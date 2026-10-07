@@ -1,0 +1,38 @@
+<resources>
+    <!-- Ana ekran -->
+    <string name="temperature_value">%1$d°</string>
+    <string name="feels_like">Hissedilen %1$d°</string>
+    <string name="humidity">Nem</string>
+    <string name="humidity_value">%%%1$d</string>
+    <string name="wind">Rüzgar</string>
+    <string name="wind_speed_value">%1$d km/sa</string>
+    <string name="retry">Tekrar dene</string>
+
+    <!-- Hatalar -->
+    <string name="error_network">İnternet bağlantısı kurulamadı.</string>
+    <string name="error_server">Sunucu hatası (%1$d).</string>
+    <string name="error_unknown">Beklenmeyen bir hata oluştu.</string>
+
+    <!-- WMO hava kodları -->
+    <string name="weather_clear">Açık</string>
+    <string name="weather_mainly_clear">Çoğunlukla açık</string>
+    <string name="weather_partly_cloudy">Parçalı bulutlu</string>
+    <string name="weather_overcast">Kapalı</string>
+    <string name="weather_fog">Sisli</string>
+    <string name="weather_drizzle">Çisenti</string>
+    <string name="weather_freezing_drizzle">Dondurucu çisenti</string>
+    <string name="weather_rain_light">Hafif yağmurlu</string>
+    <string name="weather_rain">Yağmurlu</string>
+    <string name="weather_rain_heavy">Şiddetli yağmur</string>
+    <string name="weather_freezing_rain">Dondurucu yağmur</string>
+    <string name="weather_snow_light">Hafif kar</string>
+    <string name="weather_snow">Kar yağışlı</string>
+    <string name="weather_snow_heavy">Yoğun kar</string>
+    <string name="weather_snow_grains">Kar taneleri</string>
+    <string name="weather_rain_showers">Sağanak yağış</string>
+    <string name="weather_rain_showers_violent">Şiddetli sağanak</string>
+    <string name="weather_snow_showers">Kar sağanağı</string>
+    <string name="weather_thunderstorm">Gök gürültülü fırtına</string>
+    <string name="weather_thunderstorm_hail">Dolulu fırtına</string>
+    <string name="weather_unknown">Bilinmiyor</string>
+</resources>
