@@ -31,3 +31,17 @@ fun weatherDescriptionRes(code: Int): Int = when (code) {
     96, 99 -> R.string.weather_thunderstorm_hail
     else -> R.string.weather_unknown
 }
+
+/** Geçici hava ikonu: sistem emojisi. 4. adımda kendi çizdiğimiz ikonlarla değişecek. */
+fun weatherEmoji(code: Int, isDay: Boolean): String = when (code) {
+    0 -> if (isDay) "☀️" else "🌙"
+    1 -> if (isDay) "🌤️" else "🌙"
+    2 -> if (isDay) "⛅" else "☁️"
+    3 -> "☁️"
+    45, 48 -> "🌫️"
+    51, 53, 55, 56, 57, 61, 63, 66, 80, 81 -> "🌦️"
+    65, 67, 82 -> "🌧️"
+    71, 73, 75, 77, 85, 86 -> "🌨️"
+    95, 96, 99 -> "⛈️"
+    else -> "🌡️"
+}

@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alihaydarsayar.communesky.data.WeatherRepository
 import com.alihaydarsayar.communesky.model.City
-import com.alihaydarsayar.communesky.model.CurrentWeather
+import com.alihaydarsayar.communesky.model.Forecast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +17,7 @@ import java.io.IOException
 /** Ekranın o anda içinde olabileceği durumlar. */
 sealed interface HomeUiState {
     data object Loading : HomeUiState
-    data class Success(val city: City, val weather: CurrentWeather) : HomeUiState
+    data class Success(val city: City, val forecast: Forecast) : HomeUiState
     data class Error(val error: LoadError) : HomeUiState
 }
 
@@ -44,7 +44,7 @@ class HomeViewModel(
         viewModelScope.launch {
             val city = City.Istanbul
             _uiState.value = try {
-                HomeUiState.Success(city, repository.getCurrentWeather(city))
+                HomeUiState.Success(city, repository.getForecast(city))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: IOException) {

@@ -1,12 +1,19 @@
 <resources>
     <!-- Ana ekran -->
     <string name="temperature_value">%1$d°</string>
-    <string name="feels_like">Hissedilen %1$d°</string>
+    <string name="high_low">Y:%1$d°  D:%2$d°</string>
+    <string name="feels_like">Hissedilen</string>
     <string name="humidity">Nem</string>
     <string name="humidity_value">%%%1$d</string>
     <string name="wind">Rüzgar</string>
     <string name="wind_speed_value">%1$d km/sa</string>
     <string name="retry">Tekrar dene</string>
+    <string name="hourly_forecast">Saatlik tahmin</string>
+    <string name="daily_forecast">7 günlük tahmin</string>
+    <string name="details">Ayrıntılar</string>
+    <string name="now">Şimdi</string>
+    <string name="today">Bugün</string>
+    <string name="precipitation_value">%%%1$d</string>
 
     <!-- Hatalar -->
     <string name="error_network">İnternet bağlantısı kurulamadı.</string>

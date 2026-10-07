@@ -18,6 +18,11 @@ interface OpenMeteoApi {
         @Query("latitude") latitude: Double,
         @Query("longitude") longitude: Double,
         @Query("current") current: String = CURRENT_FIELDS,
+        @Query("hourly") hourly: String = HOURLY_FIELDS,
+        @Query("daily") daily: String = DAILY_FIELDS,
+        // Saatlik veri şu anki saatten başlayıp 24 saat sürer; günlük veri bugünden itibaren 7 gün.
+        @Query("forecast_hours") forecastHours: Int = 24,
+        @Query("forecast_days") forecastDays: Int = 7,
         @Query("timezone") timezone: String = "auto",
     ): ForecastResponseDto
 
@@ -27,6 +32,12 @@ interface OpenMeteoApi {
         private const val CURRENT_FIELDS =
             "temperature_2m,apparent_temperature,relative_humidity_2m," +
                 "wind_speed_10m,weather_code,is_day"
+
+        private const val HOURLY_FIELDS =
+            "temperature_2m,weather_code,precipitation_probability,is_day"
+
+        private const val DAILY_FIELDS =
+            "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
 
         // API'nin döndürdüğü ama bizim kullanmadığımız alanlar hata vermesin diye ignoreUnknownKeys.
         private val json = Json { ignoreUnknownKeys = true }
