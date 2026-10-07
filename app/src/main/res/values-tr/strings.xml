@@ -15,6 +15,13 @@
     <string name="today">Bugün</string>
     <string name="precipitation_value">%%%1$d</string>
 
+    <!-- Konum -->
+    <string name="my_location">Konumum</string>
+    <string name="current_location">Mevcut konum</string>
+    <string name="use_my_location">Konumumu kullan</string>
+    <string name="location_permission_in_settings">Konum iznini Ayarlar\'dan ver</string>
+    <string name="location_unavailable">Konum alınamadı · Tekrar dene</string>
+
     <!-- Hatalar -->
     <string name="error_network">İnternet bağlantısı kurulamadı.</string>
     <string name="error_server">Sunucu hatası (%1$d).</string>

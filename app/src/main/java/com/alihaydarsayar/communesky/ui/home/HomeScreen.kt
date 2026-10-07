@@ -1,11 +1,22 @@
 package com.alihaydarsayar.communesky.ui.home
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
+import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -16,18 +27,29 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,6 +57,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alihaydarsayar.communesky.R
@@ -53,14 +78,71 @@ import kotlin.math.roundToInt
 
 /** ViewModel'e bağlı ekran: durumu dinler ve çizilecek içeriğe aktarır. */
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
+fun HomeScreen(viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    HomeContent(uiState = uiState, onRetry = viewModel::refresh)
+    val context = LocalContext.current
+    val activity = LocalActivity.current
+
+    // Android'in standart izin penceresini açar ve sonucu ViewModel'e iletir.
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        // Kullanıcı iki kez reddederse Android pencereyi bir daha göstermez; bunu buradan anlarız.
+        val canAskAgain = activity != null &&
+            ActivityCompat.shouldShowRequestPermissionRationale(activity, LocationPermission)
+        viewModel.onLocationPermissionResult(granted, canAskAgain)
+    }
+
+    // Uygulama açıldığında izin yoksa bir kez sor. rememberSaveable sayesinde ekran dönünce tekrar sormaz.
+    var askedOnLaunch by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        val granted = ContextCompat.checkSelfPermission(context, LocationPermission) ==
+            PackageManager.PERMISSION_GRANTED
+        if (!askedOnLaunch && !granted) {
+            askedOnLaunch = true
+            permissionLauncher.launch(LocationPermission)
+        }
+    }
+
+    // Ayarlar'dan izin verip geri dönülürse ViewModel konumla yeniden yükler.
+    LifecycleResumeEffect(viewModel) {
+        viewModel.onResume()
+        onPauseOrDispose { }
+    }
+
+    HomeContent(
+        uiState = uiState,
+        onRetry = viewModel::refresh,
+        onLocationAction = { status ->
+            when (status) {
+                is LocationStatus.NoPermission ->
+                    if (status.canAskAgain) {
+                        permissionLauncher.launch(LocationPermission)
+                    } else {
+                        context.startActivity(appSettingsIntent(context))
+                    }
+                LocationStatus.Unavailable -> viewModel.refresh()
+                LocationStatus.Current -> Unit
+            }
+        },
+    )
 }
+
+private const val LocationPermission = Manifest.permission.ACCESS_COARSE_LOCATION
+
+/** Telefon ayarlarında bu uygulamanın sayfasını açar (izinler oradan verilebilir). */
+private fun appSettingsIntent(context: Context) = Intent(
+    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+    Uri.fromParts("package", context.packageName, null),
+)
 
 /** Sadece durumu çizen ekran; ViewModel'den bağımsız olduğu için Preview'da da görülebilir. */
 @Composable
-fun HomeContent(uiState: HomeUiState, onRetry: () -> Unit) {
+fun HomeContent(
+    uiState: HomeUiState,
+    onRetry: () -> Unit,
+    onLocationAction: (LocationStatus) -> Unit,
+) {
     // Geçici: sistemin açık/koyu temasına göre seçiliyor; 4. adımda havaya ve saate göre değişecek.
     val skyColors = if (isSystemInDarkTheme()) SkyDarkColors else SkyLightColors
     Box(
@@ -72,13 +154,17 @@ fun HomeContent(uiState: HomeUiState, onRetry: () -> Unit) {
         when (uiState) {
             HomeUiState.Loading -> CircularProgressIndicator(color = Color.White)
             is HomeUiState.Error -> ErrorContent(uiState.error, onRetry)
-            is HomeUiState.Success -> ForecastContent(uiState.city, uiState.forecast)
+            is HomeUiState.Success -> ForecastContent(uiState, onLocationAction)
         }
     }
 }
 
 @Composable
-private fun ForecastContent(city: City, forecast: Forecast) {
+private fun ForecastContent(
+    state: HomeUiState.Success,
+    onLocationAction: (LocationStatus) -> Unit,
+) {
+    val forecast = state.forecast
     // İçerik durum çubuğunun altından kayabilsin diye boşluğu Modifier yerine contentPadding ile veriyoruz.
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     LazyColumn(
@@ -94,7 +180,13 @@ private fun ForecastContent(city: City, forecast: Forecast) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item(key = "header") {
-            CurrentHeader(city, forecast.current, forecast.daily.firstOrNull())
+            CurrentHeader(
+                city = state.city,
+                weather = forecast.current,
+                today = forecast.daily.firstOrNull(),
+                locationStatus = state.locationStatus,
+                onLocationAction = onLocationAction,
+            )
         }
         item(key = "hourly") { HourlyForecastCard(forecast.current, forecast.hourly) }
         item(key = "daily") { DailyForecastCard(forecast.daily) }
@@ -103,18 +195,35 @@ private fun ForecastContent(city: City, forecast: Forecast) {
 }
 
 @Composable
-private fun CurrentHeader(city: City, weather: CurrentWeather, today: DailyForecast?) {
+private fun CurrentHeader(
+    city: City,
+    weather: CurrentWeather,
+    today: DailyForecast?,
+    locationStatus: LocationStatus,
+    onLocationAction: (LocationStatus) -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = city.name,
-            color = Color.White,
-            style = MaterialTheme.typography.headlineMedium,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (locationStatus == LocationStatus.Current) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_location),
+                    contentDescription = stringResource(R.string.current_location),
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+            }
+            Text(
+                text = city.name ?: stringResource(R.string.my_location),
+                color = Color.White,
+                style = MaterialTheme.typography.headlineMedium,
+            )
+        }
         Text(
             text = stringResource(R.string.temperature_value, weather.temperature.roundToInt()),
             color = Color.White,
@@ -138,6 +247,41 @@ private fun CurrentHeader(city: City, weather: CurrentWeather, today: DailyForec
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
+        if (locationStatus != LocationStatus.Current) {
+            Spacer(Modifier.height(16.dp))
+            LocationChip(locationStatus, onClick = { onLocationAction(locationStatus) })
+        }
+    }
+}
+
+/** Konum kullanılamadığında ne yapılabileceğini söyleyen küçük, tıklanabilir hap düğme. */
+@Composable
+private fun LocationChip(status: LocationStatus, onClick: () -> Unit) {
+    val text = when (status) {
+        is LocationStatus.NoPermission -> if (status.canAskAgain) {
+            stringResource(R.string.use_my_location)
+        } else {
+            stringResource(R.string.location_permission_in_settings)
+        }
+        LocationStatus.Unavailable -> stringResource(R.string.location_unavailable)
+        LocationStatus.Current -> return
+    }
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.15f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_location),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(text = text, color = Color.White, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -196,6 +340,7 @@ private val PreviewState = run {
                 )
             },
         ),
+        locationStatus = LocationStatus.Current,
     )
 }
 
@@ -204,7 +349,7 @@ private val PreviewState = run {
 @Composable
 private fun HomeContentPreview() {
     CommuneSkyTheme {
-        HomeContent(uiState = PreviewState, onRetry = {})
+        HomeContent(uiState = PreviewState, onRetry = {}, onLocationAction = {})
     }
 }
 
@@ -213,6 +358,10 @@ private fun HomeContentPreview() {
 @Composable
 private fun HomeContentTurkishPreview() {
     CommuneSkyTheme {
-        HomeContent(uiState = PreviewState, onRetry = {})
+        HomeContent(
+            uiState = PreviewState.copy(locationStatus = LocationStatus.NoPermission(canAskAgain = true)),
+            onRetry = {},
+            onLocationAction = {},
+        )
     }
 }

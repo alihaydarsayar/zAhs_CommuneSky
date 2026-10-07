@@ -17,6 +17,13 @@
     <string name="today">Today</string>
     <string name="precipitation_value">%1$d%%</string>
 
+    <!-- Location -->
+    <string name="my_location">My location</string>
+    <string name="current_location">Current location</string>
+    <string name="use_my_location">Use my location</string>
+    <string name="location_permission_in_settings">Allow location in Settings</string>
+    <string name="location_unavailable">Location unavailable · Retry</string>
+
     <!-- Errors -->
     <string name="error_network">Couldn\'t connect to the internet.</string>
     <string name="error_server">Server error (%1$d).</string>

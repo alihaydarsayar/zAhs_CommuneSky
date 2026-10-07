@@ -1,7 +1,8 @@
 package com.alihaydarsayar.communesky.model
 
+/** [name] null ise konumun adı bulunamamıştır; ekran "Konumum" yazar. */
 data class City(
-    val name: String,
+    val name: String?,
     val latitude: Double,
     val longitude: Double,
 ) {
