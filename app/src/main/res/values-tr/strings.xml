@@ -2,18 +2,67 @@
     <!-- Ana ekran -->
     <string name="temperature_value">%1$d°</string>
     <string name="high_low">Y:%1$d°  D:%2$d°</string>
-    <string name="feels_like">Hissedilen</string>
-    <string name="humidity">Nem</string>
-    <string name="humidity_value">%%%1$d</string>
-    <string name="wind">Rüzgar</string>
-    <string name="wind_speed_value">%1$d km/sa</string>
     <string name="retry">Tekrar dene</string>
     <string name="hourly_forecast">Saatlik tahmin</string>
     <string name="daily_forecast">7 günlük tahmin</string>
-    <string name="details">Ayrıntılar</string>
     <string name="now">Şimdi</string>
     <string name="today">Bugün</string>
     <string name="precipitation_value">%%%1$d</string>
+    <string name="updated_just_now">Az önce güncellendi</string>
+    <string name="updated_ago">%1$s güncellendi</string>
+    <string name="updating">Güncelleniyor…</string>
+    <string name="update_failed">Güncellenemedi · kayıtlı veri gösteriliyor</string>
+    <string name="loading_weather">Gökyüzü yükleniyor…</string>
+    <string name="data_attribution">Hava durumu verileri: Open-Meteo.com</string>
+
+    <!-- Ayrıntılar -->
+    <string name="feels_like">Hissedilen</string>
+    <string name="feels_like_similar">Gerçek sıcaklığa yakın.</string>
+    <string name="feels_like_warmer">Olduğundan sıcak hissettiriyor.</string>
+    <string name="feels_like_colder">Olduğundan soğuk hissettiriyor.</string>
+    <string name="humidity">Nem</string>
+    <string name="humidity_value">%%%1$d</string>
+    <string name="dew_point">Çiy noktası şu an %1$d°.</string>
+    <string name="wind">Rüzgâr</string>
+    <string name="wind_speed_unit">km/sa</string>
+    <string name="wind_from">%1$s yönünden</string>
+    <string name="uv_index">UV indeksi</string>
+    <string name="uv_low">Düşük</string>
+    <string name="uv_moderate">Orta</string>
+    <string name="uv_high">Yüksek</string>
+    <string name="uv_very_high">Çok yüksek</string>
+    <string name="uv_extreme">Aşırı</string>
+    <string name="uv_max_today">Bugünkü en yüksek: %1$s</string>
+    <string name="sun">Güneş</string>
+    <string name="sunrise">Gün doğumu</string>
+    <string name="sunset">Gün batımı</string>
+    <string name="visibility">Görüş mesafesi</string>
+    <string name="visibility_value">%1$s km</string>
+    <string name="visibility_excellent">Görüş çok açık.</string>
+    <string name="visibility_good">Görüş iyi.</string>
+    <string name="visibility_moderate">Görüş orta.</string>
+    <string name="visibility_poor">Görüş zayıf.</string>
+    <string name="pressure">Basınç</string>
+    <string name="pressure_value">%1$d hPa</string>
+    <string name="pressure_high">Normalin üstünde.</string>
+    <string name="pressure_normal">Normal aralıkta.</string>
+    <string name="pressure_low">Normalin altında.</string>
+    <string-array name="compass_points">
+        <item>Kuzey</item>
+        <item>Kuzeydoğu</item>
+        <item>Doğu</item>
+        <item>Güneydoğu</item>
+        <item>Güney</item>
+        <item>Güneybatı</item>
+        <item>Batı</item>
+        <item>Kuzeybatı</item>
+    </string-array>
+    <string-array name="compass_letters">
+        <item>K</item>
+        <item>D</item>
+        <item>G</item>
+        <item>B</item>
+    </string-array>
 
     <!-- Konum -->
     <string name="my_location">Konumum</string>
@@ -24,8 +73,17 @@
 
     <!-- Hatalar -->
     <string name="error_network">İnternet bağlantısı kurulamadı.</string>
-    <string name="error_server">Sunucu hatası (%1$d).</string>
+    <string name="error_server">Hava durumu servisi şu an yoğun (%1$d). Birazdan tekrar dene.</string>
     <string name="error_unknown">Beklenmeyen bir hata oluştu.</string>
+
+    <!-- Widget -->
+    <string name="widget_small_name">Hava durumu · Kompakt</string>
+    <string name="widget_medium_name">Hava durumu · Saatlik</string>
+    <string name="widget_large_name">Hava durumu · Tahmin</string>
+    <string name="widget_small_description">Anlık sıcaklık ve hava durumu.</string>
+    <string name="widget_medium_description">Anlık hava durumu ve önümüzdeki saatler.</string>
+    <string name="widget_large_description">Anlık hava durumu, önümüzdeki saatler ve günler.</string>
+    <string name="widget_no_data">Hava durumunu yüklemek için Commune Sky\'ı aç.</string>
 
     <!-- WMO hava kodları -->
     <string name="weather_clear">Açık</string>

@@ -4,18 +4,67 @@
     <!-- Home -->
     <string name="temperature_value">%1$d°</string>
     <string name="high_low">H:%1$d°  L:%2$d°</string>
-    <string name="feels_like">Feels like</string>
-    <string name="humidity">Humidity</string>
-    <string name="humidity_value">%1$d%%</string>
-    <string name="wind">Wind</string>
-    <string name="wind_speed_value">%1$d km/h</string>
     <string name="retry">Try again</string>
     <string name="hourly_forecast">Hourly forecast</string>
     <string name="daily_forecast">7-day forecast</string>
-    <string name="details">Details</string>
     <string name="now">Now</string>
     <string name="today">Today</string>
     <string name="precipitation_value">%1$d%%</string>
+    <string name="updated_just_now">Updated just now</string>
+    <string name="updated_ago">Updated %1$s</string>
+    <string name="updating">Updating…</string>
+    <string name="update_failed">Couldn\'t update · showing saved data</string>
+    <string name="loading_weather">Loading the sky…</string>
+    <string name="data_attribution">Weather data by Open-Meteo.com</string>
+
+    <!-- Details -->
+    <string name="feels_like">Feels like</string>
+    <string name="feels_like_similar">Similar to the actual temperature.</string>
+    <string name="feels_like_warmer">Feels warmer than it is.</string>
+    <string name="feels_like_colder">Feels colder than it is.</string>
+    <string name="humidity">Humidity</string>
+    <string name="humidity_value">%1$d%%</string>
+    <string name="dew_point">The dew point is %1$d° right now.</string>
+    <string name="wind">Wind</string>
+    <string name="wind_speed_unit">km/h</string>
+    <string name="wind_from">From the %1$s</string>
+    <string name="uv_index">UV index</string>
+    <string name="uv_low">Low</string>
+    <string name="uv_moderate">Moderate</string>
+    <string name="uv_high">High</string>
+    <string name="uv_very_high">Very high</string>
+    <string name="uv_extreme">Extreme</string>
+    <string name="uv_max_today">Today\'s peak: %1$s</string>
+    <string name="sun">Sun</string>
+    <string name="sunrise">Sunrise</string>
+    <string name="sunset">Sunset</string>
+    <string name="visibility">Visibility</string>
+    <string name="visibility_value">%1$s km</string>
+    <string name="visibility_excellent">Perfectly clear view.</string>
+    <string name="visibility_good">Good visibility.</string>
+    <string name="visibility_moderate">Moderate visibility.</string>
+    <string name="visibility_poor">Poor visibility.</string>
+    <string name="pressure">Pressure</string>
+    <string name="pressure_value">%1$d hPa</string>
+    <string name="pressure_high">Higher than normal.</string>
+    <string name="pressure_normal">Within the normal range.</string>
+    <string name="pressure_low">Lower than normal.</string>
+    <string-array name="compass_points">
+        <item>north</item>
+        <item>northeast</item>
+        <item>east</item>
+        <item>southeast</item>
+        <item>south</item>
+        <item>southwest</item>
+        <item>west</item>
+        <item>northwest</item>
+    </string-array>
+    <string-array name="compass_letters">
+        <item>N</item>
+        <item>E</item>
+        <item>S</item>
+        <item>W</item>
+    </string-array>
 
     <!-- Location -->
     <string name="my_location">My location</string>
@@ -26,8 +75,17 @@
 
     <!-- Errors -->
     <string name="error_network">Couldn\'t connect to the internet.</string>
-    <string name="error_server">Server error (%1$d).</string>
+    <string name="error_server">The weather service is busy (%1$d). Try again shortly.</string>
     <string name="error_unknown">Something went wrong.</string>
+
+    <!-- Widget -->
+    <string name="widget_small_name">Weather · Compact</string>
+    <string name="widget_medium_name">Weather · Hourly</string>
+    <string name="widget_large_name">Weather · Forecast</string>
+    <string name="widget_small_description">Current temperature and conditions.</string>
+    <string name="widget_medium_description">Current weather and the next hours.</string>
+    <string name="widget_large_description">Current weather, the next hours and the coming days.</string>
+    <string name="widget_no_data">Open Commune Sky to load the weather.</string>
 
     <!-- WMO weather codes -->
     <string name="weather_clear">Clear</string>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Gökyüzü renkleri (üst, orta, alt). Hem uygulama hem widget bunları kullanır. -->
+    <color name="sky_clear_day_top">#FF1565D0</color>
+    <color name="sky_clear_day_mid">#FF3B8BE6</color>
+    <color name="sky_clear_day_bottom">#FF6FB0F0</color>
+    <color name="sky_clear_night_top">#FF050816</color>
+    <color name="sky_clear_night_mid">#FF101A3D</color>
+    <color name="sky_clear_night_bottom">#FF233366</color>
+    <color name="sky_sunrise_top">#FF2C3E7A</color>
+    <color name="sky_sunrise_mid">#FFB25C86</color>
+    <color name="sky_sunrise_bottom">#FFF2A272</color>
+    <color name="sky_sunset_top">#FF1F2A5C</color>
+    <color name="sky_sunset_mid">#FF8E4C8A</color>
+    <color name="sky_sunset_bottom">#FFF08A5D</color>
+    <color name="sky_cloudy_day_top">#FF4F6A88</color>
+    <color name="sky_cloudy_day_mid">#FF6F89A6</color>
+    <color name="sky_cloudy_day_bottom">#FF97AEC4</color>
+    <color name="sky_cloudy_night_top">#FF0F141D</color>
+    <color name="sky_cloudy_night_mid">#FF1E2635</color>
+    <color name="sky_cloudy_night_bottom">#FF343F52</color>
+    <color name="sky_rain_day_top">#FF34465E</color>
+    <color name="sky_rain_day_mid">#FF4C607A</color>
+    <color name="sky_rain_day_bottom">#FF6E8199</color>
+    <color name="sky_rain_night_top">#FF090E16</color>
+    <color name="sky_rain_night_mid">#FF161F2D</color>
+    <color name="sky_rain_night_bottom">#FF263346</color>
+    <color name="sky_snow_day_top">#FF5677A0</color>
+    <color name="sky_snow_day_mid">#FF7F9DC0</color>
+    <color name="sky_snow_day_bottom">#FFAFC5DD</color>
+    <color name="sky_snow_night_top">#FF121A2B</color>
+    <color name="sky_snow_night_mid">#FF22304A</color>
+    <color name="sky_snow_night_bottom">#FF3A4C6B</color>
+    <color name="sky_fog_day_top">#FF6E7F91</color>
+    <color name="sky_fog_day_mid">#FF8D9CAB</color>
+    <color name="sky_fog_day_bottom">#FFB0BCC7</color>
+    <color name="sky_fog_night_top">#FF14181E</color>
+    <color name="sky_fog_night_mid">#FF262C35</color>
+    <color name="sky_fog_night_bottom">#FF3C444F</color>
+    <color name="sky_storm_top">#FF0D0F1A</color>
+    <color name="sky_storm_mid">#FF232842</color>
+    <color name="sky_storm_bottom">#FF3E3F5E</color>
+</resources>

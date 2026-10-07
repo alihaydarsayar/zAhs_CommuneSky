@@ -9,9 +9,17 @@ import android.provider.Settings
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,54 +39,66 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alihaydarsayar.communesky.R
-import com.alihaydarsayar.communesky.model.City
-import com.alihaydarsayar.communesky.model.CurrentWeather
-import com.alihaydarsayar.communesky.model.DailyForecast
-import com.alihaydarsayar.communesky.model.Forecast
-import com.alihaydarsayar.communesky.model.HourlyForecast
-import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
-import com.alihaydarsayar.communesky.ui.theme.CommuneSkyTheme
-import com.alihaydarsayar.communesky.ui.theme.SkyDarkColors
-import com.alihaydarsayar.communesky.ui.theme.SkyLightColors
-import java.time.LocalDate
-import java.time.LocalDateTime
+import com.alihaydarsayar.communesky.model.SkyTheme
+import com.alihaydarsayar.communesky.model.WeatherCondition
+import com.alihaydarsayar.communesky.model.WeatherScene
+import com.alihaydarsayar.communesky.model.WeatherSnapshot
+import com.alihaydarsayar.communesky.model.currentScene
+import com.alihaydarsayar.communesky.ui.common.GlassCard
+import com.alihaydarsayar.communesky.ui.common.LocalSkyIsLight
+import com.alihaydarsayar.communesky.ui.common.WeatherIcon
+import com.alihaydarsayar.communesky.ui.sky.SkyBackground
+import com.alihaydarsayar.communesky.ui.theme.TextPrimary
+import com.alihaydarsayar.communesky.ui.theme.TextSecondary
+import com.alihaydarsayar.communesky.ui.theme.TextTertiary
+import java.time.LocalTime
 import kotlin.math.roundToInt
 
-/** ViewModel'e bağlı ekran: durumu dinler ve çizilecek içeriğe aktarır. */
+private const val LocationPermission = Manifest.permission.ACCESS_COARSE_LOCATION
+
+/** ViewModel'e bağlı ekran: durumu dinler, izin akışını yönetir ve çizilecek içeriğe aktarır. */
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)) {
+fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = LocalActivity.current
@@ -104,7 +124,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Fact
         }
     }
 
-    // Ayarlar'dan izin verip geri dönülürse ViewModel konumla yeniden yükler.
+    // Uygulamaya geri dönülünce: veri eskidiyse ya da izin Ayarlar'dan verildiyse yenile.
     LifecycleResumeEffect(viewModel) {
         viewModel.onResume()
         onPauseOrDispose { }
@@ -112,7 +132,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Fact
 
     HomeContent(
         uiState = uiState,
-        onRetry = viewModel::refresh,
+        onRefresh = { viewModel.refresh(userInitiated = true) },
         onLocationAction = { status ->
             when (status) {
                 is LocationStatus.NoPermission ->
@@ -121,14 +141,12 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Fact
                     } else {
                         context.startActivity(appSettingsIntent(context))
                     }
-                LocationStatus.Unavailable -> viewModel.refresh()
+                LocationStatus.Unavailable -> viewModel.refresh(userInitiated = true)
                 LocationStatus.Current -> Unit
             }
         },
     )
 }
-
-private const val LocationPermission = Manifest.permission.ACCESS_COARSE_LOCATION
 
 /** Telefon ayarlarında bu uygulamanın sayfasını açar (izinler oradan verilebilir). */
 private fun appSettingsIntent(context: Context) = Intent(
@@ -137,151 +155,222 @@ private fun appSettingsIntent(context: Context) = Intent(
 )
 
 /** Sadece durumu çizen ekran; ViewModel'den bağımsız olduğu için Preview'da da görülebilir. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeContent(
     uiState: HomeUiState,
-    onRetry: () -> Unit,
+    onRefresh: () -> Unit,
     onLocationAction: (LocationStatus) -> Unit,
 ) {
-    // Geçici: sistemin açık/koyu temasına göre seçiliyor; 4. adımda havaya ve saate göre değişecek.
-    val skyColors = if (isSystemInDarkTheme()) SkyDarkColors else SkyLightColors
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(skyColors)),
-        contentAlignment = Alignment.Center,
-    ) {
-        when (uiState) {
-            HomeUiState.Loading -> CircularProgressIndicator(color = Color.White)
-            is HomeUiState.Error -> ErrorContent(uiState.error, onRetry)
-            is HomeUiState.Success -> ForecastContent(uiState, onLocationAction)
+    val weather = uiState.weather
+    val scene = remember(weather) { weather?.currentScene() ?: placeholderScene() }
+
+    CompositionLocalProvider(LocalSkyIsLight provides scene.theme.isLight) {
+        Box(Modifier.fillMaxSize()) {
+            SkyBackground(scene, Modifier.fillMaxSize())
+
+            when {
+                weather != null -> {
+                    val pullState = rememberPullToRefreshState()
+                    val listState = rememberLazyListState()
+                    PullToRefreshBox(
+                        isRefreshing = uiState.isRefreshing && uiState.isUserRefresh,
+                        onRefresh = onRefresh,
+                        state = pullState,
+                        modifier = Modifier.fillMaxSize(),
+                        indicator = {
+                            PullToRefreshDefaults.Indicator(
+                                state = pullState,
+                                isRefreshing = uiState.isRefreshing && uiState.isUserRefresh,
+                                containerColor = Color.White,
+                                color = Color(0xFF1B3A66),
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
+                            )
+                        },
+                    ) {
+                        ForecastList(
+                            weather = weather,
+                            uiState = uiState,
+                            listState = listState,
+                            onLocationAction = onLocationAction,
+                        )
+                    }
+                    CompactTopBar(weather, listState)
+                }
+                // Önbellekte veri yok ve yenileme başarısız: tam ekran hata.
+                uiState.error != null && !uiState.isRefreshing -> ErrorContent(uiState.error, onRefresh)
+                else -> LoadingContent()
+            }
         }
     }
 }
 
 @Composable
-private fun ForecastContent(
-    state: HomeUiState.Success,
+private fun ForecastList(
+    weather: WeatherSnapshot,
+    uiState: HomeUiState,
+    listState: LazyListState,
     onLocationAction: (LocationStatus) -> Unit,
 ) {
-    val forecast = state.forecast
-    // İçerik durum çubuğunun altından kayabilsin diye boşluğu Modifier yerine contentPadding ile veriyoruz.
+    val forecast = weather.forecast
+    val now = remember(weather) { forecast.localNow() }
+    val today = remember(weather) { forecast.today(now) }
+    val hours = remember(weather) { forecast.upcomingHours(now) }
+    val days = remember(weather) { forecast.upcomingDays(now) }
+    val status = when {
+        uiState.isRefreshing -> HeaderStatus.Refreshing
+        uiState.error != null -> HeaderStatus.Failed
+        else -> HeaderStatus.Idle
+    }
+
+    // İçerik ilk geldiğinde hafifçe aşağıdan yukarı süzülerek belirir.
+    val entrance = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { entrance.animateTo(1f, tween(700, easing = FastOutSlowInEasing)) }
+    val density = LocalDensity.current
+
     val insets = WindowInsets.safeDrawing.asPaddingValues()
+    // Küçük üst çubuk görünürken solma alanı onun altına kadar uzar; kartlar çubuğun arkasında karışmaz.
+    val compactBarVisible by remember { derivedStateOf { listState.isCompactBarVisible() } }
+    val fadeHeight by animateDpAsState(if (compactBarVisible) 84.dp else 44.dp, label = "topFade")
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+            .graphicsLayer {
+                alpha = entrance.value
+                translationY = (1f - entrance.value) * with(density) { 32.dp.toPx() }
+                // Maske uygulayabilmek için içerik ayrı bir katmanda çizilir.
+                compositingStrategy = CompositingStrategy.Offscreen
+            }
+            // Kaydırılan içerik durum çubuğunun altına girerken yumuşakça kaybolsun; saat ve
+            // pil simgeleriyle üst üste binmesin.
+            .drawWithContent {
+                drawContent()
+                val statusBar = insets.calculateTopPadding().toPx()
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        1f to Color.Black,
+                        startY = statusBar * 0.6f,
+                        endY = statusBar + fadeHeight.toPx(),
+                    ),
+                    blendMode = BlendMode.DstIn,
+                )
+            },
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
-            top = insets.calculateTopPadding() + 48.dp,
-            bottom = insets.calculateBottomPadding() + 16.dp,
+            top = insets.calculateTopPadding() + 16.dp,
+            bottom = insets.calculateBottomPadding() + 24.dp,
         ),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item(key = "header") {
             CurrentHeader(
-                city = state.city,
-                weather = forecast.current,
-                today = forecast.daily.firstOrNull(),
-                locationStatus = state.locationStatus,
+                weather = weather,
+                today = today,
+                status = status,
+                locationStatus = uiState.locationStatus,
                 onLocationAction = onLocationAction,
+                // Kaydırırken başlık yavaşça kaybolur ve geride kalır (parallax).
+                modifier = Modifier.graphicsLayer {
+                    val offset = if (listState.firstVisibleItemIndex == 0) {
+                        listState.firstVisibleItemScrollOffset.toFloat()
+                    } else {
+                        size.height
+                    }
+                    val progress = (offset / (size.height * 0.7f)).coerceIn(0f, 1f)
+                    alpha = 1f - progress
+                    translationY = offset * 0.45f
+                },
             )
         }
-        item(key = "hourly") { HourlyForecastCard(forecast.current, forecast.hourly) }
-        item(key = "daily") { DailyForecastCard(forecast.daily) }
-        item(key = "details") { DetailsCard(forecast.current) }
+        item(key = "hourly") { HourlyCard(forecast.current, hours) }
+        item(key = "daily") { DailyCard(days, forecast.current.temperature) }
+        item(key = "details") { DetailTiles(forecast.current, today, now) }
+        item(key = "attribution") { Attribution() }
+    }
+}
+
+/**
+ * Başlık kaydırılıp gözden kaybolunca üstte beliren küçük çubuk: şehir, sıcaklık ve ikon.
+ * Görünürlük derivedStateOf ile hesaplanır; sadece eşik aşıldığında yeniden çizim olur.
+ */
+@Composable
+private fun CompactTopBar(weather: WeatherSnapshot, listState: LazyListState) {
+    val visible by remember {
+        derivedStateOf { listState.isCompactBarVisible() }
+    }
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + slideInVertically { -it / 2 },
+        exit = fadeOut() + slideOutVertically { -it / 2 },
+    ) {
+        val current = weather.forecast.current
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+                .padding(top = 6.dp),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            GlassCard(contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = weather.city.name ?: stringResource(R.string.my_location),
+                        color = TextPrimary,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    WeatherIcon(current.condition, isNight = !current.isDay, size = 22.dp, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.temperature_value, current.temperature.roundToInt()),
+                        color = TextPrimary,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun CurrentHeader(
-    city: City,
-    weather: CurrentWeather,
-    today: DailyForecast?,
-    locationStatus: LocationStatus,
-    onLocationAction: (LocationStatus) -> Unit,
-) {
-    Column(
+private fun Attribution() {
+    // Open-Meteo verileri CC BY 4.0 lisanslı; kaynağı belirtmek gerekiyor.
+    val uriHandler = LocalUriHandler.current
+    Text(
+        text = stringResource(R.string.data_attribution),
+        color = TextTertiary,
+        style = MaterialTheme.typography.labelMedium,
+        textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (locationStatus == LocationStatus.Current) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_location),
-                    contentDescription = stringResource(R.string.current_location),
-                    tint = Color.White,
-                    modifier = Modifier.size(22.dp),
-                )
-                Spacer(Modifier.width(4.dp))
-            }
-            Text(
-                text = city.name ?: stringResource(R.string.my_location),
-                color = Color.White,
-                style = MaterialTheme.typography.headlineMedium,
-            )
-        }
-        Text(
-            text = stringResource(R.string.temperature_value, weather.temperature.roundToInt()),
-            color = Color.White,
-            fontSize = 112.sp,
-            fontWeight = FontWeight.Thin,
-        )
-        Text(
-            text = stringResource(weatherDescriptionRes(weather.weatherCode)),
-            color = Color.White,
-            style = MaterialTheme.typography.titleLarge,
-        )
-        if (today != null) {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(
-                    R.string.high_low,
-                    today.maxTemperature.roundToInt(),
-                    today.minTemperature.roundToInt(),
-                ),
-                color = Color.White.copy(alpha = 0.8f),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        }
-        if (locationStatus != LocationStatus.Current) {
-            Spacer(Modifier.height(16.dp))
-            LocationChip(locationStatus, onClick = { onLocationAction(locationStatus) })
-        }
-    }
+            .clip(CircleShape)
+            .clickable { uriHandler.openUri("https://open-meteo.com/") }
+            .padding(vertical = 12.dp),
+    )
 }
 
-/** Konum kullanılamadığında ne yapılabileceğini söyleyen küçük, tıklanabilir hap düğme. */
 @Composable
-private fun LocationChip(status: LocationStatus, onClick: () -> Unit) {
-    val text = when (status) {
-        is LocationStatus.NoPermission -> if (status.canAskAgain) {
-            stringResource(R.string.use_my_location)
-        } else {
-            stringResource(R.string.location_permission_in_settings)
-        }
-        LocationStatus.Unavailable -> stringResource(R.string.location_unavailable)
-        LocationStatus.Current -> return
-    }
-    Row(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.15f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun LoadingContent() {
+    Column(
+        Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_location),
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(16.dp),
+        Text(
+            text = stringResource(R.string.app_name),
+            color = TextPrimary,
+            style = MaterialTheme.typography.displaySmall,
         )
-        Spacer(Modifier.width(6.dp))
-        Text(text = text, color = Color.White, style = MaterialTheme.typography.labelLarge)
+        Spacer(Modifier.height(20.dp))
+        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+        Spacer(Modifier.height(14.dp))
+        Text(stringResource(R.string.loading_weather), color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -293,75 +382,45 @@ private fun ErrorContent(error: LoadError, onRetry: () -> Unit) {
         LoadError.Unknown -> stringResource(R.string.error_unknown)
     }
     Column(
-        modifier = Modifier.padding(24.dp),
+        Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        WeatherIcon(WeatherCondition.Cloudy, isNight = false, size = 72.dp, contentDescription = null)
+        Spacer(Modifier.height(16.dp))
         Text(
             text = message,
-            color = Color.White,
+            color = TextPrimary,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.titleMedium,
         )
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = stringResource(R.string.retry),
+            color = Color(0xFF1B3A66),
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(Color.White)
+                .clickable(onClick = onRetry)
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+        )
     }
 }
 
-private val PreviewState = run {
-    val now = LocalDateTime.of(2026, 10, 7, 14, 0)
-    val today = LocalDate.of(2026, 10, 7)
-    HomeUiState.Success(
-        city = City.Istanbul,
-        forecast = Forecast(
-            current = CurrentWeather(
-                temperature = 18.4,
-                apparentTemperature = 17.1,
-                humidity = 64,
-                windSpeed = 12.3,
-                weatherCode = 2,
-                isDay = true,
-            ),
-            hourly = List(24) { i ->
-                HourlyForecast(
-                    time = now.plusHours(i.toLong()),
-                    temperature = 18.0 - i % 12,
-                    weatherCode = listOf(0, 2, 3, 61)[i % 4],
-                    precipitationProbability = (i * 7) % 60,
-                    isDay = i < 5,
-                )
-            },
-            daily = List(7) { i ->
-                DailyForecast(
-                    date = today.plusDays(i.toLong()),
-                    weatherCode = listOf(2, 45, 0, 0, 3, 80, 95)[i],
-                    minTemperature = 12.0 + i,
-                    maxTemperature = 20.0 + i % 3 * 2,
-                    precipitationProbability = listOf(0, 0, 5, 10, 25, 60, 80)[i],
-                )
-            },
-        ),
-        locationStatus = LocationStatus.Current,
+/** Henüz hiç veri yokken telefonun saatine göre gündüz ya da gece gökyüzü. */
+private fun placeholderScene(): WeatherScene {
+    val hour = LocalTime.now().hour
+    val isDay = hour in 7..18
+    return WeatherScene(
+        theme = if (isDay) SkyTheme.ClearDay else SkyTheme.ClearNight,
+        condition = WeatherCondition.Clear,
+        isNight = !isDay,
     )
 }
 
-/** Açık ve koyu temayı yan yana gösterir. */
-@PreviewLightDark
-@Composable
-private fun HomeContentPreview() {
-    CommuneSkyTheme {
-        HomeContent(uiState = PreviewState, onRetry = {}, onLocationAction = {})
-    }
-}
-
-/** Türkçe metinleri gösterir. */
-@Preview(locale = "tr", heightDp = 1100)
-@Composable
-private fun HomeContentTurkishPreview() {
-    CommuneSkyTheme {
-        HomeContent(
-            uiState = PreviewState.copy(locationStatus = LocationStatus.NoPermission(canAskAgain = true)),
-            onRetry = {},
-            onLocationAction = {},
-        )
-    }
-}
+/** Büyük başlık kaydırılıp gözden kaybolduysa üstteki küçük çubuk gösterilir. */
+private fun LazyListState.isCompactBarVisible(): Boolean =
+    firstVisibleItemIndex > 0 || firstVisibleItemScrollOffset > 600

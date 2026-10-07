@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Compose çizilene kadar görünen pencere rengi; gökyüzü gradyanının üst rengiyle aynı. -->
-    <color name="window_background">#FF2F6FD0</color>
+    <!-- Compose çizilene kadar görünen pencere ve açılış ekranı rengi: gece gökyüzünün orta tonu. -->
+    <color name="window_background">#FF101A3D</color>
 </resources>

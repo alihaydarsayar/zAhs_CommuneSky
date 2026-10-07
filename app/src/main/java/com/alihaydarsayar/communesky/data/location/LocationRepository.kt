@@ -15,17 +15,23 @@ import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.resume
 
 /** Cihazın konumunu bulur ve koordinatı şehir/semt adına çevirir. */
-class LocationRepository(private val context: Context) {
+@Singleton
+class LocationRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
+) {
 
-    private val locationClient = LocationServices.getFusedLocationProviderClient(context)
+    private val locationClient by lazy { LocationServices.getFusedLocationProviderClient(context) }
 
     fun hasPermission(): Boolean = ContextCompat.checkSelfPermission(
         context,

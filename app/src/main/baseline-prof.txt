@@ -1,0 +1,6 @@
+# Elle yazılmış başlangıç Baseline Profile'ı: uygulamanın kendi kodunun tamamı kurulumda önceden
+# derlenir (AOT); ilk açılışta yorumlanarak/JIT ile çalışmaz. Compose, Room vb. kütüphaneler kendi
+# profillerini zaten getirir. Daha hassas bir profil için: Run > Generate Baseline Profile
+# (baselineprofile modülü) — üretilen profil bununla birleştirilir.
+HSPLcom/alihaydarsayar/communesky/**->**(**)**
+Lcom/alihaydarsayar/communesky/**;

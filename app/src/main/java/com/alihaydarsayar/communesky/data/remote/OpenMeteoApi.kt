@@ -1,15 +1,11 @@
 package com.alihaydarsayar.communesky.data.remote
 
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
 /**
  * Open-Meteo forecast API. Retrofit bu arayüzden HTTP isteği yapan kodu otomatik üretir.
- * Örnek istek: https://api.open-meteo.com/v1/forecast?latitude=41.01&longitude=28.98&current=...
+ * Tek bir istekle anlık, saatlik ve günlük verilerin hepsi gelir; pil ve hız için iyi.
  */
 interface OpenMeteoApi {
 
@@ -20,32 +16,26 @@ interface OpenMeteoApi {
         @Query("current") current: String = CURRENT_FIELDS,
         @Query("hourly") hourly: String = HOURLY_FIELDS,
         @Query("daily") daily: String = DAILY_FIELDS,
-        // Saatlik veri şu anki saatten başlayıp 24 saat sürer; günlük veri bugünden itibaren 7 gün.
-        @Query("forecast_hours") forecastHours: Int = 24,
+        // Saatlik veri şu anki saatten başlar. 36 saat alıyoruz ki önbellek birkaç saat eskise de
+        // önümüzdeki 24 saati gösterebilelim.
+        @Query("forecast_hours") forecastHours: Int = 36,
         @Query("forecast_days") forecastDays: Int = 7,
         @Query("timezone") timezone: String = "auto",
     ): ForecastResponseDto
 
     companion object {
-        private const val BASE_URL = "https://api.open-meteo.com/"
+        const val BASE_URL = "https://api.open-meteo.com/"
 
         private const val CURRENT_FIELDS =
-            "temperature_2m,apparent_temperature,relative_humidity_2m," +
-                "wind_speed_10m,weather_code,is_day"
+            "temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m," +
+                "wind_speed_10m,wind_direction_10m,weather_code,is_day,pressure_msl," +
+                "uv_index,visibility"
 
         private const val HOURLY_FIELDS =
             "temperature_2m,weather_code,precipitation_probability,is_day"
 
         private const val DAILY_FIELDS =
-            "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
-
-        // API'nin döndürdüğü ama bizim kullanmadığımız alanlar hata vermesin diye ignoreUnknownKeys.
-        private val json = Json { ignoreUnknownKeys = true }
-
-        fun create(): OpenMeteoApi = Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build()
-            .create(OpenMeteoApi::class.java)
+            "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max," +
+                "sunrise,sunset,uv_index_max"
     }
 }

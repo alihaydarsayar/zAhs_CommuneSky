@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Commune Sky"
 include(":app")
- 
+ include(":baselineprofile")
