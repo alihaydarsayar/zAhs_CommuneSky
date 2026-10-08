@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+# Signing keys - never commit
+*.jks
+*.keystore
+keystore.properties
