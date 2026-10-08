@@ -24,6 +24,8 @@
 - **English and Turkish**, with per-app language support.
 - **Fast** — R8-optimised release build, Baseline Profiles for quick start-up, and Compose stability tuning for smooth animations.
 
+See the [changelog](CHANGELOG.md) for what's new in each version.
+
 ## Privacy
 
 Commune Sky has no ads, no analytics and no accounts. Your approximate location is sent only to Open-Meteo to get the forecast for where you are, and is never collected by the developer. See the [Privacy Policy](PRIVACY.md).
