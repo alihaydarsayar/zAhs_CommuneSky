@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.model
 
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -11,6 +12,8 @@ data class Forecast(
     val hourly: List<HourlyForecast>,
     val daily: List<DailyForecast>,
     val utcOffsetSeconds: Int,
+    /** 15 dakikalık yağış dilimleri; eski önbellekte boş olabilir. */
+    val minutely: List<PrecipitationSlice> = emptyList(),
 ) {
     /** O yerde şu an saat kaç? (Telefonun saat diliminden bağımsız.) */
     fun localNow(now: Instant = Instant.now()): LocalDateTime =
@@ -27,6 +30,48 @@ data class Forecast(
         daily.filter { !it.date.isBefore(now.toLocalDate()) }
 
     fun today(now: LocalDateTime): DailyForecast? = daily.firstOrNull { it.date == now.toLocalDate() }
+
+    /**
+     * Önümüzdeki iki saatte yağış başlayacak mı ya da şu anki yağış dinecek mi?
+     * Bir değişiklik yoksa veya veri yoksa null döner.
+     */
+    fun rainOutlook(now: LocalDateTime): RainOutlook? {
+        val horizon = now.plus(OutlookHorizon)
+        val upcoming = minutely.filter { it.end.isAfter(now) && it.start.isBefore(horizon) }
+        if (upcoming.isEmpty()) return null
+        val isSnow = current.condition == WeatherCondition.Snow || current.temperature <= 1.0
+        return if (current.condition.isWet || current.condition == WeatherCondition.Snow) {
+            val dry = upcoming.firstOrNull { !it.isWet } ?: return null
+            RainOutlook(RainOutlook.Kind.Stopping, minutesUntil(now, dry.start), isSnow)
+        } else {
+            val wet = upcoming.firstOrNull { it.isWet } ?: return null
+            RainOutlook(RainOutlook.Kind.Starting, minutesUntil(now, wet.start), isSnow)
+        }
+    }
+
+    private fun minutesUntil(now: LocalDateTime, time: LocalDateTime): Int {
+        val minutes = Duration.between(now, time).toMinutes().coerceAtLeast(0)
+        // 5 dakikaya yuvarlıyoruz; dakikası dakikasına bir kesinlik vaat etmek dürüst olmaz.
+        return (((minutes + 4) / 5) * 5).toInt()
+    }
+
+    private companion object {
+        val OutlookHorizon: Duration = Duration.ofHours(2)
+    }
+}
+
+/** Bir 15 dakikalık dilim: [start]–[end] arasında düşen yağış. */
+data class PrecipitationSlice(
+    val start: LocalDateTime,
+    val end: LocalDateTime,
+    val precipitationMm: Double,
+    /** Ekranda yağış göstermeye değecek kadar mı? */
+    val isWet: Boolean,
+)
+
+/** "Yağmur X dakika içinde başlıyor / diniyor" bilgisi. */
+data class RainOutlook(val kind: Kind, val minutes: Int, val isSnow: Boolean) {
+    enum class Kind { Starting, Stopping }
 }
 
 data class CurrentWeather(

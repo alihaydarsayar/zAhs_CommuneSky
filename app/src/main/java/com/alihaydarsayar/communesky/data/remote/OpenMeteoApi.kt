@@ -20,6 +20,11 @@ interface OpenMeteoApi {
         // önümüzdeki 24 saati gösterebilelim.
         @Query("forecast_hours") forecastHours: Int = 36,
         @Query("forecast_days") forecastDays: Int = 7,
+        // 15 dakikalık yağış: "yağmur X dk içinde başlıyor" uyarısı için. Orta Avrupa ve Kuzey
+        // Amerika'da gerçek 15 dakikalık modellerden, diğer yerlerde saatlik verinin ara
+        // değerlerinden gelir; o yüzden uyarıda süreyi 5 dakikaya yuvarlıyoruz. 3 saat yeterli.
+        @Query("minutely_15") minutely15: String = "precipitation",
+        @Query("forecast_minutely_15") forecastMinutely15: Int = 12,
         @Query("timezone") timezone: String = "auto",
     ): ForecastResponseDto
 
@@ -29,11 +34,13 @@ interface OpenMeteoApi {
         private const val CURRENT_FIELDS =
             "temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m," +
                 "wind_speed_10m,wind_direction_10m,weather_code,is_day,pressure_msl," +
-                "uv_index,visibility,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high"
+                "uv_index,visibility,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high," +
+                "precipitation,rain,showers,snowfall"
 
         private const val HOURLY_FIELDS =
             "temperature_2m,weather_code,precipitation_probability,is_day," +
-                "cloud_cover_low,cloud_cover_mid,cloud_cover_high,sunshine_duration"
+                "cloud_cover_low,cloud_cover_mid,cloud_cover_high,sunshine_duration," +
+                "precipitation,showers,snowfall"
 
         private const val DAILY_FIELDS =
             "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max," +

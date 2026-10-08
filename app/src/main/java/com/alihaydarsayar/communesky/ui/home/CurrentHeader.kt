@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +36,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.DailyForecast
+import com.alihaydarsayar.communesky.model.RainOutlook
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
 import com.alihaydarsayar.communesky.ui.common.relativeTimeSince
@@ -116,6 +118,11 @@ fun CurrentHeader(
                 style = MaterialTheme.typography.titleMedium.copy(shadow = TextShadow),
             )
         }
+        val outlook = remember(weather) { weather.forecast.rainOutlook(weather.forecast.localNow()) }
+        if (outlook != null) {
+            Spacer(Modifier.height(14.dp))
+            RainOutlookChip(outlook)
+        }
         if (locationStatus != LocationStatus.Current) {
             Spacer(Modifier.height(18.dp))
             LocationChip(locationStatus, onClick = { onLocationAction(locationStatus) })
@@ -175,6 +182,42 @@ private fun LocationChip(status: LocationStatus, onClick: () -> Unit) {
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_location),
+            contentDescription = null,
+            tint = TextPrimary,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(text = text, color = TextPrimary, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+/** "Yağmur 20 dk içinde başlıyor" gibi kısa yağış uyarısı. */
+@Composable
+private fun RainOutlookChip(outlook: RainOutlook) {
+    val text = when (outlook.kind) {
+        RainOutlook.Kind.Starting -> when {
+            outlook.minutes <= 5 && outlook.isSnow -> stringResource(R.string.snow_starting_soon)
+            outlook.minutes <= 5 -> stringResource(R.string.rain_starting_soon)
+            outlook.isSnow -> stringResource(R.string.snow_starting_in, outlook.minutes)
+            else -> stringResource(R.string.rain_starting_in, outlook.minutes)
+        }
+        RainOutlook.Kind.Stopping -> when {
+            outlook.minutes <= 5 && outlook.isSnow -> stringResource(R.string.snow_stopping_soon)
+            outlook.minutes <= 5 -> stringResource(R.string.rain_stopping_soon)
+            outlook.isSnow -> stringResource(R.string.snow_stopping_in, outlook.minutes)
+            else -> stringResource(R.string.rain_stopping_in, outlook.minutes)
+        }
+    }
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.16f))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_drop),
             contentDescription = null,
             tint = TextPrimary,
             modifier = Modifier.size(16.dp),

@@ -116,4 +116,14 @@
     <string name="weather_thunderstorm">Gök gürültülü fırtına</string>
     <string name="weather_thunderstorm_hail">Dolulu fırtına</string>
     <string name="weather_unknown">Bilinmiyor</string>
+
+    <!-- Yağış uyarısı -->
+    <string name="rain_starting_soon">Birkaç dakika içinde yağmur bekleniyor</string>
+    <string name="rain_starting_in">Yaklaşık %1$d dk içinde yağmur bekleniyor</string>
+    <string name="rain_stopping_soon">Yağmur birkaç dakika içinde dinecek gibi</string>
+    <string name="rain_stopping_in">Yağmurun yaklaşık %1$d dk içinde dinmesi bekleniyor</string>
+    <string name="snow_starting_soon">Birkaç dakika içinde kar bekleniyor</string>
+    <string name="snow_starting_in">Yaklaşık %1$d dk içinde kar bekleniyor</string>
+    <string name="snow_stopping_soon">Kar birkaç dakika içinde dinecek gibi</string>
+    <string name="snow_stopping_in">Karın yaklaşık %1$d dk içinde dinmesi bekleniyor</string>
 </resources>

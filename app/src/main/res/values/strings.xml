@@ -118,4 +118,14 @@
     <string name="weather_thunderstorm">Thunderstorm</string>
     <string name="weather_thunderstorm_hail">Thunderstorm with hail</string>
     <string name="weather_unknown">Unknown</string>
+
+    <!-- Rain outlook -->
+    <string name="rain_starting_soon">Rain expected within minutes</string>
+    <string name="rain_starting_in">Rain expected in about %1$d min</string>
+    <string name="rain_stopping_soon">Rain should ease within minutes</string>
+    <string name="rain_stopping_in">Rain should stop in about %1$d min</string>
+    <string name="snow_starting_soon">Snow expected within minutes</string>
+    <string name="snow_starting_in">Snow expected in about %1$d min</string>
+    <string name="snow_stopping_soon">Snow should ease within minutes</string>
+    <string name="snow_stopping_in">Snow should stop in about %1$d min</string>
 </resources>

@@ -5,12 +5,14 @@ import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity
 import com.alihaydarsayar.communesky.data.remote.DailyDto
 import com.alihaydarsayar.communesky.data.remote.ForecastResponseDto
 import com.alihaydarsayar.communesky.data.remote.HourlyDto
+import com.alihaydarsayar.communesky.data.remote.Minutely15Dto
 import com.alihaydarsayar.communesky.data.remote.OpenMeteoApi
 import com.alihaydarsayar.communesky.model.City
 import com.alihaydarsayar.communesky.model.CurrentWeather
 import com.alihaydarsayar.communesky.model.DailyForecast
 import com.alihaydarsayar.communesky.model.Forecast
 import com.alihaydarsayar.communesky.model.HourlyForecast
+import com.alihaydarsayar.communesky.model.PrecipitationSlice
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import dagger.Lazy
 import kotlinx.coroutines.Dispatchers
@@ -94,6 +96,7 @@ private fun ForecastResponseDto.toModel() = Forecast(
     hourly = hourly.toModel(daily),
     daily = daily.toModel(),
     utcOffsetSeconds = utcOffsetSeconds,
+    minutely = minutely15?.toModel().orEmpty(),
 )
 
 private fun ForecastResponseDto.currentToModel(): CurrentWeather {
@@ -112,15 +115,23 @@ private fun ForecastResponseDto.currentToModel(): CurrentWeather {
         dewPoint = current.dewPoint,
         windSpeed = current.windSpeed,
         windDirection = current.windDirection,
-        weatherCode = SkyCorrection.hourlyCode(
-            code = current.weatherCode,
-            cloudLow = current.cloudLow,
-            cloudMid = current.cloudMid,
-            cloudHigh = current.cloudHigh,
-            sunshineSeconds = sunshine,
-            hourStart = hourStart,
-            sunrise = sunrise,
-            sunset = sunset,
+        // Önce ince bulut düzeltmesi (sadece açar), sonra yağış kontrolü (sadece yağış ekler).
+        // Anlık yağış değerleri son 15 dakikanın toplamıdır.
+        weatherCode = RainDetection.code(
+            code = SkyCorrection.hourlyCode(
+                code = current.weatherCode,
+                cloudLow = current.cloudLow,
+                cloudMid = current.cloudMid,
+                cloudHigh = current.cloudHigh,
+                sunshineSeconds = sunshine,
+                hourStart = hourStart,
+                sunrise = sunrise,
+                sunset = sunset,
+            ),
+            precipitationMm = current.precipitation,
+            showersMm = current.showers,
+            snowfallCm = current.snowfall,
+            sliceHours = 0.25,
         ),
         isDay = current.isDay == 1,
         pressure = current.pressure,
@@ -147,18 +158,37 @@ private fun HourlyDto.toModel(daily: DailyDto): List<HourlyForecast> = time.indi
     HourlyForecast(
         time = hourStart,
         temperature = temperature.getOrNull(i) ?: return@mapNotNull null,
-        weatherCode = SkyCorrection.hourlyCode(
-            code = weatherCode.getOrNull(i) ?: return@mapNotNull null,
-            cloudLow = cloudLow.getOrNull(i),
-            cloudMid = cloudMid.getOrNull(i),
-            cloudHigh = cloudHigh.getOrNull(i),
-            sunshineSeconds = sunshineDuration.getOrNull(i),
-            hourStart = hourStart,
-            sunrise = sunrise,
-            sunset = sunset,
+        // Open-Meteo'da yağış "bir önceki saatin toplamı"dır: 14:00–15:00 arası 15:00 satırındadır.
+        weatherCode = RainDetection.code(
+            code = SkyCorrection.hourlyCode(
+                code = weatherCode.getOrNull(i) ?: return@mapNotNull null,
+                cloudLow = cloudLow.getOrNull(i),
+                cloudMid = cloudMid.getOrNull(i),
+                cloudHigh = cloudHigh.getOrNull(i),
+                sunshineSeconds = sunshineDuration.getOrNull(i),
+                hourStart = hourStart,
+                sunrise = sunrise,
+                sunset = sunset,
+            ),
+            precipitationMm = precipitation.getOrNull(i + 1),
+            showersMm = showers.getOrNull(i + 1),
+            snowfallCm = snowfall.getOrNull(i + 1),
+            sliceHours = 1.0,
         ),
         precipitationProbability = precipitationProbability.getOrNull(i) ?: 0,
         isDay = isDay.getOrNull(i) == 1,
+    )
+}
+
+// Her değer bir önceki 15 dakikanın toplamı; dilimin bitiş zamanı satırın kendi saatidir.
+private fun Minutely15Dto.toModel(): List<PrecipitationSlice> = time.indices.mapNotNull { i ->
+    val end = LocalDateTime.parse(time[i])
+    val amount = precipitation.getOrNull(i) ?: return@mapNotNull null
+    PrecipitationSlice(
+        start = end.minusMinutes(15),
+        end = end,
+        precipitationMm = amount,
+        isWet = RainDetection.isWet(amount, sliceHours = 0.25),
     )
 }
 
