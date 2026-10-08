@@ -36,4 +36,4 @@ If this policy changes, the updated version will be published at this address wi
 
 ## Contact
 
-Questions? Open an issue at https://github.com/alihaydarsayar/zAhs_CommuneSky/issues or email alihaydar.sayar@outlook.com.
+Questions? Open an issue at https://github.com/alihaydarsayar/zAhs_CommuneSky/issues or email alihaydarsayar.info@gmail.com.
