@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Ekleme sırasında ayar ekranı (yer, arka plan) açılır; sonradan uzun basıp düzenlenebilir.
-    Güncelleme WorkManager ile yapıldığı için updatePeriodMillis kapalı (0): pil dostu.
--->
+<!-- Ev + Bulunduğum yer widget'ı. Ekleme sırasında ayar ekranı (arka plan) açılır. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/widget_medium_description"
+    android:configure="com.alihaydarsayar.communesky.widget.config.WidgetConfigActivity"
+    android:description="@string/widget_home_description"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:minWidth="250dp"
     android:minHeight="110dp"
-    android:minResizeWidth="110dp"
+    android:minResizeWidth="250dp"
     android:minResizeHeight="110dp"
     android:maxResizeWidth="530dp"
-    android:maxResizeHeight="530dp"
-    android:previewLayout="@layout/widget_preview_medium"
+    android:maxResizeHeight="300dp"
+    android:previewLayout="@layout/widget_preview_home"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen"
-    android:configure="com.alihaydarsayar.communesky.widget.config.WidgetConfigActivity"
     android:widgetFeatures="reconfigurable" />

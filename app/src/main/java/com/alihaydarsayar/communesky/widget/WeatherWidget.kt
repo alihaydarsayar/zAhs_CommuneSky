@@ -1,8 +1,8 @@
 package com.alihaydarsayar.communesky.widget
 
 import android.content.Context
-import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.TextUnit
@@ -14,11 +14,10 @@ import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
+import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
-import androidx.glance.action.actionStartActivity
-import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -32,47 +31,26 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
-import androidx.glance.text.FontFamily
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
-import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import com.alihaydarsayar.communesky.MainActivity
 import com.alihaydarsayar.communesky.R
-import com.alihaydarsayar.communesky.data.WeatherRepository
-import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
-import com.alihaydarsayar.communesky.data.settings.SettingsRepository
-import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
-import kotlinx.coroutines.flow.first
-import androidx.compose.runtime.CompositionLocalProvider
+import com.alihaydarsayar.communesky.model.AppSettings
 import com.alihaydarsayar.communesky.model.SkyTheme
-import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.model.currentScene
+import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
 import com.alihaydarsayar.communesky.ui.common.iconRes
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
-import com.alihaydarsayar.communesky.ui.common.widgetBackgroundRes
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
-import java.time.format.DateTimeFormatter
+import java.time.LocalDateTime
 import java.time.format.TextStyle as JavaTextStyle
-import kotlin.math.roundToInt
-
-/** Widget, Hilt'in yönettiği depoya bu "giriş noktası" üzerinden ulaşır. */
-@EntryPoint
-@InstallIn(SingletonComponent::class)
-interface WidgetEntryPoint {
-    fun weatherRepository(): WeatherRepository
-    fun settingsRepository(): SettingsRepository
-}
 
 /**
- * Ana ekran widget'ı. Tek bir widget sınıfı, kaplanan alana göre üç farklı düzen çizer
- * (kompakt, saatlik, tahmin). Veri, uygulamanın önbelleğinden (Room) okunur; internete çıkmaz.
+ * Ana ekran hava durumu widget'ı. Tek bir widget sınıfı, kaplanan alana göre dört farklı düzen
+ * çizer (kompakt, geniş, saatlik, tahmin). Hangi yeri ve hangi arka planı göstereceği widget
+ * eklenirken seçilir. Veri, uygulamanın önbelleğinden (Room) okunur; internete çıkmaz.
+ *
+ * [previewConfig]: testlerde ve önizlemede gerçek widget kimliği olmadan ayar vermek için.
  */
-class WeatherWidget : GlanceAppWidget() {
+class WeatherWidget(private val previewConfig: WidgetConfig? = null) : GlanceAppWidget() {
 
     companion object {
         val Small = DpSize(110.dp, 110.dp)
@@ -84,80 +62,69 @@ class WeatherWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Responsive(setOf(Small, Wide, Medium, Large))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val entryPoint = EntryPointAccessors
-            .fromApplication(context.applicationContext, WidgetEntryPoint::class.java)
-        val snapshot = entryPoint.weatherRepository().snapshot(DEVICE_PLACE_ID)
-        val settings = entryPoint.settingsRepository().settings.first()
+        val config = previewConfig ?: widgetConfig(context, id)
+        val loader = WidgetDataLoader(context)
+        val data = loader.place(config.place)
+        val settings = loader.settings()
         provideContent {
-            CompositionLocalProvider(LocalAppSettings provides settings) { WidgetContent(snapshot) }
+            WidgetTheme(settings, config.background) { WeatherWidgetContent(data, config.background) }
         }
     }
 }
 
-private val White = Color.White
-private val WhiteSecondary = Color.White.copy(alpha = 0.78f)
-private val RainBlue = Color(0xFFB5E3FF)
-
-private fun style(
-    size: TextUnit,
-    color: Color = White,
-    weight: FontWeight = FontWeight.Normal,
-    light: Boolean = false,
-    align: TextAlign = TextAlign.Start,
-) = TextStyle(
-    color = ColorProvider(color),
-    fontSize = size,
-    fontWeight = weight,
-    fontFamily = if (light) FontFamily("sans-serif-light") else null,
-    textAlign = align,
-)
+/** Widget'ın her yerinde birim ayarları ve arka plan türü okunabilsin. */
+@Composable
+fun WidgetTheme(settings: AppSettings, background: WidgetBackground, content: @Composable () -> Unit) {
+    CompositionLocalProvider(
+        LocalAppSettings provides settings,
+        LocalWidgetBackground provides background,
+        content = content,
+    )
+}
 
 @Composable
-private fun WidgetContent(snapshot: WeatherSnapshot?) {
+private fun WeatherWidgetContent(data: WidgetPlaceData?, background: WidgetBackground) {
     val size = LocalSize.current
+    val snapshot = data?.snapshot
     val now = snapshot?.forecast?.localNow()
     val theme = if (snapshot != null && now != null) snapshot.currentScene(now).theme else SkyTheme.ClearNight
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .appWidgetBackground()
-            .background(ImageProvider(theme.widgetBackgroundRes))
+            .widgetBackground(background, theme)
             .clickable(actionStartActivity<MainActivity>())
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
         when {
-            snapshot == null || now == null -> EmptyContent()
+            data == null || now == null -> EmptyContent()
             size.width >= WeatherWidget.Large.width && size.height >= WeatherWidget.Large.height ->
-                LargeContent(snapshot, now)
+                LargeContent(data, now)
             size.width >= WeatherWidget.Medium.width && size.height >= WeatherWidget.Medium.height ->
-                MediumContent(snapshot, now)
-            size.width >= WeatherWidget.Wide.width -> CurrentRow(snapshot, now)
-            else -> SmallContent(snapshot, now)
+                MediumContent(data, now)
+            size.width >= WeatherWidget.Wide.width -> CurrentRow(data, now)
+            else -> SmallContent(data, now)
         }
     }
 }
 
 @Composable
-private fun EmptyContent() {
+internal fun EmptyContent() {
     val context = LocalContext.current
     Box(GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            context.getString(R.string.widget_no_data),
-            style = style(13.sp, align = TextAlign.Center),
-        )
+        WText(context.getString(R.string.widget_no_data), 13.sp, align = TextAlign.Center, maxLines = 3)
     }
 }
 
 @Composable
-private fun SmallContent(snapshot: WeatherSnapshot, now: java.time.LocalDateTime) {
+private fun SmallContent(data: WidgetPlaceData, now: LocalDateTime) {
     val context = LocalContext.current
-    val current = snapshot.forecast.current
-    val today = snapshot.forecast.today(now)
+    val current = data.snapshot.forecast.current
+    val today = data.snapshot.forecast.today(now)
     Column(GlanceModifier.fillMaxSize()) {
-        CityName(snapshot, 13.sp)
+        PlaceName(data, 13.sp)
         Spacer(GlanceModifier.defaultWeight())
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(temperature(current.temperature), style = style(36.sp, light = true))
+            WText(temperatureText(current.temperature), 36.sp, font = WidgetFont.Light)
             Spacer(GlanceModifier.defaultWeight())
             Image(
                 ImageProvider(current.condition.iconRes(!current.isDay)),
@@ -165,27 +132,24 @@ private fun SmallContent(snapshot: WeatherSnapshot, now: java.time.LocalDateTime
                 modifier = GlanceModifier.size(34.dp),
             )
         }
-        Text(
-            context.getString(weatherDescriptionRes(current.weatherCode)),
-            style = style(12.sp, weight = FontWeight.Medium),
-            maxLines = 1,
-        )
+        WText(context.getString(weatherDescriptionRes(current.weatherCode)), 12.sp, font = WidgetFont.Medium)
         // En küçük boyutta yer kalmazsa en yüksek/en düşük satırı gizlenir.
         if (today != null && LocalSize.current.height >= 130.dp) {
-            Text(highLow(context, today.maxTemperature, today.minTemperature), style = style(12.sp, WhiteSecondary))
+            WText(highLowText(context, today.maxTemperature, today.minTemperature), 12.sp, color = WidgetWhiteSecondary)
         }
     }
 }
 
+/** Yer adı, büyük sıcaklık ve sağda ikon, durum ve en yüksek/en düşük. */
 @Composable
-private fun CurrentRow(snapshot: WeatherSnapshot, now: java.time.LocalDateTime) {
+internal fun CurrentRow(data: WidgetPlaceData, now: LocalDateTime, modifier: GlanceModifier = GlanceModifier.fillMaxWidth()) {
     val context = LocalContext.current
-    val current = snapshot.forecast.current
-    val today = snapshot.forecast.today(now)
-    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    val current = data.snapshot.forecast.current
+    val today = data.snapshot.forecast.today(now)
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Column(GlanceModifier.defaultWeight()) {
-            CityName(snapshot, 14.sp)
-            Text(temperature(current.temperature), style = style(38.sp, light = true))
+            PlaceName(data, 14.sp)
+            WText(temperatureText(current.temperature), 38.sp, font = WidgetFont.Light)
         }
         Column(horizontalAlignment = Alignment.End) {
             Image(
@@ -193,15 +157,18 @@ private fun CurrentRow(snapshot: WeatherSnapshot, now: java.time.LocalDateTime) 
                 contentDescription = null,
                 modifier = GlanceModifier.size(40.dp),
             )
-            Text(
+            WText(
                 context.getString(weatherDescriptionRes(current.weatherCode)),
-                style = style(12.sp, weight = FontWeight.Medium, align = TextAlign.End),
-                maxLines = 1,
+                12.sp,
+                font = WidgetFont.Medium,
+                align = TextAlign.End,
             )
             if (today != null) {
-                Text(
-                    highLow(context, today.maxTemperature, today.minTemperature),
-                    style = style(12.sp, WhiteSecondary, align = TextAlign.End),
+                WText(
+                    highLowText(context, today.maxTemperature, today.minTemperature),
+                    12.sp,
+                    color = WidgetWhiteSecondary,
+                    align = TextAlign.End,
                 )
             }
         }
@@ -209,47 +176,54 @@ private fun CurrentRow(snapshot: WeatherSnapshot, now: java.time.LocalDateTime) 
 }
 
 @Composable
-private fun MediumContent(snapshot: WeatherSnapshot, now: java.time.LocalDateTime) {
+private fun MediumContent(data: WidgetPlaceData, now: LocalDateTime) {
     Column(GlanceModifier.fillMaxSize()) {
-        CurrentRow(snapshot, now)
+        CurrentRow(data, now)
         Spacer(GlanceModifier.defaultWeight())
-        HourlyRow(snapshot, now)
+        HourlyRow(data, now)
     }
 }
 
 @Composable
-private fun LargeContent(snapshot: WeatherSnapshot, now: java.time.LocalDateTime) {
+private fun LargeContent(data: WidgetPlaceData, now: LocalDateTime) {
     val size = LocalSize.current
     // Yükseklik arttıkça daha çok gün sığdır.
     val dayCount = ((size.height.value - 200f) / 28f).toInt().coerceIn(3, 6)
     Column(GlanceModifier.fillMaxSize()) {
-        CurrentRow(snapshot, now)
+        CurrentRow(data, now)
         Spacer(GlanceModifier.height(10.dp))
-        HourlyRow(snapshot, now)
+        HourlyRow(data, now)
         Spacer(GlanceModifier.height(8.dp))
-        Box(
-            GlanceModifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(Color.White.copy(alpha = 0.18f)),
-        ) {}
+        Divider()
         Spacer(GlanceModifier.height(4.dp))
-        DailyRows(snapshot, now, dayCount)
+        DailyRows(data, now, dayCount)
     }
 }
 
 @Composable
-private fun HourlyRow(snapshot: WeatherSnapshot, now: java.time.LocalDateTime) {
+internal fun Divider() {
+    Box(
+        GlanceModifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(Color.White.copy(alpha = 0.18f)),
+    ) {}
+}
+
+@Composable
+internal fun HourlyRow(data: WidgetPlaceData, now: LocalDateTime, count: Int = 6) {
     val context = LocalContext.current
-    val hours = snapshot.forecast.upcomingHours(now, count = 6)
+    val snapshot = data.snapshot
+    val hours = snapshot.forecast.upcomingHours(now, count = count)
     val formatter = hourFormatter(context)
     Row(GlanceModifier.fillMaxWidth()) {
         hours.forEachIndexed { index, hour ->
             Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
+                WText(
                     if (index == 0) context.getString(R.string.now) else hour.time.format(formatter),
-                    style = style(11.sp, WhiteSecondary, align = TextAlign.Center),
-                    maxLines = 1,
+                    11.sp,
+                    color = WidgetWhiteSecondary,
+                    align = TextAlign.Center,
                 )
                 Spacer(GlanceModifier.height(3.dp))
                 Image(
@@ -258,9 +232,11 @@ private fun HourlyRow(snapshot: WeatherSnapshot, now: java.time.LocalDateTime) {
                     modifier = GlanceModifier.size(24.dp),
                 )
                 Spacer(GlanceModifier.height(3.dp))
-                Text(
-                    temperature(if (index == 0) snapshot.forecast.current.temperature else hour.temperature),
-                    style = style(13.sp, weight = FontWeight.Medium, align = TextAlign.Center),
+                WText(
+                    temperatureText(if (index == 0) snapshot.forecast.current.temperature else hour.temperature),
+                    13.sp,
+                    font = WidgetFont.Medium,
+                    align = TextAlign.Center,
                 )
             }
         }
@@ -268,32 +244,30 @@ private fun HourlyRow(snapshot: WeatherSnapshot, now: java.time.LocalDateTime) {
 }
 
 @Composable
-private fun DailyRows(snapshot: WeatherSnapshot, now: java.time.LocalDateTime, count: Int) {
+private fun DailyRows(data: WidgetPlaceData, now: LocalDateTime, count: Int) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0]
-    snapshot.forecast.upcomingDays(now).take(count).forEachIndexed { index, day ->
+    data.snapshot.forecast.upcomingDays(now).take(count).forEachIndexed { index, day ->
         Row(
             GlanceModifier.fillMaxWidth().padding(vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
+            WText(
                 if (index == 0) {
                     context.getString(R.string.today)
                 } else {
                     day.date.dayOfWeek.getDisplayName(JavaTextStyle.SHORT, locale)
                         .replaceFirstChar { it.titlecase(locale) }
                 },
-                style = style(13.sp, weight = FontWeight.Medium),
+                13.sp,
+                font = WidgetFont.Medium,
                 modifier = GlanceModifier.defaultWeight(),
-                maxLines = 1,
             )
-            Text(
+            WText(
                 context.getString(R.string.precipitation_value, day.precipitationProbability),
-                style = style(
-                    11.sp,
-                    if (day.precipitationProbability >= 20) RainBlue else Color.White.copy(alpha = 0.5f),
-                    align = TextAlign.End,
-                ),
+                11.sp,
+                color = if (day.precipitationProbability >= 20) WidgetRainBlue else Color.White.copy(alpha = 0.6f),
+                align = TextAlign.End,
                 modifier = GlanceModifier.width(36.dp),
             )
             Spacer(GlanceModifier.width(6.dp))
@@ -302,52 +276,44 @@ private fun DailyRows(snapshot: WeatherSnapshot, now: java.time.LocalDateTime, c
                 contentDescription = null,
                 modifier = GlanceModifier.size(20.dp),
             )
-            Text(
-                temperature(day.minTemperature),
-                style = style(13.sp, WhiteSecondary, align = TextAlign.End),
+            WText(
+                temperatureText(day.minTemperature),
+                13.sp,
+                color = WidgetWhiteSecondary,
+                align = TextAlign.End,
                 modifier = GlanceModifier.width(40.dp),
             )
-            Text(
-                temperature(day.maxTemperature),
-                style = style(13.sp, weight = FontWeight.Medium, align = TextAlign.End),
+            WText(
+                temperatureText(day.maxTemperature),
+                13.sp,
+                font = WidgetFont.Medium,
+                align = TextAlign.End,
                 modifier = GlanceModifier.width(40.dp),
             )
         }
     }
 }
 
+/** Yer adı; cihaz konumuysa konum işareti, Ev ise ev işareti önünde. */
 @Composable
-private fun CityName(snapshot: WeatherSnapshot, size: TextUnit) {
+internal fun PlaceName(data: WidgetPlaceData, size: TextUnit, label: String? = null) {
     val context = LocalContext.current
+    val icon = when {
+        data.isHome -> R.drawable.ic_home
+        data.snapshot.isCurrentLocation -> R.drawable.ic_location
+        else -> null
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        if (snapshot.isCurrentLocation) {
+        if (icon != null) {
             Image(
-                ImageProvider(R.drawable.ic_location),
-                contentDescription = context.getString(R.string.current_location),
+                ImageProvider(icon),
+                contentDescription = context.getString(
+                    if (data.isHome) R.string.home_place else R.string.current_location,
+                ),
                 modifier = GlanceModifier.size(12.dp),
             )
             Spacer(GlanceModifier.width(3.dp))
         }
-        Text(
-            snapshot.city.name ?: context.getString(R.string.my_location),
-            style = style(size, weight = FontWeight.Medium),
-            maxLines = 1,
-        )
+        WText(label ?: data.snapshot.displayName(context), size, font = WidgetFont.Medium)
     }
-}
-
-@Composable
-private fun temperature(value: Double) =
-    "${LocalAppSettings.current.temperatureUnit.fromCelsius(value).roundToInt()}°"
-
-@Composable
-private fun highLow(context: Context, max: Double, min: Double): String {
-    val unit = LocalAppSettings.current.temperatureUnit
-    return context.getString(R.string.high_low, unit.fromCelsius(max).roundToInt(), unit.fromCelsius(min).roundToInt())
-}
-
-private fun hourFormatter(context: Context): DateTimeFormatter {
-    val locale = context.resources.configuration.locales[0]
-    val skeleton = if (DateFormat.is24HourFormat(context)) "Hm" else "h a"
-    return DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
 }

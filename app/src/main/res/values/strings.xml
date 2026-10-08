@@ -98,6 +98,24 @@
     <string name="widget_medium_description">Current weather and the next hours.</string>
     <string name="widget_large_description">Current weather, the next hours and the coming days.</string>
     <string name="widget_no_data">Open Commune Sky to load the weather.</string>
+    <string name="widget_clock_name">Clock &amp; weather</string>
+    <string name="widget_clock_description">A large clock and date next to the weather.</string>
+    <string name="widget_home_name">Home &amp; my location</string>
+    <string name="widget_home_description">The weather at home and where you are, one above the other.</string>
+    <string name="widget_at_home">%1$s · You\'re home</string>
+    <string name="widget_no_home">Mark a place as Home in Commune Sky to see both.</string>
+    <string name="widget_config_title">Widget settings</string>
+    <string name="widget_config_place">Place</string>
+    <string name="widget_config_no_home">No place marked as Home yet; shows your location</string>
+    <string name="widget_config_home_hint">This widget shows your Home and your current location. When you\'re home, it shows a single line.</string>
+    <string name="widget_config_background">Background</string>
+    <string name="widget_background_sky">Sky</string>
+    <string name="widget_background_translucent">Glass</string>
+    <string name="widget_background_transparent">Clear</string>
+    <string name="widget_background_sky_hint">A sky that follows the weather and the time of day.</string>
+    <string name="widget_background_translucent_hint">Dark glass; your wallpaper shows through.</string>
+    <string name="widget_background_transparent_hint">No background. Text has a soft shadow so it stays readable on any wallpaper.</string>
+    <string name="widget_config_save">Save</string>
 
     <!-- WMO weather codes -->
     <string name="weather_clear">Clear</string>

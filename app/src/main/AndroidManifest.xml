@@ -66,6 +66,44 @@
                 android:resource="@xml/widget_info_large" />
         </receiver>
 
+        <!-- Saatli widget. -->
+        <receiver
+            android:name=".widget.ClockWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_clock_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_clock" />
+        </receiver>
+        <!-- Ev + Bulunduğum yer widget'ı. -->
+        <receiver
+            android:name=".widget.HomeWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_home_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_home" />
+        </receiver>
+
+        <!-- Widget ayar ekranı: widget eklenirken ve "Widget'ı düzenle" ile açılır. -->
+        <activity
+            android:name=".widget.config.WidgetConfigActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:label="@string/widget_config_title"
+            android:taskAffinity=""
+            android:theme="@style/Theme.CommuneSky">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- Uygulama içinden seçilen dil: Android 12 ve altında AppCompat bu servisle saklar. -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Güncelleme WorkManager ile yapıldığı için updatePeriodMillis kapalı (0): pil dostu. -->
+<!--
+    Ekleme sırasında ayar ekranı (yer, arka plan) açılır; sonradan uzun basıp düzenlenebilir.
+    Güncelleme WorkManager ile yapıldığı için updatePeriodMillis kapalı (0): pil dostu.
+-->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_large_description"
     android:initialLayout="@layout/glance_default_loading_layout"
@@ -14,4 +17,6 @@
     android:targetCellWidth="4"
     android:targetCellHeight="4"
     android:updatePeriodMillis="0"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:configure="com.alihaydarsayar.communesky.widget.config.WidgetConfigActivity"
+    android:widgetFeatures="reconfigurable" />

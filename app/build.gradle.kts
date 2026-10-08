@@ -42,6 +42,10 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        // Birim testlerinde android.util.Log gibi çağrılar hata vermesin, sessizce geçilsin.
+        unitTests.isReturnDefaultValues = true
+    }
     androidResources {
         // values-xx klasörlerinden dil listesini üretir; Android 13+ "Uygulama dilleri" ayarında görünür.
         generateLocaleConfig = true

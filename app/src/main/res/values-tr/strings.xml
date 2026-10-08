@@ -96,6 +96,24 @@
     <string name="widget_medium_description">Anlık hava durumu ve önümüzdeki saatler.</string>
     <string name="widget_large_description">Anlık hava durumu, önümüzdeki saatler ve günler.</string>
     <string name="widget_no_data">Hava durumunu yüklemek için Commune Sky\'ı aç.</string>
+    <string name="widget_clock_name">Saat ve hava</string>
+    <string name="widget_clock_description">Hava durumunun yanında büyük saat ve tarih.</string>
+    <string name="widget_home_name">Ev ve bulunduğum yer</string>
+    <string name="widget_home_description">Evdeki ve bulunduğun yerdeki hava, alt alta.</string>
+    <string name="widget_at_home">%1$s · Evdesin</string>
+    <string name="widget_no_home">İkisini birden görmek için Commune Sky\'da bir yeri Ev olarak işaretle.</string>
+    <string name="widget_config_title">Widget ayarları</string>
+    <string name="widget_config_place">Yer</string>
+    <string name="widget_config_no_home">Henüz Ev seçilmedi; bulunduğun yer gösterilir</string>
+    <string name="widget_config_home_hint">Bu widget Evini ve bulunduğun yeri gösterir. Evdeyken tek satıra düşer.</string>
+    <string name="widget_config_background">Arka plan</string>
+    <string name="widget_background_sky">Gökyüzü</string>
+    <string name="widget_background_translucent">Yarı saydam</string>
+    <string name="widget_background_transparent">Saydam</string>
+    <string name="widget_background_sky_hint">Havaya ve günün saatine göre değişen gökyüzü.</string>
+    <string name="widget_background_translucent_hint">Koyu cam; duvar kâğıdın hafifçe görünür.</string>
+    <string name="widget_background_transparent_hint">Arka plan yok. Yazılar hafif gölgeli; her duvar kâğıdında okunur.</string>
+    <string name="widget_config_save">Kaydet</string>
 
     <!-- WMO hava kodları -->
     <string name="weather_clear">Açık</string>

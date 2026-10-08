@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Saatli widget'ın saat kısmı. TextClock Android'in kendi saat bileşenidir: dakika değişince
+    sistem kendisi günceller, uygulama hiç uyanmaz (pil harcamaz) ve saat hep doğru kalır.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clock_root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextClock
+        android:id="@+id/clock_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-light"
+        android:format12Hour="h:mm"
+        android:format24Hour="HH:mm"
+        android:includeFontPadding="false"
+        android:shadowColor="#40000000"
+        android:shadowDy="1"
+        android:shadowRadius="3"
+        android:textColor="#FFFFFFFF"
+        android:textSize="52sp" />
+
+    <TextClock
+        android:id="@+id/clock_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fontFamily="sans-serif-medium"
+        android:format12Hour="EEE, d MMM"
+        android:format24Hour="EEE, d MMM"
+        android:maxLines="1"
+        android:shadowColor="#40000000"
+        android:shadowDy="1"
+        android:shadowRadius="3"
+        android:textColor="#E6FFFFFF"
+        android:textSize="14sp" />
+</LinearLayout>

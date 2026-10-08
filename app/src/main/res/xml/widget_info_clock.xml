@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Ekleme sırasında ayar ekranı (yer, arka plan) açılır; sonradan uzun basıp düzenlenebilir.
-    Güncelleme WorkManager ile yapıldığı için updatePeriodMillis kapalı (0): pil dostu.
+    Saatli widget. Saat TextClock ile sistem tarafından güncellenir; hava kısmı WorkManager ile.
+    Ekleme sırasında ayar ekranı açılır; sonradan uzun basıp düzenlenebilir.
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/widget_medium_description"
+    android:configure="com.alihaydarsayar.communesky.widget.config.WidgetConfigActivity"
+    android:description="@string/widget_clock_description"
     android:initialLayout="@layout/glance_default_loading_layout"
-    android:minWidth="250dp"
+    android:minWidth="180dp"
     android:minHeight="110dp"
-    android:minResizeWidth="110dp"
+    android:minResizeWidth="180dp"
     android:minResizeHeight="110dp"
     android:maxResizeWidth="530dp"
-    android:maxResizeHeight="530dp"
-    android:previewLayout="@layout/widget_preview_medium"
+    android:maxResizeHeight="400dp"
+    android:previewLayout="@layout/widget_preview_clock"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen"
-    android:configure="com.alihaydarsayar.communesky.widget.config.WidgetConfigActivity"
     android:widgetFeatures="reconfigurable" />
