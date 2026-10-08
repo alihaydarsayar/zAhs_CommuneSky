@@ -19,3 +19,7 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+/.idea/appInsightsSettings.xml
+/.idea/markdown.xml
+/.idea/caches
+/app/.idea
