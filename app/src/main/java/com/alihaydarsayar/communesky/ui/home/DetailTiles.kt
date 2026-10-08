@@ -65,12 +65,12 @@ fun DetailTiles(
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(TileSpacing)) {
         TileRow(
+            { PrecipitationTile(today, it) },
             { FeelsLikeTile(current, it) },
-            { HumidityTile(current, it) },
         )
         TileRow(
             { WindTile(current, it) },
-            { UvTile(current, today, it) },
+            { HumidityTile(current, it) },
         )
         val sunrise = today?.sunrise
         val sunset = today?.sunset
@@ -78,8 +78,56 @@ fun DetailTiles(
             SunTile(sunrise, sunset, now, Modifier.fillMaxWidth())
         }
         TileRow(
+            { UvTile(current, today, it) },
+            { CloudTile(current, it) },
+        )
+        TileRow(
             { VisibilityTile(current, it) },
             { PressureTile(current, it) },
+        )
+    }
+}
+
+@Composable
+private fun PrecipitationTile(today: DailyForecast?, modifier: Modifier) {
+    val probability = today?.precipitationProbability ?: 0
+    val sum = today?.precipitationSum ?: 0.0
+    val decimal = rememberDecimalFormat()
+    val caption = if (sum >= 0.1) {
+        stringResource(R.string.precipitation_expected, decimal.format(sum))
+    } else {
+        stringResource(R.string.precipitation_none)
+    }
+    Tile(stringResource(R.string.precipitation), modifier, caption) {
+        Text(stringResource(R.string.precipitation_value, probability), color = TextPrimary, style = ValueStyle)
+        Spacer(Modifier.height(10.dp))
+        ScaleBar(
+            fraction = probability / 100f,
+            colors = listOf(Color(0xFFCDEBFF), Color(0xFF7CC4FF), Color(0xFF3B82F6)),
+        )
+    }
+}
+
+/**
+ * Bulutluluk ve bulutların türü: ince, yüksek bulutlar (sirrus) gökyüzünü kaplasa da güneşi
+ * kesmez; bunu ayrıca söylemek "kapalı ama güneşli" görünen durumları anlaşılır kılar.
+ */
+@Composable
+private fun CloudTile(current: CurrentWeather, modifier: Modifier) {
+    val cover = current.cloudCover ?: return Tile(stringResource(R.string.cloud_cover), modifier) {}
+    val lowMid = maxOf(current.cloudLow ?: 0, current.cloudMid ?: 0)
+    val high = current.cloudHigh ?: 0
+    val caption = when {
+        cover < 20 -> R.string.clouds_clear
+        high >= 50 && lowMid < 40 -> if (current.isDay) R.string.clouds_thin else R.string.clouds_thin_night
+        else -> if (current.isDay) R.string.clouds_thick else R.string.clouds_thick_night
+    }
+    Tile(stringResource(R.string.cloud_cover), modifier, stringResource(caption)) {
+        Text(stringResource(R.string.humidity_value, cover), color = TextPrimary, style = ValueStyle)
+        Spacer(Modifier.height(10.dp))
+        ScaleBar(
+            fraction = cover / 100f,
+            colors = listOf(Color(0xFF93C5FD), Color(0xFFCBD5E1), Color(0xFF64748B)),
         )
     }
 }

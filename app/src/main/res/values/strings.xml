@@ -44,6 +44,15 @@
     <string name="visibility_good">Good visibility.</string>
     <string name="visibility_moderate">Moderate visibility.</string>
     <string name="visibility_poor">Poor visibility.</string>
+    <string name="precipitation">Precipitation</string>
+    <string name="precipitation_expected">%1$s mm expected today.</string>
+    <string name="precipitation_none">No rain expected today.</string>
+    <string name="cloud_cover">Cloud cover</string>
+    <string name="clouds_clear">Mostly clear skies.</string>
+    <string name="clouds_thin">Thin, high clouds; the sun shines through.</string>
+    <string name="clouds_thin_night">Thin, high clouds.</string>
+    <string name="clouds_thick">Thick clouds are blocking the sun.</string>
+    <string name="clouds_thick_night">Thick cloud cover.</string>
     <string name="pressure">Pressure</string>
     <string name="pressure_value">%1$d hPa</string>
     <string name="pressure_high">Higher than normal.</string>

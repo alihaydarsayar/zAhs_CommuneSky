@@ -42,6 +42,15 @@
     <string name="visibility_good">Görüş iyi.</string>
     <string name="visibility_moderate">Görüş orta.</string>
     <string name="visibility_poor">Görüş zayıf.</string>
+    <string name="precipitation">Yağış</string>
+    <string name="precipitation_expected">Bugün %1$s mm yağış bekleniyor.</string>
+    <string name="precipitation_none">Bugün yağış beklenmiyor.</string>
+    <string name="cloud_cover">Bulutluluk</string>
+    <string name="clouds_clear">Gökyüzü büyük ölçüde açık.</string>
+    <string name="clouds_thin">İnce, yüksek bulutlar; güneş içinden geçiyor.</string>
+    <string name="clouds_thin_night">İnce, yüksek bulutlar.</string>
+    <string name="clouds_thick">Kalın bulutlar güneşi kapatıyor.</string>
+    <string name="clouds_thick_night">Kalın bulut örtüsü.</string>
     <string name="pressure">Basınç</string>
     <string name="pressure_value">%1$d hPa</string>
     <string name="pressure_high">Normalin üstünde.</string>

@@ -30,7 +30,6 @@ import com.alihaydarsayar.communesky.ui.common.GlassCard
 import com.alihaydarsayar.communesky.ui.common.WeatherIcon
 import com.alihaydarsayar.communesky.ui.common.currentLocale
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
-import com.alihaydarsayar.communesky.ui.theme.RainAccent
 import com.alihaydarsayar.communesky.ui.theme.TemperatureScale
 import com.alihaydarsayar.communesky.ui.theme.TextPrimary
 import com.alihaydarsayar.communesky.ui.theme.TextSecondary
@@ -106,17 +105,9 @@ private fun DayRow(
             size = 30.dp,
             contentDescription = stringResource(weatherDescriptionRes(day.weatherCode)),
         )
-        Text(
-            text = if (day.precipitationProbability >= PrecipitationThreshold) {
-                stringResource(R.string.precipitation_value, day.precipitationProbability)
-            } else {
-                ""
-            },
-            color = RainAccent,
-            style = MaterialTheme.typography.labelMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.width(40.dp),
-        )
+        Box(Modifier.width(48.dp), contentAlignment = Alignment.Center) {
+            PrecipitationChance(day.precipitationProbability, MaterialTheme.typography.labelMedium)
+        }
         Text(
             text = stringResource(R.string.temperature_value, day.minTemperature.roundToInt()),
             color = TextSecondary,

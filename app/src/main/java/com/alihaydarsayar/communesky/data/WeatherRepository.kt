@@ -2,7 +2,6 @@ package com.alihaydarsayar.communesky.data
 
 import com.alihaydarsayar.communesky.data.local.WeatherCacheDao
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity
-import com.alihaydarsayar.communesky.data.remote.CurrentDto
 import com.alihaydarsayar.communesky.data.remote.DailyDto
 import com.alihaydarsayar.communesky.data.remote.ForecastResponseDto
 import com.alihaydarsayar.communesky.data.remote.HourlyDto
@@ -91,33 +90,73 @@ class WeatherRepository @Inject constructor(
 data class Place(val city: City, val isCurrentLocation: Boolean)
 
 private fun ForecastResponseDto.toModel() = Forecast(
-    current = current.toModel(),
-    hourly = hourly.toModel(),
+    current = currentToModel(),
+    hourly = hourly.toModel(daily),
     daily = daily.toModel(),
     utcOffsetSeconds = utcOffsetSeconds,
 )
 
-private fun CurrentDto.toModel() = CurrentWeather(
-    time = LocalDateTime.parse(time),
-    temperature = temperature,
-    apparentTemperature = apparentTemperature,
-    humidity = humidity,
-    dewPoint = dewPoint,
-    windSpeed = windSpeed,
-    windDirection = windDirection,
-    weatherCode = weatherCode,
-    isDay = isDay == 1,
-    pressure = pressure,
-    uvIndex = uvIndex,
-    visibility = visibility,
-)
+private fun ForecastResponseDto.currentToModel(): CurrentWeather {
+    val time = LocalDateTime.parse(current.time)
+    val (sunrise, sunset) = daily.sunTimes(time.toLocalDate())
+    // Anlık veride güneşlenme süresi yok; içinde bulunduğumuz saatin değerini kullanıyoruz.
+    val hourStart = time.withMinute(0)
+    val sunshine = hourly.time.indexOfFirst { LocalDateTime.parse(it) == hourStart }
+        .takeIf { it >= 0 }
+        ?.let { hourly.sunshineDuration.getOrNull(it) }
+    return CurrentWeather(
+        time = time,
+        temperature = current.temperature,
+        apparentTemperature = current.apparentTemperature,
+        humidity = current.humidity,
+        dewPoint = current.dewPoint,
+        windSpeed = current.windSpeed,
+        windDirection = current.windDirection,
+        weatherCode = SkyCorrection.hourlyCode(
+            code = current.weatherCode,
+            cloudLow = current.cloudLow,
+            cloudMid = current.cloudMid,
+            cloudHigh = current.cloudHigh,
+            sunshineSeconds = sunshine,
+            hourStart = hourStart,
+            sunrise = sunrise,
+            sunset = sunset,
+        ),
+        isDay = current.isDay == 1,
+        pressure = current.pressure,
+        uvIndex = current.uvIndex,
+        visibility = current.visibility,
+        cloudCover = current.cloudCover,
+        cloudLow = current.cloudLow,
+        cloudMid = current.cloudMid,
+        cloudHigh = current.cloudHigh,
+    )
+}
+
+private fun DailyDto.sunTimes(date: LocalDate): Pair<LocalDateTime?, LocalDateTime?> {
+    val index = time.indexOf(date.toString())
+    if (index < 0) return null to null
+    return sunrise.getOrNull(index)?.let(LocalDateTime::parse) to
+        sunset.getOrNull(index)?.let(LocalDateTime::parse)
+}
 
 // Sütunları satırlara çeviriyoruz; sıcaklığı veya kodu eksik olan saat/gün atlanır.
-private fun HourlyDto.toModel(): List<HourlyForecast> = time.indices.mapNotNull { i ->
+private fun HourlyDto.toModel(daily: DailyDto): List<HourlyForecast> = time.indices.mapNotNull { i ->
+    val hourStart = LocalDateTime.parse(time[i])
+    val (sunrise, sunset) = daily.sunTimes(hourStart.toLocalDate())
     HourlyForecast(
-        time = LocalDateTime.parse(time[i]),
+        time = hourStart,
         temperature = temperature.getOrNull(i) ?: return@mapNotNull null,
-        weatherCode = weatherCode.getOrNull(i) ?: return@mapNotNull null,
+        weatherCode = SkyCorrection.hourlyCode(
+            code = weatherCode.getOrNull(i) ?: return@mapNotNull null,
+            cloudLow = cloudLow.getOrNull(i),
+            cloudMid = cloudMid.getOrNull(i),
+            cloudHigh = cloudHigh.getOrNull(i),
+            sunshineSeconds = sunshineDuration.getOrNull(i),
+            hourStart = hourStart,
+            sunrise = sunrise,
+            sunset = sunset,
+        ),
         precipitationProbability = precipitationProbability.getOrNull(i) ?: 0,
         isDay = isDay.getOrNull(i) == 1,
     )
@@ -126,12 +165,17 @@ private fun HourlyDto.toModel(): List<HourlyForecast> = time.indices.mapNotNull 
 private fun DailyDto.toModel(): List<DailyForecast> = time.indices.mapNotNull { i ->
     DailyForecast(
         date = LocalDate.parse(time[i]),
-        weatherCode = weatherCode.getOrNull(i) ?: return@mapNotNull null,
+        weatherCode = SkyCorrection.dailyCode(
+            code = weatherCode.getOrNull(i) ?: return@mapNotNull null,
+            sunshineSeconds = sunshineDuration.getOrNull(i),
+            daylightSeconds = daylightDuration.getOrNull(i),
+        ),
         minTemperature = minTemperature.getOrNull(i) ?: return@mapNotNull null,
         maxTemperature = maxTemperature.getOrNull(i) ?: return@mapNotNull null,
         precipitationProbability = precipitationProbability.getOrNull(i) ?: 0,
         sunrise = sunrise.getOrNull(i)?.let(LocalDateTime::parse),
         sunset = sunset.getOrNull(i)?.let(LocalDateTime::parse),
         uvIndexMax = uvIndexMax.getOrNull(i),
+        precipitationSum = precipitationSum.getOrNull(i),
     )
 }

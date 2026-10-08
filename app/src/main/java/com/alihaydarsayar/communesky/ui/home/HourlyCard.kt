@@ -37,7 +37,6 @@ import com.alihaydarsayar.communesky.ui.common.SectionTitle
 import com.alihaydarsayar.communesky.ui.common.WeatherIcon
 import com.alihaydarsayar.communesky.ui.common.rememberHourFormatter
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
-import com.alihaydarsayar.communesky.ui.theme.RainAccent
 import com.alihaydarsayar.communesky.ui.theme.TextPrimary
 import com.alihaydarsayar.communesky.ui.theme.TextSecondary
 import kotlin.math.roundToInt
@@ -47,8 +46,6 @@ private val CurveAreaHeight = 78.dp
 private val PointTop = 32.dp
 private val PointBottom = 66.dp
 
-/** Yağış ihtimali bu değerin altındaysa gösterilmez; her saatte "%0" yazması kalabalık yapar. */
-const val PrecipitationThreshold = 20
 
 private val CurveWarm = Color(0xFFFFC27A)
 private val CurveCool = Color(0xFF8FD3FF)
@@ -146,15 +143,8 @@ private fun HourHeader(label: String, hour: HourlyForecast, isNow: Boolean) {
             size = 32.dp,
             contentDescription = stringResource(weatherDescriptionRes(hour.weatherCode)),
         )
-        Text(
-            text = if (hour.precipitationProbability >= PrecipitationThreshold) {
-                stringResource(R.string.precipitation_value, hour.precipitationProbability)
-            } else {
-                ""
-            },
-            color = RainAccent,
-            style = MaterialTheme.typography.labelSmall,
-        )
+        Spacer(Modifier.height(2.dp))
+        PrecipitationChance(hour.precipitationProbability, MaterialTheme.typography.labelSmall)
     }
 }
 

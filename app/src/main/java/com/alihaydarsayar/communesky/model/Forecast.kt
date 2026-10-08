@@ -43,6 +43,11 @@ data class CurrentWeather(
     val uvIndex: Double?,
     /** Metre cinsinden. */
     val visibility: Double?,
+    /** Bulut oranı (%): toplam ve katmanlar (alçak, orta, yüksek). */
+    val cloudCover: Int? = null,
+    val cloudLow: Int? = null,
+    val cloudMid: Int? = null,
+    val cloudHigh: Int? = null,
 ) {
     val condition: WeatherCondition get() = WeatherCondition.fromCode(weatherCode)
 }
@@ -66,6 +71,8 @@ data class DailyForecast(
     val sunrise: LocalDateTime?,
     val sunset: LocalDateTime?,
     val uvIndexMax: Double?,
+    /** Günlük toplam yağış (mm). */
+    val precipitationSum: Double? = null,
 ) {
     val condition: WeatherCondition get() = WeatherCondition.fromCode(weatherCode)
 }

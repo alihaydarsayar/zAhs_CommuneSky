@@ -280,12 +280,12 @@ private fun DailyRows(snapshot: WeatherSnapshot, now: java.time.LocalDateTime, c
                 maxLines = 1,
             )
             Text(
-                if (day.precipitationProbability >= 20) {
-                    context.getString(R.string.precipitation_value, day.precipitationProbability)
-                } else {
-                    ""
-                },
-                style = style(11.sp, RainBlue, align = TextAlign.End),
+                context.getString(R.string.precipitation_value, day.precipitationProbability),
+                style = style(
+                    11.sp,
+                    if (day.precipitationProbability >= 20) RainBlue else Color.White.copy(alpha = 0.5f),
+                    align = TextAlign.End,
+                ),
                 modifier = GlanceModifier.width(36.dp),
             )
             Spacer(GlanceModifier.width(6.dp))

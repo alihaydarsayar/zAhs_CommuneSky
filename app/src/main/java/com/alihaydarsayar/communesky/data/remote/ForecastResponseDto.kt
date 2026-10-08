@@ -29,6 +29,10 @@ data class CurrentDto(
     @SerialName("pressure_msl") val pressure: Double? = null,
     @SerialName("uv_index") val uvIndex: Double? = null,
     val visibility: Double? = null,
+    @SerialName("cloud_cover") val cloudCover: Int? = null,
+    @SerialName("cloud_cover_low") val cloudLow: Int? = null,
+    @SerialName("cloud_cover_mid") val cloudMid: Int? = null,
+    @SerialName("cloud_cover_high") val cloudHigh: Int? = null,
 )
 
 /**
@@ -42,6 +46,10 @@ data class HourlyDto(
     @SerialName("weather_code") val weatherCode: List<Int?>,
     @SerialName("precipitation_probability") val precipitationProbability: List<Int?>,
     @SerialName("is_day") val isDay: List<Int?>,
+    @SerialName("cloud_cover_low") val cloudLow: List<Int?> = emptyList(),
+    @SerialName("cloud_cover_mid") val cloudMid: List<Int?> = emptyList(),
+    @SerialName("cloud_cover_high") val cloudHigh: List<Int?> = emptyList(),
+    @SerialName("sunshine_duration") val sunshineDuration: List<Double?> = emptyList(),
 )
 
 @Serializable
@@ -54,4 +62,7 @@ data class DailyDto(
     val sunrise: List<String?> = emptyList(),
     val sunset: List<String?> = emptyList(),
     @SerialName("uv_index_max") val uvIndexMax: List<Double?> = emptyList(),
+    @SerialName("sunshine_duration") val sunshineDuration: List<Double?> = emptyList(),
+    @SerialName("daylight_duration") val daylightDuration: List<Double?> = emptyList(),
+    @SerialName("precipitation_sum") val precipitationSum: List<Double?> = emptyList(),
 )
