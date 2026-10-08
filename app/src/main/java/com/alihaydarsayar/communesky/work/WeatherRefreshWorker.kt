@@ -12,7 +12,7 @@ import retrofit2.HttpException
 import java.io.IOException
 
 /**
- * WorkManager'ın periyodik olarak çalıştırdığı arka plan işi: son yerin hava durumunu yeniler,
+ * WorkManager'ın periyodik olarak çalıştırdığı arka plan işi: bütün yerlerin hava durumunu yeniler,
  * önbelleği ve widget'ları günceller. Uygulama kapalıyken de çalışır.
  */
 @HiltWorker
@@ -23,7 +23,7 @@ class WeatherRefreshWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = try {
-        updater.refreshLastPlace()
+        updater.refreshInBackground()
         Result.success()
     } catch (e: IOException) {
         // Geçici ağ sorunu: WorkManager biraz bekleyip tekrar dener.

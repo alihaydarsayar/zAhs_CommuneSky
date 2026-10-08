@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.alihaydarsayar.communesky.R
+import com.alihaydarsayar.communesky.ui.common.asTemperature
 import com.alihaydarsayar.communesky.model.DailyForecast
 import com.alihaydarsayar.communesky.model.RainOutlook
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
@@ -44,7 +45,6 @@ import com.alihaydarsayar.communesky.ui.theme.HeroTemperatureStyle
 import com.alihaydarsayar.communesky.ui.theme.TextPrimary
 import com.alihaydarsayar.communesky.ui.theme.TextSecondary
 import com.alihaydarsayar.communesky.ui.theme.WarningAccent
-import kotlin.math.roundToInt
 
 /** Parlak gökyüzünde beyaz yazının okunması için çok hafif gölge. */
 private val TextShadow = Shadow(Color.Black.copy(alpha = 0.18f), Offset(0f, 2f), blurRadius = 14f)
@@ -52,6 +52,8 @@ private val TextShadow = Shadow(Color.Black.copy(alpha = 0.18f), Offset(0f, 2f),
 @Composable
 fun CurrentHeader(
     weather: WeatherSnapshot,
+    title: String?,
+    isHome: Boolean,
     today: DailyForecast?,
     status: HeaderStatus,
     locationStatus: LocationStatus,
@@ -66,17 +68,17 @@ fun CurrentHeader(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (weather.isCurrentLocation) {
+            if (weather.isCurrentLocation || isHome) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_location),
-                    contentDescription = stringResource(R.string.current_location),
+                    painter = painterResource(if (isHome) R.drawable.ic_home else R.drawable.ic_location),
+                    contentDescription = stringResource(if (isHome) R.string.home_place else R.string.current_location),
                     tint = TextPrimary,
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(Modifier.width(6.dp))
             }
             Text(
-                text = weather.city.name ?: stringResource(R.string.my_location),
+                text = title ?: stringResource(R.string.my_location),
                 color = TextPrimary,
                 style = MaterialTheme.typography.headlineMedium.copy(shadow = TextShadow),
             )
@@ -86,7 +88,7 @@ fun CurrentHeader(
 
         // Sıcaklık değişince rakamlar yumuşakça geçiş yapar.
         AnimatedContent(
-            targetState = current.temperature.roundToInt(),
+            targetState = current.temperature.asTemperature(),
             transitionSpec = { fadeIn() togetherWith fadeOut() },
             label = "heroTemperature",
         ) { temperature ->
@@ -111,8 +113,8 @@ fun CurrentHeader(
             Text(
                 text = stringResource(
                     R.string.high_low,
-                    today.maxTemperature.roundToInt(),
-                    today.minTemperature.roundToInt(),
+                    today.maxTemperature.asTemperature(),
+                    today.minTemperature.asTemperature(),
                 ),
                 color = TextSecondary,
                 style = MaterialTheme.typography.titleMedium.copy(shadow = TextShadow),

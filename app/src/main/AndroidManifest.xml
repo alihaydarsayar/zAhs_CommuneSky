@@ -66,6 +66,16 @@
                 android:resource="@xml/widget_info_large" />
         </receiver>
 
+        <!-- Uygulama içinden seçilen dil: Android 12 ve altında AppCompat bu servisle saklar. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
         <!-- WorkManager'ı Hilt ile kendimiz başlatıyoruz (CommuneSkyApp); otomatik başlatmayı kapat. -->
         <provider
             android:name="androidx.startup.InitializationProvider"

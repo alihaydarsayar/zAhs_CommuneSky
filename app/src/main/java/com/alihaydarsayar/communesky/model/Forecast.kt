@@ -124,8 +124,11 @@ data class DailyForecast(
 
 /** Önbellekten okunan, ekrana hazır hava durumu: hangi yer, ne zaman alındı. */
 data class WeatherSnapshot(
+    val placeId: Long,
     val city: City,
     val isCurrentLocation: Boolean,
     val forecast: Forecast,
     val fetchedAt: Instant,
+    /** Sadece "Bulunduğum yer" için: konumun hata payı (metre). */
+    val accuracyMeters: Float? = null,
 )

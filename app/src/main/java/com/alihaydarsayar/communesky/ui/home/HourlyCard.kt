@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.alihaydarsayar.communesky.R
+import com.alihaydarsayar.communesky.ui.common.asTemperature
 import com.alihaydarsayar.communesky.model.CurrentWeather
 import com.alihaydarsayar.communesky.model.HourlyForecast
 import com.alihaydarsayar.communesky.ui.common.GlassCard
@@ -39,7 +40,6 @@ import com.alihaydarsayar.communesky.ui.common.rememberHourFormatter
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
 import com.alihaydarsayar.communesky.ui.theme.TextPrimary
 import com.alihaydarsayar.communesky.ui.theme.TextSecondary
-import kotlin.math.roundToInt
 
 private val ColumnWidth = 60.dp
 private val CurveAreaHeight = 78.dp
@@ -108,7 +108,7 @@ fun HourlyCard(
                 TemperatureCurve(pointOffsets, Modifier.matchParentSize())
                 items.forEachIndexed { index, hour ->
                     Text(
-                        text = stringResource(R.string.temperature_value, hour.temperature.roundToInt()),
+                        text = stringResource(R.string.temperature_value, hour.temperature.asTemperature()),
                         color = TextPrimary,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = if (index == 0) FontWeight.SemiBold else FontWeight.Medium,

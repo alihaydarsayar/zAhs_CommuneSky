@@ -4,9 +4,14 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alihaydarsayar.communesky.data.PlaceSelection
 import com.alihaydarsayar.communesky.data.WeatherRepository
 import com.alihaydarsayar.communesky.data.WeatherUpdater
+import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
 import com.alihaydarsayar.communesky.data.location.LocationRepository
+import com.alihaydarsayar.communesky.data.places.PlacesRepository
+import com.alihaydarsayar.communesky.data.settings.SettingsRepository
+import com.alihaydarsayar.communesky.model.AppSettings
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.work.RefreshScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,11 +30,24 @@ import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 
+/** Ana ekrandaki bir sayfa: "Bulunduğum yer" ya da kayıtlı bir yer. */
+data class HomePage(
+    val placeId: Long,
+    /** Kayıtlı yerin adı; "Bulunduğum yer" için null (ad, hava verisindeki şehir adından gelir). */
+    val name: String?,
+    val isHome: Boolean,
+    val weather: WeatherSnapshot?,
+) {
+    val isDevice: Boolean get() = placeId == DEVICE_PLACE_ID
+}
+
 /** Ekranın tüm durumu. */
 data class HomeUiState(
     /** Önbellek henüz okunmadı (uygulama açılışının ilk birkaç milisaniyesi). */
-    val isCacheLoading: Boolean = true,
-    val weather: WeatherSnapshot? = null,
+    val isLoading: Boolean = true,
+    val pages: List<HomePage> = emptyList(),
+    /** En son bakılan yer; uygulama açılınca bu sayfadan başlanır. */
+    val selectedPlaceId: Long? = null,
     /** Arka planda yenileniyor (otomatik veya kullanıcı aşağı çekti). */
     val isRefreshing: Boolean = false,
     /** Kullanıcı aşağı çekerek yeniledi; çekme göstergesi sadece bu durumda döner. */
@@ -37,9 +55,13 @@ data class HomeUiState(
     /** Son yenileme başarısız olduysa nedeni. Eldeki veri gösterilmeye devam eder. */
     val error: LoadError? = null,
     val locationStatus: LocationStatus = LocationStatus.Current,
-)
+) {
+    /** Seçili sayfa; seçim yoksa ya da o yer silindiyse ilk sayfa. */
+    val selectedPage: HomePage?
+        get() = pages.firstOrNull { it.placeId == selectedPlaceId } ?: pages.firstOrNull()
+}
 
-/** Gösterilen yerin nereden geldiği; ekran buna göre konum düğmesini gösterir. */
+/** "Bulunduğum yer"in nereden geldiği; ekran buna göre konum düğmesini gösterir. */
 sealed interface LocationStatus {
     /** Cihazın konumu kullanılıyor. */
     data object Current : LocationStatus
@@ -62,6 +84,8 @@ sealed interface LoadError {
 class HomeViewModel @Inject constructor(
     private val application: Application,
     weatherRepository: WeatherRepository,
+    placesRepository: PlacesRepository,
+    private val settingsRepository: SettingsRepository,
     private val updater: WeatherUpdater,
     private val locationRepository: LocationRepository,
 ) : ViewModel() {
@@ -74,20 +98,38 @@ class HomeViewModel @Inject constructor(
     )
 
     private val refreshState = MutableStateFlow(RefreshState())
+    private val hasPermission = MutableStateFlow(locationRepository.hasPermission())
     private var refreshJob: Job? = null
     private var canAskPermissionAgain = true
 
+    /** Birimler ve tema; uygulamanın her ekranı kullanır. */
+    val settings: StateFlow<AppSettings?> = settingsRepository.settings
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     /**
-     * Önbellek (Room) + yenileme durumu birleşip tek bir ekran durumu olur.
+     * Kayıtlı yerler + önbellek + izin + yenileme durumu birleşip tek bir ekran durumu olur.
      * Önbellek değişince ekran kendiliğinden güncellenir; ViewModel veriyi elle taşımaz.
      */
     val uiState: StateFlow<HomeUiState> = combine(
-        weatherRepository.weather,
+        placesRepository.places,
+        weatherRepository.allWeather,
+        hasPermission,
         refreshState,
-    ) { weather, refresh ->
+        settingsRepository.selectedPlaceId,
+    ) { saved, weather, permission, refresh, selectedId ->
+        val savedById = saved.associateBy { it.id }
         HomeUiState(
-            isCacheLoading = false,
-            weather = weather,
+            isLoading = false,
+            pages = PlaceSelection.pageIds(permission, saved).map { id ->
+                val place = savedById[id]
+                HomePage(
+                    placeId = id,
+                    name = place?.name,
+                    isHome = place?.isHome == true,
+                    weather = weather[id],
+                )
+            },
+            selectedPlaceId = selectedId,
             isRefreshing = refresh.isRefreshing,
             isUserRefresh = refresh.isUserRefresh,
             error = refresh.error,
@@ -100,19 +142,21 @@ class HomeViewModel @Inject constructor(
         RefreshScheduler.schedule(application)
     }
 
+    /** Konumu bulur ve bütün yerleri tek istekle yeniler. */
     fun refresh(userInitiated: Boolean = false) {
         // Önceki yenileme bitmeden yenisi başlarsa eskisini iptal et.
         refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
             refreshState.update { it.copy(isRefreshing = true, isUserRefresh = userInitiated) }
-            val resolved = updater.resolvePlace()
+            val resolved = updater.resolveDevicePlace()
+            hasPermission.value = resolved.hasPermission
             val locationStatus = when {
                 resolved.located -> LocationStatus.Current
                 !resolved.hasPermission -> LocationStatus.NoPermission(canAskPermissionAgain)
                 else -> LocationStatus.Unavailable
             }
             val error = try {
-                updater.refresh(resolved.place)
+                updater.refreshAll(resolved)
                 null
             } catch (e: CancellationException) {
                 throw e
@@ -126,6 +170,12 @@ class HomeViewModel @Inject constructor(
             }
             refreshState.value = RefreshState(error = error, locationStatus = locationStatus)
         }
+    }
+
+    /** Kullanıcı yerler arasında kaydırınca: bir sonraki açılışta bu yerden başlansın. */
+    fun onPageSelected(placeId: Long) {
+        if (uiState.value.selectedPlaceId == placeId) return
+        viewModelScope.launch { settingsRepository.setSelectedPlaceId(placeId) }
     }
 
     /** İzin penceresinin sonucu. */
@@ -145,18 +195,17 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Uygulamaya geri dönüldüğünde: kullanıcı izni ayarlardan verdiyse ya da veri eskidiyse yenile.
-     * Taze veri varken gereksiz istek atılmaz (pil ve veri tasarrufu).
+     * Uygulamaya geri dönüldüğünde: izin değiştiyse, verisi olmayan bir yer eklendiyse ya da
+     * veri eskidiyse yenile. Taze veri varken gereksiz istek atılmaz (pil ve veri tasarrufu).
      */
     fun onResume() {
         val refresh = refreshState.value
         if (refresh.isRefreshing) return
-        val permissionJustGranted = refresh.locationStatus is LocationStatus.NoPermission &&
-            locationRepository.hasPermission()
-        val fetchedAt = uiState.value.weather?.fetchedAt
-        val isStale = fetchedAt == null ||
-            Duration.between(fetchedAt, Instant.now()) > STALE_AFTER
-        if (permissionJustGranted || isStale) refresh()
+        val permissionChanged = hasPermission.value != locationRepository.hasPermission()
+        val pages = uiState.value.pages
+        val oldest = pages.minOfOrNull { it.weather?.fetchedAt ?: Instant.EPOCH }
+        val isStale = oldest == null || Duration.between(oldest, Instant.now()) > STALE_AFTER
+        if (permissionChanged || isStale) refresh()
     }
 
     companion object {

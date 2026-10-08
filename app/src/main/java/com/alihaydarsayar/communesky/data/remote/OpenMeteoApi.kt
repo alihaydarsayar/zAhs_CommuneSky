@@ -28,6 +28,25 @@ interface OpenMeteoApi {
         @Query("timezone") timezone: String = "auto",
     ): ForecastResponseDto
 
+    /**
+     * Birden çok yer için tek istek: koordinatlar virgülle ayrılır ("41.0,40.8"), cevap aynı
+     * sırada bir liste olarak gelir. Arka plan güncellemesinde her yer için ayrı istek atmak
+     * yerine telsizi bir kez uyandırır; pil dostu.
+     */
+    @GET("v1/forecast")
+    suspend fun getForecasts(
+        @Query("latitude") latitudes: String,
+        @Query("longitude") longitudes: String,
+        @Query("current") current: String = CURRENT_FIELDS,
+        @Query("hourly") hourly: String = HOURLY_FIELDS,
+        @Query("daily") daily: String = DAILY_FIELDS,
+        @Query("forecast_hours") forecastHours: Int = 36,
+        @Query("forecast_days") forecastDays: Int = 7,
+        @Query("minutely_15") minutely15: String = "precipitation",
+        @Query("forecast_minutely_15") forecastMinutely15: Int = 12,
+        @Query("timezone") timezone: String = "auto",
+    ): List<ForecastResponseDto>
+
     companion object {
         const val BASE_URL = "https://api.open-meteo.com/"
 

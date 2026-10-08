@@ -2,26 +2,56 @@ package com.alihaydarsayar.communesky
 
 import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.alihaydarsayar.communesky.model.AppSettings
+import com.alihaydarsayar.communesky.model.ThemeMode
+import com.alihaydarsayar.communesky.model.currentScene
+import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
+import com.alihaydarsayar.communesky.ui.common.LocalDarkTheme
+import com.alihaydarsayar.communesky.ui.common.LocalSkyIsLight
 import com.alihaydarsayar.communesky.ui.home.HomeScreen
 import com.alihaydarsayar.communesky.ui.home.HomeViewModel
+import com.alihaydarsayar.communesky.ui.home.placeholderScene
+import com.alihaydarsayar.communesky.ui.places.PlacesScreen
+import com.alihaydarsayar.communesky.ui.settings.SettingsScreen
+import com.alihaydarsayar.communesky.ui.sky.SkyBackground
 import com.alihaydarsayar.communesky.ui.theme.CommuneSkyTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.serialization.Serializable
 
+@Serializable private object HomeRoute
+@Serializable private object PlacesRoute
+@Serializable private object SettingsRoute
+
+// AppCompatActivity: uygulama içinden dil değiştirmenin Android 12 ve altında da çalışması için.
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val viewModel: HomeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Açılış ekranı, önbellekteki hava durumu okunana kadar (genelde birkaç on milisaniye)
-        // ekranda kalır; böylece kullanıcı boş ekran yerine doğrudan dolu ekranı görür.
-        installSplashScreen().setKeepOnScreenCondition { viewModel.uiState.value.isCacheLoading }
+        // Açılış ekranı, önbellekteki hava durumu ve ayarlar okunana kadar (genelde birkaç on
+        // milisaniye) ekranda kalır; böylece kullanıcı boş ekran yerine doğrudan dolu ekranı görür.
+        installSplashScreen().setKeepOnScreenCondition {
+            viewModel.uiState.value.isLoading || viewModel.settings.value == null
+        }
         super.onCreate(savedInstanceState)
         // Arka plan hep renkli bir gökyüzü olduğu için durum çubuğu ikonları beyaz kalsın.
         enableEdgeToEdge(
@@ -30,7 +60,55 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             CommuneSkyTheme {
-                HomeScreen(viewModel)
+                CommuneSkyApp(viewModel)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommuneSkyApp(viewModel: HomeViewModel) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val appSettings = settings ?: AppSettings()
+    val darkTheme = when (appSettings.themeMode) {
+        ThemeMode.System -> isSystemInDarkTheme()
+        ThemeMode.Light -> false
+        ThemeMode.Dark -> true
+    }
+    // Gökyüzü bütün ekranların arkasında tek parça: seçili yerin havasına göre çizilir,
+    // Ayarlar ve Yerler ekranına geçerken de kesilmez.
+    val weather = uiState.selectedPage?.weather
+    val scene = remember(weather) { weather?.currentScene() ?: placeholderScene() }
+    val navController = rememberNavController()
+
+    CompositionLocalProvider(
+        LocalAppSettings provides appSettings,
+        LocalDarkTheme provides darkTheme,
+        LocalSkyIsLight provides scene.theme.isLight,
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            SkyBackground(scene, Modifier.fillMaxSize())
+            NavHost(navController, startDestination = HomeRoute) {
+                composable<HomeRoute> {
+                    HomeScreen(
+                        viewModel = viewModel,
+                        onOpenPlaces = { navController.navigate(PlacesRoute) },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                    )
+                }
+                composable<PlacesRoute> {
+                    PlacesScreen(
+                        onBack = { navController.popBackStack() },
+                        onPlaceSelected = { navController.popBackStack(HomeRoute, inclusive = false) },
+                    )
+                }
+                composable<SettingsRoute> {
+                    SettingsScreen(
+                        onBack = { navController.popBackStack() },
+                        onManagePlaces = { navController.navigate(PlacesRoute) },
+                    )
+                }
             }
         }
     }

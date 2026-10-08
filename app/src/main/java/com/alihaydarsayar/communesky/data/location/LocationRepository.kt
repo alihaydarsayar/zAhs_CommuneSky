@@ -40,7 +40,7 @@ class LocationRepository @Inject constructor(
 
     /** İzin yoksa, konum kapalıysa veya hiçbir yoldan bulunamazsa null döner. */
     @SuppressLint("MissingPermission") // İzin hasPermission() ile kontrol ediliyor.
-    suspend fun getCurrentCity(): City? {
+    suspend fun getCurrentLocation(): DeviceLocation? {
         if (!hasPermission()) return null
         // Hızlıdan yavaşa, ucuzdan pahalıya üç deneme:
         // 1. Wi-Fi/baz istasyonu (pil dostu). Son 15 dakikada bulunmuş konum varsa anında döner.
@@ -51,7 +51,10 @@ class LocationRepository @Inject constructor(
             ?: requestLocation(Priority.PRIORITY_HIGH_ACCURACY, HIGH_ACCURACY_TIMEOUT_MS)
             ?: return null
         val name = findPlaceName(location.latitude, location.longitude)
-        return City(name = name, latitude = location.latitude, longitude = location.longitude)
+        return DeviceLocation(
+            city = City(name = name, latitude = location.latitude, longitude = location.longitude),
+            accuracyMeters = if (location.hasAccuracy()) location.accuracy else null,
+        )
     }
 
     @SuppressLint("MissingPermission")
@@ -96,6 +99,9 @@ class LocationRepository @Inject constructor(
         }
         return address?.run { locality ?: subAdminArea ?: adminArea }
     }
+
+    /** Cihaz konumu ve hata payı (metre; Android'in verdiği %68 güven yarıçapı). */
+    data class DeviceLocation(val city: City, val accuracyMeters: Float?)
 
     private companion object {
         const val TAG = "LocationRepository"

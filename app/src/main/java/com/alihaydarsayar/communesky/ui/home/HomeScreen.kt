@@ -10,6 +10,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -41,23 +42,28 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,12 +76,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alihaydarsayar.communesky.R
@@ -83,22 +92,24 @@ import com.alihaydarsayar.communesky.model.SkyTheme
 import com.alihaydarsayar.communesky.model.WeatherCondition
 import com.alihaydarsayar.communesky.model.WeatherScene
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
-import com.alihaydarsayar.communesky.model.currentScene
 import com.alihaydarsayar.communesky.ui.common.GlassCard
-import com.alihaydarsayar.communesky.ui.common.LocalSkyIsLight
+import com.alihaydarsayar.communesky.ui.common.GlassIconButton
 import com.alihaydarsayar.communesky.ui.common.WeatherIcon
-import com.alihaydarsayar.communesky.ui.sky.SkyBackground
+import com.alihaydarsayar.communesky.ui.common.asTemperature
 import com.alihaydarsayar.communesky.ui.theme.TextPrimary
 import com.alihaydarsayar.communesky.ui.theme.TextSecondary
 import com.alihaydarsayar.communesky.ui.theme.TextTertiary
 import java.time.LocalTime
-import kotlin.math.roundToInt
 
 private const val LocationPermission = Manifest.permission.ACCESS_COARSE_LOCATION
 
 /** ViewModel'e bağlı ekran: durumu dinler, izin akışını yönetir ve çizilecek içeriğe aktarır. */
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(
+    viewModel: HomeViewModel,
+    onOpenPlaces: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = LocalActivity.current
@@ -133,6 +144,9 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
     HomeContent(
         uiState = uiState,
         onRefresh = { viewModel.refresh(userInitiated = true) },
+        onPageSelected = viewModel::onPageSelected,
+        onOpenPlaces = onOpenPlaces,
+        onOpenSettings = onOpenSettings,
         onLocationAction = { status ->
             when (status) {
                 is LocationStatus.NoPermission ->
@@ -154,64 +168,183 @@ private fun appSettingsIntent(context: Context) = Intent(
     Uri.fromParts("package", context.packageName, null),
 )
 
-/** Sadece durumu çizen ekran; ViewModel'den bağımsız olduğu için Preview'da da görülebilir. */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Sadece durumu çizen ekran: yerler arasında yatay kaydırılan sayfalar, üstte Yerler ve
+ * Ayarlar düğmeleri, altta sayfa noktaları. Gökyüzü arkada, seçili yere göre çizilir (MainActivity).
+ */
 @Composable
 fun HomeContent(
     uiState: HomeUiState,
     onRefresh: () -> Unit,
+    onPageSelected: (Long) -> Unit,
+    onOpenPlaces: () -> Unit,
+    onOpenSettings: () -> Unit,
     onLocationAction: (LocationStatus) -> Unit,
 ) {
-    val weather = uiState.weather
-    val scene = remember(weather) { weather?.currentScene() ?: placeholderScene() }
+    val pages = uiState.pages
+    if (pages.isEmpty()) {
+        LoadingContent()
+        return
+    }
+    // Açılışta en son bakılan yerden başla (seçili yer zaten önbellekten hazır).
+    val initialPage = remember { pages.indexOfFirst { it.placeId == uiState.selectedPlaceId }.coerceAtLeast(0) }
+    val pagerState = rememberPagerState(initialPage = initialPage) { pages.size }
 
-    CompositionLocalProvider(LocalSkyIsLight provides scene.theme.isLight) {
-        Box(Modifier.fillMaxSize()) {
-            SkyBackground(scene, Modifier.fillMaxSize())
+    // Kaydırma bitince seçili yeri kaydet; gökyüzü de bu yere göre değişir.
+    val currentPages by rememberUpdatedState(pages)
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { index ->
+            currentPages.getOrNull(index)?.let { onPageSelected(it.placeId) }
+        }
+    }
+    // Yerler yeniden sıralandıysa ya da Yerler ekranında bir yer seçildiyse o sayfaya geç.
+    LaunchedEffect(pages.map { it.placeId }, uiState.selectedPlaceId) {
+        val index = pages.indexOfFirst { it.placeId == uiState.selectedPlaceId }
+        if (index >= 0 && index != pagerState.settledPage && !pagerState.isScrollInProgress) {
+            pagerState.scrollToPage(index)
+        }
+    }
 
-            when {
-                weather != null -> {
-                    val pullState = rememberPullToRefreshState()
-                    val listState = rememberLazyListState()
-                    PullToRefreshBox(
-                        isRefreshing = uiState.isRefreshing && uiState.isUserRefresh,
-                        onRefresh = onRefresh,
-                        state = pullState,
-                        modifier = Modifier.fillMaxSize(),
-                        indicator = {
-                            PullToRefreshDefaults.Indicator(
-                                state = pullState,
-                                isRefreshing = uiState.isRefreshing && uiState.isUserRefresh,
-                                containerColor = Color.White,
-                                color = Color(0xFF1B3A66),
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
-                            )
-                        },
-                    ) {
-                        ForecastList(
-                            weather = weather,
-                            uiState = uiState,
-                            listState = listState,
-                            onLocationAction = onLocationAction,
-                        )
-                    }
-                    CompactTopBar(weather, listState)
-                }
-                // Önbellekte veri yok ve yenileme başarısız: tam ekran hata.
-                uiState.error != null && !uiState.isRefreshing -> ErrorContent(uiState.error, onRefresh)
-                else -> LoadingContent()
-            }
+    Box(Modifier.fillMaxSize()) {
+        HorizontalPager(
+            state = pagerState,
+            key = { pages[it].placeId },
+            // Komşu sayfa önceden hazırlansın; kaydırırken takılma olmasın.
+            beyondViewportPageCount = 1,
+            modifier = Modifier.fillMaxSize(),
+        ) { index ->
+            PlacePage(
+                page = pages[index],
+                uiState = uiState,
+                animateEntrance = index == initialPage,
+                hasPageIndicator = pages.size > 1,
+                onRefresh = onRefresh,
+                onLocationAction = onLocationAction,
+            )
+        }
+        TopButtons(onOpenPlaces, onOpenSettings)
+        if (pages.size > 1) {
+            PageIndicator(
+                pages = pages,
+                pagerState = pagerState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+                    .padding(bottom = 10.dp),
+            )
         }
     }
 }
 
 @Composable
+private fun TopButtons(onOpenPlaces: () -> Unit, onOpenSettings: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        GlassIconButton(R.drawable.ic_list, stringResource(R.string.open_places), onOpenPlaces, size = 40)
+        GlassIconButton(R.drawable.ic_settings, stringResource(R.string.open_settings), onOpenSettings, size = 40)
+    }
+}
+
+/** Alttaki sayfa noktaları. "Bulunduğum yer" küçük bir konum işaretiyle gösterilir. */
+@Composable
+private fun PageIndicator(pages: List<HomePage>, pagerState: PagerState, modifier: Modifier = Modifier) {
+    val description = stringResource(R.string.page_indicator, pagerState.currentPage + 1, pages.size)
+    Row(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.14f))
+            .padding(horizontal = 10.dp, vertical = 7.dp)
+            .semantics { contentDescription = description },
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        pages.forEachIndexed { index, page ->
+            val selected = index == pagerState.currentPage
+            val color by animateColorAsState(
+                if (selected) Color.White else Color.White.copy(alpha = 0.4f),
+                label = "dot",
+            )
+            if (page.isDevice) {
+                Icon(painterResource(R.drawable.ic_location), contentDescription = null, tint = color, modifier = Modifier.size(10.dp))
+            } else {
+                Box(
+                    Modifier
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(color),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PlacePage(
+    page: HomePage,
+    uiState: HomeUiState,
+    animateEntrance: Boolean,
+    hasPageIndicator: Boolean,
+    onRefresh: () -> Unit,
+    onLocationAction: (LocationStatus) -> Unit,
+) {
+    val weather = page.weather
+    when {
+        weather != null -> Box(Modifier.fillMaxSize()) {
+            val pullState = rememberPullToRefreshState()
+            val listState = rememberLazyListState()
+            val isPulling = uiState.isRefreshing && uiState.isUserRefresh
+            PullToRefreshBox(
+                isRefreshing = isPulling,
+                onRefresh = onRefresh,
+                state = pullState,
+                modifier = Modifier.fillMaxSize(),
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        state = pullState,
+                        isRefreshing = isPulling,
+                        containerColor = Color.White,
+                        color = Color(0xFF1B3A66),
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
+                    )
+                },
+            ) {
+                ForecastList(
+                    page = page,
+                    weather = weather,
+                    uiState = uiState,
+                    listState = listState,
+                    animateEntrance = animateEntrance,
+                    extraBottomPadding = if (hasPageIndicator) 32.dp else 0.dp,
+                    onLocationAction = onLocationAction,
+                )
+            }
+            CompactTopBar(page.title(weather), weather, listState)
+        }
+        // Önbellekte veri yok ve yenileme başarısız: tam ekran hata.
+        uiState.error != null && !uiState.isRefreshing -> ErrorContent(uiState.error, onRefresh)
+        else -> LoadingContent()
+    }
+}
+
+/** Kayıtlı yerde kullanıcının seçtiği ad; "Bulunduğum yer"de konumdan bulunan şehir adı. */
+private fun HomePage.title(weather: WeatherSnapshot): String? = name ?: weather.city.name
+
+@Composable
 private fun ForecastList(
+    page: HomePage,
     weather: WeatherSnapshot,
     uiState: HomeUiState,
     listState: LazyListState,
+    animateEntrance: Boolean,
+    extraBottomPadding: Dp,
     onLocationAction: (LocationStatus) -> Unit,
 ) {
     val forecast = weather.forecast
@@ -225,15 +358,15 @@ private fun ForecastList(
         else -> HeaderStatus.Idle
     }
 
-    // İçerik ilk geldiğinde hafifçe aşağıdan yukarı süzülerek belirir.
-    val entrance = remember { Animatable(0f) }
+    // İçerik ilk geldiğinde hafifçe aşağıdan yukarı süzülerek belirir (sadece açılıştaki sayfa).
+    val entrance = remember { Animatable(if (animateEntrance) 0f else 1f) }
     LaunchedEffect(Unit) { entrance.animateTo(1f, tween(700, easing = FastOutSlowInEasing)) }
     val density = LocalDensity.current
 
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     // Küçük üst çubuk görünürken solma alanı onun altına kadar uzar; kartlar çubuğun arkasında karışmaz.
     val compactBarVisible by remember { derivedStateOf { listState.isCompactBarVisible() } }
-    val fadeHeight by animateDpAsState(if (compactBarVisible) 84.dp else 44.dp, label = "topFade")
+    val fadeHeight by animateDpAsState(if (compactBarVisible) 84.dp else 52.dp, label = "topFade")
     LazyColumn(
         state = listState,
         modifier = Modifier
@@ -245,8 +378,8 @@ private fun ForecastList(
                 // Maske uygulayabilmek için içerik ayrı bir katmanda çizilir.
                 compositingStrategy = CompositingStrategy.Offscreen
             }
-            // Kaydırılan içerik durum çubuğunun altına girerken yumuşakça kaybolsun; saat ve
-            // pil simgeleriyle üst üste binmesin.
+            // Kaydırılan içerik durum çubuğunun ve üst düğmelerin altına girerken yumuşakça
+            // kaybolsun; saat ve pil simgeleriyle üst üste binmesin.
             .drawWithContent {
                 drawContent()
                 val statusBar = insets.calculateTopPadding().toPx()
@@ -264,16 +397,19 @@ private fun ForecastList(
             start = 16.dp,
             end = 16.dp,
             top = insets.calculateTopPadding() + 16.dp,
-            bottom = insets.calculateBottomPadding() + 24.dp,
+            bottom = insets.calculateBottomPadding() + 24.dp + extraBottomPadding,
         ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item(key = "header") {
             CurrentHeader(
                 weather = weather,
+                title = page.title(weather),
+                isHome = page.isHome,
                 today = today,
                 status = status,
-                locationStatus = uiState.locationStatus,
+                // Konum düğmesi sadece "Bulunduğum yer" sayfasında anlamlı.
+                locationStatus = if (page.isDevice) uiState.locationStatus else LocationStatus.Current,
                 onLocationAction = onLocationAction,
                 // Kaydırırken başlık yavaşça kaybolur ve geride kalır (parallax).
                 modifier = Modifier.graphicsLayer {
@@ -300,7 +436,7 @@ private fun ForecastList(
  * Görünürlük derivedStateOf ile hesaplanır; sadece eşik aşıldığında yeniden çizim olur.
  */
 @Composable
-private fun CompactTopBar(weather: WeatherSnapshot, listState: LazyListState) {
+private fun CompactTopBar(title: String?, weather: WeatherSnapshot, listState: LazyListState) {
     val visible by remember {
         derivedStateOf { listState.isCompactBarVisible() }
     }
@@ -314,21 +450,24 @@ private fun CompactTopBar(weather: WeatherSnapshot, listState: LazyListState) {
             Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
-                .padding(top = 6.dp),
+                // Yanlardaki Yerler ve Ayarlar düğmeleriyle çakışmasın.
+                .padding(top = 4.dp, start = 64.dp, end = 64.dp),
             contentAlignment = Alignment.TopCenter,
         ) {
-            GlassCard(contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)) {
+            GlassCard(contentPadding = PaddingValues(horizontal = 18.dp, vertical = 9.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = weather.city.name ?: stringResource(R.string.my_location),
+                        text = title ?: stringResource(R.string.my_location),
                         color = TextPrimary,
                         style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
                     Spacer(Modifier.width(10.dp))
                     WeatherIcon(current.condition, isNight = !current.isDay, size = 22.dp, contentDescription = null)
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = stringResource(R.string.temperature_value, current.temperature.roundToInt()),
+                        text = stringResource(R.string.temperature_value, current.temperature.asTemperature()),
                         color = TextPrimary,
                         style = MaterialTheme.typography.titleMedium,
                     )
@@ -411,7 +550,7 @@ private fun ErrorContent(error: LoadError, onRetry: () -> Unit) {
 }
 
 /** Henüz hiç veri yokken telefonun saatine göre gündüz ya da gece gökyüzü. */
-private fun placeholderScene(): WeatherScene {
+fun placeholderScene(): WeatherScene {
     val hour = LocalTime.now().hour
     val isDay = hour in 7..18
     return WeatherScene(

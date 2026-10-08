@@ -1,22 +1,37 @@
 package com.alihaydarsayar.communesky.di
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import com.alihaydarsayar.communesky.data.local.WeatherCacheDao
 import com.alihaydarsayar.communesky.data.local.WeatherDatabase
 import com.alihaydarsayar.communesky.data.remote.OpenMeteoApi
+import com.alihaydarsayar.communesky.data.search.OpenMeteoGeocodingApi
+import com.alihaydarsayar.communesky.data.search.PhotonApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+/** Ekran kapansa da yarıda kalmaması gereken işler için uygulama ömrü boyunca yaşayan kapsam. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ApplicationScope
 
 /**
  * Hilt'e "şu sınıfı istersen böyle oluştur" tarifleri. Her biri uygulama boyunca tek kopya (Singleton).
@@ -32,28 +47,61 @@ object AppModule {
         ignoreUnknownKeys = true
     }
 
+    /** Bütün servisler aynı bağlantı havuzunu paylaşır. Servisler uygulamayı adıyla tanır. */
     @Provides
     @Singleton
-    fun provideOpenMeteoApi(json: Json): OpenMeteoApi {
-        val client = OkHttpClient.Builder()
-            .callTimeout(20, TimeUnit.SECONDS)
-            .build()
-        return Retrofit.Builder()
-            .baseUrl(OpenMeteoApi.BASE_URL)
+    fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+        .callTimeout(20, TimeUnit.SECONDS)
+        .addInterceptor { chain ->
+            chain.proceed(
+                chain.request().newBuilder()
+                    .header("User-Agent", "CommuneSky (Android; +https://github.com/alihaydarsayar/zAhs_CommuneSky)")
+                    .build(),
+            )
+        }
+        .build()
+
+    @Provides
+    @Singleton
+    fun provideOpenMeteoApi(client: OkHttpClient, json: Json): OpenMeteoApi =
+        retrofit(OpenMeteoApi.BASE_URL, client, json).create(OpenMeteoApi::class.java)
+
+    @Provides
+    @Singleton
+    fun providePhotonApi(client: OkHttpClient, json: Json): PhotonApi =
+        retrofit(PhotonApi.BASE_URL, client, json).create(PhotonApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideGeocodingApi(client: OkHttpClient, json: Json): OpenMeteoGeocodingApi =
+        retrofit(OpenMeteoGeocodingApi.BASE_URL, client, json).create(OpenMeteoGeocodingApi::class.java)
+
+    private fun retrofit(baseUrl: String, client: OkHttpClient, json: Json): Retrofit =
+        Retrofit.Builder()
+            .baseUrl(baseUrl)
             .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
-            .create(OpenMeteoApi::class.java)
-    }
 
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): WeatherDatabase =
         Room.databaseBuilder(context, WeatherDatabase::class.java, "weather.db")
-            // Sadece önbellek: şema değişirse eski veriyi silip baştan başlamak sorun değil.
-            .fallbackToDestructiveMigration(dropAllTables = true)
+            // Artık kayıtlı yerler de burada: şema değişince veri silinmez, geçiş (migration) yapılır.
+            // Sadece eski bir sürüme dönülürse (geliştirme sırasında) baştan başlanır.
+            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
 
     @Provides
     fun provideWeatherCacheDao(database: WeatherDatabase): WeatherCacheDao = database.weatherCacheDao()
+
+    @Provides
+    @Singleton
+    fun provideSettingsDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("settings") }
+
+    @Provides
+    @Singleton
+    @ApplicationScope
+    fun provideApplicationScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 }

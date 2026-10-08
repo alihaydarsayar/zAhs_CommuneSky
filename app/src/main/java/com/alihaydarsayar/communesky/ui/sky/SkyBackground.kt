@@ -5,7 +5,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.alihaydarsayar.communesky.model.SkyTheme
 import com.alihaydarsayar.communesky.model.WeatherScene
 import com.alihaydarsayar.communesky.ui.common.colorRes
+import com.alihaydarsayar.communesky.ui.common.LocalDarkTheme
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.floor
@@ -61,7 +61,7 @@ fun SkyBackground(scene: WeatherScene, modifier: Modifier = Modifier) {
     val bottom by animateColorAsState(colorResource(colors.bottom), colorSpec, label = "skyBottom")
     // Telefon koyu temadaysa parlak gündüz gökyüzlerini biraz karart; göz yormasın.
     val dim by animateFloatAsState(
-        targetValue = if (isSystemInDarkTheme() && scene.theme.isLight) 0.22f else 0f,
+        targetValue = if (LocalDarkTheme.current && scene.theme.isLight) 0.22f else 0f,
         animationSpec = tween(1600),
         label = "skyDim",
     )

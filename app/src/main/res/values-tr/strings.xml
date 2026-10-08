@@ -24,7 +24,10 @@
     <string name="humidity_value">%%%1$d</string>
     <string name="dew_point">Çiy noktası şu an %1$d°.</string>
     <string name="wind">Rüzgâr</string>
-    <string name="wind_speed_unit">km/sa</string>
+    <string name="wind_unit_kmh">km/sa</string>
+    <string name="wind_unit_ms">m/sn</string>
+    <string name="wind_unit_mph">mil/sa</string>
+    <string name="wind_unit_knots">knot</string>
     <string name="wind_from">%1$s yönünden</string>
     <string name="uv_index">UV indeksi</string>
     <string name="uv_low">Düşük</string>
@@ -126,4 +129,53 @@
     <string name="snow_starting_in">Yaklaşık %1$d dk içinde kar bekleniyor</string>
     <string name="snow_stopping_soon">Kar birkaç dakika içinde dinecek gibi</string>
     <string name="snow_stopping_in">Karın yaklaşık %1$d dk içinde dinmesi bekleniyor</string>
+
+    <!-- Gezinme -->
+    <string name="back">Geri</string>
+    <string name="open_places">Yerler</string>
+    <string name="open_settings">Ayarlar</string>
+    <string name="page_indicator">%2$d yerden %1$d.</string>
+
+    <!-- Yerler -->
+    <string name="places_title">Yerler</string>
+    <string name="search_places_hint">Şehir, ilçe ya da semt ara</string>
+    <string name="clear_search">Aramayı temizle</string>
+    <string name="search_no_results">Yer bulunamadı.</string>
+    <string name="search_failed">Arama yapılamadı. İnternet bağlantını kontrol et.</string>
+    <string name="search_attribution">Yer arama: Photon · © OpenStreetMap katkıcıları</string>
+    <string name="saved_places">Kayıtlı yerler</string>
+    <string name="no_saved_places">Yer eklemek için yukarıdan ara.</string>
+    <string name="place_added">%1$s eklendi</string>
+    <string name="place_removed">%1$s silindi</string>
+    <string name="undo">Geri al</string>
+    <string name="delete_place">%1$s yerini sil</string>
+    <string name="set_home">%1$s yerini Ev olarak işaretle</string>
+    <string name="unset_home">%1$s yerinden Ev işaretini kaldır</string>
+    <string name="home_place">Ev</string>
+    <string name="reorder_place">Sıralamak için sürükle</string>
+    <string name="device_place_no_permission">Bulunduğun yerin havası için konum izni ver</string>
+    <string name="device_place_locating">Konumun bulunuyor…</string>
+
+    <!-- Ayarlar -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="settings_units">Birimler</string>
+    <string name="settings_temperature">Sıcaklık</string>
+    <string name="settings_wind">Rüzgâr hızı</string>
+    <string name="settings_appearance">Görünüm</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_hint">Koyu tema, parlak gündüz gökyüzünü hafifçe karartır.</string>
+    <string name="theme_system">Sistem</string>
+    <string name="theme_light">Açık</string>
+    <string name="theme_dark">Koyu</string>
+    <string name="settings_language">Dil</string>
+    <string name="language_system">Sistem</string>
+    <string name="settings_places">Yerler</string>
+    <string name="manage_places">Yerleri yönet</string>
+    <plurals name="saved_places_count">
+        <item quantity="one">%d kayıtlı yer</item>
+        <item quantity="other">%d kayıtlı yer</item>
+    </plurals>
+    <string name="no_saved_places_short">Henüz kayıtlı yer yok</string>
+    <string name="settings_about">Hakkında</string>
+    <string name="settings_data_sources">Hava durumu verileri: Open-Meteo.com. Yer arama: Photon, © OpenStreetMap katkıcılarının verileriyle.</string>
 </resources>

@@ -2,6 +2,7 @@ package com.alihaydarsayar.communesky.data
 
 import com.alihaydarsayar.communesky.data.local.WeatherCacheDao
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity
+import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
 import com.alihaydarsayar.communesky.data.remote.DailyDto
 import com.alihaydarsayar.communesky.data.remote.ForecastResponseDto
 import com.alihaydarsayar.communesky.data.remote.HourlyDto
@@ -17,7 +18,6 @@ import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import dagger.Lazy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -25,6 +25,7 @@ import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,6 +33,7 @@ import javax.inject.Singleton
  * Offline-first hava durumu deposu:
  * - Ekran her zaman önbelleği (Room) dinler; uygulama açılır açılmaz son veri görünür.
  * - [refresh] internetten yeni veriyi alıp önbelleğe yazar; ekran kendiliğinden güncellenir.
+ * Her yerin kendi önbellek satırı vardır (kimliği yerin kimliği).
  */
 @Singleton
 class WeatherRepository @Inject constructor(
@@ -40,38 +42,75 @@ class WeatherRepository @Inject constructor(
     private val dao: WeatherCacheDao,
     private val json: Json,
 ) {
-    /** Önbellekteki son hava durumu; hiç veri yoksa null. */
-    val weather: Flow<WeatherSnapshot?> = dao.observe()
-        .distinctUntilChanged()
-        .map { entity -> entity?.toSnapshot() }
+    /** Çözülmüş satırlar: değişmeyen yerin JSON'u her yenilemede baştan çözülmesin. */
+    private val decoded = ConcurrentHashMap<Long, Pair<WeatherCacheEntity, WeatherSnapshot?>>()
+
+    /** Önbellekteki bütün yerlerin hava durumu (yer kimliği → veri). */
+    val allWeather: Flow<Map<Long, WeatherSnapshot>> = dao.observeAll()
+        .map { entities ->
+            decoded.keys.retainAll(entities.map { it.id }.toSet())
+            entities.mapNotNull { entity -> entity.cachedSnapshot()?.let { entity.id to it } }.toMap()
+        }
         // JSON çözümleme ana iş parçacığını meşgul etmesin.
         .flowOn(Dispatchers.Default)
 
-    suspend fun currentSnapshot(): WeatherSnapshot? = withContext(Dispatchers.Default) {
-        dao.get()?.toSnapshot()
+    suspend fun snapshot(placeId: Long): WeatherSnapshot? = withContext(Dispatchers.Default) {
+        dao.get(placeId)?.cachedSnapshot()
     }
 
-    suspend fun lastPlace(): Place? = dao.get()?.let {
-        Place(City(it.cityName, it.latitude, it.longitude), it.isCurrentLocation)
-    }
-
-    /** İnternetten yeni tahmini alır ve önbelleğe yazar. Ağ hatalarında istisna fırlatır. */
-    suspend fun refresh(place: Place) {
-        val city = place.city
-        val response = withContext(Dispatchers.IO) {
-            api.get().getForecast(city.latitude, city.longitude)
-        }
-        val entity = WeatherCacheEntity(
-            cityName = city.name,
-            latitude = city.latitude,
-            longitude = city.longitude,
-            isCurrentLocation = place.isCurrentLocation,
-            forecastJson = withContext(Dispatchers.Default) {
-                json.encodeToString(ForecastResponseDto.serializer(), response)
-            },
-            fetchedAtMillis = System.currentTimeMillis(),
+    /** "Bulunduğum yer" satırındaki son yer (izin yoksa yedek şehir); hiç yoksa null. */
+    suspend fun devicePlace(): Place? = dao.get(DEVICE_PLACE_ID)?.let {
+        Place(
+            id = DEVICE_PLACE_ID,
+            city = City(it.cityName, it.latitude, it.longitude),
+            isCurrentLocation = it.isCurrentLocation,
+            accuracyMeters = it.accuracyMeters,
         )
-        dao.upsert(entity)
+    }
+
+    suspend fun delete(placeId: Long) = dao.delete(placeId)
+
+    /**
+     * Verilen yerlerin tahminini tek bir istekle indirir ve önbelleğe yazar.
+     * Ağ hatalarında istisna fırlatır; o durumda hiçbir satır değişmez.
+     */
+    suspend fun refresh(places: List<Place>) {
+        if (places.isEmpty()) return
+        val responses = withContext(Dispatchers.IO) {
+            if (places.size == 1) {
+                val city = places.single().city
+                listOf(api.get().getForecast(city.latitude, city.longitude))
+            } else {
+                api.get().getForecasts(
+                    latitudes = places.joinToString(",") { it.city.latitude.toString() },
+                    longitudes = places.joinToString(",") { it.city.longitude.toString() },
+                )
+            }
+        }
+        check(responses.size == places.size) { "Beklenen ${places.size} yer, gelen ${responses.size}" }
+        val now = System.currentTimeMillis()
+        val entities = withContext(Dispatchers.Default) {
+            places.zip(responses) { place, response ->
+                WeatherCacheEntity(
+                    id = place.id,
+                    cityName = place.city.name,
+                    latitude = place.city.latitude,
+                    longitude = place.city.longitude,
+                    isCurrentLocation = place.isCurrentLocation,
+                    forecastJson = json.encodeToString(ForecastResponseDto.serializer(), response),
+                    fetchedAtMillis = now,
+                    accuracyMeters = place.accuracyMeters,
+                )
+            }
+        }
+        dao.upsertAll(entities)
+    }
+
+    private fun WeatherCacheEntity.cachedSnapshot(): WeatherSnapshot? {
+        decoded[id]?.let { (entity, snapshot) -> if (entity == this) return snapshot }
+        val snapshot = toSnapshot()
+        decoded[id] = this to snapshot
+        return snapshot
     }
 
     private fun WeatherCacheEntity.toSnapshot(): WeatherSnapshot? {
@@ -80,16 +119,27 @@ class WeatherRepository @Inject constructor(
             json.decodeFromString(ForecastResponseDto.serializer(), forecastJson)
         }.getOrNull() ?: return null
         return WeatherSnapshot(
+            placeId = id,
             city = City(cityName, latitude, longitude),
             isCurrentLocation = isCurrentLocation,
             forecast = dto.toModel(),
             fetchedAt = Instant.ofEpochMilli(fetchedAtMillis),
+            accuracyMeters = accuracyMeters,
         )
     }
 }
 
-/** Hava durumu istenen yer ve bu yerin cihaz konumundan gelip gelmediği. */
-data class Place(val city: City, val isCurrentLocation: Boolean)
+/**
+ * Hava durumu istenen yer. [id] önbellek satırının kimliği: "Bulunduğum yer" için
+ * [DEVICE_PLACE_ID], kayıtlı yerler için kendi kimlikleri.
+ */
+data class Place(
+    val id: Long,
+    val city: City,
+    val isCurrentLocation: Boolean,
+    val accuracyMeters: Float? = null,
+)
+
 
 private fun ForecastResponseDto.toModel() = Forecast(
     current = currentToModel(),

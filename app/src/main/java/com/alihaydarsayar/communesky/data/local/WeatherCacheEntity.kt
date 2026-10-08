@@ -4,21 +4,25 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Son gösterilen yerin hava durumu. Tabloda tek satır var (id = 0); her yenilemede üzerine yazılır.
+ * Bir yerin son hava durumu. Her yerin kendi satırı var; [id], yerin kimliğidir:
+ * [DEVICE_PLACE_ID] "Bulunduğum yer" (izin yoksa yedek şehir), diğerleri `places` tablosundaki yerler.
  * Tahminin kendisi API'den geldiği haliyle JSON olarak saklanır; böylece yeni alan eklemek
  * veritabanı şemasını değiştirmeyi gerektirmez.
  */
 @Entity(tableName = "weather_cache")
 data class WeatherCacheEntity(
-    @PrimaryKey val id: Int = SINGLE_ROW_ID,
+    @PrimaryKey val id: Long,
     val cityName: String?,
     val latitude: Double,
     val longitude: Double,
     val isCurrentLocation: Boolean,
     val forecastJson: String,
     val fetchedAtMillis: Long,
+    /** Cihaz konumunun hata payı (metre); sadece "Bulunduğum yer" için, bilinmiyorsa null. */
+    val accuracyMeters: Float? = null,
 ) {
     companion object {
-        const val SINGLE_ROW_ID = 0
+        /** 1.1'deki tek satırın kimliği de buydu; geçişte o satır "Bulunduğum yer" olarak kalır. */
+        const val DEVICE_PLACE_ID = 0L
     }
 }

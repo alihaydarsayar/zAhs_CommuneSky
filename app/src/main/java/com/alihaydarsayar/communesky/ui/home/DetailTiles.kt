@@ -35,6 +35,10 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alihaydarsayar.communesky.R
+import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
+import com.alihaydarsayar.communesky.ui.common.asWindSpeed
+import com.alihaydarsayar.communesky.ui.common.labelRes
+import com.alihaydarsayar.communesky.ui.common.asTemperature
 import com.alihaydarsayar.communesky.model.CurrentWeather
 import com.alihaydarsayar.communesky.model.DailyForecast
 import com.alihaydarsayar.communesky.ui.common.GlassCard
@@ -174,7 +178,7 @@ private fun FeelsLikeTile(current: CurrentWeather, modifier: Modifier) {
     }
     Tile(stringResource(R.string.feels_like), modifier, stringResource(caption)) {
         Text(
-            stringResource(R.string.temperature_value, current.apparentTemperature.roundToInt()),
+            stringResource(R.string.temperature_value, current.apparentTemperature.asTemperature()),
             color = TextPrimary,
             style = ValueStyle,
         )
@@ -183,7 +187,7 @@ private fun FeelsLikeTile(current: CurrentWeather, modifier: Modifier) {
 
 @Composable
 private fun HumidityTile(current: CurrentWeather, modifier: Modifier) {
-    val caption = current.dewPoint?.let { stringResource(R.string.dew_point, it.roundToInt()) }
+    val caption = current.dewPoint?.let { stringResource(R.string.dew_point, it.asTemperature()) }
     Tile(stringResource(R.string.humidity), modifier, caption) {
         Text(stringResource(R.string.humidity_value, current.humidity), color = TextPrimary, style = ValueStyle)
         Spacer(Modifier.height(10.dp))
@@ -206,13 +210,13 @@ private fun WindTile(current: CurrentWeather, modifier: Modifier) {
             Compass(direction, Modifier.size(104.dp))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    current.windSpeed.roundToInt().toString(),
+                    current.windSpeed.asWindSpeed().toString(),
                     color = TextPrimary,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    stringResource(R.string.wind_speed_unit),
+                    stringResource(LocalAppSettings.current.windUnit.labelRes),
                     color = TextSecondary,
                     style = MaterialTheme.typography.labelSmall,
                 )

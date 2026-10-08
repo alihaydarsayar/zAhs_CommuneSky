@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.alihaydarsayar.communesky.R
+import com.alihaydarsayar.communesky.ui.common.asTemperature
 import com.alihaydarsayar.communesky.model.DailyForecast
 import com.alihaydarsayar.communesky.ui.common.GlassCard
 import com.alihaydarsayar.communesky.ui.common.WeatherIcon
@@ -34,7 +35,6 @@ import com.alihaydarsayar.communesky.ui.theme.TemperatureScale
 import com.alihaydarsayar.communesky.ui.theme.TextPrimary
 import com.alihaydarsayar.communesky.ui.theme.TextSecondary
 import java.time.format.TextStyle
-import kotlin.math.roundToInt
 
 /**
  * Önümüzdeki günler. Her günün sıcaklık aralığı, haftanın tamamına göre ölçeklenmiş bir çubukla
@@ -109,7 +109,7 @@ private fun DayRow(
             PrecipitationChance(day.precipitationProbability, MaterialTheme.typography.labelMedium)
         }
         Text(
-            text = stringResource(R.string.temperature_value, day.minTemperature.roundToInt()),
+            text = stringResource(R.string.temperature_value, day.minTemperature.asTemperature()),
             color = TextSecondary,
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.End,
@@ -126,7 +126,7 @@ private fun DayRow(
         )
         Spacer(Modifier.width(10.dp))
         Text(
-            text = stringResource(R.string.temperature_value, day.maxTemperature.roundToInt()),
+            text = stringResource(R.string.temperature_value, day.maxTemperature.asTemperature()),
             color = TextPrimary,
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.End,

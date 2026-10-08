@@ -41,6 +41,11 @@ import androidx.glance.unit.ColorProvider
 import com.alihaydarsayar.communesky.MainActivity
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.data.WeatherRepository
+import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
+import com.alihaydarsayar.communesky.data.settings.SettingsRepository
+import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
+import kotlinx.coroutines.flow.first
+import androidx.compose.runtime.CompositionLocalProvider
 import com.alihaydarsayar.communesky.model.SkyTheme
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.model.currentScene
@@ -60,6 +65,7 @@ import kotlin.math.roundToInt
 @InstallIn(SingletonComponent::class)
 interface WidgetEntryPoint {
     fun weatherRepository(): WeatherRepository
+    fun settingsRepository(): SettingsRepository
 }
 
 /**
@@ -78,11 +84,13 @@ class WeatherWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Responsive(setOf(Small, Wide, Medium, Large))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val repository = EntryPointAccessors
+        val entryPoint = EntryPointAccessors
             .fromApplication(context.applicationContext, WidgetEntryPoint::class.java)
-            .weatherRepository()
-        val snapshot = repository.currentSnapshot()
-        provideContent { WidgetContent(snapshot) }
+        val snapshot = entryPoint.weatherRepository().snapshot(DEVICE_PLACE_ID)
+        val settings = entryPoint.settingsRepository().settings.first()
+        provideContent {
+            CompositionLocalProvider(LocalAppSettings provides settings) { WidgetContent(snapshot) }
+        }
     }
 }
 
@@ -328,10 +336,15 @@ private fun CityName(snapshot: WeatherSnapshot, size: TextUnit) {
     }
 }
 
-private fun temperature(value: Double) = "${value.roundToInt()}°"
+@Composable
+private fun temperature(value: Double) =
+    "${LocalAppSettings.current.temperatureUnit.fromCelsius(value).roundToInt()}°"
 
-private fun highLow(context: Context, max: Double, min: Double) =
-    context.getString(R.string.high_low, max.roundToInt(), min.roundToInt())
+@Composable
+private fun highLow(context: Context, max: Double, min: Double): String {
+    val unit = LocalAppSettings.current.temperatureUnit
+    return context.getString(R.string.high_low, unit.fromCelsius(max).roundToInt(), unit.fromCelsius(min).roundToInt())
+}
 
 private fun hourFormatter(context: Context): DateTimeFormatter {
     val locale = context.resources.configuration.locales[0]
