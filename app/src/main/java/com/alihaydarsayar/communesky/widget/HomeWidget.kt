@@ -2,6 +2,8 @@ package com.alihaydarsayar.communesky.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +38,7 @@ import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.model.currentScene
 import com.alihaydarsayar.communesky.ui.common.iconRes
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
+import kotlinx.coroutines.flow.first
 import java.time.LocalDateTime
 
 /** Ev + Bulunduğum yer widget'ının gösterecekleri. */
@@ -88,11 +91,16 @@ class HomeWidget(private val previewConfig: WidgetConfig? = null) : GlanceAppWid
     override val sizeMode = SizeMode.Responsive(setOf(Compact, Roomy))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val config = previewConfig ?: widgetConfig(context, id)
+        val configFlow = widgetConfigFlow(context, id, previewConfig)
         val loader = WidgetDataLoader(context)
-        val state = HomeWidgetState.of(loader.device(), loader.home())
-        val settings = loader.settings()
+        val stateFlow = loader.homeState()
+        val initialConfig = configFlow.first()
+        val initialState = stateFlow.first()
+        val initialSettings = loader.settings.first()
         provideContent {
+            val config by configFlow.collectAsState(initialConfig)
+            val state by stateFlow.collectAsState(initialState)
+            val settings by loader.settings.collectAsState(initialSettings)
             WidgetTheme(settings, config.background) { HomeWidgetContent(state, config.background) }
         }
     }

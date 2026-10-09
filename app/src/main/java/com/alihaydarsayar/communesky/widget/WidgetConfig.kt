@@ -7,7 +7,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 /** Widget'ın hangi yerin havasını gösterdiği. */
 sealed interface WidgetPlace {
@@ -56,16 +59,20 @@ data class WidgetConfig(
  * Her widget'ın ayarı, Android'in verdiği widget kimliğiyle (appWidgetId) saklanır.
  * Uygulamanın Hilt kabına bağlı değil; widget sınıfları ve ayar ekranı doğrudan kullanır.
  */
-class WidgetConfigStore private constructor(private val dataStore: DataStore<Preferences>) {
+class WidgetConfigStore internal constructor(private val dataStore: DataStore<Preferences>) {
 
-    suspend fun get(appWidgetId: Int): WidgetConfig {
-        val prefs = dataStore.data.first()
-        return WidgetConfig(
-            place = WidgetPlace.decode(prefs[placeKey(appWidgetId)]),
-            background = WidgetBackground.entries.firstOrNull { it.name == prefs[backgroundKey(appWidgetId)] }
-                ?: WidgetBackground.Sky,
-        )
-    }
+    suspend fun get(appWidgetId: Int): WidgetConfig = observe(appWidgetId).first()
+
+    /** Ayar değiştikçe yeni değeri yayar; widget bunu dinleyerek hemen yeniden çizilir. */
+    fun observe(appWidgetId: Int): Flow<WidgetConfig> = dataStore.data
+        .map { prefs ->
+            WidgetConfig(
+                place = WidgetPlace.decode(prefs[placeKey(appWidgetId)]),
+                background = WidgetBackground.entries.firstOrNull { it.name == prefs[backgroundKey(appWidgetId)] }
+                    ?: WidgetBackground.Sky,
+            )
+        }
+        .distinctUntilChanged()
 
     suspend fun set(appWidgetId: Int, config: WidgetConfig) {
         dataStore.edit {

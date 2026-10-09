@@ -40,7 +40,10 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
@@ -56,43 +59,60 @@ interface WidgetEntryPoint {
 /** Widget'ta gösterilecek bir yer: önbellekteki havası ve Ev olup olmadığı. */
 data class WidgetPlaceData(val snapshot: WeatherSnapshot, val isHome: Boolean)
 
-/** Widget'ların çizimden önce önbellekten okuduğu her şey. Hiçbiri internete çıkmaz. */
+/**
+ * Widget'ların gösterdiği her şey, önbellekten (internete çıkmadan) akış olarak okunur. Widget bu
+ * akışları çizim sırasında dinler: ayar, Ev, birimler ya da hava verisi değişince, widget oturumu
+ * açıkken bile kendiliğinden yeniden çizilir.
+ */
 class WidgetDataLoader(context: Context) {
     private val entryPoint = EntryPointAccessors
         .fromApplication(context.applicationContext, WidgetEntryPoint::class.java)
     private val weather = entryPoint.weatherRepository()
     private val places = entryPoint.placesRepository()
 
-    suspend fun settings(): AppSettings = entryPoint.settingsRepository().settings.first()
+    val settings: Flow<AppSettings> = entryPoint.settingsRepository().settings
 
-    suspend fun savedPlaces(): List<SavedPlace> = places.all()
+    /** Ayardaki yerin verisi; yer silinmişse ya da Ev seçilmemişse cihaz konumuna döner. */
+    fun place(config: Flow<WidgetConfig>): Flow<WidgetPlaceData?> =
+        combine(config, places.places, weather.allWeather) { c, saved, all -> resolvePlace(c.place, saved, all) }
+            .distinctUntilChanged()
 
-    suspend fun device(): WeatherSnapshot? = weather.snapshot(DEVICE_PLACE_ID)
+    /** Ev + Bulunduğum yer widget'ının durumu. */
+    fun homeState(): Flow<HomeWidgetState> =
+        combine(places.places, weather.allWeather) { saved, all ->
+            val home = saved.firstOrNull { it.isHome }?.let { all[it.id] }?.let { WidgetPlaceData(it, isHome = true) }
+            HomeWidgetState.of(all[DEVICE_PLACE_ID], home)
+        }.distinctUntilChanged()
 
-    suspend fun home(): WidgetPlaceData? {
-        val home = places.all().firstOrNull { it.isHome } ?: return null
-        return weather.snapshot(home.id)?.let { WidgetPlaceData(it, isHome = true) }
-    }
-
-    /** Ayardaki yer; yer silinmişse ya da Ev seçilmemişse cihaz konumuna döner. */
-    suspend fun place(place: WidgetPlace): WidgetPlaceData? {
-        val saved = places.all()
-        val id = when (place) {
-            WidgetPlace.Device -> DEVICE_PLACE_ID
-            WidgetPlace.Home -> saved.firstOrNull { it.isHome }?.id ?: DEVICE_PLACE_ID
-            is WidgetPlace.Saved -> place.placeId.takeIf { id -> saved.any { it.id == id } } ?: DEVICE_PLACE_ID
+    companion object {
+        /** Saf mantık; test edilir. */
+        fun resolvePlace(
+            place: WidgetPlace,
+            saved: List<SavedPlace>,
+            weather: Map<Long, WeatherSnapshot>,
+        ): WidgetPlaceData? {
+            val id = when (place) {
+                WidgetPlace.Device -> DEVICE_PLACE_ID
+                WidgetPlace.Home -> saved.firstOrNull { it.isHome }?.id ?: DEVICE_PLACE_ID
+                is WidgetPlace.Saved -> place.placeId.takeIf { id -> saved.any { it.id == id } } ?: DEVICE_PLACE_ID
+            }
+            val snapshot = weather[id] ?: weather[DEVICE_PLACE_ID] ?: return null
+            return WidgetPlaceData(snapshot, isHome = saved.any { it.id == snapshot.placeId && it.isHome })
         }
-        val snapshot = weather.snapshot(id) ?: weather.snapshot(DEVICE_PLACE_ID) ?: return null
-        return WidgetPlaceData(snapshot, isHome = saved.any { it.id == snapshot.placeId && it.isHome })
     }
 }
 
-/** Bu widget'ın ayarı. Önizleme ve testlerde (gerçek widget kimliği yokken) varsayılan ayar. */
-suspend fun widgetConfig(context: Context, id: GlanceId): WidgetConfig {
+/**
+ * Bu widget'ın ayarı, akış olarak: ayar ekranında kaydedilince widget hemen yeni ayarla çizilir.
+ * Önizleme ve testlerde (gerçek widget kimliği yokken) verilen ya da varsayılan ayar.
+ */
+suspend fun widgetConfigFlow(context: Context, id: GlanceId, preview: WidgetConfig?): Flow<WidgetConfig> {
+    if (preview != null) return flowOf(preview)
     val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }.getOrNull()
-        ?: return WidgetConfig()
-    return WidgetConfigStore.get(context).get(appWidgetId)
+        ?: return flowOf(WidgetConfig())
+    return WidgetConfigStore.get(context).observe(appWidgetId)
 }
+
 
 /** Çizilen widget'ın arka plan türü; yazılar buna göre gölgeli ya da düz çizilir. */
 val LocalWidgetBackground = compositionLocalOf { WidgetBackground.Sky }

@@ -2,6 +2,8 @@ package com.alihaydarsayar.communesky.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
@@ -40,6 +42,7 @@ import com.alihaydarsayar.communesky.model.currentScene
 import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
 import com.alihaydarsayar.communesky.ui.common.iconRes
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
+import kotlinx.coroutines.flow.first
 import java.time.LocalDateTime
 import java.time.format.TextStyle as JavaTextStyle
 
@@ -62,11 +65,17 @@ class WeatherWidget(private val previewConfig: WidgetConfig? = null) : GlanceApp
     override val sizeMode = SizeMode.Responsive(setOf(Small, Wide, Medium, Large))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val config = previewConfig ?: widgetConfig(context, id)
+        val configFlow = widgetConfigFlow(context, id, previewConfig)
         val loader = WidgetDataLoader(context)
-        val data = loader.place(config.place)
-        val settings = loader.settings()
+        val placeFlow = loader.place(configFlow)
+        // İlk çizim hemen dolu gelsin; sonrası akışlardan.
+        val initialConfig = configFlow.first()
+        val initialData = placeFlow.first()
+        val initialSettings = loader.settings.first()
         provideContent {
+            val config by configFlow.collectAsState(initialConfig)
+            val data by placeFlow.collectAsState(initialData)
+            val settings by loader.settings.collectAsState(initialSettings)
             WidgetTheme(settings, config.background) { WeatherWidgetContent(data, config.background) }
         }
     }
