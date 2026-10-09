@@ -5,6 +5,21 @@ data class AppSettings(
     val temperatureUnit: TemperatureUnit = TemperatureUnit.Celsius,
     val windUnit: WindUnit = WindUnit.KilometersPerHour,
     val themeMode: ThemeMode = ThemeMode.System,
+    val homeAway: HomeAwaySettings = HomeAwaySettings(),
+)
+
+/**
+ * Ayarlar > Ev ve konum. Evde/yakında/uzakta kararı ve widget'ın uzaktayken neleri göstereceği.
+ * Hepsi cihazda kalır.
+ */
+data class HomeAwaySettings(
+    /** Bu mesafe içinde "evin yakınında" sayılır (km, 2–20). */
+    val nearbyRadiusKm: Int = HomeDetection.DEFAULT_NEARBY_KM,
+    val showTemperatureDifference: Boolean = true,
+    val showHomeRain: Boolean = true,
+    val showDistance: Boolean = true,
+    /** Yakındayken de iki yer yan yana gösterilsin. */
+    val showBothWhenNearby: Boolean = false,
 )
 
 enum class TemperatureUnit {
