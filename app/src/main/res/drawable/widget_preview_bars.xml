@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Yağış widget önizlemesi: 15 dakikalık yağış çubukları. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="200dp" android:height="52dp" android:viewportWidth="200" android:viewportHeight="52">
+    <path android:fillColor="#2EFFFFFF" android:pathData="M0,49h21v3h-21zM25,49h21v3h-21z" />
+    <path android:fillColor="#FF8FD3FF" android:pathData="M50,46h21v6h-21zM75,35h21v17h-21zM100,14h21v38h-21zM125,0h21v52h-21zM150,18h21v34h-21zM175,30h21v22h-21z" />
+</vector>

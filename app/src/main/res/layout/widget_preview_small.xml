@@ -1,53 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget seçicide gösterilen önizleme (Android 12+). -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/widget_bg_clear_day"
-    android:orientation="vertical"
-    android:padding="14dp"
-    tools:ignore="HardcodedText">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="İstanbul"
-        android:textColor="#FFFFFFFF"
-        android:textSize="13sp"
-        android:textStyle="bold" />
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="sans-serif-light"
-            android:text="22°"
-            android:textColor="#FFFFFFFF"
-            android:textSize="40sp" />
-
-        <ImageView
-            android:layout_width="34dp"
-            android:layout_height="34dp"
-            android:importantForAccessibility="no"
-            android:src="@drawable/ic_wx_partly_cloudy_day" />
-    </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/weather_partly_cloudy"
-        android:textColor="#FFFFFFFF"
-        android:textSize="12sp" />
+<!-- Widget seçicide gösterilen önizleme (Android 12+): Küçük, cam görünüm. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_preview_bg_glass" android:orientation="vertical" android:gravity="top" android:paddingHorizontal="16dp" android:paddingVertical="14dp" tools:ignore="HardcodedText,ContentDescription">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_wl_home" android:tint="#FFFFFFFF" android:layout_marginEnd="5dp" android:layout_marginTop="2dp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Yayla" android:textColor="#FFFFFFFF" android:textSize="14sp" android:fontFamily="sans-serif-medium" android:layout_weight="1" />
+            <ImageView android:layout_width="30dp" android:layout_height="30dp" android:src="@drawable/ic_wl_partly_cloudy_night" android:tint="#FFFFFFFF" />
+        </LinearLayout>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="17°" android:textColor="#FFFFFFFF" android:textSize="54sp" android:fontFamily="sans-serif-light" android:layout_weight="1" android:gravity="center_vertical" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/weather_partly_cloudy" android:textColor="#FFFFFFFF" android:textSize="13sp" android:fontFamily="sans-serif" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="21° / 14°" android:textColor="#D9FFFFFF" android:textSize="13sp" android:fontFamily="sans-serif" />
 </LinearLayout>

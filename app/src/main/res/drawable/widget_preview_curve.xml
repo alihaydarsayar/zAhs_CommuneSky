@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Saatlik widget önizlemesi: sıcaklık eğrisi ve yağış çubukları (tasarımdaki örnek değerler). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="356dp"
+    android:height="96dp"
+    android:viewportWidth="356"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#8C8FD3FF"
+        android:pathData="M61,90h12v4h-12zM105,78h12v16h-12zM149,70h12v24h-12zM193,72h12v22h-12zM237,82h12v12h-12zM281,90h12v4h-12z" />
+    <path
+        android:pathData="M22,14L66,23L110,23L154,32L198,32L242,41L286,41L330,50"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="2" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M25.5,14a3.5,3.5 0,1 1,-7,0a3.5,3.5 0,1 1,7,0zM68.5,23a2.5,2.5 0,1 1,-5,0a2.5,2.5 0,1 1,5,0zM112.5,23a2.5,2.5 0,1 1,-5,0a2.5,2.5 0,1 1,5,0zM156.5,32a2.5,2.5 0,1 1,-5,0a2.5,2.5 0,1 1,5,0zM200.5,32a2.5,2.5 0,1 1,-5,0a2.5,2.5 0,1 1,5,0zM244.5,41a2.5,2.5 0,1 1,-5,0a2.5,2.5 0,1 1,5,0zM288.5,41a2.5,2.5 0,1 1,-5,0a2.5,2.5 0,1 1,5,0zM332.5,50a2.5,2.5 0,1 1,-5,0a2.5,2.5 0,1 1,5,0z" />
+</vector>

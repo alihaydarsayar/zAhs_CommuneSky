@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget seçicide gösterilen önizleme (Android 12+): Ayrıntılar. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_preview_bg_sky" android:orientation="vertical" android:gravity="top" android:paddingHorizontal="10dp" android:paddingVertical="12dp" tools:ignore="HardcodedText,ContentDescription">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="10dp" android:paddingBottom="8dp">
+            <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_wl_home" android:tint="#FFFFFFFF" android:layout_marginEnd="6dp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Yayla · 15°" android:textColor="#FFFFFFFF" android:textSize="14sp" android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginHorizontal="4dp" android:background="@drawable/widget_preview_bg_tile" android:gravity="center_vertical" android:orientation="vertical" android:paddingHorizontal="12dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/feels_like" android:textColor="#B8FFFFFF" android:textSize="12sp" android:fontFamily="sans-serif" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="13°" android:textColor="#FFFFFFFF" android:textSize="19sp" android:fontFamily="sans-serif-medium" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#A6FFFFFF" android:textSize="11sp" android:fontFamily="sans-serif" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginHorizontal="4dp" android:background="@drawable/widget_preview_bg_tile" android:gravity="center_vertical" android:orientation="vertical" android:paddingHorizontal="12dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/humidity" android:textColor="#B8FFFFFF" android:textSize="12sp" android:fontFamily="sans-serif" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="64%" android:textColor="#FFFFFFFF" android:textSize="19sp" android:fontFamily="sans-serif-medium" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#A6FFFFFF" android:textSize="11sp" android:fontFamily="sans-serif" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginHorizontal="4dp" android:background="@drawable/widget_preview_bg_tile" android:gravity="center_vertical" android:orientation="vertical" android:paddingHorizontal="12dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/wind" android:textColor="#B8FFFFFF" android:textSize="12sp" android:fontFamily="sans-serif" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="14 km/h" android:textColor="#FFFFFFFF" android:textSize="19sp" android:fontFamily="sans-serif-medium" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#A6FFFFFF" android:textSize="11sp" android:fontFamily="sans-serif" />
+            </LinearLayout>
+        </LinearLayout>
+        <View android:layout_width="match_parent" android:layout_height="8dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginHorizontal="4dp" android:background="@drawable/widget_preview_bg_tile" android:gravity="center_vertical" android:orientation="vertical" android:paddingHorizontal="12dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="UV" android:textColor="#B8FFFFFF" android:textSize="12sp" android:fontFamily="sans-serif" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="#FFFFFFFF" android:textSize="19sp" android:fontFamily="sans-serif-medium" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#A6FFFFFF" android:textSize="11sp" android:fontFamily="sans-serif" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginHorizontal="4dp" android:background="@drawable/widget_preview_bg_tile" android:gravity="center_vertical" android:orientation="vertical" android:paddingHorizontal="12dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/pressure" android:textColor="#B8FFFFFF" android:textSize="12sp" android:fontFamily="sans-serif" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1022" android:textColor="#FFFFFFFF" android:textSize="19sp" android:fontFamily="sans-serif-medium" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="hPa" android:textColor="#A6FFFFFF" android:textSize="11sp" android:fontFamily="sans-serif" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginHorizontal="4dp" android:background="@drawable/widget_preview_bg_tile" android:gravity="center_vertical" android:orientation="vertical" android:paddingHorizontal="12dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/visibility" android:textColor="#B8FFFFFF" android:textSize="12sp" android:fontFamily="sans-serif" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="20 km" android:textColor="#FFFFFFFF" android:textSize="19sp" android:fontFamily="sans-serif-medium" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#A6FFFFFF" android:textSize="11sp" android:fontFamily="sans-serif" />
+            </LinearLayout>
+        </LinearLayout>
+</LinearLayout>
