@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kadranli saat widgeti: koyu kadran ve saat isaretleri (tasarim: SaatAnalog). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path android:fillColor="#FF16213F" android:pathData="M198,100a98,98 0,1 1,-196,0a98,98 0,1 1,196,0z" />
+    <group android:pivotX="100" android:pivotY="100" android:rotation="0">
+        <path android:pathData="M100,12L100,22" android:strokeColor="#FFFFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="30">
+        <path android:pathData="M100,12L100,18" android:strokeColor="#73FFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="60">
+        <path android:pathData="M100,12L100,18" android:strokeColor="#73FFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="90">
+        <path android:pathData="M100,12L100,22" android:strokeColor="#FFFFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="120">
+        <path android:pathData="M100,12L100,18" android:strokeColor="#73FFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="150">
+        <path android:pathData="M100,12L100,18" android:strokeColor="#73FFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="180">
+        <path android:pathData="M100,12L100,22" android:strokeColor="#FFFFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="210">
+        <path android:pathData="M100,12L100,18" android:strokeColor="#73FFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="240">
+        <path android:pathData="M100,12L100,18" android:strokeColor="#73FFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="270">
+        <path android:pathData="M100,12L100,22" android:strokeColor="#FFFFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="300">
+        <path android:pathData="M100,12L100,18" android:strokeColor="#73FFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+    <group android:pivotX="100" android:pivotY="100" android:rotation="330">
+        <path android:pathData="M100,12L100,18" android:strokeColor="#73FFFFFF" android:strokeLineCap="round" android:strokeWidth="3" />
+    </group>
+</vector>

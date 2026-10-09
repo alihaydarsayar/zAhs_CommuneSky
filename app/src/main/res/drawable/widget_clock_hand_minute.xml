@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Yelkovan: acik mavi; ortadaki gobek de burada (akrebin ustunde kalsin). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path
+        android:pathData="M100,100L100,26"
+        android:strokeColor="#FF9CC4FF"
+        android:strokeLineCap="round"
+        android:strokeWidth="4" />
+    <path
+        android:fillColor="#FF9CC4FF"
+        android:pathData="M106,100a6,6 0,1 1,-12,0a6,6 0,1 1,12,0z" />
+    <path
+        android:fillColor="#FF16213F"
+        android:pathData="M102.5,100a2.5,2.5 0,1 1,-5,0a2.5,2.5 0,1 1,5,0z" />
+</vector>

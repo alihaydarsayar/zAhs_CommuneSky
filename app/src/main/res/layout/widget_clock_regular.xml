@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Widget saati. TextClock Android'in kendi saat bilesenidir: dakika ve gun degisince sistem
+    kendisi gunceller, uygulama hic uyanmaz (pil harcamaz) ve saat hep dogru kalir.
+-->
+<TextClock xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clock"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="sans-serif"
+    android:format12Hour="h:mm"
+    android:format24Hour="HH:mm"
+    android:includeFontPadding="false"
+    android:maxLines="1"
+    android:paddingHorizontal="2dp"
+    android:textColor="#FFFFFFFF" />
