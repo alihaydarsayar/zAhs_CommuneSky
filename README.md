@@ -22,7 +22,7 @@
 - **Your places** — search any city, district or neighbourhood worldwide, save it, drag to reorder and mark one as Home. Swipe between places on the home screen.
 - **Checked against real measurements** — current conditions are compared with the nearest weather station (MGM in Türkiye, airport reports elsewhere). A nearby station sets the current temperature and sky; a farther one warns about storms on the way.
 - **Home screen widgets** — weather, clock and "Home and my location" widgets in several sizes, each with its own place and a sky, glass or clear background.
-- **Your location, if you want it** — uses approximate location only; without permission it shows your saved places, or Istanbul.
+- **Your location, if you want it** — approximate location shows your district; optional precise location shows your neighbourhood and picks the closest station. Without permission it shows your saved places, or Istanbul.
 - **Units and theme** — °C or °F, four wind units, light or dark.
 - **English and Turkish**, with per-app language support.
 - **Fast** — R8-optimised release build, Baseline Profiles for quick start-up, and Compose stability tuning for smooth animations.
@@ -33,11 +33,11 @@ See the [changelog](CHANGELOG.md) for what's new in each version. Contributors: 
 
 Commune Sky has no ads, no analytics and no accounts, and the developer never receives your location, searches or saved places. To show the weather the app talks directly to:
 
-- **Open-Meteo** (forecast and place search): approximate coordinates of your location and saved places; the text you search for
+- **Open-Meteo** (forecast and place search): coordinates of your location and saved places, rounded to about 1 km; the text you search for
 - **Photon by komoot** (place search): the text you search for
-- **MGM**, Turkish State Meteorological Service (current conditions in Türkiye): coordinates of the place once to find the nearest station, then the station number
-- **NOAA Aviation Weather Center** (current conditions elsewhere, or when MGM is unavailable): an area of about 50 km around the place
-- **Android Geocoder** (city names, and searches as a last resort): approximate coordinates; the search text
+- **MGM**, Turkish State Meteorological Service (current conditions in Türkiye): rounded coordinates and the province name once to find nearby stations, then station numbers
+- **NOAA Aviation Weather Center** (airport reports, everywhere): an area of about 50 km around the place
+- **Android Geocoder** (district and neighbourhood names, and searches as a last resort): your coordinates; the search text
 
 Forecasts, saved places, measurements and settings are stored only on your device. The full policy, in English and Turkish, is at [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/).
 
