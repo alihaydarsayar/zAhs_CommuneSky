@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ev ve konum widgeti: bulundugun yerden eve ok. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="8dp"
+    android:viewportWidth="48"
+    android:viewportHeight="8">
+    <path
+        android:pathData="M2,4h44M40,1l6,3 -6,3"
+        android:strokeWidth="1.5"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

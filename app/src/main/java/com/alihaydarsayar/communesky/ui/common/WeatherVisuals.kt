@@ -70,22 +70,3 @@ val SkyTheme.colorRes: SkyColorRes
         SkyTheme.FogNight -> SkyColorRes(R.color.sky_fog_night_top, R.color.sky_fog_night_mid, R.color.sky_fog_night_bottom)
         SkyTheme.Storm -> SkyColorRes(R.color.sky_storm_top, R.color.sky_storm_mid, R.color.sky_storm_bottom)
     }
-
-/** Widget arka planı: aynı renklerle çizilmiş yuvarlak köşeli gradyan (res/drawable/widget_bg_*.xml). */
-@get:DrawableRes
-val SkyTheme.widgetBackgroundRes: Int
-    get() = when (this) {
-        SkyTheme.ClearDay -> R.drawable.widget_bg_clear_day
-        SkyTheme.ClearNight -> R.drawable.widget_bg_clear_night
-        SkyTheme.Sunrise -> R.drawable.widget_bg_sunrise
-        SkyTheme.Sunset -> R.drawable.widget_bg_sunset
-        SkyTheme.CloudyDay -> R.drawable.widget_bg_cloudy_day
-        SkyTheme.CloudyNight -> R.drawable.widget_bg_cloudy_night
-        SkyTheme.RainDay -> R.drawable.widget_bg_rain_day
-        SkyTheme.RainNight -> R.drawable.widget_bg_rain_night
-        SkyTheme.SnowDay -> R.drawable.widget_bg_snow_day
-        SkyTheme.SnowNight -> R.drawable.widget_bg_snow_night
-        SkyTheme.FogDay -> R.drawable.widget_bg_fog_day
-        SkyTheme.FogNight -> R.drawable.widget_bg_fog_night
-        SkyTheme.Storm -> R.drawable.widget_bg_storm
-    }

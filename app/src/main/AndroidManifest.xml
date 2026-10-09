@@ -36,11 +36,58 @@
             </intent-filter>
         </activity>
 
-        <!-- Ana ekran widget'ları: kompakt (2x2), saatlik (4x2), tahmin (4x4). -->
+        <!--
+            Ana ekran widget'ları: 9 widget, her birinde birden fazla stil. Alıcı adları 1.2'den
+            korunuyor (Small = Küçük, Medium = Saatlik, Large = Haftalık); eski widget'lar silinmez.
+        -->
+        <receiver
+            android:name=".widget.HomeWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_kind_home">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_home" />
+        </receiver>
+        <receiver
+            android:name=".widget.ClockWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_kind_clock">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_clock" />
+        </receiver>
+        <receiver
+            android:name=".widget.MediumWeatherWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_kind_hourly">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_hourly" />
+        </receiver>
+        <receiver
+            android:name=".widget.LargeWeatherWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_kind_weekly">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_weekly" />
+        </receiver>
         <receiver
             android:name=".widget.SmallWeatherWidgetReceiver"
             android:exported="true"
-            android:label="@string/widget_small_name">
+            android:label="@string/widget_kind_small">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -49,51 +96,48 @@
                 android:resource="@xml/widget_info_small" />
         </receiver>
         <receiver
-            android:name=".widget.MediumWeatherWidgetReceiver"
+            android:name=".widget.TextWidgetReceiver"
             android:exported="true"
-            android:label="@string/widget_medium_name">
+            android:label="@string/widget_kind_text">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_info_medium" />
+                android:resource="@xml/widget_info_text" />
         </receiver>
         <receiver
-            android:name=".widget.LargeWeatherWidgetReceiver"
+            android:name=".widget.PlacesWidgetReceiver"
             android:exported="true"
-            android:label="@string/widget_large_name">
+            android:label="@string/widget_kind_places">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_info_large" />
+                android:resource="@xml/widget_info_places" />
         </receiver>
-
-        <!-- Saatli widget. -->
         <receiver
-            android:name=".widget.ClockWidgetReceiver"
+            android:name=".widget.PrecipitationWidgetReceiver"
             android:exported="true"
-            android:label="@string/widget_clock_name">
+            android:label="@string/widget_kind_precipitation">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_info_clock" />
+                android:resource="@xml/widget_info_precipitation" />
         </receiver>
-        <!-- Ev + Bulunduğum yer widget'ı. -->
         <receiver
-            android:name=".widget.HomeWidgetReceiver"
+            android:name=".widget.DetailsWidgetReceiver"
             android:exported="true"
-            android:label="@string/widget_home_name">
+            android:label="@string/widget_kind_details">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_info_home" />
+                android:resource="@xml/widget_info_details" />
         </receiver>
 
         <!-- Widget ayar ekranı: widget eklenirken ve "Widget'ı düzenle" ile açılır. -->

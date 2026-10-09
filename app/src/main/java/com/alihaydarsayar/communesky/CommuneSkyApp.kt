@@ -49,5 +49,7 @@ class CommuneSkyApp : Application(), Configuration.Provider {
                 .debounce(500)
                 .collect { WeatherWidgetUpdater.updateAll(this@CommuneSkyApp) }
         }
+        // Android 15+: widget seçicideki önizlemeler gerçek widget çizimiyle (sürüm başına bir kez).
+        appScope.launch { runCatching { WeatherWidgetUpdater.publishPreviews(this@CommuneSkyApp) } }
     }
 }

@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Saatli widget. Saat TextClock ile sistem tarafından güncellenir; hava kısmı WorkManager ile.
+    Saat: 10 stil (büyük, yan yana, tek satır, kalın, analog...).
     Ekleme sırasında ayar ekranı açılır; sonradan uzun basıp düzenlenebilir.
+    Güncelleme WorkManager ile yapılır (tüm yerler tek istekte); updatePeriodMillis kapalı (0).
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:configure="com.alihaydarsayar.communesky.widget.config.WidgetConfigActivity"
     android:description="@string/widget_clock_description"
     android:initialLayout="@layout/glance_default_loading_layout"
-    android:minWidth="180dp"
+    android:minWidth="250dp"
     android:minHeight="110dp"
-    android:minResizeWidth="180dp"
-    android:minResizeHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
     android:maxResizeWidth="530dp"
-    android:maxResizeHeight="400dp"
+    android:maxResizeHeight="530dp"
+    android:previewImage="@drawable/widget_preview_image_clock"
     android:previewLayout="@layout/widget_preview_clock"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
