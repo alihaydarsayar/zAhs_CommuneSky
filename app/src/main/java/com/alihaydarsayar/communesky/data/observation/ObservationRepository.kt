@@ -98,10 +98,13 @@ class ObservationRepository @Inject constructor(
     private suspend fun fetch(place: Place, now: Instant): Observation? {
         val lat = place.city.latitude
         val lon = place.city.longitude
+        // Ölçüm bir sonraki yenilemeye kadar taze kalmalı: 30 dakikaya 5 dakikadan az kalmışsa
+        // (ör. saatte bir rapor veren istasyon) daha yeni olabilecek sıradaki kaynağa geçilir.
+        val later = now.plusMillis(FRESH_MARGIN_MS)
         if (isInTurkey(lat, lon)) {
-            mgm(place)?.takeIf { ObservationPolicy.isUsable(it, lat, lon, now) }?.let { return it }
+            mgm(place)?.takeIf { ObservationPolicy.isUsable(it, lat, lon, later) }?.let { return it }
         }
-        return metar(lat, lon)?.takeIf { ObservationPolicy.isUsable(it, lat, lon, now) }
+        return metar(lat, lon)?.takeIf { ObservationPolicy.isUsable(it, lat, lon, later) }
     }
 
     // --- MGM ---
@@ -193,6 +196,7 @@ class ObservationRepository @Inject constructor(
         const val TAG = "Observations"
         const val TIMEOUT_MS = 4_000L
         const val MIN_INTERVAL_MS = 3 * 60 * 1000L
+        const val FRESH_MARGIN_MS = 5 * 60 * 1000L
         const val STATION_REUSE_KM = 2.0
         const val BBOX_DEG = 0.45
         const val KNOT_TO_KMH = 1.852

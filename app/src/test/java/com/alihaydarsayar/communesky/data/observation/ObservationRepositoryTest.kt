@@ -170,6 +170,16 @@ class ObservationRepositoryTest {
     }
 
     @Test
+    fun `MGM measurement about to expire prefers a fresher airport report`() = runTest {
+        // 27 dk önce: 30 dakikaya 3 dk kalmış; bir sonraki yenilemeden önce eskiyeceği için METAR'a geçilir.
+        mgmWorks()
+        mgm.latest = { listOf(mgmObservation(time = "2026-10-08T20:43:00.000Z")) }
+        metar.answer = { listOf(carsambaMetar) }
+        repository.refresh(listOf(atakum))
+        assertEquals(ObservationSource.Metar, store.get(3)!!.source)
+    }
+
+    @Test
     fun `nothing usable falls back to the forecast silently`() = runTest {
         mgm.center = { samsunCenter }
         mgm.station = { listOf(samsunStation) }
