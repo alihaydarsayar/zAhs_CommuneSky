@@ -2,6 +2,7 @@ package com.alihaydarsayar.communesky.data.observation
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
 import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.Query
@@ -24,6 +25,11 @@ interface MgmApi {
     @Headers("Origin: $ORIGIN")
     @GET("web/istasyonlar")
     suspend fun station(@Query("istno") stationId: Int): List<MgmStationDto>
+
+    /** Bir ildeki bütün istasyonlar ve konumları (en yakın istasyonu bulmak için). */
+    @Headers("Origin: $ORIGIN")
+    @GET("web/istasyonlar/ilAdDetay")
+    suspend fun stationsInProvince(@Query("il") province: String): List<MgmStationDto>
 
     /** İstasyonun son ölçümü (genelde 10–15 dakikada bir yenilenir). */
     @Headers("Origin: $ORIGIN")
@@ -54,6 +60,8 @@ interface AviationWeatherApi {
 @Serializable
 data class MgmCenterDto(
     @SerialName("sondurumIstNo") val observationStationId: Int? = null,
+    @SerialName("enlem") val latitude: Double? = null,
+    @SerialName("boylam") val longitude: Double? = null,
     val il: String? = null,
     val ilce: String? = null,
 )
@@ -75,6 +83,10 @@ data class MgmObservationDto(
     @SerialName("sicaklik") val temperature: Double? = null,
     @SerialName("nem") val humidity: Double? = null,
     @SerialName("ruzgarHiz") val windSpeedKmh: Double? = null,
+    @SerialName("ruzgarYon") val windDirection: Double? = null,
+    /** Son 10 dakikada ölçülen yağış (mm). MGM sitesindeki "Yağış" bilgisi yagis00Now/yagis24Saat alanlarından gelir. */
+    @SerialName("yagis10Dk") val precipitation10Min: Double? = null,
+    @SerialName("yagis1Saat") val precipitation1Hour: Double? = null,
     @SerialName("hadiseKodu") val weatherCode: String? = null,
 )
 
@@ -87,6 +99,8 @@ data class MetarDto(
     val dewp: Double? = null,
     /** Rüzgâr hızı, knot. */
     val wspd: Double? = null,
+    /** Rüzgâr yönü (derece) ya da değişkense "VRB". */
+    val wdir: JsonPrimitive? = null,
     val wxString: String? = null,
     val cover: String? = null,
     val lat: Double,

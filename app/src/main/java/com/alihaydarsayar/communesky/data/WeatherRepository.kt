@@ -4,8 +4,6 @@ import com.alihaydarsayar.communesky.data.local.WeatherCacheDao
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
 import com.alihaydarsayar.communesky.data.observation.ObservationStore
-import com.alihaydarsayar.communesky.model.Observation
-import com.alihaydarsayar.communesky.model.ObservationPolicy
 import kotlinx.coroutines.flow.combine
 import com.alihaydarsayar.communesky.data.remote.DailyDto
 import com.alihaydarsayar.communesky.data.remote.ForecastResponseDto
@@ -13,6 +11,11 @@ import com.alihaydarsayar.communesky.data.remote.HourlyDto
 import com.alihaydarsayar.communesky.data.remote.Minutely15Dto
 import com.alihaydarsayar.communesky.data.remote.OpenMeteoApi
 import com.alihaydarsayar.communesky.model.City
+import com.alihaydarsayar.communesky.model.CoordinatePrivacy
+import com.alihaydarsayar.communesky.model.ObservationBlend
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import com.alihaydarsayar.communesky.model.CurrentWeather
 import com.alihaydarsayar.communesky.model.DailyForecast
 import com.alihaydarsayar.communesky.model.Forecast
@@ -50,28 +53,33 @@ class WeatherRepository @Inject constructor(
     /** Çözülmüş satırlar: değişmeyen yerin JSON'u her yenilemede baştan çözülmesin. */
     private val decoded = ConcurrentHashMap<Long, Pair<WeatherCacheEntity, WeatherSnapshot?>>()
 
-    /** Önbellekteki bütün yerlerin hava durumu (yer kimliği → veri). */
+    /**
+     * Önbellekteki bütün yerlerin hava durumu (yer kimliği → veri). İstasyon ölçümleri dakikada
+     * bir yeniden değerlendirilir: 30 dakikayı geçen ölçüm yeni veri beklenmeden ekrandan kalkar.
+     */
     val allWeather: Flow<Map<Long, WeatherSnapshot>> = combine(
         dao.observeAll().map { entities ->
             decoded.keys.retainAll(entities.map { it.id }.toSet())
             entities.mapNotNull { entity -> entity.cachedSnapshot()?.let { entity.id to it } }.toMap()
         },
         observationStore.observeAll(),
-    ) { weather, observations ->
-        weather.mapValues { (id, snapshot) -> snapshot.withObservation(observations[id]) }
+        minuteTicker(),
+    ) { weather, observations, now ->
+        weather.mapValues { (id, snapshot) -> ObservationBlend.apply(snapshot, observations[id], now) }
     }
+        .distinctUntilChanged()
         // JSON çözümleme ana iş parçacığını meşgul etmesin.
         .flowOn(Dispatchers.Default)
 
     suspend fun snapshot(placeId: Long): WeatherSnapshot? = withContext(Dispatchers.Default) {
-        dao.get(placeId)?.cachedSnapshot()?.withObservation(observationStore.get(placeId))
+        dao.get(placeId)?.cachedSnapshot()?.let { ObservationBlend.apply(it, observationStore.get(placeId), Instant.now()) }
     }
 
     /** "Bulunduğum yer" satırındaki son yer (izin yoksa yedek şehir); hiç yoksa null. */
     suspend fun devicePlace(): Place? = dao.get(DEVICE_PLACE_ID)?.let {
         Place(
             id = DEVICE_PLACE_ID,
-            city = City(it.cityName, it.latitude, it.longitude),
+            city = City(it.cityName, it.latitude, it.longitude, it.regionName),
             isCurrentLocation = it.isCurrentLocation,
             accuracyMeters = it.accuracyMeters,
         )
@@ -88,11 +96,12 @@ class WeatherRepository @Inject constructor(
         val responses = withContext(Dispatchers.IO) {
             if (places.size == 1) {
                 val city = places.single().city
-                listOf(api.get().getForecast(city.latitude, city.longitude))
+                // Koordinatlar yaklaşık 1 km'ye yuvarlanarak gönderilir.
+                listOf(api.get().getForecast(CoordinatePrivacy.round(city.latitude), CoordinatePrivacy.round(city.longitude)))
             } else {
                 api.get().getForecasts(
-                    latitudes = places.joinToString(",") { it.city.latitude.toString() },
-                    longitudes = places.joinToString(",") { it.city.longitude.toString() },
+                    latitudes = places.joinToString(",") { CoordinatePrivacy.round(it.city.latitude).toString() },
+                    longitudes = places.joinToString(",") { CoordinatePrivacy.round(it.city.longitude).toString() },
                 )
             }
         }
@@ -109,26 +118,11 @@ class WeatherRepository @Inject constructor(
                     forecastJson = json.encodeToString(ForecastResponseDto.serializer(), response),
                     fetchedAtMillis = now,
                     accuracyMeters = place.accuracyMeters,
+                    regionName = place.city.region,
                 )
             }
         }
         dao.upsertAll(entities)
-    }
-
-    /**
-     * İstasyon ölçümünü işler: yakın ve tazeyse anlık sıcaklık ve durum ölçümden gelir, uzaktaki
-     * yağış/gök gürültüsü uyarı olarak eklenir (bkz. ObservationPolicy). Ölçüm yoksa veri olduğu gibi.
-     */
-    private fun WeatherSnapshot.withObservation(observation: Observation?): WeatherSnapshot {
-        val use = ObservationPolicy.evaluate(
-            observation = observation,
-            latitude = city.latitude,
-            longitude = city.longitude,
-            now = Instant.now(),
-            modelIsWet = forecast.current.condition.isWet,
-        ) ?: return this
-        val current = ObservationPolicy.applyTo(forecast.current, use, forecast.elevation)
-        return copy(forecast = forecast.copy(current = current), observation = use)
     }
 
     private fun WeatherCacheEntity.cachedSnapshot(): WeatherSnapshot? {
@@ -145,7 +139,7 @@ class WeatherRepository @Inject constructor(
         }.getOrNull() ?: return null
         return WeatherSnapshot(
             placeId = id,
-            city = City(cityName, latitude, longitude),
+            city = City(cityName, latitude, longitude, regionName),
             isCurrentLocation = isCurrentLocation,
             forecast = dto.toModel(),
             fetchedAt = Instant.ofEpochMilli(fetchedAtMillis),
@@ -284,4 +278,12 @@ private fun DailyDto.toModel(): List<DailyForecast> = time.indices.mapNotNull { 
         uvIndexMax = uvIndexMax.getOrNull(i),
         precipitationSum = precipitationSum.getOrNull(i),
     )
+}
+
+/** Hemen ve sonra dakikada bir şimdiki zamanı yayar. */
+private fun minuteTicker() = flow {
+    while (true) {
+        emit(Instant.now())
+        delay(60_000)
+    }
 }

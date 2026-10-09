@@ -21,3 +21,12 @@ object GeoDistance {
 
 /** Enlem/boylam çifti. */
 data class GeoPoint(val latitude: Double, val longitude: Double)
+
+/**
+ * Dışarıya (Open-Meteo, MGM, NOAA) giden koordinatlar yaklaşık 1 km'ye yuvarlanır: 0,01° enlem
+ * ≈ 1,1 km, Türkiye'de 0,01° boylam ≈ 0,85 km. Hava durumu için bu fark önemsizdir; hassas konum
+ * sadece cihazda (yer adı ve en yakın istasyonu seçmek için) kullanılır.
+ */
+object CoordinatePrivacy {
+    fun round(value: Double): Double = Math.round(value * 100) / 100.0
+}

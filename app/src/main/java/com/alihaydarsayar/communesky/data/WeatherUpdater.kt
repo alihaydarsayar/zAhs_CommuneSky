@@ -4,6 +4,10 @@ import android.content.Context
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
 import com.alihaydarsayar.communesky.data.location.LocationRepository
 import com.alihaydarsayar.communesky.data.observation.ObservationRepository
+import com.alihaydarsayar.communesky.model.ObservationPolicy
+import com.alihaydarsayar.communesky.work.ObservationExpiryWorker
+import kotlinx.coroutines.flow.first
+import java.time.Instant
 import com.alihaydarsayar.communesky.data.places.PlacesRepository
 import com.alihaydarsayar.communesky.model.City
 import com.alihaydarsayar.communesky.model.SavedPlace
@@ -68,6 +72,12 @@ class WeatherUpdater @Inject constructor(
         if (observationRepository.refresh(listOfNotNull(device) + saved.map { it.toPlace() })) {
             WeatherWidgetUpdater.updateAll(context)
         }
+        // Widget'taki ölçüm 30 dakikayı geçince yeni veri beklemeden kalksın.
+        val now = Instant.now()
+        val nextExpiry = observationRepository.observations.first().values
+            .filter { ObservationPolicy.isFresh(it, now) }
+            .minOfOrNull { ObservationPolicy.expiresAt(it) }
+        ObservationExpiryWorker.schedule(context, nextExpiry)
     }
 
     /** Sadece verilen yerleri yeniler (ör. yeni eklenen yer). */

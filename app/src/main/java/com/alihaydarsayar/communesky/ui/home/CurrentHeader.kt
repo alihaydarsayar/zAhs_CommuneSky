@@ -40,6 +40,7 @@ import com.alihaydarsayar.communesky.model.DailyForecast
 import com.alihaydarsayar.communesky.model.ObservationUse
 import com.alihaydarsayar.communesky.model.RainOutlook
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
+import com.alihaydarsayar.communesky.model.rainOutlook
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
 import com.alihaydarsayar.communesky.ui.common.relativeTimeSince
 import com.alihaydarsayar.communesky.ui.theme.HeroTemperatureStyle
@@ -84,6 +85,14 @@ fun CurrentHeader(
                 style = MaterialTheme.typography.headlineMedium.copy(shadow = TextShadow),
             )
         }
+        // Mahalle gösteriliyorsa bağlı olduğu ilçe ("Yayla" → "Tuzla").
+        weather.city.region?.takeIf { weather.isCurrentLocation }?.let { region ->
+            Text(
+                text = region,
+                color = TextSecondary,
+                style = MaterialTheme.typography.titleMedium.copy(shadow = TextShadow),
+            )
+        }
         Spacer(Modifier.height(4.dp))
         StatusLine(status, weather)
         val observation = weather.observation
@@ -126,7 +135,7 @@ fun CurrentHeader(
                 style = MaterialTheme.typography.titleMedium.copy(shadow = TextShadow),
             )
         }
-        val outlook = remember(weather) { weather.forecast.rainOutlook(weather.forecast.localNow()) }
+        val outlook = remember(weather) { weather.rainOutlook() }
         if (outlook != null) {
             Spacer(Modifier.height(14.dp))
             RainOutlookChip(outlook)

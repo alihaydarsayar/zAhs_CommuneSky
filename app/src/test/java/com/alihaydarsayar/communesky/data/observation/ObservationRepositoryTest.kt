@@ -8,6 +8,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -20,19 +21,27 @@ import java.io.IOException
 import java.time.Instant
 
 /**
- * Gerçek cevaplara dayanır (8 Ekim 2026 akşamı, Atakum): MGM "SAMSUN BÖLGE" istasyonu 18,6°,
- * Samsun-Çarşamba havalimanı (27 km) METAR'ı gök gürültülü yağmur.
+ * Gerçek cevaplara dayanır (8–9 Ekim 2026): MGM "SAMSUN BÖLGE" (Atakum) ve "TUZLA" istasyonları,
+ * Samsun-Çarşamba (27 km) ve Sabiha Gökçen havalimanı METAR'ları.
  */
 class ObservationRepositoryTest {
 
     private val now = Instant.parse("2026-10-08T21:10:00Z")
     private val atakum = Place(3, City("Atakum", 41.3322588, 36.2704652), isCurrentLocation = false)
+    private val yayla = Place(5, City("Yayla", 40.8306571, 29.3110728), isCurrentLocation = true)
     private val london = Place(7, City("London", 51.5072, -0.1276), isCurrentLocation = false)
 
-    private val samsunCenter = MgmCenterDto(observationStationId = 17030, il = "Samsun", ilce = "Atakum")
+    private val samsunCenter = MgmCenterDto(observationStationId = 17030, latitude = 41.3442, longitude = 36.2564, il = "Samsun", ilce = "Atakum")
     private val samsunStation = MgmStationDto(17030, "SAMSUN BÖLGE", 41.344286, 36.255794, 4.0)
-    private fun mgmObservation(time: String = "2026-10-08T21:04:00.000Z", code: String = "CB") =
-        MgmObservationDto(17030, time, temperature = 18.6, humidity = 69.0, windSpeedKmh = 9.36, weatherCode = code)
+    private val bafra = MgmStationDto(17622, "BAFRA", 41.551018, 35.924752, 103.0)
+
+    private fun mgmObservation(
+        id: Int = 17030,
+        time: String = "2026-10-08T21:04:00.000Z",
+        code: String = "CB",
+        temperature: Double? = 18.6,
+        tenMinutes: Double? = 0.0,
+    ) = MgmObservationDto(id, time, temperature, humidity = 69.0, windSpeedKmh = 9.36, windDirection = 245.0, precipitation10Min = tenMinutes, weatherCode = code)
 
     private val carsambaMetar = MetarDto(
         icaoId = "LTFH",
@@ -40,6 +49,7 @@ class ObservationRepositoryTest {
         temp = 19.0,
         dewp = 16.0,
         wspd = 11.0,
+        wdir = JsonPrimitive(140),
         wxString = "-TSRA",
         cover = "SCT",
         lat = 41.255,
@@ -49,27 +59,33 @@ class ObservationRepositoryTest {
     )
 
     private class FakeMgm : MgmApi {
-        var center: suspend () -> MgmCenterDto = { throw IOException() }
-        var station: suspend () -> List<MgmStationDto> = { throw IOException() }
-        var latest: suspend () -> List<MgmObservationDto> = { throw IOException() }
+        var centerAnswer: suspend () -> MgmCenterDto = { throw IOException() }
+        var stationAnswer: suspend () -> List<MgmStationDto> = { throw IOException() }
+        var provinceAnswer: suspend () -> List<MgmStationDto> = { throw IOException() }
+        var latestAnswer: suspend (Int) -> List<MgmObservationDto> = { throw IOException() }
         var centerCalls = 0
-        var latestCalls = 0
+        val latestCalls = mutableListOf<Int>()
         override suspend fun center(latitude: Double, longitude: Double): MgmCenterDto {
             centerCalls++
-            return center()
+            // Dışarı giden koordinat yaklaşık 1 km'ye yuvarlanmış olmalı.
+            check(latitude == Math.round(latitude * 100) / 100.0) { "yuvarlanmamış enlem: $latitude" }
+            return centerAnswer()
         }
-        override suspend fun station(stationId: Int) = station()
+        override suspend fun station(stationId: Int) = stationAnswer()
+        override suspend fun stationsInProvince(province: String) = provinceAnswer()
         override suspend fun latest(stationId: Int): List<MgmObservationDto> {
-            latestCalls++
-            return latest()
+            latestCalls += stationId
+            return latestAnswer(stationId)
         }
     }
 
     private class FakeMetar : AviationWeatherApi {
         var answer: suspend () -> List<MetarDto> = { emptyList() }
         var calls = 0
+        var lastBbox = ""
         override suspend fun metars(bbox: String, format: String): List<MetarDto> {
             calls++
+            lastBbox = bbox
             return answer()
         }
     }
@@ -98,13 +114,14 @@ class ObservationRepositoryTest {
     private val repository = ObservationRepository({ mgm }, { metar }, store).also { it.clock = { clockMillis } }
 
     private fun mgmWorks(code: String = "CB") {
-        mgm.center = { samsunCenter }
-        mgm.station = { listOf(samsunStation) }
-        mgm.latest = { listOf(mgmObservation(code = code)) }
+        mgm.centerAnswer = { samsunCenter }
+        mgm.stationAnswer = { listOf(samsunStation) }
+        mgm.provinceAnswer = { listOf(bafra, samsunStation) }
+        mgm.latestAnswer = { listOf(mgmObservation(code = code)) }
     }
 
     @Test
-    fun `MGM success is used and the station is remembered`() = runTest {
+    fun `MGM success is used and the stations are remembered`() = runTest {
         mgmWorks()
         metar.answer = { listOf(carsambaMetar) }
         repository.refresh(listOf(atakum))
@@ -113,14 +130,14 @@ class ObservationRepositoryTest {
         assertEquals(ObservationSource.Mgm, obs.source)
         assertEquals("Samsun Bölge", obs.stationName)
         assertEquals(18.6, obs.temperature!!, 0.0)
+        assertEquals(245, obs.windDirection)
         assertEquals(3, obs.weatherCode)
-        assertEquals(0, metar.calls)
 
-        // Üç dakika sonra yeniden sorulur ama istasyon tekrar aranmaz.
+        // Üç dakika sonra yeniden sorulur ama istasyonlar tekrar aranmaz.
         clockMillis += 4 * 60 * 1000
         repository.refresh(listOf(atakum))
         assertEquals(1, mgm.centerCalls)
-        assertEquals(2, mgm.latestCalls)
+        assertEquals(listOf(17030, 17030), mgm.latestCalls)
     }
 
     @Test
@@ -129,32 +146,30 @@ class ObservationRepositoryTest {
         repository.refresh(listOf(atakum))
         clockMillis += 2 * 60 * 1000
         repository.refresh(listOf(atakum))
-        assertEquals(1, mgm.latestCalls)
+        assertEquals(1, mgm.latestCalls.size)
     }
 
     @Test
     fun `MGM error falls back to the airport`() = runTest {
-        mgm.center = { samsunCenter }
-        mgm.station = { listOf(samsunStation) }
-        mgm.latest = { throw HttpException(Response.error<Any>(500, "".toResponseBody())) }
+        mgmWorks()
+        mgm.latestAnswer = { throw HttpException(Response.error<Any>(500, "".toResponseBody())) }
         metar.answer = { listOf(carsambaMetar) }
         repository.refresh(listOf(atakum))
 
         val obs = store.get(3)!!
         assertEquals(ObservationSource.Metar, obs.source)
         assertEquals("Samsun-Çarşamba", obs.stationName)
-        assertTrue(obs.hasThunder)
-        assertTrue(obs.isWet)
+        assertTrue(obs.hasThunder && obs.isWet)
         assertEquals(95, obs.weatherCode)
-        assertEquals(19.0 * 1, obs.temperature!!, 0.0)
         assertEquals(11 * 1.852, obs.windSpeedKmh!!, 0.001)
+        assertEquals(140, obs.windDirection)
+        assertEquals(83, obs.humidity)
     }
 
     @Test
     fun `MGM not answering in time falls back to the airport`() = runTest {
-        mgm.center = { samsunCenter }
-        mgm.station = { listOf(samsunStation) }
-        mgm.latest = { awaitCancellation() }
+        mgmWorks()
+        mgm.latestAnswer = { awaitCancellation() }
         metar.answer = { listOf(carsambaMetar) }
         repository.refresh(listOf(atakum))
         assertEquals(ObservationSource.Metar, store.get(3)!!.source)
@@ -163,27 +178,26 @@ class ObservationRepositoryTest {
     @Test
     fun `old MGM measurement falls back to the airport`() = runTest {
         mgmWorks()
-        mgm.latest = { listOf(mgmObservation(time = "2026-10-08T20:20:00.000Z")) } // 50 dk önce
+        mgm.latestAnswer = { listOf(mgmObservation(time = "2026-10-08T20:20:00.000Z")) } // 50 dk önce
         metar.answer = { listOf(carsambaMetar) }
         repository.refresh(listOf(atakum))
         assertEquals(ObservationSource.Metar, store.get(3)!!.source)
     }
 
     @Test
-    fun `MGM measurement about to expire prefers a fresher airport report`() = runTest {
-        // 27 dk önce: 30 dakikaya 3 dk kalmış; bir sonraki yenilemeden önce eskiyeceği için METAR'a geçilir.
+    fun `a 27 minute old MGM measurement nearby is still used`() = runTest {
+        // Madde 8: "eskimek üzere" kuralı yakın istasyonu gereksiz yere atlamasın.
         mgmWorks()
-        mgm.latest = { listOf(mgmObservation(time = "2026-10-08T20:43:00.000Z")) }
+        mgm.latestAnswer = { listOf(mgmObservation(time = "2026-10-08T20:43:00.000Z")) }
         metar.answer = { listOf(carsambaMetar) }
         repository.refresh(listOf(atakum))
-        assertEquals(ObservationSource.Metar, store.get(3)!!.source)
+        assertEquals(ObservationSource.Mgm, store.get(3)!!.source)
     }
 
     @Test
     fun `nothing usable falls back to the forecast silently`() = runTest {
-        mgm.center = { samsunCenter }
-        mgm.station = { listOf(samsunStation) }
-        mgm.latest = { throw IOException() }
+        mgmWorks()
+        mgm.latestAnswer = { throw IOException() }
         metar.answer = { throw IOException() }
         repository.refresh(listOf(atakum))
         assertNull(store.get(3))
@@ -192,11 +206,23 @@ class ObservationRepositoryTest {
     }
 
     @Test
-    fun `old airport measurement is not used`() = runTest {
+    fun `failed station lookup is retried on the next refresh`() = runTest {
+        mgm.centerAnswer = { throw IOException() }
+        repository.refresh(listOf(atakum))
+        assertNull(store.station(3))
+
+        mgmWorks()
+        clockMillis += 4 * 60 * 1000
+        repository.refresh(listOf(atakum))
+        assertEquals(2, mgm.centerCalls)
+        assertEquals(ObservationSource.Mgm, store.get(3)!!.source)
+    }
+
+    @Test
+    fun `old airport reports are ignored`() = runTest {
         metar.answer = { listOf(carsambaMetar.copy(obsTime = Instant.parse("2026-10-08T19:50:00Z").epochSecond)) }
-        repository.refresh(listOf(atakum.copy(id = 9)))
-        // MGM servisi yok (sahte hata veriyor), METAR 80 dk önce: kullanılmaz.
-        assertNull(store.get(9))
+        repository.refresh(listOf(atakum))
+        assertNull(store.get(3))
     }
 
     @Test
@@ -210,10 +236,65 @@ class ObservationRepositoryTest {
     }
 
     @Test
-    fun `a far station beyond 40 km is ignored`() = runTest {
-        metar.answer = { listOf(carsambaMetar.copy(lat = 41.0, lon = 36.9)) } // ~63 km
-        repository.refresh(listOf(london.copy(id = 8, city = atakum.city)))
-        assertNull(store.get(8))
+    fun `nearest fresh station wins over a closer stale one and over far airports`() = runTest {
+        // Madde 6 ve 9: Yayla'ya en yakın istasyon Tuzla (1,6 km); deniz feneri istasyonu sıcaklık
+        // ölçmüyorsa atlanır; Sabiha Gökçen METAR'ı (7 km) daha uzak olduğu için seçilmez.
+        val tuzla = MgmStationDto(18100, "TUZLA", 40.827623, 29.292767, 3.0)
+        val fener = MgmStationDto(17448, "TUZLA İTÜ GÜNEY MENDİREK FENERİ", 40.81, 29.29, 1.0)
+        val saw = MgmStationDto(17063, "İSTANBUL SABİHA GÖKÇEN HAVALİMANI", 40.892797, 29.297236, 99.0)
+        mgm.centerAnswer = { MgmCenterDto(observationStationId = 18100, il = "İstanbul", ilce = "Tuzla") }
+        mgm.provinceAnswer = { listOf(saw, fener, tuzla) }
+        mgm.latestAnswer = { id ->
+            when (id) {
+                18100 -> listOf(mgmObservation(id = 18100, time = "2026-10-08T21:09:00.000Z", temperature = 23.1))
+                17448 -> listOf(mgmObservation(id = 17448, temperature = null))
+                else -> listOf(mgmObservation(id = id))
+            }
+        }
+        metar.answer = {
+            listOf(carsambaMetar.copy(icaoId = "LTFJ", lat = 40.899, lon = 29.309, name = "Istanbul/Gokcen Arpt, IS, TR", wxString = null))
+        }
+        repository.refresh(listOf(yayla))
+
+        val obs = store.get(5)!!
+        assertEquals(ObservationSource.Mgm, obs.source)
+        assertEquals("Tuzla", obs.stationName)
+        assertEquals(23.1, obs.temperature!!, 0.0)
+        assertEquals(listOf(18100), mgm.latestCalls)
+        // NOAA'ya giden kutu yuvarlanmış koordinattan kurulur.
+        assertTrue(metar.lastBbox.startsWith("40.38,28.68"))
+    }
+
+    @Test
+    fun `MGM rain amount marks the measurement wet`() = runTest {
+        mgmWorks()
+        mgm.latestAnswer = { listOf(mgmObservation(code = "CB", tenMinutes = 0.4)) }
+        repository.refresh(listOf(atakum))
+        val obs = store.get(3)!!
+        assertTrue(obs.isWet)
+        assertEquals(61, obs.weatherCode) // 0,4 mm / 10 dk = 2,4 mm/sa
+    }
+
+    @Test
+    fun `MGM time is UTC`() {
+        // veriZamani "Z" ile biter: 07:39 UTC = 10:39 Türkiye saati (MGM sitesinde görünen saat).
+        val time = Instant.parse("2026-10-09T07:39:00.000Z")
+        assertEquals(
+            "10:39",
+            time.atZone(java.time.ZoneId.of("Europe/Istanbul")).toLocalTime().toString(),
+        )
+    }
+
+    @Test
+    fun `nearest candidates keep the official station last`() {
+        val tuzla = MgmStationDto(18100, "TUZLA", 40.827623, 29.292767, 3.0)
+        val near1 = MgmStationDto(1, "A", 40.83, 29.31, null)
+        val near2 = MgmStationDto(2, "B", 40.84, 29.32, null)
+        val near3 = MgmStationDto(3, "C", 40.85, 29.33, null)
+        val far = MgmStationDto(4, "UZAK", 41.2, 29.9, null)
+        val candidates = ObservationRepository.nearestCandidates(listOf(far, near3, near2, near1), tuzla, 40.8306, 29.3110)
+        assertEquals(listOf(1, 2, 3, 18100), candidates.map { it.id })
+        assertFalse(candidates.any { it.id == 4 })
     }
 
     @Test
@@ -221,7 +302,6 @@ class ObservationRepositoryTest {
         assertEquals("Samsun Bölge", ObservationRepository.titleCaseTurkish("SAMSUN BÖLGE"))
         assertEquals("İstanbul Kartal", ObservationRepository.titleCaseTurkish("İSTANBUL KARTAL"))
         assertEquals("Istanbul Ataturk", ObservationRepository.cleanAirportName("Istanbul Ataturk Intl Arpt, IS, TR"))
-        assertEquals(83, ObservationRepository.relativeHumidity(19.0, 16.0))
         assertFalse(ObservationRepository.isInTurkey(51.5, -0.1))
         assertTrue(ObservationRepository.isInTurkey(41.33, 36.27))
     }

@@ -20,6 +20,8 @@ data class WeatherCacheEntity(
     val fetchedAtMillis: Long,
     /** Cihaz konumunun hata payı (metre); sadece "Bulunduğum yer" için, bilinmiyorsa null. */
     val accuracyMeters: Float? = null,
+    /** Mahalle adı gösterildiğinde bağlı olduğu ilçe ("Yayla" → "Tuzla"). */
+    val regionName: String? = null,
 ) {
     companion object {
         /** 1.1'deki tek satırın kimliği de buydu; geçişte o satır "Bulunduğum yer" olarak kalır. */

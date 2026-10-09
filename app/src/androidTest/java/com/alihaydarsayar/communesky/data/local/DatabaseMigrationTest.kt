@@ -13,7 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** 1.1 → 1.2 veritabanı geçişleri (1 → 2 → 3) ve kayıtlı yer kuralları. */
+/** 1.1 → 1.2 veritabanı geçişleri (1 → 2 → 3 → 4) ve kayıtlı yer kuralları. */
 @RunWith(AndroidJUnit4::class)
 class DatabaseMigrationTest {
 
@@ -24,14 +24,14 @@ class DatabaseMigrationTest {
     )
 
     @Test
-    fun migration1To3KeepsTheCachedWeather() {
+    fun migration1To4KeepsTheCachedWeather() {
         helper.createDatabase(TEST_DB, 1).use { db ->
             db.execSQL(
                 "INSERT INTO weather_cache (id, cityName, latitude, longitude, isCurrentLocation, " +
                     "forecastJson, fetchedAtMillis) VALUES (0, 'Tuzla', 40.81, 29.30, 1, '{}', 123)",
             )
         }
-        val db = helper.runMigrationsAndValidate(TEST_DB, 3, true)
+        val db = helper.runMigrationsAndValidate(TEST_DB, 4, true)
         db.query("SELECT cityName, isCurrentLocation, fetchedAtMillis, accuracyMeters FROM weather_cache WHERE id = 0")
             .use { cursor ->
                 assertTrue(cursor.moveToFirst())

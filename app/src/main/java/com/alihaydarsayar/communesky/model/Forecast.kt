@@ -37,12 +37,21 @@ data class Forecast(
      * Önümüzdeki iki saatte yağış başlayacak mı ya da şu anki yağış dinecek mi?
      * Bir değişiklik yoksa veya veri yoksa null döner.
      */
-    fun rainOutlook(now: LocalDateTime): RainOutlook? {
+    fun rainOutlook(now: LocalDateTime, observed: Boolean = false): RainOutlook? {
         val horizon = now.plus(OutlookHorizon)
         val upcoming = minutely.filter { it.end.isAfter(now) && it.start.isBefore(horizon) }
         if (upcoming.isEmpty()) return null
         val isSnow = current.condition == WeatherCondition.Snow || current.temperature <= 1.0
-        return if (current.condition.isWet || current.condition == WeatherCondition.Snow) {
+        val currentWet = current.condition.isWet || current.condition == WeatherCondition.Snow
+        if (observed) {
+            // Anlık durum istasyon ölçümünden geliyorsa modelin 15 dakikalık verisiyle çelişebilir.
+            // Ölçüm yağış diyorsa "diniyor" demeyiz (model kuru diye yağmur dinmiş olmaz); ölçüm kuru
+            // ama model şu an yağış diyorsa "birazdan başlıyor" demek de ölçümle çelişir.
+            if (currentWet) return null
+            val sliceNow = minutely.firstOrNull { !it.start.isAfter(now) && it.end.isAfter(now) }
+            if (sliceNow?.isWet == true) return null
+        }
+        return if (currentWet) {
             val dry = upcoming.firstOrNull { !it.isWet } ?: return null
             RainOutlook(RainOutlook.Kind.Stopping, minutesUntil(now, dry.start), isSnow)
         } else {
@@ -136,3 +145,7 @@ data class WeatherSnapshot(
     /** İstasyon ölçümü kullanıldıysa nasıl kullanıldığı (anlık durumu belirledi ya da uyarı). */
     val observation: ObservationUse? = null,
 )
+
+/** Yağış uyarısı; anlık durum istasyon ölçümünden geliyorsa çelişkiler gösterilmez. */
+fun WeatherSnapshot.rainOutlook(now: LocalDateTime = forecast.localNow()): RainOutlook? =
+    forecast.rainOutlook(now, observed = observation is ObservationUse.Override)

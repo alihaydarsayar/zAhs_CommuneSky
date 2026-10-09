@@ -35,6 +35,8 @@ data class MgmStationEntity(
     val longitude: Double?,
     val elevation: Double?,
     val resolvedAtMillis: Long,
+    /** Yere en yakın istasyonlar (en yakından uzağa), JSON. Ölçüm alırken sırayla denenir. */
+    val candidatesJson: String? = null,
 )
 
 @Dao

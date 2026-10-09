@@ -174,6 +174,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /** Ekran açıkken ölçümleri tazeler (aynı yer için 3 dakikadan sık sorulmaz). */
+    fun refreshObservations() {
+        if (refreshState.value.isRefreshing) return
+        viewModelScope.launch { updater.refreshObservations() }
+    }
+
     /** Kullanıcı yerler arasında kaydırınca: bir sonraki açılışta bu yerden başlansın. */
     fun onPageSelected(placeId: Long) {
         if (uiState.value.selectedPlaceId == placeId) return

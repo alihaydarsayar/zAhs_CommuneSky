@@ -1,33 +1,78 @@
 package com.alihaydarsayar.communesky.data.observation
 
-/** Ölçülen hava durumu: WMO kodu (bilinmiyorsa null), yağış ve gök gürültüsü. */
-data class ObservedWeather(val wmoCode: Int?, val isWet: Boolean, val hasThunder: Boolean)
+/**
+ * Ölçülen hava durumu: WMO kodu (görsel karşılığı yoksa null), yağış ve gök gürültüsü.
+ * [isKnown] false ise kod tanınmadı (yeni ya da hatalı bir MGM kodu); loglanır.
+ */
+data class ObservedWeather(
+    val wmoCode: Int?,
+    val isWet: Boolean,
+    val hasThunder: Boolean,
+    val isKnown: Boolean = true,
+)
 
 /**
  * MGM'nin "hadise" kodlarını (sondurumlar.hadiseKodu) WMO hava kodlarına çevirir.
  * Kodlar MGM'nin web sitesinde kullanılan kısaltmalardır (A = Açık, GSY = Gök gürültülü
- * sağanak yağışlı…). Görsel karşılığı olmayan olaylar (rüzgârlı, sıcak, toz…) durumu değiştirmez.
+ * sağanak yağışlı…). Liste, MGM sitesinin ve Breezy Weather'ın kullandığı tam listeyle
+ * karşılaştırıldı. Görsel karşılığı olmayan olaylar (rüzgârlı, sıcak, toz…) durumu değiştirmez.
  */
 object MgmWeatherCodes {
+
+    /** 10 dakikada bu kadar (mm) ya da daha fazla yağış ölçülmüşse "yağış var" sayılır (0,6 mm/sa). */
+    const val WET_MM_PER_10_MIN = 0.1
+
+    private fun dry(code: Int?) = ObservedWeather(code, isWet = false, hasThunder = false)
+    private fun wet(code: Int, thunder: Boolean = false) = ObservedWeather(code, isWet = true, hasThunder = thunder)
+
     fun map(code: String?): ObservedWeather = when (code?.trim()?.uppercase()) {
-        "A" -> ObservedWeather(0, isWet = false, hasThunder = false) // Açık
-        "AB" -> ObservedWeather(1, isWet = false, hasThunder = false) // Az bulutlu
-        "PB" -> ObservedWeather(2, isWet = false, hasThunder = false) // Parçalı bulutlu
-        "CB" -> ObservedWeather(3, isWet = false, hasThunder = false) // Çok bulutlu
-        "SIS" -> ObservedWeather(45, isWet = false, hasThunder = false) // Sisli
-        "HY" -> ObservedWeather(61, isWet = true, hasThunder = false) // Hafif yağmurlu
-        "Y" -> ObservedWeather(63, isWet = true, hasThunder = false) // Yağmurlu
-        "KY" -> ObservedWeather(65, isWet = true, hasThunder = false) // Kuvvetli yağmurlu
-        "KKY" -> ObservedWeather(71, isWet = true, hasThunder = false) // Karla karışık yağmurlu
-        "HKY" -> ObservedWeather(71, isWet = true, hasThunder = false) // Hafif kar yağışlı
-        "K" -> ObservedWeather(73, isWet = true, hasThunder = false) // Kar yağışlı
-        "YKY" -> ObservedWeather(75, isWet = true, hasThunder = false) // Yoğun kar yağışlı
-        "HSY", "MSY" -> ObservedWeather(80, isWet = true, hasThunder = false) // Hafif / mevzi sağanak
-        "SY" -> ObservedWeather(81, isWet = true, hasThunder = false) // Sağanak yağışlı
-        "KSY" -> ObservedWeather(82, isWet = true, hasThunder = false) // Kuvvetli sağanak
-        "GSY", "KGY" -> ObservedWeather(95, isWet = true, hasThunder = true) // Gök gürültülü sağanak
-        "DY" -> ObservedWeather(96, isWet = true, hasThunder = true) // Dolu
-        else -> ObservedWeather(null, isWet = false, hasThunder = false)
+        null, "", "-9999" -> dry(null)
+        "A" -> dry(0) // Açık
+        "AB" -> dry(1) // Az bulutlu
+        "PB" -> dry(2) // Parçalı bulutlu
+        "CB" -> dry(3) // Çok bulutlu
+        "SIS" -> dry(45) // Sisli
+        "PUS" -> dry(45) // Puslu
+        "DNM" -> dry(null) // Dumanlı: ayrı bir ikonumuz yok, gökyüzü modelden gelir
+        "HHY" -> wet(61) // Yağışlı (türü belirtilmemiş); miktara göre aşağıda inceltilir
+        "HY" -> wet(61) // Hafif yağmurlu
+        "Y" -> wet(63) // Yağmurlu
+        "KY" -> wet(65) // Kuvvetli yağmurlu
+        "KKY" -> wet(71) // Karla karışık yağmurlu
+        "HKY" -> wet(71) // Hafif kar yağışlı
+        "K" -> wet(73) // Kar yağışlı
+        "YKY", "KYK" -> wet(75) // Yoğun kar yağışlı
+        "HSY", "MSY" -> wet(80) // Hafif / mevzi sağanak
+        "SY" -> wet(81) // Sağanak yağışlı
+        "KSY" -> wet(82) // Kuvvetli sağanak
+        "GSY", "KGY" -> wet(95, thunder = true) // Gök gürültülü sağanak
+        "DY" -> wet(96, thunder = true) // Dolu
+        // Rüzgârlı, kuvvetli rüzgâr, toz fırtınası, sıcak, soğuk: durumu değiştirmez.
+        "R", "GKR", "KKR", "KF", "SCK", "SGK" -> dry(null)
+        else -> ObservedWeather(null, isWet = false, hasThunder = false, isKnown = false)
+    }
+
+    /**
+     * Koda ek olarak istasyonun son 10 dakikada ölçtüğü yağışa bakar. Anlamlı yağış varsa kod ne
+     * derse desin "yağış var" sayılır; kod yağış söylemiyorsa (açık/bulutlu/eksik) ya da sadece
+     * "yağışlı" diyorsa (HHY), miktardan uygun yağmur/kar kodu seçilir.
+     */
+    fun map(code: String?, precipitation10MinMm: Double?, temperature: Double?): ObservedWeather {
+        val byCode = map(code)
+        val amount = precipitation10MinMm?.takeIf { it >= WET_MM_PER_10_MIN } ?: return byCode
+        val generic = byCode.wmoCode == null || byCode.wmoCode in 0..3 || byCode.wmoCode == 45 ||
+            code?.trim()?.uppercase() == "HHY"
+        if (!generic) return byCode.copy(isWet = true)
+        val rate = amount * 6 // mm/saat
+        val snow = temperature != null && temperature <= 0.5
+        val wmo = when {
+            snow -> if (rate < 1.0) 71 else if (rate < 4.0) 73 else 75
+            rate < 0.5 -> 51
+            rate < 2.5 -> 61
+            rate < 7.6 -> 63
+            else -> 65
+        }
+        return byCode.copy(wmoCode = wmo, isWet = true)
     }
 }
 
