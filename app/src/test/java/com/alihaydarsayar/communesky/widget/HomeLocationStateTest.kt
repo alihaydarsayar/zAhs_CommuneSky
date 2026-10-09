@@ -13,7 +13,10 @@ import org.junit.Test
 import java.time.Instant
 import java.time.LocalDateTime
 
-/** Evde / Yakında / Uzakta kararı: sınır mesafeleri, konum hata payı, ev ya da konum yokken. */
+/**
+ * Evde / Yakında / Uzakta kararı: "Evde" sınırı (1 km + en fazla 1 km hata payı, yakınlık
+ * mesafesinin yarısını geçmez), sınır mesafeleri, ev ya da konum yokken.
+ */
 class HomeLocationStateTest {
 
     private val home = GeoPoint(41.0, 29.0)
@@ -21,14 +24,52 @@ class HomeLocationStateTest {
     /** [home]'un [km] kilometre kuzeyindeki nokta (1° enlem ≈ 111,195 km). */
     private fun north(km: Double) = GeoPoint(home.latitude + km / 111.19508, home.longitude)
 
-    // --- Sınır mesafeleri (hata payı belli) ---
+    // --- "Evde" sınırı: 1 km + en fazla 1 km hata payı, yakınlık mesafesinin yarısını geçmez ---
 
     @Test
-    fun `at home up to one km plus the location's error`() {
-        assertEquals(HomeProximity.AtHome, HomeDetection.classifyDistance(1.0, 0.0, 5))
-        assertEquals(HomeProximity.AtHome, HomeDetection.classifyDistance(3.0, 2.0, 5))
-        assertEquals(HomeProximity.Nearby, HomeDetection.classifyDistance(3.01, 2.0, 5))
+    fun `accuracy adds at most 1 km to the home limit`() {
+        // Yakınlık mesafesi 5 km: yarısı 2,5 km, yani sadece hata payı sınırı belirler.
+        assertEquals(1.3, HomeDetection.homeLimitKm(0.3, 5), 1e-9)
+        assertEquals(2.0, HomeDetection.homeLimitKm(2.0, 5), 1e-9)
+        assertEquals(2.0, HomeDetection.homeLimitKm(5.0, 5), 1e-9)
     }
+
+    @Test
+    fun `home limit never exceeds half the nearby distance`() {
+        // Yakınlık mesafesi 2 km: evde sınırı en fazla 1 km, hata payı ne olursa olsun.
+        assertEquals(1.0, HomeDetection.homeLimitKm(0.3, 2), 1e-9)
+        assertEquals(1.0, HomeDetection.homeLimitKm(2.0, 2), 1e-9)
+        assertEquals(1.0, HomeDetection.homeLimitKm(5.0, 2), 1e-9)
+    }
+
+    @Test
+    fun `nearby is possible at a 5 km nearby distance with any accuracy`() {
+        for (accuracy in listOf(300f, 2_000f, 5_000f)) {
+            val limit = if (accuracy == 300f) 1.3 else 2.0
+            assertEquals("$accuracy m", HomeProximity.AtHome, HomeDetection.classify(north(limit - 0.05), accuracy, home, 5))
+            assertEquals("$accuracy m", HomeProximity.Nearby, HomeDetection.classify(north(limit + 0.05), accuracy, home, 5))
+            assertEquals("$accuracy m", HomeProximity.Nearby, HomeDetection.classify(north(4.9), accuracy, home, 5))
+            assertEquals("$accuracy m", HomeProximity.Away, HomeDetection.classify(north(5.1), accuracy, home, 5))
+        }
+    }
+
+    @Test
+    fun `nearby is possible at a 2 km nearby distance with any accuracy`() {
+        for (accuracy in listOf(300f, 2_000f, 5_000f)) {
+            assertEquals("$accuracy m", HomeProximity.AtHome, HomeDetection.classify(north(0.95), accuracy, home, 2))
+            assertEquals("$accuracy m", HomeProximity.Nearby, HomeDetection.classify(north(1.05), accuracy, home, 2))
+            assertEquals("$accuracy m", HomeProximity.Nearby, HomeDetection.classify(north(1.95), accuracy, home, 2))
+            assertEquals("$accuracy m", HomeProximity.Away, HomeDetection.classify(north(2.05), accuracy, home, 2))
+        }
+    }
+
+    @Test
+    fun `Tuzla Merkez 3 km away is nearby even with a coarse location`() {
+        assertEquals(HomeProximity.Nearby, HomeDetection.classify(north(3.0), accuracyMeters = 5_000f, home = home))
+        assertEquals(HomeProximity.Nearby, HomeDetection.classify(north(3.0), accuracyMeters = null, home = home))
+    }
+
+    // --- Sınır mesafeleri ---
 
     @Test
     fun `nearby up to the nearby distance, away beyond it`() {
@@ -44,27 +85,10 @@ class HomeLocationStateTest {
         assertEquals(HomeProximity.Away, HomeDetection.classifyDistance(25.0, 0.0, 99))
     }
 
-    // --- Konum hata payı ---
-
     @Test
-    fun `precise location 2_5 km away is nearby, coarse location is at home`() {
-        val device = north(2.5)
-        assertEquals(HomeProximity.Nearby, HomeDetection.classify(device, accuracyMeters = 100f, home = home))
-        assertEquals(HomeProximity.AtHome, HomeDetection.classify(device, accuracyMeters = 2_000f, home = home))
-    }
-
-    @Test
-    fun `unknown accuracy assumes a coarse location`() {
-        assertEquals(HomeProximity.AtHome, HomeDetection.classify(north(2.9), accuracyMeters = null, home = home))
-        assertEquals(HomeProximity.Nearby, HomeDetection.classify(north(3.1), accuracyMeters = null, home = home))
-    }
-
-    @Test
-    fun `huge accuracy is capped so another district is never home`() {
-        // Hata payı 50 km bile olsa en fazla 5 km sayılır: 1 + 5 = 6 km.
-        assertEquals(HomeProximity.AtHome, HomeDetection.classify(north(5.9), 50_000f, home, nearbyRadiusKm = 20))
-        assertEquals(HomeProximity.Nearby, HomeDetection.classify(north(6.1), 50_000f, home, nearbyRadiusKm = 20))
-        assertEquals(HomeProximity.Away, HomeDetection.classify(GeoPoint(41.33, 36.27), 50_000f, home))
+    fun `unknown accuracy counts as coarse, capped at 1 km`() {
+        assertEquals(HomeProximity.AtHome, HomeDetection.classify(north(1.95), accuracyMeters = null, home = home))
+        assertEquals(HomeProximity.Nearby, HomeDetection.classify(north(2.05), accuracyMeters = null, home = home))
     }
 
     @Test
@@ -72,6 +96,7 @@ class HomeLocationStateTest {
         val device = north(9.0)
         assertEquals(HomeProximity.Away, HomeDetection.classify(device, 100f, home, nearbyRadiusKm = 5))
         assertEquals(HomeProximity.Nearby, HomeDetection.classify(device, 100f, home, nearbyRadiusKm = 10))
+        assertEquals(HomeProximity.Away, HomeDetection.classify(GeoPoint(41.33, 36.27), 50_000f, home, nearbyRadiusKm = 20))
     }
 
     // --- Widget durumu ---
