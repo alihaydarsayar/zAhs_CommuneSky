@@ -13,7 +13,7 @@ What's new in each version of Commune Sky.
 - **Settings.** °C or °F, four wind units, light or dark theme, and the app language.
 - All your places are updated together in the background, in a single request.
 
-## 1.1 — in testing
+## 1.1 — October 8, 2026 (closed testing)
 
 - Rain that the forecast's weather code missed now shows up. If the model expects rain, showers or snow right now or in a given hour, the app shows it even when the code says "partly cloudy".
 - A heads-up on the home screen when rain is about to start or stop, such as "Rain expected in about 25 min".
