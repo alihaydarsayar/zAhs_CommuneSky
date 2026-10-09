@@ -7,6 +7,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import com.alihaydarsayar.communesky.data.local.WeatherCacheDao
+import com.alihaydarsayar.communesky.data.local.ObservationDao
+import com.alihaydarsayar.communesky.data.observation.AviationWeatherApi
+import com.alihaydarsayar.communesky.data.observation.MgmApi
 import com.alihaydarsayar.communesky.data.local.WeatherDatabase
 import com.alihaydarsayar.communesky.data.remote.OpenMeteoApi
 import com.alihaydarsayar.communesky.data.search.OpenMeteoGeocodingApi
@@ -76,6 +79,16 @@ object AppModule {
     fun provideGeocodingApi(client: OkHttpClient, json: Json): OpenMeteoGeocodingApi =
         retrofit(OpenMeteoGeocodingApi.BASE_URL, client, json).create(OpenMeteoGeocodingApi::class.java)
 
+    @Provides
+    @Singleton
+    fun provideMgmApi(client: OkHttpClient, json: Json): MgmApi =
+        retrofit(MgmApi.BASE_URL, client, json).create(MgmApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAviationWeatherApi(client: OkHttpClient, json: Json): AviationWeatherApi =
+        retrofit(AviationWeatherApi.BASE_URL, client, json).create(AviationWeatherApi::class.java)
+
     private fun retrofit(baseUrl: String, client: OkHttpClient, json: Json): Retrofit =
         Retrofit.Builder()
             .baseUrl(baseUrl)
@@ -91,6 +104,9 @@ object AppModule {
             // Sadece eski bir sürüme dönülürse (geliştirme sırasında) baştan başlanır.
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
+
+    @Provides
+    fun provideObservationDao(database: WeatherDatabase): ObservationDao = database.observationDao()
 
     @Provides
     fun provideWeatherCacheDao(database: WeatherDatabase): WeatherCacheDao = database.weatherCacheDao()

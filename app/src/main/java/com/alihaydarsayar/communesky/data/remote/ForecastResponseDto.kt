@@ -10,6 +10,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ForecastResponseDto(
     @SerialName("utc_offset_seconds") val utcOffsetSeconds: Int = 0,
+    /** Modelin bu nokta için kullandığı rakım (m); ölçümle karşılaştırmak için. */
+    val elevation: Double? = null,
     val current: CurrentDto,
     val hourly: HourlyDto,
     val daily: DailyDto,

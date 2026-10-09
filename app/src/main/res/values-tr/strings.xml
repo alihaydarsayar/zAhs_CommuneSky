@@ -13,7 +13,14 @@
     <string name="updating">Güncelleniyor…</string>
     <string name="update_failed">Güncellenemedi · kayıtlı veri gösteriliyor</string>
     <string name="loading_weather">Gökyüzü yükleniyor…</string>
-    <string name="data_attribution">Hava durumu verileri: Open-Meteo.com</string>
+    <string name="data_attribution">Tahmin: Open-Meteo.com · Ölçüm: MGM, NOAA Aviation Weather Center</string>
+    <string name="station_label_mgm">%1$s istasyonu</string>
+    <string name="station_label_airport">%1$s Havalimanı</string>
+    <string name="observation_just_now">az önce</string>
+    <string name="observation_note_mgm">Ölçüm: MGM, %1$s, %2$s</string>
+    <string name="observation_note_metar">Ölçüm: %1$s (METAR), %2$s</string>
+    <string name="observation_thunder_nearby">Yakında gök gürültülü yağış var (%1$s, %2$s)</string>
+    <string name="observation_rain_nearby">Yakında yağış var (%1$s, %2$s)</string>
 
     <!-- Ayrıntılar -->
     <string name="feels_like">Hissedilen</string>
@@ -195,5 +202,5 @@
     </plurals>
     <string name="no_saved_places_short">Henüz kayıtlı yer yok</string>
     <string name="settings_about">Hakkında</string>
-    <string name="settings_data_sources">Hava durumu verileri: Open-Meteo.com. Yer arama: Photon, © OpenStreetMap katkıcılarının verileriyle.</string>
+    <string name="settings_data_sources">Tahmin verileri: Open-Meteo.com. Anlık durum en yakın istasyonun ölçümüyle doğrulanır: Türkiye\'de Meteoroloji Genel Müdürlüğü (MGM) istasyonları, diğer yerlerde NOAA Aviation Weather Center üzerinden havalimanı ölçümleri (METAR). Yer arama: Photon, © OpenStreetMap katkıcılarının verileriyle.</string>
 </resources>

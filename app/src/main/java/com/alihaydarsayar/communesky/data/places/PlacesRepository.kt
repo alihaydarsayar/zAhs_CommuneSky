@@ -19,6 +19,7 @@ class PlacesRepository @Inject constructor(
 ) {
     private val placeDao = database.placeDao()
     private val cacheDao = database.weatherCacheDao()
+    private val observationDao = database.observationDao()
 
     val places: Flow<List<SavedPlace>> = placeDao.observeAll()
         .map { list -> list.map { it.toModel() } }
@@ -48,6 +49,8 @@ class PlacesRepository @Inject constructor(
         val removed = placeDao.getAll().firstOrNull { it.id == id }
         placeDao.delete(id)
         cacheDao.delete(id)
+        observationDao.deleteObservation(id)
+        observationDao.deleteStation(id)
         removed?.toModel()
     }
 

@@ -3,6 +3,10 @@ package com.alihaydarsayar.communesky.data
 import com.alihaydarsayar.communesky.data.local.WeatherCacheDao
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
+import com.alihaydarsayar.communesky.data.observation.ObservationStore
+import com.alihaydarsayar.communesky.model.Observation
+import com.alihaydarsayar.communesky.model.ObservationPolicy
+import kotlinx.coroutines.flow.combine
 import com.alihaydarsayar.communesky.data.remote.DailyDto
 import com.alihaydarsayar.communesky.data.remote.ForecastResponseDto
 import com.alihaydarsayar.communesky.data.remote.HourlyDto
@@ -41,21 +45,26 @@ class WeatherRepository @Inject constructor(
     private val api: Lazy<OpenMeteoApi>,
     private val dao: WeatherCacheDao,
     private val json: Json,
+    private val observationStore: ObservationStore,
 ) {
     /** Çözülmüş satırlar: değişmeyen yerin JSON'u her yenilemede baştan çözülmesin. */
     private val decoded = ConcurrentHashMap<Long, Pair<WeatherCacheEntity, WeatherSnapshot?>>()
 
     /** Önbellekteki bütün yerlerin hava durumu (yer kimliği → veri). */
-    val allWeather: Flow<Map<Long, WeatherSnapshot>> = dao.observeAll()
-        .map { entities ->
+    val allWeather: Flow<Map<Long, WeatherSnapshot>> = combine(
+        dao.observeAll().map { entities ->
             decoded.keys.retainAll(entities.map { it.id }.toSet())
             entities.mapNotNull { entity -> entity.cachedSnapshot()?.let { entity.id to it } }.toMap()
-        }
+        },
+        observationStore.observeAll(),
+    ) { weather, observations ->
+        weather.mapValues { (id, snapshot) -> snapshot.withObservation(observations[id]) }
+    }
         // JSON çözümleme ana iş parçacığını meşgul etmesin.
         .flowOn(Dispatchers.Default)
 
     suspend fun snapshot(placeId: Long): WeatherSnapshot? = withContext(Dispatchers.Default) {
-        dao.get(placeId)?.cachedSnapshot()
+        dao.get(placeId)?.cachedSnapshot()?.withObservation(observationStore.get(placeId))
     }
 
     /** "Bulunduğum yer" satırındaki son yer (izin yoksa yedek şehir); hiç yoksa null. */
@@ -106,6 +115,22 @@ class WeatherRepository @Inject constructor(
         dao.upsertAll(entities)
     }
 
+    /**
+     * İstasyon ölçümünü işler: yakın ve tazeyse anlık sıcaklık ve durum ölçümden gelir, uzaktaki
+     * yağış/gök gürültüsü uyarı olarak eklenir (bkz. ObservationPolicy). Ölçüm yoksa veri olduğu gibi.
+     */
+    private fun WeatherSnapshot.withObservation(observation: Observation?): WeatherSnapshot {
+        val use = ObservationPolicy.evaluate(
+            observation = observation,
+            latitude = city.latitude,
+            longitude = city.longitude,
+            now = Instant.now(),
+            modelIsWet = forecast.current.condition.isWet,
+        ) ?: return this
+        val current = ObservationPolicy.applyTo(forecast.current, use, forecast.elevation)
+        return copy(forecast = forecast.copy(current = current), observation = use)
+    }
+
     private fun WeatherCacheEntity.cachedSnapshot(): WeatherSnapshot? {
         decoded[id]?.let { (entity, snapshot) -> if (entity == this) return snapshot }
         val snapshot = toSnapshot()
@@ -147,6 +172,7 @@ private fun ForecastResponseDto.toModel() = Forecast(
     daily = daily.toModel(),
     utcOffsetSeconds = utcOffsetSeconds,
     minutely = minutely15?.toModel().orEmpty(),
+    elevation = elevation,
 )
 
 private fun ForecastResponseDto.currentToModel(): CurrentWeather {

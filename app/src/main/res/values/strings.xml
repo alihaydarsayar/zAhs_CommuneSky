@@ -15,7 +15,14 @@
     <string name="updating">Updating…</string>
     <string name="update_failed">Couldn\'t update · showing saved data</string>
     <string name="loading_weather">Loading the sky…</string>
-    <string name="data_attribution">Weather data by Open-Meteo.com</string>
+    <string name="data_attribution">Forecast: Open-Meteo.com · Observations: MGM, NOAA Aviation Weather Center</string>
+    <string name="station_label_mgm">%1$s station</string>
+    <string name="station_label_airport">%1$s airport</string>
+    <string name="observation_just_now">just now</string>
+    <string name="observation_note_mgm">Measured: MGM, %1$s, %2$s</string>
+    <string name="observation_note_metar">Measured: %1$s (METAR), %2$s</string>
+    <string name="observation_thunder_nearby">Thunderstorm nearby (%1$s, %2$s)</string>
+    <string name="observation_rain_nearby">Rain nearby (%1$s, %2$s)</string>
 
     <!-- Details -->
     <string name="feels_like">Feels like</string>
@@ -199,7 +206,7 @@
     </plurals>
     <string name="no_saved_places_short">No saved places yet</string>
     <string name="settings_about">About</string>
-    <string name="settings_data_sources">Weather data by Open-Meteo.com. Place search by Photon, using © OpenStreetMap contributors data.</string>
+    <string name="settings_data_sources">Forecast data by Open-Meteo.com. Current conditions are checked against the nearest station: Turkish State Meteorological Service (MGM) stations in Türkiye, airport reports (METAR) from the NOAA Aviation Weather Center elsewhere. Place search by Photon, using © OpenStreetMap contributors data.</string>
     <string name="unit_celsius" translatable="false">°C</string>
     <string name="unit_fahrenheit" translatable="false">°F</string>
 </resources>

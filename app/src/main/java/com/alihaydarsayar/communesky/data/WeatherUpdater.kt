@@ -3,6 +3,7 @@ package com.alihaydarsayar.communesky.data
 import android.content.Context
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
 import com.alihaydarsayar.communesky.data.location.LocationRepository
+import com.alihaydarsayar.communesky.data.observation.ObservationRepository
 import com.alihaydarsayar.communesky.data.places.PlacesRepository
 import com.alihaydarsayar.communesky.model.City
 import com.alihaydarsayar.communesky.model.SavedPlace
@@ -21,6 +22,7 @@ class WeatherUpdater @Inject constructor(
     private val weatherRepository: WeatherRepository,
     private val locationRepository: LocationRepository,
     private val placesRepository: PlacesRepository,
+    private val observationRepository: ObservationRepository,
 ) {
     /** Konum izni varsa cihaz konumunu bulur; yoksa en mantıklı yedeği seçer. Hata fırlatmaz. */
     suspend fun resolveDevicePlace(): ResolvedPlace {
@@ -51,6 +53,23 @@ class WeatherUpdater @Inject constructor(
         refresh(listOfNotNull(device) + saved.map { it.toPlace() })
     }
 
+    /**
+     * Ekrandaki yerlerin istasyon ölçümlerini yeniler (3 dakikadan yeni olanlar atlanır).
+     * Tahminden ayrı çağrılır; ekran bunu beklemez ve hiçbir hata fırlatmaz.
+     */
+    suspend fun refreshObservations(resolved: ResolvedPlace? = null) {
+        val saved = placesRepository.all()
+        val hasPermission = resolved?.hasPermission ?: locationRepository.hasPermission()
+        val device = if (PlaceSelection.showsDevicePage(hasPermission, saved.size)) {
+            resolved?.place ?: weatherRepository.devicePlace()
+        } else {
+            null
+        }
+        if (observationRepository.refresh(listOfNotNull(device) + saved.map { it.toPlace() })) {
+            WeatherWidgetUpdater.updateAll(context)
+        }
+    }
+
     /** Sadece verilen yerleri yeniler (ör. yeni eklenen yer). */
     suspend fun refresh(places: List<Place>) {
         weatherRepository.refresh(places)
@@ -66,6 +85,7 @@ class WeatherUpdater @Inject constructor(
         val showsDevice = PlaceSelection.showsDevicePage(locationRepository.hasPermission(), saved.size)
         val device = if (showsDevice) weatherRepository.devicePlace() ?: fallbackPlace() else null
         refresh(listOfNotNull(device) + saved.map { it.toPlace() })
+        refreshObservations()
     }
 
     private fun fallbackPlace() = Place(DEVICE_PLACE_ID, City.Istanbul, isCurrentLocation = false)

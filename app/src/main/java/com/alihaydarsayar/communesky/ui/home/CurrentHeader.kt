@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.ui.common.asTemperature
 import com.alihaydarsayar.communesky.model.DailyForecast
+import com.alihaydarsayar.communesky.model.ObservationUse
 import com.alihaydarsayar.communesky.model.RainOutlook
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
@@ -85,6 +86,11 @@ fun CurrentHeader(
         }
         Spacer(Modifier.height(4.dp))
         StatusLine(status, weather)
+        val observation = weather.observation
+        if (observation is ObservationUse.Override) {
+            Spacer(Modifier.height(2.dp))
+            ObservationNote(observation)
+        }
 
         // Sıcaklık değişince rakamlar yumuşakça geçiş yapar.
         AnimatedContent(
@@ -124,6 +130,10 @@ fun CurrentHeader(
         if (outlook != null) {
             Spacer(Modifier.height(14.dp))
             RainOutlookChip(outlook)
+        }
+        if (observation is ObservationUse.Advisory) {
+            Spacer(Modifier.height(10.dp))
+            ObservationAdvisoryChip(observation)
         }
         if (locationStatus != LocationStatus.Current) {
             Spacer(Modifier.height(18.dp))

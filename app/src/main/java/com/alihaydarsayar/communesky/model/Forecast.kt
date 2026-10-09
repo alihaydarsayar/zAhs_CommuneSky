@@ -14,6 +14,8 @@ data class Forecast(
     val utcOffsetSeconds: Int,
     /** 15 dakikalık yağış dilimleri; eski önbellekte boş olabilir. */
     val minutely: List<PrecipitationSlice> = emptyList(),
+    /** Modelin bu nokta için kullandığı rakım (m). */
+    val elevation: Double? = null,
 ) {
     /** O yerde şu an saat kaç? (Telefonun saat diliminden bağımsız.) */
     fun localNow(now: Instant = Instant.now()): LocalDateTime =
@@ -131,4 +133,6 @@ data class WeatherSnapshot(
     val fetchedAt: Instant,
     /** Sadece "Bulunduğum yer" için: konumun hata payı (metre). */
     val accuracyMeters: Float? = null,
+    /** İstasyon ölçümü kullanıldıysa nasıl kullanıldığı (anlık durumu belirledi ya da uyarı). */
+    val observation: ObservationUse? = null,
 )

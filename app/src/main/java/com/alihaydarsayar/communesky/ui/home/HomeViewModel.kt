@@ -150,6 +150,8 @@ class HomeViewModel @Inject constructor(
             refreshState.update { it.copy(isRefreshing = true, isUserRefresh = userInitiated) }
             val resolved = updater.resolveDevicePlace()
             hasPermission.value = resolved.hasPermission
+            // İstasyon ölçümü ayrı yürür: tahmin bunu beklemez, ölçüm gelince ekran kendiliğinden güncellenir.
+            viewModelScope.launch { updater.refreshObservations(resolved) }
             val locationStatus = when {
                 resolved.located -> LocationStatus.Current
                 !resolved.hasPermission -> LocationStatus.NoPermission(canAskPermissionAgain)
@@ -205,7 +207,12 @@ class HomeViewModel @Inject constructor(
         val pages = uiState.value.pages
         val oldest = pages.minOfOrNull { it.weather?.fetchedAt ?: Instant.EPOCH }
         val isStale = oldest == null || Duration.between(oldest, Instant.now()) > STALE_AFTER
-        if (permissionChanged || isStale) refresh()
+        if (permissionChanged || isStale) {
+            refresh()
+        } else {
+            // Tahmin taze ama anlık ölçüm 3 dakikadan eskiyse yeniden sorulur (kısa ve ucuz bir istek).
+            viewModelScope.launch { updater.refreshObservations() }
+        }
     }
 
     companion object {
