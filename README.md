@@ -19,16 +19,27 @@
 - **Details at a glance** — feels-like, humidity, wind with compass, UV index, sun path, visibility, pressure, precipitation and cloud cover.
 - **Honest skies** — clear/cloudy conditions are recomputed from sunshine duration and cloud layers, so thin high cirrus doesn't turn a sunny day "overcast".
 - **Offline-first** — the last forecast appears instantly from the local cache, then refreshes in the background. Pull to refresh any time.
-- **Home screen widgets** — compact, wide, hourly and forecast layouts that share the app's sky colours and icons.
-- **Your location, if you want it** — uses approximate location only; without permission it falls back to Istanbul.
+- **Your places** — search any city, district or neighbourhood worldwide, save it, drag to reorder and mark one as Home. Swipe between places on the home screen.
+- **Checked against real measurements** — current conditions are compared with the nearest weather station (MGM in Türkiye, airport reports elsewhere). A nearby station sets the current temperature and sky; a farther one warns about storms on the way.
+- **Home screen widgets** — weather, clock and "Home and my location" widgets in several sizes, each with its own place and a sky, glass or clear background.
+- **Your location, if you want it** — uses approximate location only; without permission it shows your saved places, or Istanbul.
+- **Units and theme** — °C or °F, four wind units, light or dark.
 - **English and Turkish**, with per-app language support.
 - **Fast** — R8-optimised release build, Baseline Profiles for quick start-up, and Compose stability tuning for smooth animations.
 
-See the [changelog](CHANGELOG.md) for what's new in each version.
+See the [changelog](CHANGELOG.md) for what's new in each version. Contributors: please read [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Privacy
 
-Commune Sky has no ads, no analytics and no accounts. Your approximate location is sent only to Open-Meteo to get the forecast for where you are, and is never collected by the developer. See the [Privacy Policy](PRIVACY.md).
+Commune Sky has no ads, no analytics and no accounts, and the developer never receives your location, searches or saved places. To show the weather the app talks directly to:
+
+- **Open-Meteo** (forecast and place search): approximate coordinates of your location and saved places; the text you search for
+- **Photon by komoot** (place search): the text you search for
+- **MGM**, Turkish State Meteorological Service (current conditions in Türkiye): coordinates of the place once to find the nearest station, then the station number
+- **NOAA Aviation Weather Center** (current conditions elsewhere, or when MGM is unavailable): an area of about 50 km around the place
+- **Android Geocoder** (city names, and searches as a last resort): approximate coordinates; the search text
+
+Forecasts, saved places, measurements and settings are stored only on your device. The full policy, in English and Turkish, is at [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/).
 
 ## Building
 
@@ -48,11 +59,13 @@ To build a release:
 
 ## Tech stack
 
-Kotlin · Jetpack Compose · Material 3 · MVVM · Hilt · Retrofit + kotlinx.serialization · Room · WorkManager · Jetpack Glance · Fused Location Provider · Baseline Profiles
+Kotlin · Jetpack Compose · Material 3 · MVVM · Hilt · Retrofit + kotlinx.serialization · Room · DataStore · WorkManager · Jetpack Glance · Navigation Compose · Fused Location Provider · Baseline Profiles
 
 ## Credits
 
 - Weather data by [Open-Meteo.com](https://open-meteo.com/), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- Station measurements from the [Turkish State Meteorological Service (MGM)](https://www.mgm.gov.tr/) and airport reports from the [NOAA Aviation Weather Center](https://aviationweather.gov/).
+- Place search by [Photon](https://photon.komoot.io/) (komoot), using data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, and [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api) (GeoNames).
 - [Outfit](https://github.com/Outfitio/Outfit-Fonts) typeface, licensed under the [SIL Open Font License 1.1](third_party/Outfit-OFL.txt).
 
 ## License

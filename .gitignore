@@ -23,3 +23,5 @@ keystore.properties
 /.idea/markdown.xml
 /.idea/caches
 /app/.idea
+# Local notes - never commit
+*.local.md
