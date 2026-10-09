@@ -91,6 +91,12 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private const val LocationPermission = Manifest.permission.ACCESS_COARSE_LOCATION
 
+// Hassas konum da istenir ama zorunlu değil: kullanıcı "Yaklaşık"ı seçerse uygulama yine çalışır.
+private val LocationPermissions = arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION,
+)
+
 /** Yerleri yönet: ara ve ekle, sil, sürükleyerek sırala, "Ev" olarak işaretle. */
 @Composable
 fun PlacesScreen(
@@ -117,7 +123,7 @@ fun PlacesScreen(
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
+        ActivityResultContracts.RequestMultiplePermissions(),
     ) { viewModel.onResume() }
     val requestPermission = {
         val canAsk = activity != null &&
@@ -125,7 +131,7 @@ fun PlacesScreen(
                 !hasAskedBefore(context))
         if (canAsk) {
             markAsked(context)
-            permissionLauncher.launch(LocationPermission)
+            permissionLauncher.launch(LocationPermissions)
         } else {
             context.startActivity(
                 Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),

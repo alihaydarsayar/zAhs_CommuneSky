@@ -11,6 +11,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.alihaydarsayar.communesky.model.City
+import com.alihaydarsayar.communesky.model.PlaceNaming
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -33,26 +34,48 @@ class LocationRepository @Inject constructor(
 
     private val locationClient by lazy { LocationServices.getFusedLocationProviderClient(context) }
 
-    fun hasPermission(): Boolean = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-    ) == PackageManager.PERMISSION_GRANTED
 
-    /** İzin yoksa, konum kapalıysa veya hiçbir yoldan bulunamazsa null döner. */
+    /** Yaklaşık ya da hassas konum izni var mı? Uygulama ikisiyle de çalışır. */
+    fun hasPermission(): Boolean = granted(Manifest.permission.ACCESS_COARSE_LOCATION) ||
+        granted(Manifest.permission.ACCESS_FINE_LOCATION)
+
+    /**
+     * Kullanıcı hassas konuma izin verdi mi? (Android 12+ izin penceresinde "Yaklaşık"ı seçerse
+     * sadece yaklaşık konum verilir.) Mahalle adı sadece hassas konumda gösterilir.
+     */
+    fun hasPreciseLocation(): Boolean = granted(Manifest.permission.ACCESS_FINE_LOCATION)
+
+    private fun granted(permission: String) =
+        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+    /**
+     * İzin yoksa, konum kapalıysa veya bulunamazsa null döner. Sadece uygulama açıkken çağrılır;
+     * GPS'e zorlanmaz:
+     * 1. Wi-Fi/baz istasyonu (pil dostu, "balanced"). Son 15 dakikada bulunmuş konum varsa anında döner.
+     * 2. Olmazsa cihazın bildiği son konum (anında); hava durumu için biraz eski konum da yeterli.
+     */
     @SuppressLint("MissingPermission") // İzin hasPermission() ile kontrol ediliyor.
     suspend fun getCurrentLocation(): DeviceLocation? {
         if (!hasPermission()) return null
-        // Hızlıdan yavaşa, ucuzdan pahalıya üç deneme:
-        // 1. Wi-Fi/baz istasyonu (pil dostu). Son 15 dakikada bulunmuş konum varsa anında döner.
-        // 2. Olmazsa cihazın bildiği son konum (anında); hava durumu için biraz eski konum da yeterli.
-        // 3. Cihaz hiç konum bilmiyorsa son çare olarak kısa süreliğine GPS.
         val location = requestLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, BALANCED_TIMEOUT_MS)
             ?: locationClient.lastLocation.await()
-            ?: requestLocation(Priority.PRIORITY_HIGH_ACCURACY, HIGH_ACCURACY_TIMEOUT_MS)
             ?: return null
-        val name = findPlaceName(location.latitude, location.longitude)
+        val precise = hasPreciseLocation()
+        val address = findAddress(location.latitude, location.longitude)
+        val naming = PlaceNaming.fromAddress(
+            subLocality = address?.subLocality,
+            locality = address?.locality,
+            subAdminArea = address?.subAdminArea,
+            adminArea = address?.adminArea,
+            precise = precise,
+        )
         return DeviceLocation(
-            city = City(name = name, latitude = location.latitude, longitude = location.longitude),
+            city = City(
+                name = naming.name,
+                latitude = location.latitude,
+                longitude = location.longitude,
+                region = naming.region,
+            ),
             accuracyMeters = if (location.hasAccuracy()) location.accuracy else null,
         )
     }
@@ -64,28 +87,33 @@ class LocationRepository @Inject constructor(
             .setMaxUpdateAgeMillis(MAX_LOCATION_AGE_MS)
             .build()
         val cancellation = CancellationTokenSource()
-        // Süre dolarsa withTimeoutOrNull isteği iptal eder; await(cancellation) GPS'i de kapatır.
+        // Süre dolarsa withTimeoutOrNull isteği iptal eder; await(cancellation) isteği de kapatır.
         return withTimeoutOrNull(timeoutMs) {
             locationClient.getCurrentLocation(request, cancellation.token).await(cancellation)
         }
     }
 
-    /** Android'in Geocoder servisiyle koordinatı telefonun dilinde bir yer adına çevirir. */
-    private suspend fun findPlaceName(latitude: Double, longitude: Double): String? {
+    /**
+     * Android'in Geocoder servisiyle koordinatın adresi (telefonun dilinde). Mahalle ve ilçe adı
+     * için hassas koordinat kullanılır; bu servis cihazın işletim sistemi tarafından sağlanır.
+     */
+    private suspend fun findAddress(latitude: Double, longitude: Double): Address? {
         if (!Geocoder.isPresent()) return null
         val geocoder = Geocoder(context, context.resources.configuration.locales[0])
-        val address: Address? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            suspendCancellableCoroutine { continuation ->
-                geocoder.getFromLocation(latitude, longitude, 1, object : Geocoder.GeocodeListener {
-                    override fun onGeocode(addresses: MutableList<Address>) {
-                        continuation.resume(addresses.firstOrNull())
-                    }
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            withTimeoutOrNull(GEOCODER_TIMEOUT_MS) {
+                suspendCancellableCoroutine { continuation ->
+                    geocoder.getFromLocation(latitude, longitude, 1, object : Geocoder.GeocodeListener {
+                        override fun onGeocode(addresses: MutableList<Address>) {
+                            continuation.resume(addresses.firstOrNull())
+                        }
 
-                    override fun onError(errorMessage: String?) {
-                        Log.w(TAG, "Geocoder hatası: $errorMessage")
-                        continuation.resume(null)
-                    }
-                })
+                        override fun onError(errorMessage: String?) {
+                            Log.w(TAG, "Geocoder hatası: $errorMessage")
+                            continuation.resume(null)
+                        }
+                    })
+                }
             }
         } else {
             // Eski sürümlerde bu çağrı bekletici (blocking) olduğu için arka plan iş parçacığında.
@@ -97,7 +125,6 @@ class LocationRepository @Inject constructor(
                     ?.firstOrNull()
             }
         }
-        return address?.run { locality ?: subAdminArea ?: adminArea }
     }
 
     /** Cihaz konumu ve hata payı (metre; Android'in verdiği %68 güven yarıçapı). */
@@ -106,7 +133,7 @@ class LocationRepository @Inject constructor(
     private companion object {
         const val TAG = "LocationRepository"
         const val MAX_LOCATION_AGE_MS = 15 * 60 * 1000L
-        const val BALANCED_TIMEOUT_MS = 5_000L
-        const val HIGH_ACCURACY_TIMEOUT_MS = 10_000L
+        const val BALANCED_TIMEOUT_MS = 6_000L
+        const val GEOCODER_TIMEOUT_MS = 6_000L
     }
 }

@@ -85,6 +85,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alihaydarsayar.communesky.R
@@ -103,6 +107,12 @@ import java.time.LocalTime
 
 private const val LocationPermission = Manifest.permission.ACCESS_COARSE_LOCATION
 
+// Hassas konum da istenir ama zorunlu değil: kullanıcı "Yaklaşık"ı seçerse uygulama yine çalışır.
+private val LocationPermissions = arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION,
+)
+
 /** ViewModel'e bağlı ekran: durumu dinler, izin akışını yönetir ve çizilecek içeriğe aktarır. */
 @Composable
 fun HomeScreen(
@@ -116,8 +126,9 @@ fun HomeScreen(
 
     // Android'in standart izin penceresini açar ve sonucu ViewModel'e iletir.
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted ->
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { results ->
+        val granted = results.values.any { it }
         // Kullanıcı iki kez reddederse Android pencereyi bir daha göstermez; bunu buradan anlarız.
         val canAskAgain = activity != null &&
             ActivityCompat.shouldShowRequestPermissionRationale(activity, LocationPermission)
@@ -131,7 +142,18 @@ fun HomeScreen(
             PackageManager.PERMISSION_GRANTED
         if (!askedOnLaunch && !granted) {
             askedOnLaunch = true
-            permissionLauncher.launch(LocationPermission)
+            permissionLauncher.launch(LocationPermissions)
+        }
+    }
+
+    // Ekran açık kaldıkça istasyon ölçümü 5 dakikada bir tazelenir; uygulama arka plandayken durur.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                delay(5 * 60_000L)
+                viewModel.refreshObservations()
+            }
         }
     }
 
@@ -151,7 +173,7 @@ fun HomeScreen(
             when (status) {
                 is LocationStatus.NoPermission ->
                     if (status.canAskAgain) {
-                        permissionLauncher.launch(LocationPermission)
+                        permissionLauncher.launch(LocationPermissions)
                     } else {
                         context.startActivity(appSettingsIntent(context))
                     }
