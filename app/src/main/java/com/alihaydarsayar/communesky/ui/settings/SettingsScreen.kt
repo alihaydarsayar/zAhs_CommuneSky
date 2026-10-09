@@ -105,6 +105,7 @@ enum class AppLanguage(val tag: String) {
 fun SettingsScreen(
     onBack: () -> Unit,
     onManagePlaces: () -> Unit,
+    onOpenHomeLocation: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -142,6 +143,20 @@ fun SettingsScreen(
                                 color = TextSecondary,
                                 style = MaterialTheme.typography.bodySmall,
                             )
+                        }
+                        Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
+                    }
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable(onClick = onOpenHomeLocation)
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.home_settings_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.home_settings_summary), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
                         }
                         Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
                     }

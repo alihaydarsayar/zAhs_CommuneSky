@@ -21,9 +21,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -137,4 +142,115 @@ fun GlassSegmented(
             }
         }
     }
+}
+
+/** Cam kart içinde açma/kapama satırı. Satırın tamamı dokunulabilir; ekran okuyucu anahtar olarak okur. */
+@Composable
+fun GlassSwitchRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
+            Text(title, color = TextPrimary, style = MaterialTheme.typography.bodyLarge)
+            if (subtitle != null) Text(subtitle, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+        }
+        Spacer(Modifier.width(12.dp))
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color(0xFF14284A),
+                checkedTrackColor = Color.White,
+                checkedBorderColor = Color.White,
+                uncheckedThumbColor = Color.White.copy(alpha = 0.75f),
+                uncheckedTrackColor = Color.White.copy(alpha = 0.12f),
+                uncheckedBorderColor = Color.White.copy(alpha = 0.3f),
+            ),
+        )
+    }
+}
+
+/** Cam kart içinde tek seçimli satır: başlık, alt yazı ve sağda seçim işareti. */
+@Composable
+fun GlassRadioRow(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    @DrawableRes icon: Int? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Icon(painterResource(icon), contentDescription = null, tint = TextPrimary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+        }
+        androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
+            Text(title, color = TextPrimary, style = MaterialTheme.typography.bodyLarge)
+            if (subtitle != null) Text(subtitle, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+        }
+        Spacer(Modifier.width(12.dp))
+        // Seçim işareti: dolu beyaz daire.
+        Box(
+            Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(if (selected) Color.White else Color.White.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) {
+                Box(
+                    Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF14284A)),
+                )
+            }
+        }
+    }
+}
+
+/** Gökyüzü üstünde beyaz kaydırıcı. */
+@Composable
+fun GlassSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    modifier: Modifier = Modifier,
+    steps: Int = 0,
+    onValueChangeFinished: (() -> Unit)? = null,
+) {
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        valueRange = valueRange,
+        steps = steps,
+        onValueChangeFinished = onValueChangeFinished,
+        modifier = modifier.fillMaxWidth(),
+        colors = SliderDefaults.colors(
+            thumbColor = Color.White,
+            activeTrackColor = Color.White,
+            inactiveTrackColor = Color.White.copy(alpha = 0.2f),
+            activeTickColor = Color.Transparent,
+            inactiveTickColor = Color.Transparent,
+        ),
+    )
 }
