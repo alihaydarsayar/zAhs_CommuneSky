@@ -2,6 +2,18 @@
 
 What's new in each version of Commune Sky.
 
+## 1.3 — in testing
+
+- **New widgets, redesigned.** Nine widgets to choose from: Home & location, Clock, Hourly, Weekly, Small, Text, My places, Rain and Details. Each one comes in several styles, more than 30 designs in all, and you pick the style when you add it.
+- **Home & location knows where you are.** At home it shows your home. Nearby, home stays in front with a small note such as "You're in Tuzla Merkez · 3 km · same weather". Away, the widget splits in two: where you are on the left, home on the right, with the distance, the temperature difference and when rain starts at home.
+- **Ten clock styles.** Large, side by side, one line, bold, analog, clock with your places, clock with the sun's path, a date "at a glance" and a small card. The clock always keeps exact time without using extra battery.
+- **Rain in the next two hours.** The Rain widget says in one sentence when rain starts or stops ("Rain starts at 20:00") and shows it in 15-minute bars.
+- **Make every widget yours.** Background (sky, glass, clear or solid), transparency, colors (sky, your wallpaper's colors on Android 12 and later, sunset, ocean, forest, night, pastel), light or dark text, rounded corners, text size, and what each widget shows.
+- **See it before you add it.** The setup screen shows the widget exactly as it will look, and updates as you change anything. Touch and hold a widget later to change it again.
+- **Widgets fit any size.** Make a widget smaller and it shows less; make it bigger and it shows more. Text is sized to fit the space.
+- **New: Settings › Home & location.** Choose your home, or make your current location home, and set how far counts as "near home" (2 to 20 km). Choose what widgets show when you're away. Whether you're home or away is worked out on your phone; your location isn't sent anywhere for this.
+- Fixed: removing a widget from the home screen could close the app in the background.
+
 ## 1.2 — in testing
 
 - **Your places.** Search for any city, district or neighbourhood, even small ones like Atakum or Kurupelit, and save it. Drag to reorder, delete with undo, and mark one place as Home.

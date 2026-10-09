@@ -21,7 +21,7 @@
 - **Offline-first** — the last forecast appears instantly from the local cache, then refreshes in the background. Pull to refresh any time.
 - **Your places** — search any city, district or neighbourhood worldwide, save it, drag to reorder and mark one as Home. Swipe between places on the home screen.
 - **Checked against real measurements** — current conditions are compared with the nearest weather station (MGM in Türkiye, airport reports elsewhere). A nearby station sets the current temperature and sky; a farther one warns about storms on the way.
-- **Home screen widgets** — weather, clock and "Home and my location" widgets in several sizes, each with its own place and a sky, glass or clear background.
+- **Home screen widgets** — nine widgets with more than 30 styles (clocks, hourly curve, weekly range bars, rain in the next two hours, details and more). A "Home & location" widget knows whether you are home, nearby or away, worked out on your phone. Each widget has its own place, background, transparency, colors, corners and text size, with a live preview when you add it.
 - **Your location, if you want it** — approximate location shows your district; optional precise location shows your neighbourhood and picks the closest station. Without permission it shows your saved places, or Istanbul.
 - **Units and theme** — °C or °F, four wind units, light or dark.
 - **English and Turkish**, with per-app language support.
