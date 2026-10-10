@@ -196,7 +196,7 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
         HSpace((digitsDp * 0.04f).dp)
         ClockColon(digits * 1.15f, theme.hourColor)
         HSpace((digitsDp * 0.04f).dp)
-        if (theme.clockFont == ClockFont.DigitsOutline && hollowGround != null) {
+        if (theme.clockFont == ClockFont.DigitsOutline && hollowGround != null && !OUTLINE_FONT_IN_WIDGETS) {
             // Çerçeve kalınlığı rakamın boyuna göre: yaklaşık yüzde 4,5.
             val hollowLayout = when ((digitsDp * 0.045f).roundToInt().coerceIn(2, 5)) {
                 2 -> R.layout.wc_hollow_2
@@ -256,8 +256,6 @@ private val HOLLOW_FRAME_IDS = intArrayOf(
     R.id.clock_halo_7, R.id.clock_halo_8, R.id.clock_halo_9, R.id.clock_halo_10, R.id.clock_halo_11, R.id.clock_halo_12,
     R.id.clock_halo_13, R.id.clock_halo_14, R.id.clock_halo_15, R.id.clock_halo_16, R.id.clock_halo_17, R.id.clock_halo_18,
     R.id.clock_halo_19, R.id.clock_halo_20, R.id.clock_halo_21, R.id.clock_halo_22, R.id.clock_halo_23, R.id.clock_halo_24,
-    R.id.clock_halo_25, R.id.clock_halo_26, R.id.clock_halo_27, R.id.clock_halo_28, R.id.clock_halo_29, R.id.clock_halo_30,
-    R.id.clock_halo_31, R.id.clock_halo_32, R.id.clock_halo_33, R.id.clock_halo_34, R.id.clock_halo_35, R.id.clock_halo_36,
 )
 
 /** Işınsal saatin rakamları yatayda bu kadar sıkıştırılır: sistemin dar rakamları tasarımdaki oranlara yaklaşır. */

@@ -462,6 +462,13 @@ fun distanceText(context: Context, km: Double): String =
 enum class ClockPart { Time, Hours, Minutes, Date }
 
 /**
+ * Uygulamanın çizgi rakamlı yazı tipi (res/font/commune_digits_outline) ana ekran widget'ında
+ * yüklenebiliyor mu? Emülatörde denendi: Android 11'de (API 30) yükleniyor; Android 12+ launcher'ı
+ * widget'ı kısıtlı bağlamda açtığı için yazı tipi sessizce sistem yazı tipine düşüyor (API 37'de denendi).
+ */
+val OUTLINE_FONT_IN_WIDGETS: Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+
+/**
  * Android'in TextClock bileşeni: dakika (ve gün) değişince sistem kendisi günceller, uygulama hiç
  * uyanmaz, alarm kurulmaz. Dokununca telefonun saat/alarm uygulaması açılır.
  *
@@ -548,7 +555,9 @@ private fun ClockView(
         ClockPart.Date -> theme.colors.text
         else -> theme.hourColor
     }
-    val views = RemoteViews(context.packageName, WidgetLayouts.clock(key, theme.colors.shadowKind, uppercase)).apply {
+    // Android 11 ve öncesinde launcher uygulamanın yazı tipini yükler: içi boş rakam tek TextClock.
+    val layout = if (key == "ol" && part == ClockPart.Minutes && OUTLINE_FONT_IN_WIDGETS) R.layout.wc_outline else WidgetLayouts.clock(key, theme.colors.shadowKind, uppercase)
+    val views = RemoteViews(context.packageName, layout).apply {
         setTextViewTextSize(R.id.clock, TypedValue.COMPLEX_UNIT_SP, theme.sp(size).value)
         setTextColor(R.id.clock, textColor.toArgb())
         // Biçimi ayrıca vermek saatin ilk çizimde de dolu gelmesini sağlar.

@@ -74,6 +74,33 @@ class WidgetMeasureTest {
         File(out, "widgets.csv").writeText(lines.joinToString("\n"))
     }
 
+    /**
+     * Launcher tarafındaki maliyet (uygulamanın kendi çizim süresine girmez): widget'ın görünümlerini
+     * kurma (RemoteViews.apply) ve bir kez çizme süresi. Saat her dakika değişince launcher bu çizimi
+     * yeniden yapar. Sonuç: adb logcat -s WidgetCost
+     */
+    @Test
+    fun launcherCost() = runBlocking {
+        for (style in listOf(WidgetStyleId.ClockRadial, WidgetStyleId.ClockBig)) {
+            val views = compose(style, WidgetConfig(WidgetPlace.Smart, style.defaultStyle()))
+            val density = context.resources.displayMetrics.density
+            val width = (style.previewSize.width.value * density).toInt()
+            val height = (style.previewSize.height.value * density).toInt()
+            withContext(Dispatchers.Main) {
+                fun build(): View = views.apply(context, FrameLayout(context)).also {
+                    it.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY))
+                    it.layout(0, 0, width, height)
+                }
+                val canvas = Canvas(Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888))
+                repeat(10) { build().draw(canvas) }
+                val applyMs = (1..30).map { val t = System.nanoTime(); build(); (System.nanoTime() - t) / 1e6 }.sorted()
+                val view = build()
+                val drawMs = (1..60).map { val t = System.nanoTime(); view.draw(canvas); (System.nanoTime() - t) / 1e6 }.sorted()
+                android.util.Log.i("WidgetCost", "%s views=%d apply_median=%.2fms draw_median=%.2fms".format(Locale.US, style.name, countViews(view), applyMs[applyMs.size / 2], drawMs[drawMs.size / 2]))
+            }
+        }
+    }
+
     private suspend fun compose(style: WidgetStyleId, config: WidgetConfig): RemoteViews {
         val size: DpSize = WidgetSizes.of(style.kind, style.previewSize).draw
         return style.kind.widget(config, input).compose(context, size = size)
