@@ -21,14 +21,15 @@ import java.io.IOException
 import java.time.Instant
 
 /**
- * Gerçek cevaplara dayanır (8–9 Ekim 2026): MGM "SAMSUN BÖLGE" (Atakum) ve "TUZLA" istasyonları,
- * Samsun-Çarşamba (27 km) ve Sabiha Gökçen havalimanı METAR'ları.
+ * Gerçek cevapların biçimine dayanır (8–9 Ekim 2026): MGM "SAMSUN BÖLGE" (Atakum) istasyonu ve
+ * Samsun-Çarşamba (27 km) METAR'ı. İstanbul örneğinde yer ve istasyonlar örnek bir ilçeye
+ * (Beşiktaş) taşındı; aralarındaki uzaklıklar aynı.
  */
 class ObservationRepositoryTest {
 
     private val now = Instant.parse("2026-10-08T21:10:00Z")
     private val atakum = Place(3, City("Atakum", 41.3322588, 36.2704652), isCurrentLocation = false)
-    private val yayla = Place(5, City("Yayla", 40.8306571, 29.3110728), isCurrentLocation = true)
+    private val besiktas = Place(5, City("Beşiktaş", 41.0422, 29.0083), isCurrentLocation = true)
     private val london = Place(7, City("London", 51.5072, -0.1276), isCurrentLocation = false)
 
     private val samsunCenter = MgmCenterDto(observationStationId = 17030, latitude = 41.3442, longitude = 36.2564, il = "Samsun", ilce = "Atakum")
@@ -237,13 +238,13 @@ class ObservationRepositoryTest {
 
     @Test
     fun `nearest fresh station wins over a closer stale one and over far airports`() = runTest {
-        // Madde 6 ve 9: Yayla'ya en yakın istasyon Tuzla (1,6 km); deniz feneri istasyonu sıcaklık
-        // ölçmüyorsa atlanır; Sabiha Gökçen METAR'ı (7 km) daha uzak olduğu için seçilmez.
-        val tuzla = MgmStationDto(18100, "TUZLA", 40.827623, 29.292767, 3.0)
-        val fener = MgmStationDto(17448, "TUZLA İTÜ GÜNEY MENDİREK FENERİ", 40.81, 29.29, 1.0)
-        val saw = MgmStationDto(17063, "İSTANBUL SABİHA GÖKÇEN HAVALİMANI", 40.892797, 29.297236, 99.0)
-        mgm.centerAnswer = { MgmCenterDto(observationStationId = 18100, il = "İstanbul", ilce = "Tuzla") }
-        mgm.provinceAnswer = { listOf(saw, fener, tuzla) }
+        // Madde 6 ve 9: en yakın istasyon ilçenin kendi istasyonu (1,6 km); deniz feneri istasyonu
+        // sıcaklık ölçmüyorsa atlanır; havalimanı METAR'ı (7 km) daha uzak olduğu için seçilmez.
+        val district = MgmStationDto(18100, "BEŞİKTAŞ", 41.039166, 28.989994, 3.0)
+        val fener = MgmStationDto(17448, "BEŞİKTAŞ İSKELE FENERİ", 41.0215, 28.9872, 1.0)
+        val airport = MgmStationDto(17063, "İSTANBUL HAVALİMANI", 41.104340, 28.994463, 99.0)
+        mgm.centerAnswer = { MgmCenterDto(observationStationId = 18100, il = "İstanbul", ilce = "Beşiktaş") }
+        mgm.provinceAnswer = { listOf(airport, fener, district) }
         mgm.latestAnswer = { id ->
             when (id) {
                 18100 -> listOf(mgmObservation(id = 18100, time = "2026-10-08T21:09:00.000Z", temperature = 23.1))
@@ -252,17 +253,17 @@ class ObservationRepositoryTest {
             }
         }
         metar.answer = {
-            listOf(carsambaMetar.copy(icaoId = "LTFJ", lat = 40.899, lon = 29.309, name = "Istanbul/Gokcen Arpt, IS, TR", wxString = null))
+            listOf(carsambaMetar.copy(icaoId = "LTXX", lat = 41.1105, lon = 29.0062, name = "Istanbul Arpt, IS, TR", wxString = null))
         }
-        repository.refresh(listOf(yayla))
+        repository.refresh(listOf(besiktas))
 
         val obs = store.get(5)!!
         assertEquals(ObservationSource.Mgm, obs.source)
-        assertEquals("Tuzla", obs.stationName)
+        assertEquals("Beşiktaş", obs.stationName)
         assertEquals(23.1, obs.temperature!!, 0.0)
         assertEquals(listOf(18100), mgm.latestCalls)
         // NOAA'ya giden kutu yuvarlanmış koordinattan kurulur.
-        assertTrue(metar.lastBbox.startsWith("40.38,28.68"))
+        assertTrue(metar.lastBbox.startsWith("40.59,28.38"))
     }
 
     @Test
@@ -287,12 +288,12 @@ class ObservationRepositoryTest {
 
     @Test
     fun `nearest candidates keep the official station last`() {
-        val tuzla = MgmStationDto(18100, "TUZLA", 40.827623, 29.292767, 3.0)
-        val near1 = MgmStationDto(1, "A", 40.83, 29.31, null)
-        val near2 = MgmStationDto(2, "B", 40.84, 29.32, null)
-        val near3 = MgmStationDto(3, "C", 40.85, 29.33, null)
-        val far = MgmStationDto(4, "UZAK", 41.2, 29.9, null)
-        val candidates = ObservationRepository.nearestCandidates(listOf(far, near3, near2, near1), tuzla, 40.8306, 29.3110)
+        val official = MgmStationDto(18100, "BEŞİKTAŞ", 41.039166, 28.989994, 3.0)
+        val near1 = MgmStationDto(1, "A", 41.04, 29.01, null)
+        val near2 = MgmStationDto(2, "B", 41.05, 29.02, null)
+        val near3 = MgmStationDto(3, "C", 41.06, 29.03, null)
+        val far = MgmStationDto(4, "UZAK", 41.4, 29.6, null)
+        val candidates = ObservationRepository.nearestCandidates(listOf(far, near3, near2, near1), official, 41.0422, 29.0083)
         assertEquals(listOf(1, 2, 3, 18100), candidates.map { it.id })
         assertFalse(candidates.any { it.id == 4 })
     }

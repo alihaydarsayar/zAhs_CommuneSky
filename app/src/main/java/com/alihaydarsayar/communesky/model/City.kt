@@ -2,7 +2,7 @@ package com.alihaydarsayar.communesky.model
 
 /**
  * [name] null ise konumun adı bulunamamıştır; ekran "Konumum" yazar.
- * [region]: ad mahalle düzeyindeyse bağlı olduğu ilçe ("Yayla" → "Tuzla"); ikinci satırda gösterilir.
+ * [region]: ad mahalle düzeyindeyse bağlı olduğu ilçe ("Merkez" → "Beşiktaş"); ikinci satırda gösterilir.
  */
 data class City(
     val name: String?,

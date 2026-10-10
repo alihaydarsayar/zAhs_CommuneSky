@@ -7,22 +7,22 @@ import org.junit.Test
 class PlaceNamingTest {
 
     @Test
-    fun `precise location in Yayla shows the neighbourhood and the district`() {
-        // Google Geocoder'ın Tuzla, Yayla için verdiği alanlar.
+    fun `precise location shows the neighbourhood and the district`() {
+        // Geocoder'ın bir mahalle için verdiği alanlar: mahalle, ilçe, il.
         val name = PlaceNaming.fromAddress(
-            subLocality = "Yayla Mahallesi",
-            locality = "Tuzla",
-            subAdminArea = "Tuzla",
+            subLocality = "Merkez Mahallesi",
+            locality = "Beşiktaş",
+            subAdminArea = "Beşiktaş",
             adminArea = "İstanbul",
             precise = true,
         )
-        assertEquals(PlaceName("Yayla", "Tuzla"), name)
+        assertEquals(PlaceName("Merkez", "Beşiktaş"), name)
     }
 
     @Test
     fun `approximate location shows only the district`() {
-        val name = PlaceNaming.fromAddress("Yayla Mahallesi", "Tuzla", "Tuzla", "İstanbul", precise = false)
-        assertEquals(PlaceName("Tuzla", null), name)
+        val name = PlaceNaming.fromAddress("Merkez Mahallesi", "Beşiktaş", "Beşiktaş", "İstanbul", precise = false)
+        assertEquals(PlaceName("Beşiktaş", null), name)
     }
 
     @Test
@@ -46,10 +46,10 @@ class PlaceNamingTest {
 
     @Test
     fun `coordinates leaving the phone are rounded to about 1 km`() {
-        assertEquals(40.83, CoordinatePrivacy.round(40.8306571), 0.0)
-        assertEquals(29.31, CoordinatePrivacy.round(29.3110728), 0.0)
+        assertEquals(41.04, CoordinatePrivacy.round(41.0422), 0.0)
+        assertEquals(29.01, CoordinatePrivacy.round(29.0083), 0.0)
         assertEquals(-0.13, CoordinatePrivacy.round(-0.1276), 0.0)
         // Yuvarlama en fazla ~0,8 km kaydırır.
-        assertEquals(0.0, GeoDistance.kilometers(40.8306571, 29.3110728, 40.83, 29.31), 0.8)
+        assertEquals(0.0, GeoDistance.kilometers(41.0422, 29.0083, 41.04, 29.01), 0.8)
     }
 }

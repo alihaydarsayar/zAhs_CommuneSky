@@ -22,9 +22,9 @@ class UnitsAndDistanceTest {
     }
 
     @Test
-    fun `distance between Tuzla and Kadıköy is about 30 km`() {
-        val km = GeoDistance.kilometers(40.8161732, 29.3034194, 40.9912955, 29.0245631)
-        assertEquals(30.5, km, 1.0)
+    fun `distance between Besiktas and Liverpool is about 2747 km`() {
+        val km = GeoDistance.kilometers(41.0422, 29.0083, 53.4084, -2.9916)
+        assertEquals(2747.0, km, 3.0)
     }
 
     @Test

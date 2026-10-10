@@ -10,7 +10,7 @@ import org.junit.Test
 
 /**
  * Photon ve Open-Meteo cevapları, 8 Ekim 2026'da servislerden alınan gerçek cevapların
- * kısaltılmış halleri. Open-Meteo Atakum'u hiç bulamıyor ve İstanbul'daki Tuzla ile Kadıköy'ü
+ * kısaltılmış halleri. Open-Meteo Atakum'u hiç bulamıyor ve İstanbul'daki Tuzla ile Beşiktaş'ı
  * vermiyordu; Photon hepsini buldu.
  */
 class SearchResultMappingTest {
@@ -41,13 +41,13 @@ class SearchResultMappingTest {
         ]}
     """
 
-    // Photon'un kendi sırası: önce Ankara'daki Kadıköy köyü.
-    private val kadikoyPhoton = """
+    // Photon böyle sıralarsa: önce aynı adlı bir köy, sonra İstanbul'daki ilçe.
+    private val besiktasPhoton = """
         {"features":[
-          {"properties":{"osm_value":"village","name":"Kadıköy","state":"Ankara","country":"Türkiye","countrycode":"TR"},
+          {"properties":{"osm_value":"village","name":"Beşiktaş","state":"Ankara","country":"Türkiye","countrycode":"TR"},
            "geometry":{"coordinates":[32.484181,39.472138]}},
-          {"properties":{"osm_value":"town","name":"Kadıköy","state":"İstanbul","country":"Türkiye","countrycode":"TR"},
-           "geometry":{"coordinates":[29.0245631,40.9912955]}}
+          {"properties":{"osm_value":"town","name":"Beşiktaş","state":"İstanbul","country":"Türkiye","countrycode":"TR"},
+           "geometry":{"coordinates":[29.0083,41.0422]}}
         ]}
     """
 
@@ -85,12 +85,12 @@ class SearchResultMappingTest {
 
     @Test
     fun `places near the user come first even if the phone's country is unknown`() {
-        // Kullanıcı Kadıköy'de; telefonun ülkesi bilinmiyor (ör. yurt dışı SIM ya da emülatör).
+        // Kullanıcı Beşiktaş'ta; telefonun ülkesi bilinmiyor (ör. yurt dışı SIM ya da emülatör).
         val results = SearchResultMapping.fromPhoton(
             photon(tuzlaPhoton),
             "Tuzla",
             preferredCountries = setOf("US"),
-            anchors = listOf(GeoPoint(40.99, 29.02)),
+            anchors = listOf(GeoPoint(41.04, 29.01)),
         )
         assertEquals("İstanbul, Türkiye", results[0].region)
     }
@@ -105,7 +105,7 @@ class SearchResultMappingTest {
 
     @Test
     fun `the district comes before villages with the same name`() {
-        val results = SearchResultMapping.fromPhoton(photon(kadikoyPhoton), "kadikoy", setOf("TR"))
+        val results = SearchResultMapping.fromPhoton(photon(besiktasPhoton), "besiktas", setOf("TR"))
         assertEquals("İstanbul, Türkiye", results.first().region)
     }
 
@@ -142,8 +142,8 @@ class SearchResultMappingTest {
 
     @Test
     fun `normalize ignores case and Turkish letters`() {
-        assertEquals(SearchResultMapping.normalize("Kadıköy"), SearchResultMapping.normalize("KADIKÖY"))
-        assertEquals(SearchResultMapping.normalize("Kadıköy"), SearchResultMapping.normalize("kadikoy"))
+        assertEquals(SearchResultMapping.normalize("Beşiktaş"), SearchResultMapping.normalize("BEŞİKTAŞ"))
+        assertEquals(SearchResultMapping.normalize("Beşiktaş"), SearchResultMapping.normalize("besiktas"))
         assertEquals(SearchResultMapping.normalize("Çarşamba"), SearchResultMapping.normalize("Carsamba"))
     }
 

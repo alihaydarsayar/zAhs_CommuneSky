@@ -11,8 +11,8 @@ object PlaceNaming {
     private val NeighbourhoodSuffixes = listOf(" Mahallesi", " Mah.", " Mah", " Mh.", " Neighbourhood", " Neighborhood")
 
     /**
-     * Hassas konumda mahalle (subLocality) varsa ad mahalle, ikinci satır ilçe olur: "Yayla",
-     * "Tuzla". Yaklaşık konumda (kullanıcı "Yaklaşık"ı seçtiyse) mahalle yanlış olabileceği için
+     * Hassas konumda mahalle (subLocality) varsa ad mahalle, ikinci satır ilçe olur: "Merkez",
+     * "Beşiktaş". Yaklaşık konumda (kullanıcı "Yaklaşık"ı seçtiyse) mahalle yanlış olabileceği için
      * sadece ilçe adı gösterilir.
      *
      * Türkiye'de Google Geocoder genelde mahalleyi subLocality, ilçeyi subAdminArea ya da
@@ -35,7 +35,7 @@ object PlaceNaming {
         }
     }
 
-    /** "Yayla Mahallesi" → "Yayla". */
+    /** "Merkez Mahallesi" → "Merkez". */
     fun cleanNeighbourhood(name: String): String {
         var result = name.trim()
         for (suffix in NeighbourhoodSuffixes) {

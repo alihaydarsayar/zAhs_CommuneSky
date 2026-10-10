@@ -93,9 +93,10 @@ class PrecipitationNowcastTest {
     fun `turkish place suffix follows vowel harmony`() {
         assertEquals("Tuzla Merkez'de", TurkishSuffix.locative("Tuzla Merkez"))
         assertEquals("Pendik'te", TurkishSuffix.locative("Pendik"))
-        assertEquals("Kadıköy'de", TurkishSuffix.locative("Kadıköy"))
+        assertEquals("Beşiktaş'ta", TurkishSuffix.locative("Beşiktaş"))
+        assertEquals("Liverpool'da", TurkishSuffix.locative("Liverpool"))
+        assertEquals("Limerick'te", TurkishSuffix.locative("Limerick"))
         assertEquals("Atakum'da", TurkishSuffix.locative("Atakum"))
-        assertEquals("Yayla'da", TurkishSuffix.locative("Yayla"))
         assertEquals("Moda'da", TurkishSuffix.locative("Moda"))
         assertEquals("Üsküdar'da", TurkishSuffix.locative("Üsküdar"))
         assertEquals("Beşiktaş'ta", TurkishSuffix.locative("Beşiktaş"))

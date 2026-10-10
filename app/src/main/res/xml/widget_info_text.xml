@@ -15,7 +15,6 @@
     android:maxResizeWidth="530dp"
     android:maxResizeHeight="530dp"
     android:previewImage="@drawable/widget_preview_image_text"
-    android:previewLayout="@layout/widget_preview_text"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="3"
     android:targetCellHeight="1"

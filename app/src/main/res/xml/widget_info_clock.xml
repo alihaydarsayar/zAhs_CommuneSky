@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Saat: 10 stil (büyük, yan yana, tek satır, kalın, analog...).
+    Saat: 13 stil (ışınsal dijital, üç analog kadran, büyük, yan yana, tek satır, kalın...).
     Ekleme sırasında ayar ekranı açılır; sonradan uzun basıp düzenlenebilir.
     Güncelleme WorkManager ile yapılır (tüm yerler tek istekte); updatePeriodMillis kapalı (0).
 -->
@@ -15,7 +15,6 @@
     android:maxResizeWidth="530dp"
     android:maxResizeHeight="530dp"
     android:previewImage="@drawable/widget_preview_image_clock"
-    android:previewLayout="@layout/widget_preview_clock"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
     android:targetCellHeight="2"

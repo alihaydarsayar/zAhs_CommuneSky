@@ -58,11 +58,11 @@ class DatabaseMigrationTest {
         val repository = PlacesRepository(database)
         val atakum = repository.add(PlaceSearchResult("Atakum", "Samsun, Türkiye", "TR", 41.33, 36.27))
         val tuzla = repository.add(PlaceSearchResult("Tuzla", "İstanbul, Türkiye", "TR", 40.82, 29.30))
-        val kadikoy = repository.add(PlaceSearchResult("Kadıköy", "İstanbul, Türkiye", "TR", 40.99, 29.02))
+        val limerick = repository.add(PlaceSearchResult("Limerick", "Ireland", "IE", 52.66, -8.63))
 
         // Aynı yer ikinci kez eklenmez.
         assertEquals(atakum, repository.add(PlaceSearchResult("Atakum", null, "TR", 41.34, 36.26)))
-        assertEquals(listOf(atakum, tuzla, kadikoy), repository.all().map { it.id })
+        assertEquals(listOf(atakum, tuzla, limerick), repository.all().map { it.id })
 
         repository.setHome(atakum)
         repository.setHome(tuzla)
@@ -70,14 +70,14 @@ class DatabaseMigrationTest {
         repository.setHome(null)
         assertTrue(repository.all().none { it.isHome })
 
-        repository.reorder(listOf(kadikoy, atakum, tuzla))
-        assertEquals(listOf(kadikoy, atakum, tuzla), repository.all().map { it.id })
+        repository.reorder(listOf(limerick, atakum, tuzla))
+        assertEquals(listOf(limerick, atakum, tuzla), repository.all().map { it.id })
 
         repository.setHome(atakum)
         val removed = repository.remove(atakum)!!
-        assertEquals(listOf(kadikoy, tuzla), repository.all().map { it.id })
+        assertEquals(listOf(limerick, tuzla), repository.all().map { it.id })
         repository.restore(removed)
-        assertEquals(listOf(kadikoy, atakum, tuzla), repository.all().map { it.id })
+        assertEquals(listOf(limerick, atakum, tuzla), repository.all().map { it.id })
         assertEquals(listOf(atakum), repository.all().filter { it.isHome }.map { it.id })
         database.close()
     }

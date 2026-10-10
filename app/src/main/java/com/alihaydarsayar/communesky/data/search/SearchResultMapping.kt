@@ -20,8 +20,8 @@ object SearchResultMapping {
 
     /**
      * Photon sonuçlarını sıralar: önce adı yazılanla birebir eşleşenler, sonra kullanıcının
-     * bulunduğu yere ya da kayıtlı yerlerine yakın olanlar, sonra kullanıcının ülkesindekiler, sonra büyük yerler (şehir > ilçe > semt > köy). Böylece "Kadıköy" yazınca
-     * aynı adlı köylerden önce İstanbul'daki Kadıköy, "Tuzla" yazınca İstanbul'daki Tuzla gelir.
+     * bulunduğu yere ya da kayıtlı yerlerine yakın olanlar, sonra kullanıcının ülkesindekiler, sonra büyük yerler (şehir > ilçe > semt > köy). Böylece "Beşiktaş" yazınca
+     * aynı adlı köylerden önce İstanbul'daki Beşiktaş, "Tuzla" yazınca İstanbul'daki Tuzla gelir.
      */
     fun fromPhoton(
         response: PhotonResponseDto,
@@ -113,7 +113,7 @@ object SearchResultMapping {
         normalize(name) == normalize(other.name) &&
             GeoDistance.kilometers(latitude, longitude, other.latitude, other.longitude) < SAME_PLACE_KM
 
-    /** Büyük/küçük harf ve aksan farkını yok sayar: "Kadıköy", "KADIKÖY" ve "Kadikoy" aynı. */
+    /** Büyük/küçük harf ve aksan farkını yok sayar: "Beşiktaş", "BEŞİKTAŞ" ve "Besiktas" aynı. */
     fun normalize(text: String): String {
         val lower = text.trim().lowercase(Locale.ROOT).replace('ı', 'i')
         return Normalizer.normalize(lower, Normalizer.Form.NFD).replace(DiacriticRegex, "")

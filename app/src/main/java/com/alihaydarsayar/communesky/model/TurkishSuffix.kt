@@ -18,7 +18,7 @@ object TurkishSuffix {
 
     private val turkish = Locale.forLanguageTag("tr")
 
-    /** "Tuzla Merkez" → "Tuzla Merkez'de", "Pendik" → "Pendik'te", "Kadıköy" → "Kadıköy'de". */
+    /** "Tuzla Merkez" → "Tuzla Merkez'de", "Pendik" → "Pendik'te", "Beşiktaş" → "Beşiktaş'ta". */
     fun locative(name: String): String {
         val word = name.trim()
         val lower = word.lowercase(turkish)

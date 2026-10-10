@@ -306,7 +306,7 @@ fun HomeLocationScreen(
     }
 }
 
-/** "Kadıköy 18 km — Uzakta": yakınlık mesafesi değiştikçe canlı güncellenir. */
+/** "Liverpool 2.747 km — Uzakta": yakınlık mesafesi değiştikçe canlı güncellenir. */
 @Composable
 private fun PlaceDistanceRow(name: String, distanceKm: Double, proximity: HomeProximity) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {

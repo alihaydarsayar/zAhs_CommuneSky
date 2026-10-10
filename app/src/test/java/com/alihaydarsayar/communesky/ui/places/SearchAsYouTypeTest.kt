@@ -99,9 +99,9 @@ class SearchAsYouTypeTest {
         val job = launch {
             queries.searchAsYouType { SearchOutcome.Failed }.collect { states += it }
         }
-        queries.value = "Kadıköy"
+        queries.value = "Limerick"
         advanceUntilIdle()
-        assertEquals(SearchState.Failed("Kadıköy"), states.last())
+        assertEquals(SearchState.Failed("Limerick"), states.last())
         job.cancel()
     }
 }

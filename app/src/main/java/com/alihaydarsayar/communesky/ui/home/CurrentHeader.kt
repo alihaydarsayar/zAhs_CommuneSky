@@ -85,7 +85,7 @@ fun CurrentHeader(
                 style = MaterialTheme.typography.headlineMedium.copy(shadow = TextShadow),
             )
         }
-        // Mahalle gösteriliyorsa bağlı olduğu ilçe ("Yayla" → "Tuzla").
+        // Mahalle gösteriliyorsa bağlı olduğu ilçe ("Merkez" → "Beşiktaş").
         weather.city.region?.takeIf { weather.isCurrentLocation }?.let { region ->
             Text(
                 text = region,
