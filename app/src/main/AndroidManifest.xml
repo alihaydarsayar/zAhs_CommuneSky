@@ -11,6 +11,13 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+    <!-- Saat widget'ına dokununca telefonun saat/alarm uygulaması açılır; var mı diye bakabilmek için. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SHOW_ALARMS" />
+        </intent>
+    </queries>
+
     <application
         android:name=".CommuneSkyApp"
         android:allowBackup="true"

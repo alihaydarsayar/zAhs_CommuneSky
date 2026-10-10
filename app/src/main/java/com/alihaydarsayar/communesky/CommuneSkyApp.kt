@@ -49,6 +49,22 @@ class CommuneSkyApp : Application(), Configuration.Provider {
                 .debounce(500)
                 .collect { WeatherWidgetUpdater.updateAll(this@CommuneSkyApp) }
         }
+        // Duvar kâğıdı değişince cam ve saydam widget'ların yazı rengi yeniden seçilir. Sadece
+        // sistemin hesapladığı renk ipuçları dinlenir; duvar kâğıdının kendisi okunmaz, izin gerekmez.
+        // Dinleyici uygulama süreci yaşarken çalışır; süreç kapalıysa renk bir sonraki veri
+        // güncellemesinde düzelir (bunun için ayrıca uyanılmaz).
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+            runCatching {
+                android.app.WallpaperManager.getInstance(this).addOnColorsChangedListener(
+                    { _, which ->
+                        if (which and android.app.WallpaperManager.FLAG_SYSTEM != 0) {
+                            appScope.launch { WeatherWidgetUpdater.updateAll(this@CommuneSkyApp) }
+                        }
+                    },
+                    android.os.Handler(android.os.Looper.getMainLooper()),
+                )
+            }
+        }
         // Android 15+: widget seçicideki önizlemeler gerçek widget çizimiyle (sürüm başına bir kez).
         appScope.launch { runCatching { WeatherWidgetUpdater.publishPreviews(this@CommuneSkyApp) } }
     }

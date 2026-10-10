@@ -41,11 +41,7 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
-import androidx.glance.text.FontFamily
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
-import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.WeatherCondition
@@ -69,10 +65,19 @@ data class WidgetTheme(
 ) {
     fun sp(base: Float): TextUnit = (base * style.textSize.scale * fontScaleFix).sp
 
+    /** Saat rakamlarının yazı tipi: kullanıcı seçmediyse stilin kendi yazı tipi. */
+    val clockFont: ClockFont get() = style.clockFont ?: styleId.clockFont
+
+    /** "18:03" yazısının genişliği, yazı boyutu cinsinden (dar rakamlar daha az yer tutar). */
+    val clockEms: Float get() = if (clockFont == ClockFont.Digits || clockFont == ClockFont.DigitsOutline) 2.35f else 2.6f
+
+    val hourColor: Color get() = style.hourColor?.let { Color(it) } ?: colors.text
+    val minuteColor: Color get() = style.minuteColor?.let { Color(it) } ?: hourColor
+
     fun shows(content: WidgetContent): Boolean = style.shows(kind, content)
 
     /** Arka planın görünürlüğü (0–1), saydamlık kaydırıcısından. */
-    val backgroundAlpha: Float get() = (100 - style.transparency.coerceIn(0, 100)) / 100f
+    val backgroundAlpha: Float get() = (100 - style.effectiveTransparency) / 100f
 
     companion object {
         fun fontScaleFix(context: Context): Float {
@@ -86,10 +91,39 @@ val LocalWidgetTheme = staticCompositionLocalOf<WidgetTheme> { error("Widget tem
 
 enum class WWeight { Light, Regular, Medium, Bold }
 
+/** Yazının rolü: düz yazı, dar kalın rakam ya da dar ince rakam. */
+enum class WFont { Text, Digits, Outline }
+
+private val NUMERIC = Regex("^[-−]?[0-9][0-9.,]*[°%]?$|^%[0-9]+$")
+
+/** Sıcaklık ve sayılar ("16°", "1022", "%64") dar ve kalın rakamlarla çizilir; çok küçük yazılar hariç. */
+fun isNumeric(text: String, sizeSp: Float): Boolean = sizeSp >= 12f && NUMERIC.matches(text)
+
+/** Düzen anahtarı (bkz. [WidgetLayouts]): kalınlık seçimi ve rol birlikte. */
+fun fontKey(style: WidgetStyle, weight: WWeight, font: WFont): String {
+    if (font == WFont.Digits) return "dg"
+    if (font == WFont.Outline) return "ol"
+    val step = when (weight) {
+        WWeight.Light -> 0
+        WWeight.Regular -> 1
+        WWeight.Medium -> 2
+        WWeight.Bold -> 3
+    } + when (style.weight) {
+        WeightChoice.Thin -> -1
+        WeightChoice.Normal -> 0
+        WeightChoice.Bold -> 1
+    }
+    return "s" + "3457"[step.coerceIn(0, 3)]
+}
+
 /**
- * Widget yazısı, sistem yazı tipiyle. Duvar kâğıdının üstünde ([WidgetColors.shadow]) Glance'in
- * kendi yazısı gölge desteklemediği için Android'in gölgeli TextView'ı (RemoteViews) kullanılır;
- * böylece açık duvar kâğıdında da okunur.
+ * Widget yazısı. Glance'in kendi yazısı dar rakamları ve gölgeyi desteklemediği için Android'in
+ * TextView'ı (RemoteViews) kullanılır: sistemin yazı tipi, sayılar dar ve kalın rakamlarla,
+ * duvar kâğıdının üstünde ([WidgetColors.shadow]) gölgeli.
+ *
+ * Uygulamanın kendi yazı tipi dosyaları (res/font) burada kullanılamaz: widget'ı launcher çizer ve
+ * Android ona başka bir uygulamanın yazı tipini yükletmez (kısıtlı bağlam). Önizleme ile ana ekran
+ * aynı görünsün diye her yerde sistem yazı tipleri kullanılır.
  */
 @Composable
 fun WText(
@@ -100,55 +134,31 @@ fun WText(
     weight: WWeight = WWeight.Regular,
     align: TextAlign = TextAlign.Start,
     maxLines: Int = 1,
+    font: WFont? = null,
 ) {
     val theme = LocalWidgetTheme.current
-    val textColor = color ?: theme.colors.text
-    val fontSize = theme.sp(size)
-    // Büyük rakamlar ve gölgeli yazılar Android TextView ile: yazı dolgusu olmadan, tasarımdaki gibi sıkı.
-    if (theme.colors.shadow || size >= TIGHT_TEXT_SP) {
-        val context = LocalContext.current
-        val layout = when (weight) {
-            WWeight.Light -> if (theme.colors.shadow) R.layout.widget_text_shadow_light else R.layout.widget_text_plain_light
-            WWeight.Regular -> if (theme.colors.shadow) R.layout.widget_text_shadow_regular else R.layout.widget_text_plain_regular
-            WWeight.Medium -> if (theme.colors.shadow) R.layout.widget_text_shadow_medium else R.layout.widget_text_plain_medium
-            WWeight.Bold -> if (theme.colors.shadow) R.layout.widget_text_shadow_bold else R.layout.widget_text_plain_bold
-        }
-        val gravity = when (align) {
-            TextAlign.End, TextAlign.Right -> Gravity.END
-            TextAlign.Center -> Gravity.CENTER_HORIZONTAL
-            else -> Gravity.START
-        }
-        val views = RemoteViews(context.packageName, layout).apply {
-            setTextViewText(R.id.widget_text, text)
-            setTextViewTextSize(R.id.widget_text, TypedValue.COMPLEX_UNIT_SP, fontSize.value)
-            setTextColor(R.id.widget_text, textColor.toArgb())
-            setInt(R.id.widget_text, "setGravity", gravity or Gravity.CENTER_VERTICAL)
-            if (maxLines != 1) setInt(R.id.widget_text, "setMaxLines", maxLines)
-        }
-        val alignment = when (align) {
-            TextAlign.End, TextAlign.Right -> Alignment.CenterEnd
-            TextAlign.Center -> Alignment.Center
-            else -> Alignment.CenterStart
-        }
-        Box(modifier, contentAlignment = alignment) { AndroidRemoteViews(views) }
-    } else {
-        Text(
-            text,
-            style = TextStyle(
-                color = ColorProvider(textColor),
-                fontSize = fontSize,
-                fontWeight = when (weight) {
-                    WWeight.Medium -> FontWeight.Medium
-                    WWeight.Bold -> FontWeight.Bold
-                    else -> FontWeight.Normal
-                },
-                fontFamily = if (weight == WWeight.Light) FontFamily("sans-serif-light") else null,
-                textAlign = align,
-            ),
-            maxLines = maxLines,
-            modifier = modifier,
-        )
+    val context = LocalContext.current
+    val role = font ?: if (isNumeric(text, size)) WFont.Digits else WFont.Text
+    val gravity = when (align) {
+        TextAlign.End, TextAlign.Right -> Gravity.END
+        TextAlign.Center -> Gravity.CENTER_HORIZONTAL
+        else -> Gravity.START
     }
+    val views = RemoteViews(context.packageName, WidgetLayouts.text(fontKey(theme.style, weight, role), theme.colors.shadowKind)).apply {
+        setTextViewText(R.id.widget_text, text)
+        setTextViewTextSize(R.id.widget_text, TypedValue.COMPLEX_UNIT_SP, theme.sp(size).value)
+        setTextColor(R.id.widget_text, (color ?: theme.colors.text).toArgb())
+        // Çok satırlı yazının hizası. Android 12 öncesinde bu çağrı widget'larda desteklenmez (widget hata verir);
+        // orada yazı kutusu içeriği kadar yer kaplar ve hizayı dıştaki kutu verir.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) setInt(R.id.widget_text, "setGravity", gravity or Gravity.CENTER_VERTICAL)
+        if (maxLines != 1) setInt(R.id.widget_text, "setMaxLines", maxLines)
+    }
+    val alignment = when (align) {
+        TextAlign.End, TextAlign.Right -> Alignment.CenterEnd
+        TextAlign.Center -> Alignment.Center
+        else -> Alignment.CenterStart
+    }
+    Box(modifier, contentAlignment = alignment) { AndroidRemoteViews(views) }
 }
 
 /** Tek renkli çizgi ikon (res/drawable/ic_wl_*.xml), istenen renge boyanır. */
@@ -168,7 +178,7 @@ fun WIcon(@DrawableRes res: Int, size: Dp, tint: Color? = null, modifier: Glance
 fun WeatherGlyph(condition: WeatherCondition, isNight: Boolean, size: Dp, modifier: GlanceModifier = GlanceModifier) {
     val colors = LocalWidgetTheme.current.colors
     val tint = when {
-        condition == WeatherCondition.Clear -> colors.sun
+        condition == WeatherCondition.Clear -> if (isNight) colors.moon else colors.sun
         condition.isWet -> colors.rain
         else -> colors.text
     }
@@ -256,8 +266,8 @@ fun WidgetSurface(
             alpha = alpha,
         ) else root
         BackgroundKind.Solid -> if (alpha > 0f) root.rounded(theme.colors.palette.solid.copy(alpha = alpha), radius) else root
-        BackgroundKind.Glass -> root.rounded(Color.White.copy(alpha = 0.4f * alpha), radius)
-        BackgroundKind.Transparent -> if (alpha > 0f) root.rounded(Color(0xFF0B1026).copy(alpha = 0.75f * alpha), radius) else root
+        BackgroundKind.Glass -> root.rounded(Color.White.copy(alpha = WidgetColors.GLASS_ALPHA * alpha), radius)
+        BackgroundKind.Transparent -> if (alpha > 0f) root.rounded(WidgetColors.TransparentTint.copy(alpha = 0.75f * alpha), radius) else root
     }
     if (onClick != null) root = root.clickable(onClick)
     var inner = GlanceModifier.fillMaxSize()
@@ -268,6 +278,17 @@ fun WidgetSurface(
         )
     }
     Box(root.then(modifier)) {
+        // Hafif perde: yazının arkasında kenarları yumuşak, yarı saydam bir katman.
+        if (theme.colors.scrim) {
+            val size = LocalSize.current
+            val density = LocalContext.current.resources.displayMetrics.density
+            Image(
+                ImageProvider(WidgetBitmaps.scrim(size.width.value, size.height.value, density, WidgetColors.scrimColor(theme.colors.darkText))),
+                contentDescription = null,
+                modifier = GlanceModifier.fillMaxSize(),
+                contentScale = androidx.glance.layout.ContentScale.FillBounds,
+            )
+        }
         Box(inner.padding(horizontal = horizontal, vertical = vertical), contentAlignment = contentAlignment) { content() }
     }
 }
@@ -410,9 +431,13 @@ fun durationText(context: Context, minutes: Long): String {
     }
 }
 
-/** "9 km"; 1 km'nin altında "<1 km". */
+/** "9 km", "2.747 km" (dile göre binlik ayırıcı); 1 km'nin altında "<1 km". */
 fun distanceText(context: Context, km: Double): String =
-    if (km < 1) context.getString(R.string.widget_distance_under_one) else context.getString(R.string.widget_distance_km, km.roundToInt())
+    if (km < 1) {
+        context.getString(R.string.widget_distance_under_one)
+    } else {
+        context.getString(R.string.widget_distance_km, java.text.NumberFormat.getIntegerInstance(locale(context)).format(km.roundToInt()))
+    }
 
 // --- Saat (Android'in kendi bileşenleri) ------------------------------------------------------------
 
@@ -422,6 +447,9 @@ enum class ClockPart { Time, Hours, Minutes, Date }
  * Android'in TextClock bileşeni: dakika (ve gün) değişince sistem kendisi günceller, uygulama hiç
  * uyanmaz, alarm kurulmaz. Dokununca telefonun saat/alarm uygulaması açılır.
  *
+ * Saat ve dakika ayrı renkteyse ya da yazı tipi "dolu + çizgi" ise saat iki ayrı TextClock olarak
+ * çizilir (tek tek rakam renklendirilemez: bunun için uygulamanın dakikada bir uyanması gerekirdi).
+ *
  * [dateSkeleton]: tarih için dile göre biçim iskeleti ("EEEEdMMMM" → "9 Ekim Cuma").
  */
 @Composable
@@ -429,58 +457,100 @@ fun WClock(
     part: ClockPart,
     size: Float,
     modifier: GlanceModifier = GlanceModifier,
-    weight: WWeight = WWeight.Light,
+    weight: WWeight = WWeight.Medium,
     color: Color? = null,
     dateSkeleton: String = "EEEEdMMMM",
     uppercase: Boolean = false,
     contentAlignment: Alignment = Alignment.CenterStart,
+    font: WFont? = null,
+) {
+    val theme = LocalWidgetTheme.current
+    val split = part == ClockPart.Time && color == null &&
+        (theme.clockFont == ClockFont.DigitsOutline || theme.hourColor != theme.minuteColor)
+    if (split) {
+        // Satırın yüksekliği açıkça verilir: aksi halde iki nokta resmi satırı kısaltıp rakamları kesiyor.
+        val rowHeight = theme.sp(size).value * LocalContext.current.resources.configuration.fontScale * 1.3f
+        Box(modifier, contentAlignment = contentAlignment) {
+            Row(GlanceModifier.height(rowHeight.dp), verticalAlignment = Alignment.CenterVertically) {
+                ClockView(ClockPart.Hours, size, weight, null, dateSkeleton, uppercase, font, hour12 = "h")
+                ClockColon(size, theme.hourColor)
+                ClockView(ClockPart.Minutes, size, weight, null, dateSkeleton, uppercase, font)
+            }
+        }
+    } else {
+        Box(modifier, contentAlignment = contentAlignment) { ClockView(part, size, weight, color, dateSkeleton, uppercase, font) }
+    }
+}
+
+/** Saat ile dakika arasındaki iki nokta: saat renginde iki küçük daire. */
+@Composable
+fun ClockColon(size: Float, color: Color) {
+    val theme = LocalWidgetTheme.current
+    val height = theme.sp(size).value * LocalContext.current.resources.configuration.fontScale * 0.5f
+    Image(
+        ImageProvider(R.drawable.widget_clock_colon),
+        contentDescription = null,
+        modifier = GlanceModifier.width((height * 0.36f).dp).height(height.dp),
+        colorFilter = ColorFilter.tint(ColorProvider(color)),
+    )
+}
+
+@Composable
+private fun ClockView(
+    part: ClockPart,
+    size: Float,
+    weight: WWeight,
+    color: Color?,
+    dateSkeleton: String,
+    uppercase: Boolean,
+    font: WFont?,
+    hour12: String = "hh",
 ) {
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
-    val shadow = theme.colors.shadow
-    val layout = when (weight) {
-        WWeight.Light -> if (shadow) R.layout.widget_clock_light_shadow else R.layout.widget_clock_light
-        WWeight.Regular -> if (shadow) R.layout.widget_clock_regular_shadow else R.layout.widget_clock_regular
-        WWeight.Medium -> when {
-            uppercase -> R.layout.widget_clock_medium_caps
-            shadow -> R.layout.widget_clock_medium_shadow
-            else -> R.layout.widget_clock_medium
+    val key = when {
+        font != null -> fontKey(theme.style, weight, font)
+        part == ClockPart.Date -> fontKey(theme.style, weight, WFont.Text)
+        else -> when (theme.clockFont) {
+            ClockFont.System -> fontKey(theme.style, weight, WFont.Text)
+            ClockFont.Digits -> "dg"
+            ClockFont.DigitsOutline -> if (part == ClockPart.Minutes) "ol" else "dg"
         }
-        WWeight.Bold -> if (shadow) R.layout.widget_clock_black_shadow else R.layout.widget_clock_black
     }
     val (format12, format24) = when (part) {
         ClockPart.Time -> "h:mm" to "HH:mm"
-        ClockPart.Hours -> "hh" to "HH"
+        ClockPart.Hours -> hour12 to "HH"
         ClockPart.Minutes -> "mm" to "mm"
         ClockPart.Date -> DateFormat.getBestDateTimePattern(locale(context), dateSkeleton).let { it to it }
     }
-    val views = RemoteViews(context.packageName, layout).apply {
+    val textColor = color ?: when (part) {
+        ClockPart.Minutes -> theme.minuteColor
+        ClockPart.Date -> theme.colors.text
+        else -> theme.hourColor
+    }
+    val views = RemoteViews(context.packageName, WidgetLayouts.clock(key, theme.colors.shadowKind, uppercase)).apply {
         setTextViewTextSize(R.id.clock, TypedValue.COMPLEX_UNIT_SP, theme.sp(size).value)
-        setTextColor(R.id.clock, (color ?: theme.colors.text).toArgb())
+        setTextColor(R.id.clock, textColor.toArgb())
         // Biçimi ayrıca vermek saatin ilk çizimde de dolu gelmesini sağlar.
         setCharSequence(R.id.clock, "setFormat12Hour", format12)
         setCharSequence(R.id.clock, "setFormat24Hour", format24)
         setOnClickPendingIntent(R.id.clock, clockAppIntent(context))
     }
-    Box(modifier, contentAlignment = contentAlignment) { AndroidRemoteViews(views) }
+    AndroidRemoteViews(views)
 }
 
-/** Kadranlı saat (AnalogClock): akrep beyaz, yelkovan açık mavi. Sistem çizer ve günceller. */
-@Composable
-fun WAnalogClock(modifier: GlanceModifier = GlanceModifier) {
-    val context = LocalContext.current
-    val views = RemoteViews(context.packageName, R.layout.widget_clock_analog).apply {
-        setOnClickPendingIntent(R.id.clock, clockAppIntent(context))
+/**
+ * Saate dokununca telefonun saat/alarm uygulaması açılır; böyle bir uygulama yoksa Commune Sky.
+ */
+fun clockAppIntent(context: Context): PendingIntent {
+    val alarms = Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    val intent = if (alarms.resolveActivity(context.packageManager) != null) {
+        alarms
+    } else {
+        Intent(context, com.alihaydarsayar.communesky.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
-    Box(modifier, contentAlignment = Alignment.Center) { AndroidRemoteViews(views) }
+    return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 }
-
-fun clockAppIntent(context: Context): PendingIntent = PendingIntent.getActivity(
-    context,
-    0,
-    Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-)
 
 @Composable
 fun VSpace(height: Dp) = Spacer(GlanceModifier.height(height))
@@ -491,12 +561,17 @@ fun HSpace(width: Dp) = Spacer(GlanceModifier.width(width))
 /** Bu boyuttan büyük yazılar yazı dolgusu olmadan (sıkı satır yüksekliğiyle) çizilir. */
 const val TIGHT_TEXT_SP = 26f
 
+/** Sistem yazı tipinin satır yüksekliği (em). */
+private const val LINE_EM = 1.2f
+
 /**
- * Yazının yaklaşık genişliği (dp): sistem yazı tipinde ortalama harf genişliği ~0,55 em. Yazının
- * kesilmemesi için boyut seçerken kullanılır.
+ * Yazının yaklaşık genişliği (dp): ortalama harf genişliği ~0,55 em, dar rakamlarda ~0,5 em.
+ * Yazının kesilmemesi için boyut seçerken kullanılır.
  */
-fun estimateWidthDp(text: String, sizeSp: Float, theme: WidgetTheme): Float =
-    text.length * sizeSp * 0.55f * theme.style.textSize.scale * theme.fontScaleFix
+fun estimateWidthDp(text: String, sizeSp: Float, theme: WidgetTheme): Float {
+    val em = if (isNumeric(text, 12f)) 0.5f else 0.55f
+    return text.length * sizeSp * em * theme.style.textSize.scale * theme.fontScaleFix
+}
 
 /** [text] [availableDp] genişliğe sığacak en büyük boyut, [max]'ı geçmeden. */
 fun fitWidth(text: String, max: Float, availableDp: Float, theme: WidgetTheme): Float {
@@ -506,7 +581,7 @@ fun fitWidth(text: String, max: Float, availableDp: Float, theme: WidgetTheme): 
 
 /** Sıkı (yazı dolgusuz) bir satırın yüksekliği (dp). */
 fun lineHeightDp(sizeSp: Float, theme: WidgetTheme): Float =
-    sizeSp * theme.style.textSize.scale * theme.fontScaleFix * (if (sizeSp >= TIGHT_TEXT_SP) 1.2f else 1.35f)
+    sizeSp * theme.style.textSize.scale * theme.fontScaleFix * LINE_EM + 2f
 
 /** Büyük sıcaklık yazısı: hem genişliğe hem yüksekliğe sığan en büyük boyut. */
 fun fitTemperature(text: String, max: Float, widthDp: Float, heightDp: Float, theme: WidgetTheme): Float =
