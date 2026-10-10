@@ -19,7 +19,8 @@ What's new in each version of Commune Sky.
 - **Clearer, calmer widget settings.** The preview stays on top; swipe it to change the style and see it on your wallpaper, a light or a dark background. Below it are five short rows: background, colors, text, what's shown and location. Each opens a small page, colors are named in plain words, and one tap fixes text that is hard to read.
 - **More polished widgets.** The same spacing, corners and type in every widget; corners match your phone's other widgets; a fine edge sets dark widgets apart from the wallpaper; highs and lows are written the same way everywhere; nothing is cut off at small sizes or with large text.
 - **Crisper text shadows.** On glass and clear backgrounds the shadow behind text is thinner and sharper, with a stronger option if you need it.
-- **Faster start and lighter widgets.** Widgets are redrawn only when what they show has changed, the radial clock sends a much smaller picture to your home screen, and the app starts faster.
+- **Lighter widgets.** Widgets are redrawn only when what they show has changed, and the radial clock sends a much smaller picture to your home screen.
+- Fixed: on the widget setup screen, some styles showed an empty preview after swiping through a few of them.
 - Example places in previews are now Besiktas, Liverpool and Limerick.
 
 ## 1.3 — in testing
