@@ -67,6 +67,7 @@ Kotlin · Jetpack Compose · Material 3 · MVVM · Hilt · Retrofit + kotlinx.se
 - Station measurements from the [Turkish State Meteorological Service (MGM)](https://www.mgm.gov.tr/) and airport reports from the [NOAA Aviation Weather Center](https://aviationweather.gov/).
 - Place search by [Photon](https://photon.komoot.io/) (komoot), using data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, and [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api) (GeoNames).
 - [Outfit](https://github.com/Outfitio/Outfit-Fonts) typeface, licensed under the [SIL Open Font License 1.1](third_party/Outfit-OFL.txt).
+- Clock digits derived from Bebas Neue (SIL Open Font License 1.1), see [third_party/BebasNeue-OFL.txt](third_party/BebasNeue-OFL.txt).
 
 ## License
 
