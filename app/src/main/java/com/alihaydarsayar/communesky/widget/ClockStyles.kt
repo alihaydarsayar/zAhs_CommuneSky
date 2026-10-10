@@ -524,8 +524,8 @@ fun onLightColors(base: WidgetColors): WidgetColors {
         text = ink,
         secondary = ink.copy(alpha = 0.75f),
         tertiary = ink.copy(alpha = 0.6f),
-        rain = Color(0xFF1F6CB0),
-        sun = Color(0xFFB7791F),
+        rain = VividOnLight.Rain,
+        sun = VividOnLight.Sun,
         divider = ink.copy(alpha = 0.14f),
     )
 }

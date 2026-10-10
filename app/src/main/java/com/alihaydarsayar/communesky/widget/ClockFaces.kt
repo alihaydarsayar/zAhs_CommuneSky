@@ -80,8 +80,9 @@ fun ClockRadial(data: WidgetPlaceData) {
     val density = context.resources.displayMetrics.density
     val corner = style.corners.radius.value
     val palette = theme.colors.palette
-    val dim = style.lineColor?.let { Color(it).copy(alpha = 0.3f) } ?: theme.colors.text.copy(alpha = 0.22f)
-    val lit = style.lineColor?.let { Color(it) } ?: theme.colors.text
+    // Sönük çizgiler net görünsün; parlayan çizgi tam beyaz (koyu yazıda tam siyah).
+    val dim = (style.lineColor?.let { Color(it) } ?: theme.colors.text).copy(alpha = 0.38f)
+    val lit = style.lineColor?.let { Color(it) } ?: if (theme.colors.darkText) Color.Black else Color.White
     val seconds = radialSeconds(style)
 
     WidgetSurface(horizontal = 0.dp, vertical = 0.dp, contentAlignment = Alignment.Center) {
@@ -117,7 +118,7 @@ fun ClockRadial(data: WidgetPlaceData) {
                     AndroidRemoteViews(radialStrips(context, w, h, lit), GlanceModifier.fillMaxSize())
                 }
             }
-            RadialContent(data)
+            RadialContent(data, hollowGround = if (style.background == BackgroundKind.Solid && style.effectiveTransparency == 0) palette.solid else null)
         }
     }
 }
@@ -154,8 +155,13 @@ private fun radialStrips(context: Context, w: Float, h: Float, color: Color): Re
     }
 
 /** Işınsal saatin içeriği: gün, saat : dakika, hava. Hepsi dikeyde tam ortalı. */
+/**
+ * [hollowGround]: zemin tek renk ve tam doluysa o renk. O zaman dakika "içi boş" çizilir: aynı saat iki
+ * katman halinde üst üste (altta kalın, dakika renginde; üstte ince, zemin renginde). Uygulamanın
+ * kendi çizgi rakamlı yazı tipi widget'larda yüklenemediği için bu yol kullanılır; ikisi de TextClock.
+ */
 @Composable
-private fun RadialContent(data: WidgetPlaceData) {
+private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
@@ -164,10 +170,10 @@ private fun RadialContent(data: WidgetPlaceData) {
     val ring = WidgetBitmaps.RADIAL_INSET + WidgetBitmaps.RADIAL_LENGTH + 2f
     val showWeather = theme.shows(WidgetContent.Weather)
     val showDay = w >= 290f
-    val dayWidth = if (showDay) 40f else 0f
-    val weatherWidth = if (showWeather) (if (w >= 380f) 96f else 76f) else 0f
+    val dayWidth = if (showDay) 36f else 0f
+    val weatherWidth = if (showWeather) (if (w >= 380f) 96f else 72f) else 0f
     // Rakamlar hem genişliğe hem yüksekliğe sığar: "17:22" ≈ 2,45 em; rakamın kendisi 0,71 em yüksek.
-    val digitsDp = min((w - 2 * ring - dayWidth - weatherWidth - 16f) / 2.45f, (h - 2 * ring - 8f) / 0.76f).coerceIn(28f, 132f)
+    val digitsDp = min((w - 2 * ring - dayWidth - weatherWidth - 12f) / 2.3f, (h - 2 * ring - 8f) / 0.76f).coerceIn(28f, 132f)
     val digits = dpToBase(digitsDp, theme, context)
     val current = data.snapshot.forecast.current
     Row(
@@ -186,7 +192,24 @@ private fun RadialContent(data: WidgetPlaceData) {
         HSpace((digitsDp * 0.05f).dp)
         ClockColon(digits, theme.hourColor)
         HSpace((digitsDp * 0.05f).dp)
-        WClock(ClockPart.Minutes, digits, color = theme.minuteColor, font = if (theme.clockFont == ClockFont.DigitsOutline) WFont.Outline else WFont.Digits)
+        // Çerçevenin rengi düzende sabit (açık ya da koyu); dakikaya özel renk seçildiyse ince dolu rakam.
+        if (theme.clockFont == ClockFont.DigitsOutline && hollowGround != null && theme.style.minuteColor == null && theme.style.hourColor == null) {
+            Box {
+              AndroidRemoteViews(
+                RemoteViews(context.packageName, if (theme.colors.darkText) R.layout.wc_hollow_dark else R.layout.wc_hollow).apply {
+                    for (id in intArrayOf(R.id.clock_halo_1, R.id.clock_halo_2, R.id.clock_halo_3, R.id.clock_halo_4, R.id.clock_halo_5, R.id.clock_halo_6, R.id.clock)) {
+                        setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, theme.sp(digits).value)
+                        setCharSequence(id, "setFormat12Hour", "mm")
+                        setCharSequence(id, "setFormat24Hour", "mm")
+                    }
+                    setTextColor(R.id.clock, hollowGround.toArgb())
+                    setOnClickPendingIntent(R.id.clock, clockAppIntent(context))
+                },
+              )
+            }
+        } else {
+            WClock(ClockPart.Minutes, digits, color = theme.minuteColor, font = if (theme.clockFont == ClockFont.DigitsOutline) WFont.Outline else WFont.Digits)
+        }
         HSpace(4.dp)
         if (showWeather) {
             Column(GlanceModifier.width(weatherWidth.dp).clickableApp(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -195,19 +218,16 @@ private fun RadialContent(data: WidgetPlaceData) {
                 val onPill = if (pill.luminance() > 0.45f) WidgetInk.Dark else WidgetInk.Light
                 Pill(color = pill) {
                     WithColors(theme.colors.copy(shadow = false, text = onPill)) {
-                        WeatherIconTinted(current.condition, !current.isDay, 16.dp, if (pill.luminance() > 0.45f) Color(0xFFB7791F) else null)
+                        WeatherIconTinted(current.condition, !current.isDay, 16.dp, if (pill.luminance() > 0.45f) VividOnLight.Sun else null)
                         HSpace(5.dp)
                         WText(temp(current.temperature), 17f, weight = WWeight.Bold)
                     }
                 }
-                val line = buildList {
-                    if (theme.shows(WidgetContent.PlaceName)) add(data.snapshot.displayName(context))
-                    if (theme.shows(WidgetContent.Condition)) add(context.getString(weatherDescriptionRes(current.weatherCode)))
-                }
-                // Sığmayan parça düşer; yazı kesilmez.
-                val text = generateSequence(line) { if (it.size > 1) it.dropLast(1) else null }
-                    .map { it.joinToString(" · ") }
-                    .firstOrNull { estimateWidthDp(it, 11f, theme) <= weatherWidth }
+                val name = if (theme.shows(WidgetContent.PlaceName)) data.snapshot.displayName(context) else null
+                val condition = if (theme.shows(WidgetContent.Condition)) context.getString(weatherDescriptionRes(current.weatherCode)) else null
+                // "Beşiktaş · Açık"; sığmazsa yalnız yer, o da sığmazsa yalnız durum. Yazı kesilmez.
+                val text = listOfNotNull(listOfNotNull(name, condition).joinToString(" · ").ifEmpty { null }, name, condition)
+                    .firstOrNull { estimateWidthDp(it, 11f, theme) <= weatherWidth + 8f }
                 if (text != null) {
                     VSpace(4.dp)
                     WText(text, 11f, color = theme.colors.secondary, align = TextAlign.Center)
@@ -223,7 +243,7 @@ private fun WeatherIconTinted(condition: WeatherCondition, isNight: Boolean, siz
     val colors = LocalWidgetTheme.current.colors
     val tint = when {
         condition == WeatherCondition.Clear -> sunOnLight ?: if (isNight) colors.moon else colors.sun
-        condition.isWet -> if (sunOnLight != null) Color(0xFF1F6CB0) else colors.rain
+        condition.isWet -> if (sunOnLight != null) VividOnLight.Rain else colors.rain
         else -> colors.text
     }
     WIcon(condition.lineIconRes(isNight), size, tint)
@@ -291,9 +311,9 @@ fun ClockAnalogFace(styleId: WidgetStyleId, data: WidgetPlaceData) {
         text = onGround,
         secondary = onGround.copy(alpha = 0.7f),
         tertiary = onGround.copy(alpha = 0.55f),
-        sun = if (onGround == WidgetInk.Dark) Color(0xFFD98A00) else WidgetInk.Sun,
-        rain = if (onGround == WidgetInk.Dark) Color(0xFF1F6CB0) else WidgetInk.Rain,
-        moon = if (onGround == WidgetInk.Dark) Color(0xFF8A6D1B) else WidgetInk.Moon,
+        sun = if (onGround == WidgetInk.Dark) VividOnLight.Sun else WidgetInk.Sun,
+        rain = if (onGround == WidgetInk.Dark) VividOnLight.Rain else WidgetInk.Rain,
+        moon = if (onGround == WidgetInk.Dark) VividOnLight.Moon else WidgetInk.Moon,
     )
     WidgetSurface(horizontal = 0.dp, vertical = 0.dp, contentAlignment = Alignment.Center) {
         Box(GlanceModifier.size(dial.dp), contentAlignment = Alignment.Center) {

@@ -58,6 +58,13 @@ object WidgetInk {
     ).map { it.toInt() }
 }
 
+/** Açık zeminde de canlı kalan, yine de okunur vurgu renkleri. */
+object VividOnLight {
+    val Sun = Color(0xFFF08C00)
+    val Rain = Color(0xFF2F7BF5)
+    val Moon = Color(0xFFD99A00)
+}
+
 object WidgetPalettes {
 
     /** Gökyüzü teması: hava ve günün saatine göre (tasarım: akşam #22305E → #5E5590, yağmur #263852 → #3F5068). */
@@ -229,14 +236,14 @@ data class WidgetColors(
                     text = ink,
                     secondary = secondary,
                     tertiary = ink.copy(alpha = if (onWallpaper) 0.78f else 0.6f),
-                    rain = Color(0xFF1F6CB0),
-                    sun = Color(0xFFB7791F),
+                    rain = VividOnLight.Rain,
+                    sun = VividOnLight.Sun,
                     divider = ink.copy(alpha = 0.18f),
                     surface = ink.copy(alpha = 0.06f),
                     pill = ink.copy(alpha = 0.08f),
                     strip = ink.copy(alpha = 0.06f),
                     accent = accent,
-                    moon = Color(0xFF8A6D1B),
+                    moon = VividOnLight.Moon,
                     scrim = scrim,
                     onWallpaper = onWallpaper,
                 )

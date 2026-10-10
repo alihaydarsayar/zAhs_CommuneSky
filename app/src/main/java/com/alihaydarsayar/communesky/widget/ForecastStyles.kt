@@ -112,7 +112,7 @@ private fun HourlyCurve(data: WidgetPlaceData) {
         barBottomDp = barBottom,
         density = context.resources.displayMetrics.density,
         line = theme.colors.text,
-        bar = theme.colors.rain.copy(alpha = 0.7f),
+        bar = theme.colors.rain.copy(alpha = 0.9f),
         // "Şimdi" noktası vurgu renginde.
         now = theme.colors.accent,
     )

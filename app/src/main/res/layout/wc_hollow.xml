@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ici bos rakam (cerceveli). Ayni TextClock ust uste: alttaki katmanlar rakamin cevresine ince bir
+    hale cizer (golge), en ustteki katman zemin rengiyle rakamin icini kapatir; geriye yalnizca
+    cerceve kalir. Hepsi ayni yazi tipi ve boyutta oldugu icin her cihazda tam ust uste gelir.
+    Hepsi TextClock: sistem gunceller, uygulama uyanmaz. Golge rengi duzenle sabittir.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <TextClock
+        android:id="@+id/clock_halo_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
+        android:format12Hour="mm"
+        android:format24Hour="mm"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:paddingHorizontal="4dp"
+        android:shadowColor="#FFFFFFFF"
+        android:shadowRadius="@dimen/widget_outline_radius"
+        android:textColor="#FFFFFFFF"
+        android:textStyle="bold" />
+    <TextClock
+        android:id="@+id/clock_halo_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
+        android:format12Hour="mm"
+        android:format24Hour="mm"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:paddingHorizontal="4dp"
+        android:shadowColor="#FFFFFFFF"
+        android:shadowRadius="@dimen/widget_outline_radius"
+        android:textColor="#FFFFFFFF"
+        android:textStyle="bold" />
+    <TextClock
+        android:id="@+id/clock_halo_3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
+        android:format12Hour="mm"
+        android:format24Hour="mm"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:paddingHorizontal="4dp"
+        android:shadowColor="#FFFFFFFF"
+        android:shadowRadius="@dimen/widget_outline_radius"
+        android:textColor="#FFFFFFFF"
+        android:textStyle="bold" />
+    <TextClock
+        android:id="@+id/clock_halo_4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
+        android:format12Hour="mm"
+        android:format24Hour="mm"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:paddingHorizontal="4dp"
+        android:shadowColor="#FFFFFFFF"
+        android:shadowRadius="@dimen/widget_outline_radius"
+        android:textColor="#FFFFFFFF"
+        android:textStyle="bold" />
+    <TextClock
+        android:id="@+id/clock_halo_5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
+        android:format12Hour="mm"
+        android:format24Hour="mm"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:paddingHorizontal="4dp"
+        android:shadowColor="#FFFFFFFF"
+        android:shadowRadius="@dimen/widget_outline_radius"
+        android:textColor="#FFFFFFFF"
+        android:textStyle="bold" />
+    <TextClock
+        android:id="@+id/clock_halo_6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
+        android:format12Hour="mm"
+        android:format24Hour="mm"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:paddingHorizontal="4dp"
+        android:shadowColor="#FFFFFFFF"
+        android:shadowRadius="@dimen/widget_outline_radius"
+        android:textColor="#FFFFFFFF"
+        android:textStyle="bold" />
+    <TextClock
+        android:id="@+id/clock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
+        android:format12Hour="mm"
+        android:format24Hour="mm"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:paddingHorizontal="4dp"
+        android:textColor="#FFFFFFFF"
+        android:textStyle="bold" />
+</FrameLayout>
