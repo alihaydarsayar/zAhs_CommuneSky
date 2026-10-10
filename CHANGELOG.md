@@ -2,6 +2,21 @@
 
 What's new in each version of Commune Sky.
 
+## 1.4 — in testing
+
+- **Widgets keep your settings.** Choosing another style no longer resets your background, colors, corners or anything else you picked; only the style changes. Switching the background keeps the transparency you set.
+- **What you see is what you get.** The preview on the setup screen is now drawn at the real size of the widget on your home screen, so the saved widget looks the same as the preview.
+- **Remove and re-add without starting over.** A new widget opens with the settings you last saved for that kind of widget.
+- **New: Settings › My widgets.** See every Commune Sky widget on your home screen and tap one to change it, even if your home screen has no "edit widget" option.
+- **One look for all widgets.** A calm dark design with the same spacing, type and colors everywhere: narrow, bold digits for temperatures, cool-to-warm temperature bars, and one accent color for "Today", "Now" and alerts.
+- **New clock: Radial digital.** Sixty fine lines around a bold clock with heavy hours and light minutes. The lines light up with the seconds, as a single line or with a fading tail. Your phone draws this itself, so it costs no extra battery.
+- **Three new analog clocks.** Plain, with a light dial and a date window; Field, with bold numerals where you choose which ones to highlight; and Weather ring, with the next twelve hours around the dial, cool to warm, and blue when rain is expected. Each has an optional second hand with a star or a circle.
+- **Your colors.** Next to the ready-made color themes there is now "Custom": choose the background, the main text, the secondary text and the accent from twelve colors or type a color code. Clocks let you color hours and minutes separately; analog clocks let you color the dial, numerals and hands.
+- **Your type.** Pick thin, normal or bold text, and choose standard or narrow digits for the clock.
+- **Easier to read on any wallpaper.** On glass and clear backgrounds the text turns dark on a light wallpaper and light on a dark one, with a soft shadow or an optional soft veil behind it. The setup screen warns you when the text may be hard to read. Glass never fades away completely.
+- **Tap where it matters.** Tap the clock to open your phone's clock app; tap the weather to open Commune Sky on that widget's place.
+- Example places in previews are now Besiktas, Liverpool and Limerick.
+
 ## 1.3 — in testing
 
 - **New widgets, redesigned.** Nine widgets to choose from: Home & location, Clock, Hourly, Weekly, Small, Text, My places, Rain and Details. Each one comes in several styles, more than 30 designs in all, and you pick the style when you add it.
