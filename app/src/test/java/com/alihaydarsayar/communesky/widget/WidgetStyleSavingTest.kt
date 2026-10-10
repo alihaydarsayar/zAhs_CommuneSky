@@ -63,6 +63,9 @@ class WidgetStyleSavingTest {
         ringCool = 0xFF6E56CF.toInt(),
         ringWarm = 0xFFD6409F.toInt(),
         ringRain = 0xFF46A758.toInt(),
+        windowColor = 0xFF0F2233.toInt(),
+        logo = false,
+        showDate = false,
     )
 
     @Test
@@ -73,7 +76,7 @@ class WidgetStyleSavingTest {
             "style", "background", "transparency", "colorTheme", "textColor", "corners", "textSize", "contents", "touched",
             "weight", "infoRow", "legibility", "accent", "customBackground", "customText", "customSecondary", "clockFont", "hourColor",
             "minuteColor", "lineColor", "pillColor", "secondEffect", "secondHand", "secondSymbol", "dialColor", "numeralColor",
-            "handColor", "highlighted", "ringCool", "ringWarm", "ringRain",
+            "handColor", "highlighted", "ringCool", "ringWarm", "ringRain", "windowColor", "logo", "showDate",
         )
         val a = everything.toString().removePrefix("WidgetStyle(").removeSuffix(")")
         val b = defaults.toString().removePrefix("WidgetStyle(").removeSuffix(")")
@@ -252,5 +255,38 @@ class WidgetStyleSavingTest {
         assertEquals(RadialSeconds.None, radialSeconds(solid.withBackground(BackgroundKind.Glass).copy(secondEffect = SecondEffect.Off), sdk = 34))
         // Android 12 öncesinde saniye kolu yok: çizgiler sabit.
         assertEquals(RadialSeconds.None, radialSeconds(solid, sdk = 30))
+    }
+
+    @Test
+    fun `the SS clock starts classic and its ready-made looks set all four colors`() {
+        val style = WidgetStyleId.ClockSS.defaultStyle()
+        assertEquals(SsClock.Preset.Classic, SsClock.preset(style))
+        assertEquals(0xFFD93A3F.toInt(), SsClock.look(style).accent)
+        assertTrue(style.logo && style.showDate && style.secondHand)
+
+        val night = SsClock.apply(style, SsClock.Preset.NightBlue)
+        assertEquals(SsClock.Preset.NightBlue, SsClock.preset(night))
+        assertEquals(SsClock.Look(0xFF0F2233.toInt(), 0xFFEDE6D6.toInt(), 0xFFE8B04B.toInt(), 0xFF0F2233.toInt()), SsClock.look(night))
+        // Kullanıcı bir rengi değiştirince artık hazır temalardan biri değildir, ama diğer renkler durur.
+        val custom = night.copy(accent = 0xFF30C85A.toInt())
+        assertNull(SsClock.preset(custom))
+        assertEquals(0xFF0F2233.toInt(), SsClock.look(custom).dial)
+        // Stil değişip geri gelince renkler korunur.
+        assertEquals(custom, custom.withStyle(WidgetStyleId.ClockAnalog).withStyle(WidgetStyleId.ClockSS))
+    }
+
+    @Test
+    fun `the SS clock switches each weather part on its own`() {
+        val parts = WidgetStyleId.ClockSS.contents
+        assertEquals(
+            listOf(WidgetContent.WeatherIcon, WidgetContent.Temperature, WidgetContent.Condition, WidgetContent.HighLow, WidgetContent.PlaceName, WidgetContent.RainAlert),
+            parts,
+        )
+        val style = WidgetStyleId.ClockSS.defaultStyle()
+        assertTrue(parts.all { style.shows(WidgetKind.Clock, it) })
+        // Diğer saat stillerinde bu iki anahtar görünmez.
+        assertFalse(WidgetContent.WeatherIcon in WidgetStyleId.ClockBig.contents)
+        assertFalse(WidgetContent.Temperature in WidgetStyleId.ClockBig.contents)
+        assertTrue(WidgetContent.Weather in WidgetStyleId.ClockBig.contents)
     }
 }

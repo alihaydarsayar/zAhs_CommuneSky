@@ -30,7 +30,7 @@ import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
 import kotlin.math.min
 
 /**
- * Saat widget'ı: 13 stil. Saatler her zaman Android'in kendi bileşenleriyle (TextClock,
+ * Saat widget'ı: 14 stil. Saatler her zaman Android'in kendi bileşenleriyle (TextClock,
  * AnalogClock) çizilir; uygulama dakikada ya da saniyede bir uyanmaz.
  */
 @Composable
@@ -40,6 +40,7 @@ fun ClockContent(style: WidgetStyleId, place: WidgetPlaceData?, input: WidgetInp
     val small = size.width < 180.dp || size.height < 100.dp
     when (style) {
         WidgetStyleId.ClockRadial -> if (size.width < 250.dp || size.height < 100.dp) ClockCompact(place!!) else ClockRadial(place!!)
+        WidgetStyleId.ClockSS -> if (size.height < 100.dp) ClockCompact(place!!) else ClockSsFace(place!!)
         WidgetStyleId.ClockAnalog, WidgetStyleId.ClockField, WidgetStyleId.ClockRing ->
             if (size.height < 100.dp) ClockCompact(place!!) else ClockAnalogFace(style, place!!)
         WidgetStyleId.ClockBold -> if (size.height < 100.dp) ClockCompact(place!!) else ClockBold(place!!)

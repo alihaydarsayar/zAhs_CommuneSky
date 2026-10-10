@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SS saati: tarih penceresinin ici. Cizimde pencere rengine boyanir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="400dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M234.80 210.00 L234.80 190.00 Q234.80 189.16 235.12 188.39 Q235.44 187.62 236.03 187.03 Q236.62 186.44 237.39 186.12 Q238.16 185.80 239.00 185.80 L301.00 185.80 Q301.84 185.80 302.61 186.12 Q303.38 186.44 303.97 187.03 Q304.56 187.62 304.88 188.39 Q305.20 189.16 305.20 190.00 L305.20 210.00 Q305.20 210.84 304.88 211.61 Q304.56 212.38 303.97 212.97 Q303.38 213.56 302.61 213.88 Q301.84 214.20 301.00 214.20 L239.00 214.20 Q238.16 214.20 237.39 213.88 Q236.62 213.56 236.03 212.97 Q235.44 212.38 235.12 211.61 Q234.80 210.84 234.80 210.00 Z" />
+</vector>

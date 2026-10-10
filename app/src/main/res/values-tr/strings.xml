@@ -459,4 +459,17 @@
     <string name="my_widgets_hint">Görünümünü değiştirmek için bir widget\'a dokun.</string>
     <string name="my_widgets_empty">Ana ekranda henüz widget yok</string>
     <string name="my_widgets_empty_hint">Ana ekranda boş bir yere basılı tut, Widget\'lar\'ı seç ve Commune Sky\'ı bul.</string>
+
+    <!-- SS analog saati -->
+    <string name="widget_style_clock_ss">SS</string>
+    <string name="widget_content_weather_icon">Hava ikonu</string>
+    <string name="widget_content_temperature">Sıcaklık</string>
+    <string name="widget_color_ink">Mürekkep (çizgi, rakam, logo, kol)</string>
+    <string name="widget_color_window">Tarih penceresi</string>
+    <string name="widget_config_ss_looks">Hazır temalar</string>
+    <string name="widget_ss_classic">Klasik</string>
+    <string name="widget_ss_night_blue">Gece mavisi</string>
+    <string name="widget_config_logo">Logo</string>
+    <string name="widget_config_date">Tarih</string>
+    <string name="widget_rain_time">%1$s yağmur</string>
 </resources>

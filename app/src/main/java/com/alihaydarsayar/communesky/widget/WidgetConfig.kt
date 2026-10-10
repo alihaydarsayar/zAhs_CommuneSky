@@ -219,6 +219,10 @@ data class WidgetStyle(
     val ringCool: Int? = null,
     val ringWarm: Int? = null,
     val ringRain: Int? = null,
+    /** SS saati: tarih penceresinin rengi, mühür (logo) ve tarih penceresi. */
+    val windowColor: Int? = null,
+    val logo: Boolean = true,
+    val showDate: Boolean = true,
 ) {
     fun styleId(kind: WidgetKind): WidgetStyleId =
         WidgetStyleId.entries.firstOrNull { it.name == style && it.kind == kind } ?: kind.defaultStyle

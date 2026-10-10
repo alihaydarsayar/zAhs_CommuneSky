@@ -465,4 +465,17 @@
     <string name="my_widgets_hint">Tap a widget to change how it looks.</string>
     <string name="my_widgets_empty">No widgets on your home screen yet</string>
     <string name="my_widgets_empty_hint">Touch and hold an empty spot on your home screen, choose Widgets and pick Commune Sky.</string>
+
+    <!-- SS analog saati -->
+    <string name="widget_style_clock_ss">SS</string>
+    <string name="widget_content_weather_icon">Weather icon</string>
+    <string name="widget_content_temperature">Temperature</string>
+    <string name="widget_color_ink">Ink (marks, numerals, seal, hands)</string>
+    <string name="widget_color_window">Date window</string>
+    <string name="widget_config_ss_looks">Ready-made looks</string>
+    <string name="widget_ss_classic">Classic</string>
+    <string name="widget_ss_night_blue">Night blue</string>
+    <string name="widget_config_logo">Seal</string>
+    <string name="widget_config_date">Date</string>
+    <string name="widget_rain_time">Rain %1$s</string>
 </resources>

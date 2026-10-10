@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SS saatinin kollari, saniye kolu olmadan.
+    AnalogClock Android'in kendi bilesenidir: sistem cizer ve dondurur; uygulama uyanmaz.
+-->
+<AnalogClock xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clock"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:dial="@drawable/widget_ss_dial_empty"
+    android:hand_hour="@drawable/widget_ss_hand_hour"
+    android:hand_minute="@drawable/widget_ss_hand_minute" />

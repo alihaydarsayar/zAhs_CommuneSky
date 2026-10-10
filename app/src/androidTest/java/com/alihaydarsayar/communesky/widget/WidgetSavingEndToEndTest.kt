@@ -64,6 +64,9 @@ class WidgetSavingEndToEndTest {
                 ringCool = 0xFF6E56CF.toInt(),
                 ringWarm = 0xFFD6409F.toInt(),
                 ringRain = 0xFF46A758.toInt(),
+                windowColor = 0xFF0F2233.toInt(),
+                logo = false,
+                showDate = false,
             )
         return WidgetConfig(WidgetPlace.Saved(7), style)
     }

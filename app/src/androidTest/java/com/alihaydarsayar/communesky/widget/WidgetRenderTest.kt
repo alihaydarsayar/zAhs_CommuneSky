@@ -132,6 +132,32 @@ class WidgetRenderTest {
     }
 
     @Test
+    fun renderSsClock() = runBlocking {
+        // SS saati: tasarımdaki beş hâl (design/png/ss-saat-final.png) ve boyutlar.
+        val base = WidgetStyleId.ClockSS.defaultStyle()
+        val weatherOnly = setOf(WidgetContent.WeatherIcon, WidgetContent.Temperature, WidgetContent.Condition)
+        val looks = mapOf(
+            "default" to base,
+            "weather_short" to base.copy(contents = weatherOnly),
+            "no_weather_no_date" to base.copy(contents = emptySet(), showDate = false),
+            "no_date" to base.copy(showDate = false),
+            "no_logo_no_seconds" to base.copy(logo = false, secondHand = false),
+            "dark" to SsClock.apply(base, SsClock.Preset.Dark),
+            "night_blue" to SsClock.apply(base, SsClock.Preset.NightBlue),
+            "custom_accent" to base.copy(accent = 0xFF30C85A.toInt(), windowColor = 0xFFFFD84D.toInt()),
+            "large_text" to base.copy(textSize = TextSize.Large),
+        )
+        val sample = WidgetSamples.input(context, scenario = WidgetSamples.Scenario.AtHome)
+        for ((name, style) in looks) {
+            render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), DpSize(170.dp, 170.dp), "ss_$name", lightWallpaper = false, input = sample)
+        }
+        for (side in listOf(110, 150, 250, 330)) {
+            render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, base), DpSize(side.dp, side.dp), "ss_size_$side", lightWallpaper = false, input = sample)
+        }
+        render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, base), DpSize(340.dp, 170.dp), "ss_wide", lightWallpaper = false, input = sample)
+    }
+
+    @Test
     fun renderHomeScenarios() = runBlocking {
         // Evde / yakında / uzakta / ev yok: Ev ve konum widget'ı ve saat + ev stili.
         for (scenario in WidgetSamples.Scenario.entries) {

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SS saati: kadran zemini. Cizimde kadran rengine boyanir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="400dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M398.00 200.00 Q398.00 239.38 382.93 275.77 Q367.86 312.16 340.01 340.01 Q312.16 367.86 275.77 382.93 Q239.38 398.00 200.00 398.00 Q160.62 398.00 124.23 382.93 Q87.84 367.86 59.99 340.01 Q32.14 312.16 17.07 275.77 Q2.00 239.38 2.00 200.00 Q2.00 160.62 17.07 124.23 Q32.14 87.84 59.99 59.99 Q87.84 32.14 124.23 17.07 Q160.62 2.00 200.00 2.00 Q239.38 2.00 275.77 17.07 Q312.16 32.14 340.01 59.99 Q367.86 87.84 382.93 124.23 Q398.00 160.62 398.00 200.00 Z" />
+</vector>

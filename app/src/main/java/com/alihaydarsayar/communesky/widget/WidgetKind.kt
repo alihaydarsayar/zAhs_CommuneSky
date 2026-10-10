@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Widget seçicide görünen 9 ana widget. Her birinin içinde birden fazla stil ([WidgetStyleId])
- * var: liste sade kalır, tasarım sayısı 30'u geçer. Stil, ekleme ekranında seçilir ve sonradan
+ * var: liste sade kalır, toplam 36 tasarım. Stil, ekleme ekranında seçilir ve sonradan
  * değiştirilebilir.
  *
  * [sizes]: Glance'in boyuta duyarlı (SizeMode.Responsive) düzeni için kırılma noktaları. Widget
@@ -35,8 +35,14 @@ enum class WidgetKind(
         R.string.widget_kind_clock,
         setOf(size(110, 40), size(110, 100), size(150, 150), size(180, 40), size(250, 40), size(250, 100), size(300, 150)),
         choosesPlace = true,
-        contents = listOf(WidgetContent.PlaceName, WidgetContent.Weather, WidgetContent.Condition, WidgetContent.HighLow, WidgetContent.RainAlert),
-        defaultContents = setOf(WidgetContent.PlaceName, WidgetContent.Weather, WidgetContent.Condition, WidgetContent.HighLow, WidgetContent.RainAlert),
+        contents = listOf(
+            WidgetContent.PlaceName, WidgetContent.Weather, WidgetContent.WeatherIcon, WidgetContent.Temperature,
+            WidgetContent.Condition, WidgetContent.HighLow, WidgetContent.RainAlert,
+        ),
+        defaultContents = setOf(
+            WidgetContent.PlaceName, WidgetContent.Weather, WidgetContent.WeatherIcon, WidgetContent.Temperature,
+            WidgetContent.Condition, WidgetContent.HighLow, WidgetContent.RainAlert,
+        ),
     ),
     Hourly(
         R.string.widget_kind_hourly,
@@ -141,6 +147,10 @@ enum class WidgetContent(@param:StringRes val labelRes: Int) {
     Current(R.string.widget_content_current),
     IncludeLocation(R.string.widget_content_include_location),
     TileNotes(R.string.widget_content_tile_notes),
+
+    /** SS saatinde hava alanının parçaları ayrı ayrı açılıp kapanır. */
+    WeatherIcon(R.string.widget_content_weather_icon),
+    Temperature(R.string.widget_content_temperature),
 }
 
 /**
@@ -163,6 +173,7 @@ enum class WidgetStyleId(
     ClockAnalog(WidgetKind.Clock, R.string.widget_style_clock_analog, size(170, 170), BackgroundKind.Transparent),
     ClockField(WidgetKind.Clock, R.string.widget_style_clock_field, size(170, 170), BackgroundKind.Transparent),
     ClockRing(WidgetKind.Clock, R.string.widget_style_clock_ring, size(170, 170), BackgroundKind.Transparent),
+    ClockSS(WidgetKind.Clock, R.string.widget_style_clock_ss, size(170, 170), BackgroundKind.Transparent),
     ClockWeather(WidgetKind.Clock, R.string.widget_style_clock_weather, size(320, 170)),
     ClockBig(WidgetKind.Clock, R.string.widget_style_clock_big, size(340, 170), BackgroundKind.Transparent),
     ClockSide(WidgetKind.Clock, R.string.widget_style_clock_side, size(340, 170), BackgroundKind.Transparent),
@@ -209,7 +220,18 @@ enum class WidgetStyleId(
     )
 
     /** Analog kadranlı stiller: kare çizilir, arka plan ayarı kadranın çevresini etkiler. */
-    val isAnalog: Boolean get() = this == ClockAnalog || this == ClockField || this == ClockRing
+    val isAnalog: Boolean get() = this == ClockAnalog || this == ClockField || this == ClockRing || this == ClockSS
+
+    /** Bu stilde ekleme ekranında açılıp kapanabilen içerikler. */
+    val contents: List<WidgetContent>
+        get() = when (this) {
+            // SS: hava alanının her parçası ayrı; tek bir "Hava durumu" anahtarı yok.
+            ClockSS -> listOf(
+                WidgetContent.WeatherIcon, WidgetContent.Temperature, WidgetContent.Condition,
+                WidgetContent.HighLow, WidgetContent.PlaceName, WidgetContent.RainAlert,
+            )
+            else -> kind.contents - setOf(WidgetContent.WeatherIcon, WidgetContent.Temperature)
+        }
 
     /** Stilin kendi saat yazı tipi (kullanıcı başka bir tane seçmediyse). */
     val clockFont: ClockFont get() = if (this == ClockRadial) ClockFont.DigitsOutline else ClockFont.System
@@ -227,7 +249,7 @@ internal object LegacyLooks {
         WidgetStyleId.WeeklyList, WidgetStyleId.SmallClassic, WidgetStyleId.PlacesList, WidgetStyleId.DetailsList,
         -> BackgroundKind.Glass to ColorTheme.Sky
         // 1.3'te olmayan stiller: bugünkü önerileri.
-        WidgetStyleId.ClockRadial, WidgetStyleId.ClockField, WidgetStyleId.ClockRing -> style.background to style.colorTheme
+        WidgetStyleId.ClockRadial, WidgetStyleId.ClockField, WidgetStyleId.ClockRing, WidgetStyleId.ClockSS -> style.background to style.colorTheme
         else -> BackgroundKind.Sky to ColorTheme.Sky
     }
 }

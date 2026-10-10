@@ -36,7 +36,7 @@ class PinWidgetTest {
 
     /**
      * Ana ekrandaki bir türün bütün widget'larına bir stil ve arka plan verir:
-     *   -e kind Clock -e style ClockRadial [-e background Glass] [-e effect Line]
+     *   -e kind Clock -e style ClockRadial [-e background Glass] [-e effect Line] [-e preset Dark]
      */
     @Test
     fun restyle() = kotlinx.coroutines.runBlocking<Unit> {
@@ -46,6 +46,7 @@ class PinWidgetTest {
         var style = WidgetStyleId.valueOf(arguments.getString("style") ?: kind.defaultStyle.name).defaultStyle()
         arguments.getString("background")?.let { style = style.withBackground(BackgroundKind.valueOf(it)) }
         arguments.getString("effect")?.let { style = style.copy(secondEffect = SecondEffect.valueOf(it)) }
+        arguments.getString("preset")?.let { style = SsClock.apply(style, SsClock.Preset.valueOf(it)) }
         val store = WidgetConfigStore.get(context)
         for (id in AppWidgetManager.getInstance(context).getAppWidgetIds(ComponentName(context, kind.receiverClass))) {
             store.set(id, WidgetConfig(WidgetPlace.Smart, style), kind)

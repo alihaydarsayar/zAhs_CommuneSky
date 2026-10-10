@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Saat: 13 stil (ışınsal dijital, üç analog kadran, büyük, yan yana, tek satır, kalın...).
+    Saat: 14 stil (ışınsal dijital, dört analog kadran, büyük, yan yana, tek satır, kalın...).
     Ekleme sırasında ayar ekranı açılır; sonradan uzun basıp düzenlenebilir.
     Güncelleme WorkManager ile yapılır (tüm yerler tek istekte); updatePeriodMillis kapalı (0).
 -->

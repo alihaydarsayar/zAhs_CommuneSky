@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SS saati: akrep (katedral tipi), 12'yi gosterir. Android 12+ murekkep rengine boyanir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="39.6dp"
+    android:height="360dp"
+    android:viewportWidth="44"
+    android:viewportHeight="400">
+    <group android:translateX="-178">
+        <path
+            android:fillColor="#FF16171A"
+            android:pathData="M194.40 176.24 L194.40 220.00 L205.60 220.00 L205.60 176.24 C219.20 165.44 217.60 133.04 207.20 120.08 L200.00 92.00 L192.80 120.08 C182.40 133.04 180.80 165.44 194.40 176.24 Z M200.00 128.72 C209.28 139.52 209.92 161.12 200.00 167.60 C190.08 161.12 190.72 139.52 200.00 128.72 Z" />
+    </group>
+</vector>

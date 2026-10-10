@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SS saati: muhurdeki yildiz. Cizimde vurgu rengine boyanir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="400dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M200.00 90.32 L201.24 93.30 L204.45 93.55 L202.00 95.65 L202.75 98.79 L200.00 97.11 L197.25 98.79 L198.00 95.65 L195.55 93.55 L198.76 93.30 L200.00 90.32 Z" />
+</vector>
