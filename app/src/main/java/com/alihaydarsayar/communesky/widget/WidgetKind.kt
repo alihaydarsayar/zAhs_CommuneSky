@@ -33,10 +33,10 @@ enum class WidgetKind(
     ),
     Clock(
         R.string.widget_kind_clock,
-        setOf(size(110, 40), size(110, 100), size(180, 40), size(250, 40), size(250, 100), size(300, 150)),
+        setOf(size(110, 40), size(110, 100), size(150, 150), size(180, 40), size(250, 40), size(250, 100), size(300, 150)),
         choosesPlace = true,
-        contents = listOf(WidgetContent.PlaceName, WidgetContent.Weather, WidgetContent.HighLow, WidgetContent.RainAlert),
-        defaultContents = setOf(WidgetContent.PlaceName, WidgetContent.Weather, WidgetContent.HighLow, WidgetContent.RainAlert),
+        contents = listOf(WidgetContent.PlaceName, WidgetContent.Weather, WidgetContent.Condition, WidgetContent.HighLow, WidgetContent.RainAlert),
+        defaultContents = setOf(WidgetContent.PlaceName, WidgetContent.Weather, WidgetContent.Condition, WidgetContent.HighLow, WidgetContent.RainAlert),
     ),
     Hourly(
         R.string.widget_kind_hourly,
@@ -144,28 +144,32 @@ enum class WidgetContent(@param:StringRes val labelRes: Int) {
 }
 
 /**
- * Bir widget'ın stilleri. [previewSize]: ekleme ekranındaki önizlemenin boyutu (dp);
- * [background], [colorTheme]: stil seçilince gelen varsayılan görünüm.
+ * Bir widget'ın stilleri. [previewSize]: seçici görselinin ve küçük önizlemelerin boyutu (dp);
+ * [background], [colorTheme]: stil seçilince gelen varsayılan görünüm (kullanıcı o ayara
+ * dokunmadıysa). 1.4'te ortak görünüm koyu düz zemin; Küçük cam, Yazı arka plansız.
  */
 enum class WidgetStyleId(
     val kind: WidgetKind,
     @param:StringRes val nameRes: Int,
     val previewSize: DpSize,
-    val background: BackgroundKind = BackgroundKind.Sky,
-    val colorTheme: ColorTheme = ColorTheme.Sky,
+    val background: BackgroundKind = BackgroundKind.Solid,
+    val colorTheme: ColorTheme = ColorTheme.Dark,
 ) {
     HomeSmart(WidgetKind.HomeLocation, R.string.widget_style_home_smart, size(320, 170)),
     HomeRow(WidgetKind.HomeLocation, R.string.widget_style_home_row, size(320, 86)),
     HomeList(WidgetKind.HomeLocation, R.string.widget_style_home_list, size(320, 150)),
 
+    ClockRadial(WidgetKind.Clock, R.string.widget_style_clock_radial, size(340, 150)),
+    ClockAnalog(WidgetKind.Clock, R.string.widget_style_clock_analog, size(170, 170), BackgroundKind.Transparent),
+    ClockField(WidgetKind.Clock, R.string.widget_style_clock_field, size(170, 170), BackgroundKind.Transparent),
+    ClockRing(WidgetKind.Clock, R.string.widget_style_clock_ring, size(170, 170), BackgroundKind.Transparent),
     ClockWeather(WidgetKind.Clock, R.string.widget_style_clock_weather, size(320, 170)),
     ClockBig(WidgetKind.Clock, R.string.widget_style_clock_big, size(340, 170), BackgroundKind.Transparent),
     ClockSide(WidgetKind.Clock, R.string.widget_style_clock_side, size(340, 170), BackgroundKind.Transparent),
     ClockLine(WidgetKind.Clock, R.string.widget_style_clock_line, size(340, 100), BackgroundKind.Transparent),
     ClockBold(WidgetKind.Clock, R.string.widget_style_clock_bold, size(170, 170), BackgroundKind.Solid, ColorTheme.Wallpaper),
-    ClockAnalog(WidgetKind.Clock, R.string.widget_style_clock_analog, size(170, 170), BackgroundKind.Transparent),
     ClockHome(WidgetKind.Clock, R.string.widget_style_clock_home, size(340, 170), BackgroundKind.Transparent),
-    ClockSun(WidgetKind.Clock, R.string.widget_style_clock_sun, size(340, 170), BackgroundKind.Solid, ColorTheme.Night),
+    ClockSun(WidgetKind.Clock, R.string.widget_style_clock_sun, size(340, 170)),
     ClockGlance(WidgetKind.Clock, R.string.widget_style_clock_glance, size(340, 100), BackgroundKind.Transparent),
     ClockCard(WidgetKind.Clock, R.string.widget_style_clock_card, size(170, 170)),
 
@@ -175,25 +179,25 @@ enum class WidgetStyleId(
 
     WeeklyBars(WidgetKind.Weekly, R.string.widget_style_weekly_bars, size(320, 240)),
     WeeklyColumns(WidgetKind.Weekly, R.string.widget_style_weekly_columns, size(320, 150)),
-    WeeklyList(WidgetKind.Weekly, R.string.widget_style_weekly_list, size(320, 240), BackgroundKind.Glass),
+    WeeklyList(WidgetKind.Weekly, R.string.widget_style_weekly_list, size(320, 240)),
 
     SmallClassic(WidgetKind.Small, R.string.widget_style_small_classic, size(160, 160), BackgroundKind.Glass),
     SmallCentered(WidgetKind.Small, R.string.widget_style_small_centered, size(160, 160)),
-    SmallMinimal(WidgetKind.Small, R.string.widget_style_small_minimal, size(160, 160), BackgroundKind.Solid, ColorTheme.Wallpaper),
+    SmallMinimal(WidgetKind.Small, R.string.widget_style_small_minimal, size(160, 160)),
 
     TextStack(WidgetKind.Text, R.string.widget_style_text_stack, size(220, 100), BackgroundKind.Transparent),
     TextLine(WidgetKind.Text, R.string.widget_style_text_line, size(320, 60), BackgroundKind.Transparent),
     TextTemperature(WidgetKind.Text, R.string.widget_style_text_temperature, size(160, 100), BackgroundKind.Transparent),
 
-    PlacesColumns(WidgetKind.Places, R.string.widget_style_places_columns, size(340, 86)),
-    PlacesList(WidgetKind.Places, R.string.widget_style_places_list, size(320, 170), BackgroundKind.Glass),
+    PlacesColumns(WidgetKind.Places, R.string.widget_style_places_columns, size(340, 100)),
+    PlacesList(WidgetKind.Places, R.string.widget_style_places_list, size(320, 190)),
 
-    PrecipitationBars(WidgetKind.Precipitation, R.string.widget_style_precipitation_bars, size(340, 86), BackgroundKind.Solid, ColorTheme.Night),
+    PrecipitationBars(WidgetKind.Precipitation, R.string.widget_style_precipitation_bars, size(340, 100)),
     PrecipitationSentence(WidgetKind.Precipitation, R.string.widget_style_precipitation_sentence, size(220, 86)),
 
-    DetailsTiles(WidgetKind.Details, R.string.widget_style_details_tiles, size(340, 170)),
-    DetailsSun(WidgetKind.Details, R.string.widget_style_details_sun, size(170, 170), BackgroundKind.Solid, ColorTheme.Night),
-    DetailsList(WidgetKind.Details, R.string.widget_style_details_list, size(320, 170), BackgroundKind.Glass),
+    DetailsTiles(WidgetKind.Details, R.string.widget_style_details_tiles, size(340, 190)),
+    DetailsSun(WidgetKind.Details, R.string.widget_style_details_sun, size(170, 170)),
+    DetailsList(WidgetKind.Details, R.string.widget_style_details_list, size(320, 170)),
     ;
 
     /** Bu stil seçilince gelen görünüm; kullanıcı sonra değiştirebilir. */
@@ -203,4 +207,27 @@ enum class WidgetStyleId(
         transparency = background.defaultTransparency,
         colorTheme = colorTheme,
     )
+
+    /** Analog kadranlı stiller: kare çizilir, arka plan ayarı kadranın çevresini etkiler. */
+    val isAnalog: Boolean get() = this == ClockAnalog || this == ClockField || this == ClockRing
+
+    /** Stilin kendi saat yazı tipi (kullanıcı başka bir tane seçmediyse). */
+    val clockFont: ClockFont get() = if (this == ClockRadial) ClockFont.DigitsOutline else ClockFont.System
+}
+
+/** 1.3'te her stilin önerdiği arka plan ve renk teması; eski kayıtları yükseltirken kullanılır. */
+internal object LegacyLooks {
+    fun of(style: WidgetStyleId): Pair<BackgroundKind, ColorTheme> = when (style) {
+        WidgetStyleId.ClockBig, WidgetStyleId.ClockSide, WidgetStyleId.ClockLine, WidgetStyleId.ClockAnalog,
+        WidgetStyleId.ClockHome, WidgetStyleId.ClockGlance, WidgetStyleId.TextStack, WidgetStyleId.TextLine,
+        WidgetStyleId.TextTemperature,
+        -> BackgroundKind.Transparent to ColorTheme.Sky
+        WidgetStyleId.ClockBold, WidgetStyleId.SmallMinimal -> BackgroundKind.Solid to ColorTheme.Wallpaper
+        WidgetStyleId.ClockSun, WidgetStyleId.PrecipitationBars, WidgetStyleId.DetailsSun -> BackgroundKind.Solid to ColorTheme.Night
+        WidgetStyleId.WeeklyList, WidgetStyleId.SmallClassic, WidgetStyleId.PlacesList, WidgetStyleId.DetailsList,
+        -> BackgroundKind.Glass to ColorTheme.Sky
+        // 1.3'te olmayan stiller: bugünkü önerileri.
+        WidgetStyleId.ClockRadial, WidgetStyleId.ClockField, WidgetStyleId.ClockRing -> style.background to style.colorTheme
+        else -> BackgroundKind.Sky to ColorTheme.Sky
+    }
 }

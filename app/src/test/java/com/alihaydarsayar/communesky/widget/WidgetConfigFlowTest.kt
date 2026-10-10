@@ -48,7 +48,7 @@ class WidgetConfigFlowTest {
         val job = launch { store.observe(42, WidgetKind.Small).take(3).toList(seen) }
         advanceUntilIdle()
         val glass = WidgetStyleId.SmallClassic.defaultStyle()
-        store.set(42, WidgetConfig(WidgetPlace.Home, glass.copy(transparency = 30)))
+        store.set(42, WidgetConfig(WidgetPlace.Home, glass.withTransparency(30)))
         advanceUntilIdle()
         store.set(42, WidgetConfig(WidgetPlace.Home, glass.copy(colorTheme = ColorTheme.Ocean, textSize = TextSize.Large)))
         advanceUntilIdle()
@@ -92,9 +92,9 @@ class WidgetConfigFlowTest {
     }
 
     @Test
-    fun `there are 9 widgets with more than 30 styles`() {
+    fun `there are 9 widgets with 35 styles`() {
         assertEquals(9, WidgetKind.entries.size)
-        assertTrue(WidgetStyleId.entries.size > 30)
+        assertEquals(35, WidgetStyleId.entries.size)
         WidgetKind.entries.forEach { assertTrue("${it.name} stilsiz", it.styles.isNotEmpty()) }
     }
 
@@ -109,17 +109,17 @@ class WidgetConfigFlowTest {
 
     @Test
     fun `widget place follows Home and falls back to my location`() {
-        val device = snapshot(0, "Tuzla", 40.83)
-        val atakum = snapshot(3, "Atakum", 41.33)
-        val weather = mapOf(0L to device, 3L to atakum)
-        val home = SavedPlace(3, "Atakum", null, 41.33, 29.0, isHome = true)
+        val device = snapshot(0, "Liverpool", 40.83)
+        val besiktas = snapshot(3, "Beşiktaş", 41.33)
+        val weather = mapOf(0L to device, 3L to besiktas)
+        val home = SavedPlace(3, "Beşiktaş", null, 41.33, 29.0, isHome = true)
         fun input(places: List<SavedPlace>) = WidgetInput(AppSettings(), places, weather)
 
-        assertEquals(atakum, WidgetInput.resolvePlace(WidgetPlace.Home, input(listOf(home)))!!.snapshot)
+        assertEquals(besiktas, WidgetInput.resolvePlace(WidgetPlace.Home, input(listOf(home)))!!.snapshot)
         assertEquals(device, WidgetInput.resolvePlace(WidgetPlace.Home, input(listOf(home.copy(isHome = false))))!!.snapshot)
         assertEquals(device, WidgetInput.resolvePlace(WidgetPlace.Saved(99), input(listOf(home)))!!.snapshot)
         assertEquals(true, WidgetInput.resolvePlace(WidgetPlace.Saved(3), input(listOf(home)))!!.isHome)
-        // Akıllı: Tuzla Atakum'dan ~55 km uzakta → bulunduğun yer.
+        // Akıllı: bulunduğun yer evden ~55 km uzakta → bulunduğun yer.
         assertEquals(device, WidgetInput.resolvePlace(WidgetPlace.Smart, input(listOf(home)))!!.snapshot)
     }
 

@@ -1,11 +1,14 @@
 package com.alihaydarsayar.communesky.widget
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.LocalContext
@@ -44,27 +47,43 @@ abstract class CommuneSkyWidget(
     private val previewInput: WidgetInput? = null,
 ) : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(kind.sizes)
+    /**
+     * Saat widget'ı gerçek boyutuyla çizilir (ışınsal çizgiler ve saniye şeritleri widget'ın tam
+     * ölçüsüne göre hesaplanır). Diğerleri boyut basamaklarıyla: küçültülünce daha az bilgi.
+     */
+    override val sizeMode: SizeMode = if (kind == WidgetKind.Clock) SizeMode.Exact else SizeMode.Responsive(kind.sizes)
 
     override val previewSizeMode = SizeMode.Responsive(kind.sizes)
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val started = SystemClock.elapsedRealtimeNanos()
         val configFlow = configFlow(context, id)
         val inputFlow = previewInput?.let { flowOf(it) } ?: WidgetDataLoader(context).input
         // İlk çizim hemen dolu gelsin; sonrası akışlardan.
         val initialConfig = configFlow.first()
         val initialInput = inputFlow.first()
+        val loaded = SystemClock.elapsedRealtimeNanos()
+        val debug = WidgetTiming.enabled(context)
         provideContent {
             val config by configFlow.collectAsState(initialConfig)
             val input by inputFlow.collectAsState(initialInput)
-            WidgetRoot(kind, config, input)
+            if (debug) {
+                // Debug sürümünde çizim süresi ölçülür: veri yüklendikten sonra 50 ms'yi geçmemeli.
+                val composeStart = SystemClock.elapsedRealtimeNanos()
+                WidgetRoot(kind, config, input)
+                WidgetTiming.log(kind, config, loadNanos = loaded - started, drawNanos = SystemClock.elapsedRealtimeNanos() - composeStart)
+            } else {
+                WidgetRoot(kind, config, input)
+            }
         }
     }
 
-    /** Android 15+ widget seçicisindeki gerçek önizleme: önbellekte veri varsa o, yoksa örnek veri. */
+    /**
+     * Android 15+ widget seçicisindeki önizleme: widget'ın gerçek çizimi, ama her zaman örnek veriyle.
+     * Seçici görselinde kullanıcının kendi yeri (evi, mahallesi) görünmez.
+     */
     override suspend fun providePreview(context: Context, widgetCategory: Int) {
-        val cached = runCatching { WidgetDataLoader(context).input.first() }.getOrNull()
-        val input = cached?.takeIf { it.weather.isNotEmpty() } ?: WidgetSamples.input(scenario = WidgetSamples.Scenario.AtHome)
+        val input = WidgetSamples.input(context, scenario = WidgetSamples.Scenario.AtHome)
         provideContent { WidgetRoot(kind, WidgetConfig.default(kind), input) }
     }
 
@@ -96,13 +115,33 @@ class PlacesWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : 
 class PrecipitationWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : CommuneSkyWidget(WidgetKind.Precipitation, preview, input)
 class DetailsWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : CommuneSkyWidget(WidgetKind.Details, preview, input)
 
-/** Uygulamayı açar; [openHomeSettings] ise doğrudan Ayarlar > Ev ve konum. */
-fun openAppAction(openHomeSettings: Boolean = false): Action =
-    if (openHomeSettings) {
-        actionStartActivity<MainActivity>(actionParametersOf(MainActivity.OpenHomeSettingsKey to true))
-    } else {
-        actionStartActivity<MainActivity>()
+/** Widget'ın gösterdiği ana yerin kimliği: havaya dokununca uygulama o yerle açılır. */
+val LocalWidgetPlaceId = staticCompositionLocalOf<Long?> { null }
+
+/**
+ * Uygulamayı, widget'ın gösterdiği yer seçili olarak açar; [openHomeSettings] ise doğrudan
+ * Ayarlar > Ev ve konum.
+ */
+@Composable
+fun openAppAction(openHomeSettings: Boolean = false): Action {
+    val placeId = LocalWidgetPlaceId.current
+    return when {
+        openHomeSettings -> actionStartActivity<MainActivity>(actionParametersOf(MainActivity.OpenHomeSettingsKey to true))
+        placeId != null -> actionStartActivity<MainActivity>(actionParametersOf(MainActivity.OpenPlaceKey to placeId))
+        else -> actionStartActivity<MainActivity>()
     }
+}
+
+/** Debug sürümünde her widget çiziminin süresini loglar ("adb logcat -s WidgetTiming"). */
+object WidgetTiming {
+    private const val TAG = "WidgetTiming"
+
+    fun enabled(context: Context): Boolean = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+
+    fun log(kind: WidgetKind, config: WidgetConfig, loadNanos: Long, drawNanos: Long) {
+        Log.d(TAG, "${kind.name}/${config.style.styleId(kind).name} load=${loadNanos / 1_000_000.0}ms draw=${drawNanos / 1_000_000.0}ms")
+    }
+}
 
 /** Hava sahnesinin teması (gökyüzü renkleri için); veri yoksa açık gece. */
 fun WeatherSnapshot?.skyTheme(): SkyTheme = this?.currentScene()?.theme ?: SkyTheme.ClearNight
@@ -136,6 +175,7 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput) {
     CompositionLocalProvider(
         LocalAppSettings provides input.settings,
         LocalWidgetTheme provides theme,
+        LocalWidgetPlaceId provides primary?.placeId,
     ) {
         val place = input.place(config.place)
         when (kind) {
@@ -194,6 +234,17 @@ class DetailsWidgetReceiver : CommuneSkyWidgetReceiver(WidgetKind.Details)
 object WeatherWidgetUpdater {
     private const val TAG = "WidgetUpdater"
 
+    /** Önizlemelerin içeriği sürüm değişmeden değişirse artırılır; önizlemeler yeniden yayınlanır. */
+    private const val PREVIEWS_REVISION = 2
+
+    /** Tek bir widget'ı yeniden çizer (ayarı kaydedilince); diğer widget'lara dokunmaz. */
+    suspend fun update(context: Context, kind: WidgetKind, appWidgetId: Int) {
+        runCatching {
+            val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
+            kind.widget().update(context, glanceId)
+        }.onFailure { Log.w(TAG, "${kind.name} #$appWidgetId çizilemedi", it) }
+    }
+
     /** Önbellek ya da ayarlar değişince ana ekrandaki tüm widget'ları yeniden çizer. */
     suspend fun updateAll(context: Context) {
         WidgetKind.entries.forEach { kind ->
@@ -203,19 +254,25 @@ object WeatherWidgetUpdater {
 
     /**
      * Android 15+ widget seçicisine gerçek önizlemeleri yükler. Sistem bunu saatte birkaç kezle
-     * sınırladığı için her sürümde bir kez yapılır.
+     * sınırladığı için her sürümde ve her dilde bir kez yapılır (örnek yer adı dile göre yazılır).
      */
     suspend fun publishPreviews(context: Context) {
         if (android.os.Build.VERSION.SDK_INT < 35) return
         val store = WidgetConfigStore.get(context)
         val version = androidx.core.content.pm.PackageInfoCompat
-            .getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0)).toInt()
+            .getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0))
+            .let { code -> "$code:${locale(context).toLanguageTag()}:$PREVIEWS_REVISION".hashCode() }
         if (store.previewsPublishedVersion() == version) return
         val manager = GlanceAppWidgetManager(context)
         var allPublished = true
         WidgetKind.entries.forEach { kind ->
-            val result = runCatching { manager.setWidgetPreviews(kind.receiverClass.kotlin) }.getOrNull()
-            if (result != GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS) allPublished = false
+            val result = runCatching { manager.setWidgetPreviews(kind.receiverClass.kotlin) }
+                .onFailure { Log.w(TAG, "${kind.name} önizlemesi yayınlanamadı", it) }
+                .getOrNull()
+            if (result != GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS) {
+                Log.i(TAG, "${kind.name} önizlemesi yayınlanmadı (sonuç $result); sonraki açılışta yeniden denenecek")
+                allPublished = false
+            }
         }
         if (allPublished) store.setPreviewsPublishedVersion(version)
     }
