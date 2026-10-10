@@ -1,5 +1,7 @@
 package com.alihaydarsayar.communesky.widget.config
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.Context
@@ -107,21 +109,37 @@ fun WidgetRender(
     // Ayar değişmedikçe yeniden çizilmez; art arda gelen değişiklikler (kaydırıcı) tek çizimde birleşir.
     LaunchedEffect(kind, config, size, wallpaperDarkText) {
         delay(80)
-        views = runCatching {
-            kind.widget(config, input).apply { previewWallpaperDarkText = wallpaperDarkText }.compose(context, size = size.draw)
-        }.getOrNull()
+        // Bileşim arka planda: stil kaydırılırken ekran takılmasın.
+        views = withContext(Dispatchers.Default) {
+            runCatching {
+                kind.widget(config, input).apply { previewWallpaperDarkText = wallpaperDarkText }.compose(context, size = size.draw)
+            }.onFailure { android.util.Log.w("WidgetPreview", "Önizleme hazırlanamadı", it) }.getOrNull()
+        }
     }
     Box(Modifier.size(size.frame.width * scale, size.frame.height * scale), contentAlignment = Alignment.Center) {
         AndroidView(
             factory = { FrameLayout(it) },
             update = { frame ->
                 val remote = views ?: return@AndroidView
-                frame.removeAllViews()
+                // Aynı çizim yeniden kurulmaz.
+                if (frame.tag === remote) return@AndroidView
+                frame.tag = remote
                 // Uygulama bağlamıyla: AppCompat ekranlarının yazı bileşenlerini değiştiren şişiricisi
                 // widget düzenlerini bozmasın (launcher da düz bir bağlamla çizer).
-                runCatching { remote.apply(frame.context.applicationContext, frame) }
-                    .onFailure { android.util.Log.w("WidgetPreview", "Önizleme çizilemedi", it) }
-                    .getOrNull()?.let(frame::addView)
+                val app = frame.context.applicationContext
+                // Görünüm bir sonraki mesajda kurulur: bu blok, sayfa kaydırılırken yerleşim geçişinin içinde
+                // çalışabiliyor; o anda eklenen görünümün yerleşim isteği yutulur ve önizleme boş kalır.
+                // Yeni görünüm kurulunca eskisinin yerini alır; arada boş kare görünmez.
+                frame.post {
+                    if (frame.tag !== remote) return@post
+                    runCatching { remote.apply(app, frame) }
+                        .onFailure { android.util.Log.w("WidgetPreview", "Önizleme çizilemedi", it) }
+                        .getOrNull()?.let { view ->
+                            frame.removeAllViews()
+                            frame.addView(view)
+                            frame.requestLayout()
+                        }
+                }
             },
             modifier = Modifier
                 .requiredSize(size.frame)

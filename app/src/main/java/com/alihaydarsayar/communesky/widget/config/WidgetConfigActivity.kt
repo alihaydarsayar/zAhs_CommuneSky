@@ -452,7 +452,10 @@ private fun PreviewStage(
             state = pager,
             contentPadding = PaddingValues(horizontal = 44.dp),
             pageSpacing = 12.dp,
-            beyondViewportPageCount = 1,
+            // Bütün stil sayfaları baştan kurulur ve yaşar. Sayfalar gerektikçe kurulduğunda Compose eski
+            // sayfaların yuvalarını yeniden kullanıyor ve içlerindeki widget görünümü (AndroidView) boş
+            // kalıyordu: dört kaydırmadan sonraki stiller önizlemede görünmüyordu.
+            beyondViewportPageCount = styles.size,
             key = { styles[it].name },
             modifier = Modifier.fillMaxSize().padding(top = if (compact) 8.dp else 44.dp, bottom = if (compact) 8.dp else 56.dp),
         ) { index ->
