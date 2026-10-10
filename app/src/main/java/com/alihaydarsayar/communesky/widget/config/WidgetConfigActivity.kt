@@ -95,6 +95,7 @@ import com.alihaydarsayar.communesky.widget.Legibility
 import com.alihaydarsayar.communesky.widget.RadialSeconds
 import com.alihaydarsayar.communesky.widget.SecondEffect
 import com.alihaydarsayar.communesky.widget.SecondSymbol
+import com.alihaydarsayar.communesky.widget.SsClock
 import com.alihaydarsayar.communesky.widget.TextColorMode
 import com.alihaydarsayar.communesky.widget.TextSize
 import com.alihaydarsayar.communesky.widget.WallpaperTone
@@ -221,6 +222,7 @@ private fun WidgetConfigScreen(
     val colors = remember(style, scene) { WidgetColors.resolve(context, style, scene.theme) }
     val isClock = kind == WidgetKind.Clock
     val isRadial = styleId == WidgetStyleId.ClockRadial
+    val isSs = styleId == WidgetStyleId.ClockSS
 
     CompositionLocalProvider(LocalSkyIsLight provides scene.theme.isLight) {
         Box(Modifier.fillMaxSize()) {
@@ -338,7 +340,26 @@ private fun WidgetConfigScreen(
                                 ColorRow(stringResource(R.string.widget_color_text), style.customText, colors.text) { c -> restyle { it.copy(customText = c) } }
                                 ColorRow(stringResource(R.string.widget_color_secondary), style.customSecondary, colors.secondary.copy(alpha = 1f)) { c -> restyle { it.copy(customSecondary = c) } }
                             }
-                            ColorRow(stringResource(R.string.widget_color_accent), style.accent, WidgetInk.Accent) { c -> restyle { it.copy(accent = c) } }
+                            if (isSs) {
+                                // SS saati: hazır üç tema ve kadranın dört rengi.
+                                Spacer(Modifier.height(12.dp))
+                                Label(stringResource(R.string.widget_config_ss_looks))
+                                GlassSegmented(
+                                    options = SsClock.Preset.entries.map { stringResource(it.labelRes) },
+                                    selectedIndex = SsClock.preset(style)?.ordinal ?: -1,
+                                    onSelect = { i -> restyle { SsClock.apply(it, SsClock.Preset.entries[i]) } },
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                val look = SsClock.Preset.Classic.look
+                                ColorRow(stringResource(R.string.widget_color_dial), style.dialColor, Color(look.dial)) { c -> restyle { it.copy(dialColor = c) } }
+                                ColorRow(stringResource(R.string.widget_color_ink), style.numeralColor, Color(look.ink)) { c -> restyle { it.copy(numeralColor = c) } }
+                                ColorRow(stringResource(R.string.widget_color_window), style.windowColor, Color(look.window)) { c -> restyle { it.copy(windowColor = c) } }
+                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) Note(stringResource(R.string.widget_config_hands_old_android))
+                            }
+                            ColorRow(
+                                stringResource(R.string.widget_color_accent), style.accent,
+                                if (isSs) Color(SsClock.Preset.Classic.look.accent) else WidgetInk.Accent,
+                            ) { c -> restyle { it.copy(accent = c) } }
                             if (isClock && !styleId.isAnalog) {
                                 ColorRow(stringResource(R.string.widget_color_hours), style.hourColor, colors.text) { c -> restyle { it.copy(hourColor = c) } }
                                 ColorRow(stringResource(R.string.widget_color_minutes), style.minuteColor, style.hourColor?.let { Color(it) } ?: colors.text) { c -> restyle { it.copy(minuteColor = c) } }
@@ -348,7 +369,7 @@ private fun WidgetConfigScreen(
                                 ColorRow(stringResource(R.string.widget_color_lines), style.lineColor, colors.text) { c -> restyle { it.copy(lineColor = c) } }
                                 ColorRow(stringResource(R.string.widget_color_pill), style.pillColor, colors.text) { c -> restyle { it.copy(pillColor = c) } }
                             }
-                            if (styleId.isAnalog) {
+                            if (styleId.isAnalog && !isSs) {
                                 val lightDial = styleId == WidgetStyleId.ClockAnalog
                                 val dial = if (lightDial) Color(0xFFF4F2EC) else Color(0xFF141414)
                                 val ink = if (lightDial) WidgetInk.Dark else WidgetInk.Light
@@ -420,7 +441,19 @@ private fun WidgetConfigScreen(
                         item {
                             GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.widget_config_contents)) {
                                 val enabled = style.contents ?: kind.defaultContents
-                                kind.contents.forEach { content ->
+                                if (isSs) {
+                                    GlassSwitchRow(
+                                        title = stringResource(R.string.widget_config_logo),
+                                        checked = style.logo,
+                                        onCheckedChange = { on -> restyle { it.copy(logo = on) } },
+                                    )
+                                    GlassSwitchRow(
+                                        title = stringResource(R.string.widget_config_date),
+                                        checked = style.showDate,
+                                        onCheckedChange = { on -> restyle { it.copy(showDate = on) } },
+                                    )
+                                }
+                                styleId.contents.forEach { content ->
                                     GlassSwitchRow(
                                         title = stringResource(content.labelRes),
                                         checked = content in enabled,
@@ -455,7 +488,7 @@ private fun WidgetConfigScreen(
                                         onCheckedChange = { on -> restyle { it.copy(secondHand = on) } },
                                         subtitle = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) stringResource(R.string.widget_config_second_old_android) else null,
                                     )
-                                    if (style.secondHand) {
+                                    if (style.secondHand && !isSs) {
                                         Spacer(Modifier.height(8.dp))
                                         Label(stringResource(R.string.widget_config_second_symbol))
                                         GlassSegmented(

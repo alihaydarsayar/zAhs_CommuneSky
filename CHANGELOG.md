@@ -15,6 +15,7 @@ What's new in each version of Commune Sky.
 - **Your type.** Pick thin, normal or bold text, and choose standard or narrow digits for the clock.
 - **Easier to read on any wallpaper.** On glass and clear backgrounds the text turns dark on a light wallpaper and light on a dark one, with a soft shadow or an optional soft veil behind it. The setup screen warns you when the text may be hard to read. Glass never fades away completely.
 - **Tap where it matters.** Tap the clock to open your phone's clock app; tap the weather to open Commune Sky on that widget's place.
+- **A new analog clock with its own seal, date window and weather.** The "SS" clock comes in three ready-made looks (classic, dark and night blue), and you can choose every color and what it shows.
 - Example places in previews are now Besiktas, Liverpool and Limerick.
 
 ## 1.3 — in testing
