@@ -79,7 +79,7 @@ fun ClockRadial(data: WidgetPlaceData) {
     val w = size.width.value
     val h = size.height.value
     val density = context.resources.displayMetrics.density
-    val corner = style.corners.radius.value
+    val corner = style.corners.radius(LocalContext.current).value
     val palette = theme.colors.palette
     // Sönük çizgiler net görünsün; parlayan çizgi tam beyaz (koyu yazıda tam siyah).
     val dim = (style.lineColor?.let { Color(it) } ?: theme.colors.text).copy(alpha = 0.38f)
@@ -173,7 +173,8 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
     val showWeather = theme.shows(WidgetContent.Weather)
     val showDay = w >= 290f
     val dayWidth = if (showDay) 36f else 0f
-    val weatherWidth = if (showWeather) (if (w >= 380f) 96f else 72f) else 0f
+    // Büyük yazı boyutunda hava sütunu da genişler (hap kesilmesin).
+    val weatherWidth = if (showWeather) (if (w >= 380f) 96f else 72f) * (theme.style.textSize.scale * theme.fontScaleFix).coerceAtLeast(1f) else 0f
     // Rakamlar hem genişliğe hem yüksekliğe sığar: "17:22" ≈ 2,45 em; rakamın kendisi 0,71 em yüksek.
     // Rakamlar yatayda sıkıştırılır (RADIAL_SCALE_X): tasarımdaki gibi dar ve uzun, daha büyük.
     val digitsDp = min((w - 2 * ring - dayWidth - weatherWidth - 8f) / 2.0f, (h - 2 * ring) / 0.76f).coerceIn(28f, 150f)
@@ -230,8 +231,9 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
                 Pill(color = pill) {
                     WithColors(theme.colors.copy(shadow = false, text = onPill)) {
                         WeatherIconTinted(current.condition, !current.isDay, 16.dp, if (pill.luminance() > 0.45f) VividOnLight.Sun else null)
-                        HSpace(5.dp)
-                        WText(temp(current.temperature), 17f, weight = WWeight.Bold)
+                        HSpace(4.dp)
+                        val temperature = temp(current.temperature)
+                        WText(temperature, min(17f, fitWidth(temperature, 17f, weatherWidth - 24f - 16f - 4f - 4f, theme)), weight = WWeight.Bold)
                     }
                 }
                 val name = if (theme.shows(WidgetContent.PlaceName)) data.snapshot.displayName(context) else null

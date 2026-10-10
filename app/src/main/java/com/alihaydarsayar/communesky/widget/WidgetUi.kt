@@ -91,6 +91,12 @@ val LocalWidgetTheme = staticCompositionLocalOf<WidgetTheme> { error("Widget tem
 
 enum class WWeight { Light, Regular, Medium, Bold }
 
+/** Widget'ların iç kenar boşluğu: her yerde aynı; 2×1 gibi küçüklerde [Small]. Aralıklar 4'ün katı. */
+object WidgetPad {
+    val Normal = 16.dp
+    val Small = 12.dp
+}
+
 /** Yazının rolü: düz yazı, dar kalın rakam ya da dar ince rakam. */
 enum class WFont { Text, Digits, Outline }
 
@@ -100,14 +106,15 @@ private val NUMERIC = Regex("^[-−]?[0-9][0-9.,]*[°%]?$|^%[0-9]+$")
 fun isNumeric(text: String, sizeSp: Float): Boolean = sizeSp >= 12f && NUMERIC.matches(text)
 
 /**
- * Düzen anahtarı (bkz. [WidgetLayouts]): kalınlık seçimi ve rol birlikte. İnce (light) kalınlık
- * yalnızca kullanıcı "İnce" seçerse ve yazı gölgesizse kullanılır: ince çizgiler gölgeyle kirli görünür.
+ * Düzen anahtarı (bkz. [WidgetLayouts]): kalınlık seçimi ve rol birlikte. Tasarımda ince (light)
+ * kalınlık yok: [WWeight.Light] normal sayılır. İnce yazı yalnızca kullanıcı "İnce" seçerse ve yazı
+ * gölgesizse kullanılır: ince çizgiler gölgeyle kirli görünür.
  */
 fun fontKey(style: WidgetStyle, weight: WWeight, font: WFont, shadow: Boolean = false): String {
     if (font == WFont.Digits) return "dg"
     if (font == WFont.Outline) return if (shadow) "dg" else "ol"
     val step = when (weight) {
-        WWeight.Light -> 0
+        WWeight.Light -> 1
         WWeight.Regular -> 1
         WWeight.Medium -> 2
         WWeight.Bold -> 3
@@ -222,15 +229,20 @@ private fun shapeRes(radius: Dp): Int = when {
     radius <= 12.dp -> R.drawable.widget_shape_12
     radius <= 16.dp -> R.drawable.widget_shape_16
     radius <= 20.dp -> R.drawable.widget_shape_20
+    radius <= 24.dp -> R.drawable.widget_shape_24
     radius <= 28.dp -> R.drawable.widget_shape_28
+    radius <= 36.dp -> R.drawable.widget_shape_36
     radius <= 40.dp -> R.drawable.widget_shape_40
     else -> R.drawable.widget_shape_pill
 }
 
 @DrawableRes
 private fun strokeRes(radius: Dp): Int = when {
+    radius <= 12.dp -> R.drawable.widget_stroke_12
     radius <= 16.dp -> R.drawable.widget_stroke_16
+    radius <= 24.dp -> R.drawable.widget_stroke_24
     radius <= 28.dp -> R.drawable.widget_stroke_28
+    radius <= 36.dp -> R.drawable.widget_stroke_36
     else -> R.drawable.widget_stroke_40
 }
 
@@ -243,8 +255,8 @@ private fun strokeRes(radius: Dp): Int = when {
 @Composable
 fun WidgetSurface(
     modifier: GlanceModifier = GlanceModifier,
-    horizontal: Dp = 18.dp,
-    vertical: Dp = 14.dp,
+    horizontal: Dp = WidgetPad.Normal,
+    vertical: Dp = WidgetPad.Normal,
     onClick: Action? = null,
     gradient: List<Color>? = null,
     contentAlignment: Alignment = Alignment.TopStart,
@@ -255,7 +267,7 @@ fun WidgetSurface(
     val theme = LocalWidgetTheme.current
     val style = theme.style
     val alpha = theme.backgroundAlpha
-    val radius = style.corners.radius
+    val radius = style.corners.radius(LocalContext.current)
     var root = GlanceModifier.fillMaxSize().appWidgetBackground()
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) root = root.cornerRadius(radius)
     if (!drawBackground) {
@@ -274,12 +286,15 @@ fun WidgetSurface(
     }
     if (onClick != null) root = root.clickable(onClick)
     var inner = GlanceModifier.fillMaxSize()
-    if (style.background == BackgroundKind.Glass && alpha > 0f) {
-        inner = inner.background(
-            imageProvider = ImageProvider(strokeRes(radius)),
-            alpha = (0.26f + 0.3f * alpha).coerceAtMost(0.5f),
-        )
+    // İnce iç çerçeve (1 dp): camda %25 beyaz; koyu dolu zeminde %6 beyaz, duvar kâğıdından ayırır.
+    val edge = when {
+        alpha <= 0f -> 0f
+        style.background == BackgroundKind.Glass -> WidgetColors.GLASS_EDGE
+        style.background == BackgroundKind.Transparent -> 0f
+        !theme.colors.darkText && !theme.colors.onWallpaper -> WidgetColors.DARK_EDGE
+        else -> 0f
     }
+    if (edge > 0f) inner = inner.background(imageProvider = ImageProvider(strokeRes(radius)), alpha = edge)
     Box(root.then(modifier)) {
         // Hafif perde: yazının arkasında kenarları yumuşak, yarı saydam bir katman.
         if (theme.colors.scrim) {
@@ -331,7 +346,7 @@ fun Pill(modifier: GlanceModifier = GlanceModifier, color: Color? = null, conten
     Row(
         modifier = modifier
             .rounded(color ?: LocalWidgetTheme.current.colors.pill, 999.dp)
-            .padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) { content() }
 }
@@ -357,11 +372,11 @@ fun PlaceLabel(
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         if (icon != null && !iconAfter) {
             WIcon(icon, iconSize, color, description = context.getString(if (data.isHome) R.string.home_place else R.string.current_location))
-            Spacer(GlanceModifier.width(5.dp))
+            Spacer(GlanceModifier.width(4.dp))
         }
         WText(name, size, weight = weight, color = color)
         if (icon != null && iconAfter) {
-            Spacer(GlanceModifier.width(5.dp))
+            Spacer(GlanceModifier.width(4.dp))
             WIcon(icon, iconSize, color)
         }
     }
@@ -388,9 +403,9 @@ fun tempValue(celsius: Double): Int = LocalAppSettings.current.temperatureUnit.f
 fun highLow(max: Double, min: Double): String =
     LocalContext.current.getString(R.string.widget_high_low, temp(max), temp(min))
 
-/** "18° / 6°". */
+/** "21° · 14°": dar yerde harfsiz; ayırıcı her yerde aynı. */
 @Composable
-fun highSlashLow(max: Double, min: Double): String = "${temp(max)} / ${temp(min)}"
+fun highLowShort(max: Double, min: Double): String = "${temp(max)} · ${temp(min)}"
 
 fun locale(context: Context) = context.resources.configuration.locales[0]
 
@@ -610,7 +625,7 @@ fun TinyRow(data: WidgetPlaceData, extra: String? = null, extraColor: Color? = n
     val temperature = temp(data.snapshot.forecast.current.temperature)
     val icon = min(24f, size.height.value - 16f).coerceAtLeast(14f)
     val tempSize = fitTemperature(temperature, 24f, size.width.value * 0.4f, size.height.value - 12f, theme)
-    var left = size.width.value - 24f - icon - 6f - estimateWidthDp(temperature, tempSize, theme)
+    var left = size.width.value - 24f - icon - 8f - estimateWidthDp(temperature, tempSize, theme)
     val name = data.snapshot.displayName(context)
     val nameWidth = estimateWidthDp(name, 13f, theme) + 8f + (if (placeIcon(data) != null) 18f else 0f)
     val withName = showName && nameWidth <= left
@@ -619,7 +634,7 @@ fun TinyRow(data: WidgetPlaceData, extra: String? = null, extraColor: Color? = n
     WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = 4.dp, contentAlignment = Alignment.CenterStart) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             CurrentGlyph(data.snapshot, icon.dp)
-            HSpace(6.dp)
+            HSpace(8.dp)
             WText(temperature, tempSize, weight = WWeight.Light)
             if (withName) {
                 HSpace(8.dp)

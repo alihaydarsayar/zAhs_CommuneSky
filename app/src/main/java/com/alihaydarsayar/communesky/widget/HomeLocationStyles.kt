@@ -75,7 +75,7 @@ private fun MainPlace(data: WidgetPlaceData, hint: HomeLocationState.Hint? = nul
     val vertical = if (big) 16f else 12f
     val bottom = when {
         hint != null -> lineHeightDp(12f, theme) * 2
-        showHourly -> 1f + (if (big) 10f else 6f) + if (big) lineHeightDp(12f, theme) + lineHeightDp(13f, theme) + 24f else lineHeightDp(11f, theme) + lineHeightDp(12f, theme) + 20f
+        showHourly -> 1f + (if (big) 12f else 8f) + if (big) lineHeightDp(12f, theme) + lineHeightDp(13f, theme) + 24f else lineHeightDp(11f, theme) + lineHeightDp(12f, theme) + 20f
         rain != null -> lineHeightDp(13f, theme)
         else -> 0f
     }
@@ -90,7 +90,7 @@ private fun MainPlace(data: WidgetPlaceData, hint: HomeLocationState.Hint? = nul
         theme = theme,
     )
     // Sıcaklığın yanındaki sütun: durum, Y/D, hissedilen. Sığmayan satır düşer.
-    val sideWidth = size.width.value - 32f - iconSize - 12f - estimateWidthDp(temperature, tempSize, theme) - 12f
+    val sideWidth = size.width.value - 32f - iconSize - 12f - estimateWidthDp(temperature, tempSize, theme) - 10f
     val sideHeight = lineHeightDp(tempSize, theme)
     val highLowText = if (theme.shows(WidgetContent.HighLow) && today != null) highLow(today.maxTemperature, today.minTemperature) else null
     val feelsText = if (theme.shows(WidgetContent.FeelsLike)) context.getString(R.string.widget_feels_like, temp(current.apparentTemperature)) else null
@@ -115,7 +115,7 @@ private fun MainPlace(data: WidgetPlaceData, hint: HomeLocationState.Hint? = nul
                     }
                     Row(verticalAlignment = Alignment.Bottom) {
                         WText(temperature, tempSize, weight = WWeight.Light)
-                        HSpace(10.dp)
+                        HSpace(8.dp)
                         Column(GlanceModifier.padding(bottom = (tempSize * 0.1f).dp)) {
                             sideLines.forEach { (text, small) ->
                                 WText(text, if (small) 12f else 14f, color = if (small) theme.colors.secondary else null, weight = if (small) WWeight.Regular else WWeight.Medium)
@@ -130,7 +130,7 @@ private fun MainPlace(data: WidgetPlaceData, hint: HomeLocationState.Hint? = nul
                 hint != null -> HintLine(hint)
                 showHourly -> {
                     HDivider()
-                    VSpace(if (big) 10.dp else 6.dp)
+                    VSpace(if (big) 12.dp else 8.dp)
                     HourlyStrip(data, count = if (size.width >= 300.dp) 6 else 5, compact = !big)
                 }
                 rain != null -> RainLine(rain)
@@ -154,7 +154,7 @@ private fun NearbyPlace(state: HomeLocationState.Nearby) {
     val vertical = if (big) 16f else 12f
     val rain = if (theme.shows(WidgetContent.RainAlert)) WidgetPhrases.rainAlert(context, home.snapshot) else null
     // Hap tek satıra sığmazsa yazı küçülür, yine sığmazsa hava karşılaştırması düşer.
-    val pillWidth = size.width.value - 32f - 43f
+    val pillWidth = size.width.value - 32f - 46f
     var pillText = WidgetPhrases.nearbyPill(context, state.here, home, state.distanceKm, unit)
     var pillSize = 13f
     if (estimateWidthDp(pillText, pillSize, theme) > pillWidth) pillSize = 12f
@@ -186,7 +186,7 @@ private fun NearbyPlace(state: HomeLocationState.Nearby) {
             if (roomy) {
                 Pill {
                     WIcon(R.drawable.ic_wl_pin, 14.dp)
-                    HSpace(7.dp)
+                    HSpace(8.dp)
                     WText(pillText, pillSize)
                 }
             }
@@ -214,7 +214,7 @@ private fun SplitPlaces(here: WidgetPlaceData, home: WidgetPlaceData, distanceKm
     var items = allItems
     var stripText = 13f
     fun stripFits(list: List<WidgetPhrases.AwayItem>, sp: Float) =
-        list.sumOf { estimateWidthDp(it.text, sp, theme).toDouble() + if (it.rain) 19.0 else 0.0 } + 14.0 * (list.size - 1) <= stripWidth
+        list.sumOf { estimateWidthDp(it.text, sp, theme).toDouble() + if (it.rain) 18.0 else 0.0 } + 16.0 * (list.size - 1) <= stripWidth
     if (!stripFits(items, stripText)) stripText = 12f
     while (items.size > 1 && !stripFits(items, stripText)) items = items.drop(1)
     WidgetSurface(onClick = openAppAction(), horizontal = 0.dp, vertical = 0.dp, drawBackground = !sky) {
@@ -237,10 +237,10 @@ private fun SplitPlaces(here: WidgetPlaceData, home: WidgetPlaceData, distanceKm
                 ) {
                     // Her öğe tek bir satır: Glance bir satırda en çok 10 öğe çizer.
                     items.forEachIndexed { index, item ->
-                        Row(GlanceModifier.padding(start = if (index > 0) 14.dp else 0.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(GlanceModifier.padding(start = if (index > 0) 16.dp else 0.dp), verticalAlignment = Alignment.CenterVertically) {
                             if (item.rain) {
                                 WIcon(R.drawable.ic_wl_drop, 14.dp, theme.colors.rain)
-                                HSpace(5.dp)
+                                HSpace(4.dp)
                             }
                             WText(item.text, stripText, color = if (item.rain) theme.colors.rain else theme.colors.secondary)
                         }
@@ -266,7 +266,7 @@ private fun Half(data: WidgetPlaceData, modifier: GlanceModifier, sky: Boolean, 
         m = m.background(
             imageProvider = ImageProvider(
                 gradientBitmap(
-                    colors, theme.style.corners.radius,
+                    colors, theme.style.corners.radius(context),
                     widthDp = size.width.value / 2f, heightDp = heightDp,
                     roundLeft = left, roundRight = !left, roundBottom = roundBottom,
                 ),
@@ -303,7 +303,7 @@ private fun Half(data: WidgetPlaceData, modifier: GlanceModifier, sky: Boolean, 
 private fun HomeRow(state: HomeLocationState) {
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
-    WidgetSurface(onClick = openAppAction(), horizontal = 20.dp, vertical = 8.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 8.dp, contentAlignment = Alignment.CenterStart) {
         when (state) {
             is HomeLocationState.Away -> TwoPlaceRow(state.here, state.home, state.distanceKm)
             is HomeLocationState.Nearby -> TwoPlaceRow(state.here, state.home, state.distanceKm)
@@ -319,19 +319,19 @@ private fun TwoPlaceRow(here: WidgetPlaceData, home: WidgetPlaceData, distanceKm
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     // Yer adları sığmıyorsa önce hava ikonları kalkar.
-    val column = (LocalSize.current.width.value - 40f - 64f) / 2f
+    val column = (LocalSize.current.width.value - 32f - 64f) / 2f
     val hereTemp = temp(here.snapshot.forecast.current.temperature)
     val homeTemp = temp(home.snapshot.forecast.current.temperature)
     fun needs(data: WidgetPlaceData, temperature: String) = maxOf(
         estimateWidthDp(data.snapshot.displayName(context), 13f, theme) + 18f,
         estimateWidthDp(temperature, 32f, theme),
-    ) + 42f
+    ) + 40f
     val wide = LocalSize.current.width >= 250.dp && needs(here, hereTemp) <= column && needs(home, homeTemp) <= column
     Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
         Row(GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
             if (wide) {
                 CurrentGlyph(here.snapshot, 32.dp)
-                HSpace(10.dp)
+                HSpace(8.dp)
             }
             Column {
                 WText(temp(here.snapshot.forecast.current.temperature), 32f, weight = WWeight.Light)
@@ -348,7 +348,7 @@ private fun TwoPlaceRow(here: WidgetPlaceData, home: WidgetPlaceData, distanceKm
                 PlaceLabel(home, 13f, weight = WWeight.Regular, color = theme.colors.secondary)
             }
             if (wide) {
-                HSpace(10.dp)
+                HSpace(8.dp)
                 CurrentGlyph(home.snapshot, 32.dp)
             }
         }
@@ -363,7 +363,7 @@ private fun SinglePlaceRow(data: WidgetPlaceData) {
     val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
     Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
         CurrentGlyph(data.snapshot, 32.dp)
-        HSpace(10.dp)
+        HSpace(8.dp)
         WText(temp(current.temperature), 32f, weight = WWeight.Light)
         HSpace(12.dp)
         Column(GlanceModifier.defaultWeight()) {
@@ -387,7 +387,7 @@ private fun HomeList(state: HomeLocationState) {
         is HomeLocationState.Single -> listOf(state.place)
         HomeLocationState.Empty -> emptyList()
     }
-    WidgetSurface(onClick = openAppAction(), horizontal = 18.dp, vertical = 12.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 12.dp, contentAlignment = Alignment.CenterStart) {
         Column(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             rows.forEachIndexed { index, data ->
                 if (index > 0) {
@@ -398,11 +398,11 @@ private fun HomeList(state: HomeLocationState) {
                 ListRow(data)
             }
             if (state is HomeLocationState.AtHome) {
-                VSpace(6.dp)
+                VSpace(8.dp)
                 WText(context.getString(R.string.widget_you_are_home), 12f, color = LocalWidgetTheme.current.colors.secondary)
             }
             if (state is HomeLocationState.Single) {
-                VSpace(6.dp)
+                VSpace(8.dp)
                 HintLine(state.hint)
             }
         }
@@ -467,7 +467,7 @@ fun RainLine(text: String, size: Float = 13f) {
     val theme = LocalWidgetTheme.current
     InfoLine {
         WIcon(R.drawable.ic_wl_drop, (size + 2).dp, theme.colors.rain)
-        HSpace(7.dp)
+        HSpace(8.dp)
         WText(text, size, color = theme.colors.rain)
     }
 }
@@ -489,7 +489,7 @@ fun HintLine(hint: HomeLocationState.Hint) {
     val theme = LocalWidgetTheme.current
     Row(verticalAlignment = Alignment.CenterVertically) {
         WIcon(if (hint == HomeLocationState.Hint.NoHome) R.drawable.ic_wl_home else R.drawable.ic_wl_pin, 13.dp, theme.colors.tertiary)
-        HSpace(6.dp)
+        HSpace(8.dp)
         WText(
             context.getString(
                 if (hint == HomeLocationState.Hint.NoHome) R.string.widget_hint_no_home else R.string.widget_hint_no_location,

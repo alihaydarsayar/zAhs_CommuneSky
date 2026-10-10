@@ -21,6 +21,7 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.width
 import androidx.glance.layout.size
 import androidx.glance.text.TextAlign
 import com.alihaydarsayar.communesky.R
@@ -72,6 +73,18 @@ private fun clockSize(max: Float, widthDp: Float, heightDp: Float, ems: Float = 
     return min(max, min(widthDp / (ems * scale), heightDp / (1.2f * scale))).coerceAtLeast(18f)
 }
 
+/** Tarih iskeleti, [widthDp] genişliğe sığan en uzun hâliyle: "10 Ekim Cumartesi" → "10 Ekim Cmt" → "10 Ekim". */
+@Composable
+private fun dateSkeletonFor(widthDp: Float, sizeSp: Float): String {
+    val theme = LocalWidgetTheme.current
+    // En uzun ay ve gün adına göre: "30 September Wednesday" ≈ 22 harf.
+    return when {
+        estimateWidthDp("30 September Wednesday", sizeSp, theme) <= widthDp -> "EEEEdMMMM"
+        estimateWidthDp("30 September Wed", sizeSp, theme) <= widthDp -> "EEEdMMMM"
+        else -> "dMMMM"
+    }
+}
+
 /** Tasarım "Saat ve hava": solda saat ve tarih, sağda hava; altta yağmur uyarısı. */
 @Composable
 private fun ClockWeather(data: WidgetPlaceData) {
@@ -80,29 +93,42 @@ private fun ClockWeather(data: WidgetPlaceData) {
     val size = LocalSize.current
     val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
     val rain = if (theme.shows(WidgetContent.RainAlert) && size.height >= 150.dp) WidgetPhrases.rainAlert(context, data.snapshot) else null
-    WidgetSurface(horizontal = 20.dp, vertical = 16.dp) {
+    val temperature = temp(data.snapshot.forecast.current.temperature)
+    val inner = size.width.value - 32f
+    val pinned = theme.shows(WidgetContent.PlaceName) && placeIcon(data) != null
+    // Sağ sütun: ikon + sıcaklık, altında "yer · Y/D". Widget'ın yarısına sığmayan ayrıntı sondan düşer.
+    val detailParts = buildList {
+        if (theme.shows(WidgetContent.PlaceName)) add(data.snapshot.displayName(context))
+        if (theme.shows(WidgetContent.HighLow) && today != null) add(highLow(today.maxTemperature, today.minTemperature))
+    }
+    val detail = if (!theme.shows(WidgetContent.Weather)) "" else generateSequence(detailParts) { if (it.size > 1) it.dropLast(1) else null }
+        .map { it.joinToString(" · ") }
+        .firstOrNull { estimateWidthDp(it, 13f, theme) + (if (pinned) 16f else 0f) <= inner * 0.5f }
+        .orEmpty()
+    val side = if (!theme.shows(WidgetContent.Weather)) 0f else maxOf(
+        38f + 8f + estimateWidthDp(temperature, 38f, theme),
+        estimateWidthDp(detail, 13f, theme) + (if (pinned) 16f else 0f),
+    ) + 12f
+    val clockWidth = inner - side
+    WidgetSurface(horizontal = 16.dp, vertical = 16.dp) {
         Column(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(GlanceModifier.defaultWeight()) {
-                    WClock(ClockPart.Time, clockSize(72f, size.width.value - 40f - 150f, size.height.value - 32f - lineHeightDp(15f, theme) - (if (rain != null) lineHeightDp(13f, theme) + 30f else 0f)))
-                    WClock(ClockPart.Date, 15f, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = "EEEEdMMMM")
+                    WClock(ClockPart.Time, clockSize(72f, clockWidth, size.height.value - 32f - lineHeightDp(15f, theme) - (if (rain != null) lineHeightDp(13f, theme) + 30f else 0f)))
+                    WClock(ClockPart.Date, 15f, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = dateSkeletonFor(clockWidth, 15f))
                 }
                 if (theme.shows(WidgetContent.Weather)) {
                     Column(GlanceModifier.clickableApp(), horizontalAlignment = Alignment.End) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             CurrentGlyph(data.snapshot, 38.dp)
                             HSpace(8.dp)
-                            WText(temp(data.snapshot.forecast.current.temperature), 38f, weight = WWeight.Light)
+                            WText(temperature, 38f, weight = WWeight.Light)
                         }
-                        val detail = buildList {
-                            if (theme.shows(WidgetContent.PlaceName)) add(data.snapshot.displayName(context))
-                            if (theme.shows(WidgetContent.HighLow) && today != null) add(highLow(today.maxTemperature, today.minTemperature))
-                        }.joinToString(" · ")
                         if (detail.isNotEmpty()) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (theme.shows(WidgetContent.PlaceName)) placeIcon(data)?.let {
+                                if (pinned) placeIcon(data)?.let {
                                     WIcon(it, 12.dp, theme.colors.secondary)
-                                    HSpace(5.dp)
+                                    HSpace(4.dp)
                                 }
                                 WText(detail, 13f, color = theme.colors.secondary, align = TextAlign.End)
                             }
@@ -117,7 +143,7 @@ private fun ClockWeather(data: WidgetPlaceData) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     WIcon(R.drawable.ic_wl_drop, 16.dp, theme.colors.rain)
-                    HSpace(10.dp)
+                    HSpace(8.dp)
                     WText(rain, 13f, color = theme.colors.rain)
                 }
             }
@@ -131,11 +157,11 @@ private fun ClockBig(data: WidgetPlaceData) {
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
     val showWeather = theme.shows(WidgetContent.Weather)
-    WidgetSurface(horizontal = 24.dp, vertical = 14.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(horizontal = 16.dp, vertical = 16.dp, contentAlignment = Alignment.CenterStart) {
         Column(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             if (theme.shows(WidgetContent.PlaceName)) PlaceLabel(data, 16f, iconAfter = true)
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                WClock(ClockPart.Time, clockSize(96f, size.width.value - 48f - (if (showWeather) 82f else 0f), size.height.value - 28f - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(16f, theme) else 0f) - lineHeightDp(22f, theme) - 4f), GlanceModifier.defaultWeight())
+                WClock(ClockPart.Time, clockSize(96f, size.width.value - 32f - (if (showWeather) 82f else 0f), size.height.value - 32f - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(16f, theme) else 0f) - lineHeightDp(22f, theme) - 4f), GlanceModifier.defaultWeight())
                 if (showWeather) {
                     Box(GlanceModifier.clickableApp().padding(end = 12.dp)) { CurrentGlyph(data.snapshot, min(70f, size.height.value * 0.36f).dp) }
                 }
@@ -156,22 +182,22 @@ private fun ClockSide(data: WidgetPlaceData) {
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
     val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
-    WidgetSurface(horizontal = 20.dp, vertical = 14.dp, contentAlignment = Alignment.Center) {
+    WidgetSurface(horizontal = 16.dp, vertical = 16.dp, contentAlignment = Alignment.Center) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(horizontalAlignment = Alignment.End) {
-                WClock(ClockPart.Time, clockSize(88f, size.width.value - 40f - (if (theme.shows(WidgetContent.Weather)) 140f else 0f), size.height.value - 28f - lineHeightDp(17f, theme) - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(15f, theme) else 0f)), contentAlignment = Alignment.CenterEnd)
+                WClock(ClockPart.Time, clockSize(88f, size.width.value - 32f - (if (theme.shows(WidgetContent.Weather)) 140f else 0f), size.height.value - 32f - lineHeightDp(17f, theme) - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(15f, theme) else 0f)), contentAlignment = Alignment.CenterEnd)
                 WClock(ClockPart.Date, 17f, weight = WWeight.Regular, dateSkeleton = "dMMMMEEEE", contentAlignment = Alignment.CenterEnd)
                 if (theme.shows(WidgetContent.PlaceName)) PlaceLabel(data, 15f, weight = WWeight.Regular, color = theme.colors.secondary, iconAfter = true)
             }
             if (theme.shows(WidgetContent.Weather)) {
-                HSpace(22.dp)
+                HSpace(20.dp)
                 VDivider(GlanceModifier.height(min(120f, size.height.value * 0.7f).dp), width = 1.5.dp)
-                HSpace(22.dp)
+                HSpace(20.dp)
                 Column(GlanceModifier.clickableApp()) {
                     CurrentGlyph(data.snapshot, 46.dp)
                     WText(temp(data.snapshot.forecast.current.temperature), 38f, weight = WWeight.Light)
                     if (theme.shows(WidgetContent.HighLow) && today != null) {
-                        WText(highSlashLow(today.maxTemperature, today.minTemperature), 15f, color = theme.colors.secondary)
+                        WText(highLow(today.maxTemperature, today.minTemperature), 13f, color = theme.colors.secondary)
                     }
                 }
             }
@@ -234,13 +260,14 @@ private fun LineSeparator() {
 /** Tasarım "Kalın": açık renkli dolu kare (Android 12+ duvar kâğıdı rengi), alt alta kalın saat. */
 @Composable
 private fun ClockBold(data: WidgetPlaceData) {
+    val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
     val palette = theme.colors.palette
     val filled = theme.style.background == BackgroundKind.Solid || theme.style.background == BackgroundKind.Sky
     val hourColor = theme.style.hourColor?.let { Color(it) } ?: if (filled) palette.onContainer else theme.colors.text
     val minuteColor = theme.style.minuteColor?.let { Color(it) } ?: if (filled) palette.containerAccent else theme.colors.secondary
-    val digits = clockSize(72f, size.width.value - 36f, (size.height.value - 28f - lineHeightDp(15f, theme) - 6f) / 2f, ems = theme.clockEms / 2f)
+    val digits = clockSize(72f, size.width.value - 32f, (size.height.value - 32f - lineHeightDp(15f, theme) - 6f) / 2f, ems = theme.clockEms / 2f)
     val content: @Composable () -> Unit = {
         Column(GlanceModifier.fillMaxSize()) {
             WClock(ClockPart.Hours, digits, weight = WWeight.Bold, color = hourColor)
@@ -264,14 +291,14 @@ private fun ClockBold(data: WidgetPlaceData) {
         WidgetSurface(drawBackground = false) {
             Box(
                 GlanceModifier.fillMaxSize()
-                    .rounded(palette.container.copy(alpha = theme.backgroundAlpha), theme.style.corners.radius + 12.dp)
-                    .padding(horizontal = 18.dp, vertical = 14.dp),
+                    .rounded(palette.container.copy(alpha = theme.backgroundAlpha), theme.style.corners.radius(context) + 12.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
             ) {
                 WithColors(onLightColors(theme.colors)) { content() }
             }
         }
     } else {
-        WidgetSurface(horizontal = 18.dp, vertical = 14.dp) { content() }
+        WidgetSurface(horizontal = 16.dp, vertical = 16.dp) { content() }
     }
 }
 
@@ -288,21 +315,35 @@ private fun ClockHome(input: WidgetInput) {
         is HomeLocationState.Single -> listOf(state.place to null)
         HomeLocationState.Empty -> emptyList()
     }
-    WidgetSurface(horizontal = 24.dp, vertical = 14.dp, contentAlignment = Alignment.CenterStart) {
+    // Sağ sütun: ikon + en uzun satır; widget'ın yarısını geçmez (uzun yer adı kendi içinde kısalır).
+    val temps = rows.map { (data, _) -> temp(data.snapshot.forecast.current.temperature) }
+    fun sideWidth(withExtra: Boolean) = 38f + 6f + (
+        rows.mapIndexed { i, (data, extra) ->
+            maxOf(
+                estimateWidthDp(temps[i], 24f, theme),
+                estimateWidthDp(data.snapshot.displayName(context) + (extra?.takeIf { withExtra }?.let { " · $it" } ?: ""), 13f, theme) + (if (placeIcon(data) != null) 18f else 0f),
+            )
+        }.maxOrNull() ?: 0f
+    )
+    // Ek bilgi (mesafe, "evdesin") widget'ın yarısına sığmıyorsa düşer; yazı kesilmez, saat büyük kalır.
+    val showExtra = sideWidth(true) <= (size.width.value - 32f) * 0.5f
+    val side = min((size.width.value - 32f) * 0.55f, sideWidth(showExtra))
+    WidgetSurface(horizontal = 16.dp, vertical = 16.dp, contentAlignment = Alignment.CenterStart) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             Column(GlanceModifier.defaultWeight()) {
-                WClock(ClockPart.Time, clockSize(84f, size.width.value - 48f - 160f, size.height.value - 28f - lineHeightDp(17f, theme)))
-                WClock(ClockPart.Date, 17f, weight = WWeight.Regular, dateSkeleton = "dMMMMEEEE")
+                WClock(ClockPart.Time, clockSize(84f, size.width.value - 32f - 12f - side, size.height.value - 32f - lineHeightDp(17f, theme)))
+                WClock(ClockPart.Date, 17f, weight = WWeight.Regular, dateSkeleton = dateSkeletonFor(size.width.value - 32f - 12f - side, 17f))
             }
-            Column(GlanceModifier.clickableApp()) {
+            HSpace(12.dp)
+            Column(GlanceModifier.width(side.dp).clickableApp()) {
                 rows.forEachIndexed { index, (data, extra) ->
                     if (index > 0) VSpace(12.dp)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         CurrentGlyph(data.snapshot, 30.dp)
-                        HSpace(10.dp)
+                        HSpace(8.dp)
                         Column {
                             WText(temp(data.snapshot.forecast.current.temperature), 24f)
-                            PlaceLabel(data, 13f, weight = WWeight.Regular, suffix = extra?.let { " · $it" })
+                            PlaceLabel(data, 13f, weight = WWeight.Regular, suffix = extra?.takeIf { showExtra }?.let { " · $it" })
                         }
                     }
                 }
@@ -320,15 +361,16 @@ private fun ClockSun(data: WidgetPlaceData) {
     val forecast = data.snapshot.forecast
     val phase = SunPhase.of(forecast, forecast.localNow())
     val current = forecast.current
-    WidgetSurface(horizontal = 22.dp, vertical = 14.dp) {
+    WidgetSurface(horizontal = 16.dp, vertical = 16.dp) {
         Column(GlanceModifier.fillMaxSize()) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Column(GlanceModifier.defaultWeight()) {
-                    WClock(ClockPart.Time, clockSize(60f, size.width.value - 44f - 100f, size.height.value - 28f - lineHeightDp(14f, theme) - min(62f, size.height.value * 0.22f) - lineHeightDp(13f, theme) - 8f))
+                    WClock(ClockPart.Time, clockSize(60f, size.width.value - 32f - 100f, size.height.value - 32f - lineHeightDp(14f, theme) - min(62f, size.height.value * 0.22f) - lineHeightDp(13f, theme) - 8f))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         WClock(ClockPart.Date, 14f, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = "EEEEdMMMM")
-                        if (theme.shows(WidgetContent.PlaceName)) {
-                            WText(" · " + data.snapshot.displayName(context), 14f, color = theme.colors.secondary)
+                        val place = " · " + data.snapshot.displayName(context)
+                        if (theme.shows(WidgetContent.PlaceName) && estimateWidthDp("30 September Wednesday" + place, 14f, theme) <= size.width.value - 32f - 100f) {
+                            WText(place, 14f, color = theme.colors.secondary)
                         }
                     }
                 }
@@ -354,7 +396,7 @@ fun SunArc(phase: SunPhase, heightDp: Float, compactLabels: Boolean = false) {
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
     val formatter = timeFormatter(context)
-    val width = size.width.value - 44f
+    val width = size.width.value - 32f
     val bitmap = WidgetBitmaps.sunArc(
         phase.progress, width, heightDp, context.resources.displayMetrics.density,
         accent = theme.colors.sun, faint = theme.colors.text.copy(alpha = 0.22f), horizon = theme.colors.text.copy(alpha = 0.15f),
@@ -400,22 +442,27 @@ private fun ClockGlance(data: WidgetPlaceData) {
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
-    WidgetSurface(horizontal = 24.dp, vertical = 10.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(horizontal = 16.dp, vertical = 12.dp, contentAlignment = Alignment.CenterStart) {
         Column(verticalAlignment = Alignment.CenterVertically) {
-            WClock(ClockPart.Date, clockSize(30f, size.width.value - 48f, size.height.value - 20f - 6f - 24f, ems = 6.2f), weight = WWeight.Regular, dateSkeleton = "EEEEdMMMM")
-            VSpace(6.dp)
+            val rowHeight = lineHeightDp(15f, theme) + 12f
+            WClock(ClockPart.Date, clockSize(30f, size.width.value - 32f, size.height.value - 24f - 8f - rowHeight, ems = 11f), weight = WWeight.Regular, dateSkeleton = "EEEEdMMMM")
+            VSpace(8.dp)
             Row(GlanceModifier.clickableApp(), verticalAlignment = Alignment.CenterVertically) {
                 if (theme.shows(WidgetContent.Weather)) {
                     CurrentGlyph(data.snapshot, 20.dp)
-                    HSpace(6.dp)
+                    HSpace(8.dp)
                     WText(temp(data.snapshot.forecast.current.temperature), 17f)
                 }
                 if (theme.shows(WidgetContent.RainAlert)) {
-                    WidgetPhrases.rainStartSentence(context, data.snapshot)?.let { text ->
-                        HSpace(14.dp)
+                    val weatherWidth = if (theme.shows(WidgetContent.Weather)) 28f + estimateWidthDp(temp(data.snapshot.forecast.current.temperature), 17f, theme) + 12f else 0f
+                    // Uzun cümle sığmıyorsa kısa uyarı.
+                    listOfNotNull(WidgetPhrases.rainStartSentence(context, data.snapshot), WidgetPhrases.rainShort(context, data.snapshot))
+                        .firstOrNull { estimateWidthDp(it, 15f, theme) + 15f + 8f + 24f <= size.width.value - 32f - weatherWidth }
+                        ?.let { text ->
+                        HSpace(12.dp)
                         Pill(color = if (theme.colors.darkText) theme.colors.pill else Color(0xFF141830).copy(alpha = 0.35f)) {
                             WIcon(R.drawable.ic_wl_drop, 15.dp, theme.colors.rain)
-                            HSpace(6.dp)
+                            HSpace(8.dp)
                             WithColors(theme.colors.copy(shadow = false)) { WText(text, 15f, color = theme.colors.rain) }
                         }
                     }
@@ -432,9 +479,9 @@ private fun ClockCard(data: WidgetPlaceData) {
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
     val current = data.snapshot.forecast.current
-    WidgetSurface(horizontal = 16.dp, vertical = 14.dp) {
+    WidgetSurface(horizontal = 16.dp, vertical = 16.dp) {
         Column(GlanceModifier.fillMaxSize()) {
-            WClock(ClockPart.Time, clockSize(52f, size.width.value - 32f, size.height.value - 28f - lineHeightDp(13f, theme) - 9f - lineHeightDp(24f, theme) - lineHeightDp(12f, theme) - 4f))
+            WClock(ClockPart.Time, clockSize(52f, size.width.value - 32f, size.height.value - 32f - lineHeightDp(13f, theme) - 9f - lineHeightDp(24f, theme) - lineHeightDp(12f, theme) - 4f))
             WClock(ClockPart.Date, 13f, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = "EEEEdMMMM")
             Spacer(GlanceModifier.defaultWeight())
             HDivider()
@@ -460,10 +507,10 @@ private fun ClockCompact(data: WidgetPlaceData) {
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
     val narrow = size.width < 180.dp
-    WidgetSurface(horizontal = 14.dp, vertical = 8.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(horizontal = 12.dp, vertical = 8.dp, contentAlignment = Alignment.CenterStart) {
         if (narrow) {
             Column(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                WClock(ClockPart.Time, clockSize(40f, size.width.value - 28f, size.height.value - 16f - (if (size.height >= 100.dp) 18f + 22f else 0f)))
+                WClock(ClockPart.Time, clockSize(40f, size.width.value - 24f, size.height.value - 16f - (if (size.height >= 100.dp) 18f + 22f else 0f)))
                 if (size.height >= 100.dp) WClock(ClockPart.Date, 13f, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = "EEEdMMM")
                 if (theme.shows(WidgetContent.Weather) && size.height >= 100.dp) {
                     Row(GlanceModifier.clickableApp(), verticalAlignment = Alignment.CenterVertically) {
@@ -476,13 +523,13 @@ private fun ClockCompact(data: WidgetPlaceData) {
         } else {
             Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                 Column(GlanceModifier.defaultWeight()) {
-                    WClock(ClockPart.Time, clockSize(40f, size.width.value - 28f - 80f, size.height.value - 16f - (if (size.height >= 70.dp) 17f else 0f)))
+                    WClock(ClockPart.Time, clockSize(40f, size.width.value - 24f - 80f, size.height.value - 16f - (if (size.height >= 70.dp) 17f else 0f)))
                     if (size.height >= 70.dp) WClock(ClockPart.Date, 12f, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = "EEEdMMM")
                 }
                 if (theme.shows(WidgetContent.Weather)) {
                     Row(GlanceModifier.clickableApp(), verticalAlignment = Alignment.CenterVertically) {
                         CurrentGlyph(data.snapshot, 26.dp)
-                        HSpace(6.dp)
+                        HSpace(8.dp)
                         WText(temp(data.snapshot.forecast.current.temperature), 24f, weight = WWeight.Light)
                     }
                 }

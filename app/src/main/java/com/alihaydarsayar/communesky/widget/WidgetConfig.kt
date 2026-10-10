@@ -1,6 +1,7 @@
 package com.alihaydarsayar.communesky.widget
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.ui.unit.Dp
@@ -113,10 +114,25 @@ enum class TextColorMode(@param:StringRes val labelRes: Int) {
 }
 
 @Serializable
-enum class CornerSize(@param:StringRes val labelRes: Int, val radius: Dp) {
-    Small(R.string.widget_corners_small, 16.dp),
-    Medium(R.string.widget_corners_medium, 28.dp),
-    Large(R.string.widget_corners_large, 40.dp),
+enum class CornerSize(@param:StringRes val labelRes: Int, private val step: Int) {
+    Small(R.string.widget_corners_small, -12),
+    Medium(R.string.widget_corners_medium, 0),
+    Large(R.string.widget_corners_large, 12),
+    ;
+
+    /**
+     * Köşe yarıçapı. "Orta", Android 12+ sisteminin widget yarıçapıdır (çoğu telefonda 28 dp; diğer
+     * widget'larla aynı durur), öncesinde 24 dp. "Az" ve "Çok" bunun 12 dp altı ve üstü.
+     */
+    fun radius(context: Context): Dp {
+        val base = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val metrics = context.resources.displayMetrics
+            (context.resources.getDimension(android.R.dimen.system_app_widget_background_radius) / metrics.density).coerceIn(16f, 28f)
+        } else {
+            24f
+        }
+        return (base + step).coerceAtLeast(8f).dp
+    }
 }
 
 @Serializable

@@ -349,7 +349,12 @@ data class WidgetColors(
         /** Hafif perde: açık yazının arkasında %25 koyu, koyu yazının arkasında %25 açık. */
         fun scrimColor(darkText: Boolean): Color = (if (darkText) Color.White else Color.Black).copy(alpha = 0.25f)
 
-        const val GLASS_ALPHA = 0.4f
+        /** Cam: varsayılan saydamlıkta (%65) yaklaşık %20 beyaz. */
+        const val GLASS_ALPHA = 0.57f
+
+        /** Camın 1 dp kenarı (%25 beyaz) ve koyu dolu zeminin iç çerçevesi (%6 beyaz). */
+        const val GLASS_EDGE = 0.25f
+        const val DARK_EDGE = 0.06f
         val TransparentTint = Color(0xFF0B1026)
     }
 }
