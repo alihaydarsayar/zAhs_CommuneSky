@@ -30,8 +30,8 @@ import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
 import kotlin.math.min
 
 /**
- * Saat widget'ı: 10 stil. Saatler her zaman Android'in kendi bileşenleriyle (TextClock,
- * AnalogClock) çizilir; uygulama dakikada bir uyanmaz.
+ * Saat widget'ı: 13 stil. Saatler her zaman Android'in kendi bileşenleriyle (TextClock,
+ * AnalogClock) çizilir; uygulama dakikada ya da saniyede bir uyanmaz.
  */
 @Composable
 fun ClockContent(style: WidgetStyleId, place: WidgetPlaceData?, input: WidgetInput) {
@@ -39,8 +39,10 @@ fun ClockContent(style: WidgetStyleId, place: WidgetPlaceData?, input: WidgetInp
     if (place == null && style != WidgetStyleId.ClockHome) return EmptyContent()
     val small = size.width < 180.dp || size.height < 100.dp
     when (style) {
+        WidgetStyleId.ClockRadial -> if (size.width < 250.dp || size.height < 100.dp) ClockCompact(place!!) else ClockRadial(place!!)
+        WidgetStyleId.ClockAnalog, WidgetStyleId.ClockField, WidgetStyleId.ClockRing ->
+            if (size.height < 100.dp) ClockCompact(place!!) else ClockAnalogFace(style, place!!)
         WidgetStyleId.ClockBold -> if (size.height < 100.dp) ClockCompact(place!!) else ClockBold(place!!)
-        WidgetStyleId.ClockAnalog -> ClockAnalog(place!!)
         WidgetStyleId.ClockCard -> if (size.height < 100.dp) ClockCompact(place!!) else ClockCard(place!!)
         WidgetStyleId.ClockLine -> if (size.width < 180.dp) ClockCompact(place!!) else ClockLine(place!!)
         WidgetStyleId.ClockGlance -> if (size.width < 180.dp) ClockCompact(place!!) else ClockGlance(place!!)
@@ -60,10 +62,10 @@ fun ClockContent(style: WidgetStyleId, place: WidgetPlaceData?, input: WidgetInp
 
 /**
  * Saat yazısının boyutu: hem genişliğe hem yüksekliğe sığsın. [ems]: yazının genişliği, yazı
- * boyutu cinsinden ("18:03" ≈ 2,6).
+ * boyutu cinsinden ("18:03" ≈ 2,6; rakam yazı tipinde daha dar).
  */
 @Composable
-private fun clockSize(max: Float, widthDp: Float, heightDp: Float, ems: Float = 2.6f): Float {
+private fun clockSize(max: Float, widthDp: Float, heightDp: Float, ems: Float = LocalWidgetTheme.current.clockEms): Float {
     val theme = LocalWidgetTheme.current
     val scale = theme.style.textSize.scale * theme.fontScaleFix
     return min(max, min(widthDp / (ems * scale), heightDp / (1.2f * scale))).coerceAtLeast(18f)
@@ -176,7 +178,7 @@ private fun ClockSide(data: WidgetPlaceData) {
     }
 }
 
-/** Tasarım "Tek satır": ortada saat, altında "9 Ekim Cum | Yayla | 15° | 21:00". */
+/** Tasarım "Tek satır": ortada saat, altında "9 Ekim Cum | Beşiktaş | 15° | 21:00". */
 @Composable
 private fun ClockLine(data: WidgetPlaceData) {
     val context = LocalContext.current
@@ -235,13 +237,13 @@ private fun ClockBold(data: WidgetPlaceData) {
     val size = LocalSize.current
     val palette = theme.colors.palette
     val filled = theme.style.background == BackgroundKind.Solid || theme.style.background == BackgroundKind.Sky
-    val hourColor = if (filled) palette.onContainer else theme.colors.text
-    val minuteColor = if (filled) palette.containerAccent else theme.colors.secondary
-    val digits = clockSize(72f, size.width.value - 36f, (size.height.value - 28f - lineHeightDp(15f, theme) - 6f) / 2f, ems = 1.3f)
+    val hourColor = theme.style.hourColor?.let { Color(it) } ?: if (filled) palette.onContainer else theme.colors.text
+    val minuteColor = theme.style.minuteColor?.let { Color(it) } ?: if (filled) palette.containerAccent else theme.colors.secondary
+    val digits = clockSize(72f, size.width.value - 36f, (size.height.value - 28f - lineHeightDp(15f, theme) - 6f) / 2f, ems = theme.clockEms / 2f)
     val content: @Composable () -> Unit = {
         Column(GlanceModifier.fillMaxSize()) {
             WClock(ClockPart.Hours, digits, weight = WWeight.Bold, color = hourColor)
-            WClock(ClockPart.Minutes, digits, weight = WWeight.Bold, color = minuteColor)
+            WClock(ClockPart.Minutes, digits, weight = WWeight.Bold, color = minuteColor, font = if (theme.clockFont == ClockFont.DigitsOutline) WFont.Outline else null)
             Spacer(GlanceModifier.defaultWeight())
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 WClock(ClockPart.Date, 15f, GlanceModifier.defaultWeight(), weight = WWeight.Medium, color = hourColor, dateSkeleton = "EEEd")
@@ -269,48 +271,6 @@ private fun ClockBold(data: WidgetPlaceData) {
         }
     } else {
         WidgetSurface(horizontal = 18.dp, vertical = 14.dp) { content() }
-    }
-}
-
-/** Tasarım "Analog": koyu kadran; üstünde sıcaklık ve yer, sağında gün. */
-@Composable
-private fun ClockAnalog(data: WidgetPlaceData) {
-    val context = LocalContext.current
-    val theme = LocalWidgetTheme.current
-    val size = LocalSize.current
-    val dial = min(size.width.value, size.height.value).coerceAtMost(200f)
-    val scale = dial / 200f
-    val current = data.snapshot.forecast.current
-    WidgetSurface(horizontal = 0.dp, vertical = 0.dp, contentAlignment = Alignment.Center) {
-        Box(GlanceModifier.size(dial.dp), contentAlignment = Alignment.Center) {
-            WAnalogClock(GlanceModifier.fillMaxSize())
-            // Kadran hep koyu: yazılar da hep açık renk.
-            WithColors(dialColors(theme.colors)) {
-                if (theme.shows(WidgetContent.Weather)) {
-                    Column(
-                        GlanceModifier.fillMaxSize().padding(top = (44 * scale).dp).clickableApp(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            WeatherGlyph(current.condition, !current.isDay, (18 * scale).dp)
-                            HSpace(2.dp)
-                            WText(temp(current.temperature), 22f * scale, weight = WWeight.Medium)
-                        }
-                        if (theme.shows(WidgetContent.PlaceName)) {
-                            WText(
-                                data.snapshot.displayName(context).uppercase(locale(context)),
-                                11f * scale,
-                                color = Color.White.copy(alpha = 0.75f),
-                                align = TextAlign.Center,
-                            )
-                        }
-                    }
-                }
-                Box(GlanceModifier.fillMaxSize().padding(end = (26 * scale).dp), contentAlignment = Alignment.CenterEnd) {
-                    WClock(ClockPart.Date, 12f * scale, weight = WWeight.Medium, color = Color(0xFF9CC4FF), dateSkeleton = "EEEd", uppercase = true)
-                }
-            }
-        }
     }
 }
 
@@ -530,7 +490,8 @@ private fun ClockCompact(data: WidgetPlaceData) {
     }
 }
 
-/** Saat widget'larında havaya dokununca uygulama açılır (saate dokununca saat uygulaması). */
+/** Saat widget'larında havaya dokununca uygulama o yerle açılır (saate dokununca saat uygulaması). */
+@Composable
 fun GlanceModifier.clickableApp(): GlanceModifier = this.then(GlanceModifier.clickable(openAppAction()))
 
 /** Bir bölümü farklı renklerle çizmek için (koyu kadran, açık kutu). */
@@ -544,6 +505,7 @@ fun WithColors(colors: WidgetColors, content: @Composable () -> Unit) {
 fun dialColors(base: WidgetColors): WidgetColors = base.copy(
     darkText = false,
     shadow = false,
+    scrim = false,
     text = Color.White,
     secondary = Color.White.copy(alpha = 0.8f),
     tertiary = Color.White.copy(alpha = 0.7f),
@@ -558,6 +520,7 @@ fun onLightColors(base: WidgetColors): WidgetColors {
     return base.copy(
         darkText = true,
         shadow = false,
+        scrim = false,
         text = ink,
         secondary = ink.copy(alpha = 0.75f),
         tertiary = ink.copy(alpha = 0.6f),

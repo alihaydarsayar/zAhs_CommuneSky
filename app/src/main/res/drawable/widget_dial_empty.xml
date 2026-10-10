@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bos kadran, 200 dp: analog saatlerde kadrani ayri bir resim cizer, kollar bu boyuta gore olceklenir. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <size android:width="200dp" android:height="200dp" />
+    <solid android:color="#00000000" />
+</shape>

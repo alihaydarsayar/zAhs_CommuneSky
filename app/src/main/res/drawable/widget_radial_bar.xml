@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Isinsal saatte "tek cizgi" saniye efekti: merkezden yukari uzanan ince cubuk (AnalogClock saniye kolu). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:bottom="450dp">
+        <shape android:shape="rectangle">
+            <size android:width="2dp" android:height="450dp" />
+            <solid android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+</layer-list>

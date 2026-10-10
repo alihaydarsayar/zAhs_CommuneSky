@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Isinsal saat, cam ve saydam arka planlar: sablon kullanilamaz (arkasi gorunur). Bunun yerine
+    cizgilerin durdugu dort seritte birer AnalogClock var; her seritte ince saniye cubugunun sadece
+    o seride dusen parcasi gorunur. Seritlerin ve saatlerin yeri kodda verilir.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout
+        android:id="@+id/strip_top"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="top|start">
+        <AnalogClock
+            android:id="@+id/clock_top"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="top|start"
+            android:dial="@drawable/widget_empty_dot"
+            android:hand_hour="@drawable/widget_empty_dot"
+            android:hand_minute="@drawable/widget_empty_dot"
+            android:hand_second="@drawable/widget_radial_bar" />
+    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/strip_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="top|start">
+        <AnalogClock
+            android:id="@+id/clock_bottom"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="top|start"
+            android:dial="@drawable/widget_empty_dot"
+            android:hand_hour="@drawable/widget_empty_dot"
+            android:hand_minute="@drawable/widget_empty_dot"
+            android:hand_second="@drawable/widget_radial_bar" />
+    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/strip_left"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="top|start">
+        <AnalogClock
+            android:id="@+id/clock_left"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="top|start"
+            android:dial="@drawable/widget_empty_dot"
+            android:hand_hour="@drawable/widget_empty_dot"
+            android:hand_minute="@drawable/widget_empty_dot"
+            android:hand_second="@drawable/widget_radial_bar" />
+    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/strip_right"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="top|start">
+        <AnalogClock
+            android:id="@+id/clock_right"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="top|start"
+            android:dial="@drawable/widget_empty_dot"
+            android:hand_hour="@drawable/widget_empty_dot"
+            android:hand_minute="@drawable/widget_empty_dot"
+            android:hand_second="@drawable/widget_radial_bar" />
+    </FrameLayout>
+</FrameLayout>

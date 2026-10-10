@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Isinsal saatin saniye katmani: sadece saniye kolu olan AnalogClock. Sistem cizer ve her saniye
+    kendisi dondurur; uygulama uyanmaz. Saniye kolu Android 12 ile geldi.
+-->
+<AnalogClock xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/seconds"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:dial="@drawable/widget_empty_dot"
+    android:hand_hour="@drawable/widget_empty_dot"
+    android:hand_minute="@drawable/widget_empty_dot"
+    android:hand_second="@drawable/widget_radial_fan" />

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sade kadran: yelkovan, duz siyah cubuk. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path android:fillColor="#FF111214" android:pathData="M97.4,106L97.4,22L102.6,22L102.6,106z" />
+</vector>

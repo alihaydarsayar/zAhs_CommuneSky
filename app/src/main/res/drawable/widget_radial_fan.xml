@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Isinsal saatin saniye yelpazesi (AnalogClock saniye kolu). Ondeki kenar tam dolu, geriye dogru
+    saydama iner. Widget'in kosegeninden buyuk cizilir; sablonun deliklerinden gorunur.
+    3 derece one kaydirildi: o anki saniyenin cizgisi tam parlak olsun.
+-->
+<rotate xmlns:android="http://schemas.android.com/apk/res/android"
+    android:fromDegrees="-87"
+    android:pivotX="50%"
+    android:pivotY="50%"
+    android:toDegrees="-87">
+    <shape android:shape="oval">
+        <size android:width="900dp" android:height="900dp" />
+        <gradient
+            android:centerColor="#00FFFFFF"
+            android:endColor="#FFFFFFFF"
+            android:startColor="#00FFFFFF"
+            android:type="sweep" />
+    </shape>
+</rotate>
