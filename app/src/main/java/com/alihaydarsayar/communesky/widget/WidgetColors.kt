@@ -23,6 +23,10 @@ data class Palette(
     val container: Color = lerp(mid, Color.White, 0.84f),
     val onContainer: Color = lerp(top, Color.Black, 0.35f),
     val containerAccent: Color = lerp(mid, Color.Black, 0.1f),
+    /** Temanın kendi vurgu rengi ve saat/dakika rakamı renkleri; null ise ortak varsayılanlar. */
+    val accent: Color? = null,
+    val hour: Color? = null,
+    val minute: Color? = null,
 ) {
     val gradient: List<Color> get() = listOf(top, mid, bottom)
 }
@@ -33,7 +37,10 @@ object WidgetInk {
     val Light = Color(0xFFFFFFFF)
 
     /** Açık zeminde ana yazı. */
-    val Dark = Color(0xFF111214)
+    val Dark = Color(0xFF141416)
+
+    /** Açık ("kâğıt") zemin. Saf beyaz zemin kullanılmaz. */
+    val Paper = Color(0xFFF2EEE6)
 
     /** Varsayılan koyu zemin. */
     val Ground = Color(0xFF121316)
@@ -53,8 +60,8 @@ object WidgetInk {
 
     /** Renk seçicideki 12 hazır renk. */
     val Presets: List<Int> = listOf(
-        0xFFFFFFFF, 0xFF111214, 0xFFFF3B3B, 0xFFFF6B3D, 0xFFFFB000, 0xFFFFD84D,
-        0xFF2ED3C0, 0xFF30C85A, 0xFF3D8BFF, 0xFF7C4DFF, 0xFFFF3D9A, 0xFF8B8D98,
+        0xFFFFFFFF, 0xFFF1ECE3, 0xFFA8A39D, 0xFF141416, 0xFFFF3B3B, 0xFFFF7A2F,
+        0xFFFFB000, 0xFF2ED3A0, 0xFF3D8BFF, 0xFF8E6BFF, 0xFFFF5FA2, 0xFF3F6B4A,
     ).map { it.toInt() }
 }
 
@@ -95,6 +102,28 @@ object WidgetPalettes {
             onContainer = WidgetInk.Dark,
             containerAccent = WidgetInk.Accent,
         )
+        ColorTheme.Paper -> Palette(
+            top = WidgetInk.Paper,
+            mid = Color(0xFFEBE6DC),
+            bottom = Color(0xFFE2DCCF),
+            solid = WidgetInk.Paper,
+            gradientDarkText = true,
+            solidDarkText = true,
+            container = Color(0xFFFFFFFF),
+            onContainer = WidgetInk.Dark,
+            containerAccent = WidgetInk.Accent,
+            minute = WidgetInk.Accent,
+        )
+        ColorTheme.Coral -> Palette(
+            top = WidgetInk.Ground,
+            mid = Color(0xFF1B1517),
+            bottom = Color(0xFF2A191B),
+            solid = WidgetInk.Ground,
+            container = Color(0xFFF4F2EC),
+            onContainer = WidgetInk.Dark,
+            containerAccent = WidgetInk.Accent,
+            hour = WidgetInk.Accent,
+        )
         ColorTheme.Custom -> {
             val ground = custom?.let { Color(it) } ?: WidgetInk.Ground
             val dark = ground.luminance() > 0.4f
@@ -121,7 +150,13 @@ object WidgetPalettes {
         )
         ColorTheme.Sunset -> palette(0xFF3B2F63, 0xFF9A5680, 0xFFEE946B)
         ColorTheme.Ocean -> palette(0xFF0D3550, 0xFF176A87, 0xFF2FA3B5)
-        ColorTheme.Forest -> palette(0xFF1C3527, 0xFF2D5A43, 0xFF5E8C5F)
+        ColorTheme.Forest -> Palette(
+            top = Color(0xFF1C3527),
+            mid = Color(0xFF2D5A43),
+            bottom = Color(0xFF5E8C5F),
+            solid = Color(0xFF1C3527),
+            accent = Color(0xFFFFB000),
+        )
         ColorTheme.Night -> Palette(
             top = Color(0xFF0F1630),
             mid = Color(0xFF1A2440),
@@ -186,12 +221,16 @@ data class WidgetColors(
     val scrim: Boolean = false,
     /** Yazı doğrudan duvar kâğıdının üstünde mi (cam, saydam ya da çok saydam dolu arka plan)? */
     val onWallpaper: Boolean = false,
+    /** Belirgin gölge (%45, 3 dp); false ise ince gölge (%30, 2 dp). */
+    val strongShadow: Boolean = false,
+    /** Kullanıcı vurgu rengi seçmediyse kullanılan renk (temanın vurgusu ya da ortak kırmızı). */
+    val paletteAccent: Color = WidgetInk.Accent,
 ) {
     val shadowKind: WShadow
         get() = when {
             !shadow -> WShadow.None
-            darkText -> WShadow.Light
-            else -> WShadow.Dark
+            darkText -> if (strongShadow) WShadow.StrongLight else WShadow.Light
+            else -> if (strongShadow) WShadow.StrongDark else WShadow.Dark
         }
 
     companion object {
@@ -201,7 +240,13 @@ data class WidgetColors(
             sky: SkyTheme,
             wallpaperPrefersDarkText: Boolean = WallpaperTone.prefersDarkText(context),
         ): WidgetColors {
-            val palette = WidgetPalettes.of(context, style.colorTheme, sky, style.customBackground)
+            val themed = WidgetPalettes.of(context, style.colorTheme, sky, style.customBackground)
+            // "Gökyüzü" arka planı hava ve saate göre değişen gökyüzünü kullanır; temanın diğer renkleri kalır.
+            val palette = if (style.background == BackgroundKind.Sky && style.colorTheme in ColorTheme.skyDriven) {
+                WidgetPalettes.sky(sky).let { themed.copy(top = it.top, mid = it.mid, bottom = it.bottom, gradientDarkText = it.gradientDarkText) }
+            } else {
+                themed
+            }
             val transparency = style.effectiveTransparency
             val filled = transparency < 60
             val onWallpaper = isOnWallpaper(style)
@@ -219,9 +264,11 @@ data class WidgetColors(
                     else -> wallpaperPrefersDarkText
                 }
             }
-            val shadow = onWallpaper && style.legibility == Legibility.Shadow
+            val shadow = onWallpaper && (style.legibility == Legibility.Shadow || style.legibility == Legibility.Strong)
+            val strong = style.legibility == Legibility.Strong
             val scrim = onWallpaper && style.legibility == Legibility.Scrim
-            val accent = style.accent?.let { Color(it) } ?: WidgetInk.Accent
+            val paletteAccent = palette.accent ?: WidgetInk.Accent
+            val accent = style.accent?.let { Color(it) } ?: paletteAccent
             val ink = when {
                 customText != null && style.textColor == TextColorMode.Auto -> customText
                 dark -> WidgetInk.Dark
@@ -246,6 +293,8 @@ data class WidgetColors(
                     moon = VividOnLight.Moon,
                     scrim = scrim,
                     onWallpaper = onWallpaper,
+                    strongShadow = strong,
+                    paletteAccent = paletteAccent,
                 )
             } else {
                 WidgetColors(
@@ -264,6 +313,8 @@ data class WidgetColors(
                     accent = accent,
                     scrim = scrim,
                     onWallpaper = onWallpaper,
+                    strongShadow = strong,
+                    paletteAccent = paletteAccent,
                 )
             }
         }

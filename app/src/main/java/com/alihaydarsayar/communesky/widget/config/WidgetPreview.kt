@@ -93,12 +93,23 @@ object WidgetSizes {
  */
 @OptIn(ExperimentalGlanceApi::class)
 @Composable
-fun WidgetRender(kind: WidgetKind, config: WidgetConfig, size: PreviewSize, scale: Float, input: WidgetInput) {
+fun WidgetRender(
+    kind: WidgetKind,
+    config: WidgetConfig,
+    size: PreviewSize,
+    scale: Float,
+    input: WidgetInput,
+    /** Önizleme hangi zeminde duruyor: true açık (koyu yazı), false koyu, null telefonun duvar kâğıdı. */
+    wallpaperDarkText: Boolean? = null,
+) {
     val context = LocalContext.current
     var views by remember { mutableStateOf<RemoteViews?>(null) }
-    LaunchedEffect(kind, config, size) {
+    // Ayar değişmedikçe yeniden çizilmez; art arda gelen değişiklikler (kaydırıcı) tek çizimde birleşir.
+    LaunchedEffect(kind, config, size, wallpaperDarkText) {
         delay(80)
-        views = runCatching { kind.widget(config, input).compose(context, size = size.draw) }.getOrNull()
+        views = runCatching {
+            kind.widget(config, input).apply { previewWallpaperDarkText = wallpaperDarkText }.compose(context, size = size.draw)
+        }.getOrNull()
     }
     Box(Modifier.size(size.frame.width * scale, size.frame.height * scale), contentAlignment = Alignment.Center) {
         AndroidView(

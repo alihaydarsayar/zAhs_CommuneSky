@@ -56,6 +56,12 @@ abstract class CommuneSkyWidget(
 
     override val previewSizeMode = SizeMode.Responsive(kind.sizes)
 
+    /**
+     * Ayar ekranındaki önizleme için: duvar kâğıdı açık mı (koyu yazı mı gerekir)? Önizleme sahnesi
+     * "Açık" ya da "Koyu" zemine alınınca widget o zemindeki haliyle çizilir. null: telefonun duvar kâğıdı.
+     */
+    var previewWallpaperDarkText: Boolean? = null
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val started = SystemClock.elapsedRealtimeNanos()
         val configFlow = configFlow(context, id)
@@ -74,10 +80,10 @@ abstract class CommuneSkyWidget(
             if (debug) {
                 // Debug sürümünde çizim süresi ayrıca loglanır: veri yüklendikten sonra 50 ms'yi geçmemeli.
                 val composeStart = SystemClock.elapsedRealtimeNanos()
-                WidgetRoot(kind, config, input)
+                WidgetRoot(kind, config, input, previewWallpaperDarkText)
                 WidgetTiming.log(kind, config, loadNanos = loaded - started, drawNanos = SystemClock.elapsedRealtimeNanos() - composeStart)
             } else {
-                WidgetRoot(kind, config, input)
+                WidgetRoot(kind, config, input, previewWallpaperDarkText)
             }
             Trace.endSection()
         }
@@ -159,7 +165,7 @@ fun WeatherSnapshot?.skyTheme(): SkyTheme = this?.currentScene()?.theme ?: SkyTh
  * Renkler, widget'ın gösterdiği ana yerin havasına göre seçilir.
  */
 @Composable
-fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput) {
+fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput, wallpaperDarkText: Boolean? = null) {
     val context = LocalContext.current
     val styleId = config.style.styleId(kind)
     val primary: WeatherSnapshot? = when (kind) {
@@ -177,7 +183,7 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput) {
         kind = kind,
         styleId = styleId,
         style = config.style,
-        colors = WidgetColors.resolve(context, config.style, primary.skyTheme()),
+        colors = WidgetColors.resolve(context, config.style, primary.skyTheme(), wallpaperDarkText ?: WallpaperTone.prefersDarkText(context)),
         fontScaleFix = WidgetTheme.fontScaleFix(context),
     )
     CompositionLocalProvider(

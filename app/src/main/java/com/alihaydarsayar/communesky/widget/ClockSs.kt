@@ -42,7 +42,7 @@ object SsClock {
 
     enum class Preset(@param:StringRes val labelRes: Int, val look: Look) {
         Classic(R.string.widget_ss_classic, Look(0xFFF4F2EC.toInt(), 0xFF16171A.toInt(), 0xFFD93A3F.toInt(), 0xFFFFFFFF.toInt())),
-        Dark(R.string.widget_theme_dark, Look(0xFF16171A.toInt(), 0xFFF4F2EC.toInt(), 0xFFD93A3F.toInt(), 0xFF16171A.toInt())),
+        Dark(R.string.widget_ss_dark, Look(0xFF16171A.toInt(), 0xFFF4F2EC.toInt(), 0xFFD93A3F.toInt(), 0xFF16171A.toInt())),
         NightBlue(R.string.widget_ss_night_blue, Look(0xFF0F2233.toInt(), 0xFFEDE6D6.toInt(), 0xFFE8B04B.toInt(), 0xFF0F2233.toInt())),
     }
 

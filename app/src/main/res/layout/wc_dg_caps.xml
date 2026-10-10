@@ -8,6 +8,7 @@
     android:paddingHorizontal="2dp"
     android:fontFamily="sans-serif-condensed"
     android:textStyle="bold"
+    android:fontFeatureSettings="tnum"
     android:includeFontPadding="false"
     android:maxLines="1"
     android:textColor="#FFFFFFFF"

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="widget_shadow_dy" format="float" type="dimen">6</item>
-    <item name="widget_shadow_radius" format="float" type="dimen">18</item>
+    <item name="widget_shadow_dy" format="float" type="dimen">3</item>
+    <item name="widget_shadow_radius" format="float" type="dimen">6</item>
+    <item name="widget_shadow_radius_strong" format="float" type="dimen">9</item>
 </resources>

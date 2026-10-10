@@ -71,8 +71,8 @@ data class WidgetTheme(
     /** "18:03" yazısının genişliği, yazı boyutu cinsinden (dar rakamlar daha az yer tutar). */
     val clockEms: Float get() = if (clockFont == ClockFont.Digits || clockFont == ClockFont.DigitsOutline) 2.35f else 2.6f
 
-    val hourColor: Color get() = style.hourColor?.let { Color(it) } ?: colors.text
-    val minuteColor: Color get() = style.minuteColor?.let { Color(it) } ?: hourColor
+    val hourColor: Color get() = style.hourColor?.let { Color(it) } ?: colors.palette.hour?.takeIf { !colors.onWallpaper } ?: colors.text
+    val minuteColor: Color get() = style.minuteColor?.let { Color(it) } ?: colors.palette.minute?.takeIf { !colors.onWallpaper && style.hourColor == null } ?: hourColor
 
     fun shows(content: WidgetContent): Boolean = style.shows(kind, content)
 
@@ -99,10 +99,13 @@ private val NUMERIC = Regex("^[-−]?[0-9][0-9.,]*[°%]?$|^%[0-9]+$")
 /** Sıcaklık ve sayılar ("16°", "1022", "%64") dar ve kalın rakamlarla çizilir; çok küçük yazılar hariç. */
 fun isNumeric(text: String, sizeSp: Float): Boolean = sizeSp >= 12f && NUMERIC.matches(text)
 
-/** Düzen anahtarı (bkz. [WidgetLayouts]): kalınlık seçimi ve rol birlikte. */
-fun fontKey(style: WidgetStyle, weight: WWeight, font: WFont): String {
+/**
+ * Düzen anahtarı (bkz. [WidgetLayouts]): kalınlık seçimi ve rol birlikte. İnce (light) kalınlık
+ * yalnızca kullanıcı "İnce" seçerse ve yazı gölgesizse kullanılır: ince çizgiler gölgeyle kirli görünür.
+ */
+fun fontKey(style: WidgetStyle, weight: WWeight, font: WFont, shadow: Boolean = false): String {
     if (font == WFont.Digits) return "dg"
-    if (font == WFont.Outline) return "ol"
+    if (font == WFont.Outline) return if (shadow) "dg" else "ol"
     val step = when (weight) {
         WWeight.Light -> 0
         WWeight.Regular -> 1
@@ -113,7 +116,7 @@ fun fontKey(style: WidgetStyle, weight: WWeight, font: WFont): String {
         WeightChoice.Normal -> 0
         WeightChoice.Bold -> 1
     }
-    return "s" + "3457"[step.coerceIn(0, 3)]
+    return "s" + "3457"[step.coerceIn(if (shadow) 1 else 0, 3)]
 }
 
 /**
@@ -144,7 +147,7 @@ fun WText(
         TextAlign.Center -> Gravity.CENTER_HORIZONTAL
         else -> Gravity.START
     }
-    val views = RemoteViews(context.packageName, WidgetLayouts.text(fontKey(theme.style, weight, role), theme.colors.shadowKind)).apply {
+    val views = RemoteViews(context.packageName, WidgetLayouts.text(fontKey(theme.style, weight, role, theme.colors.shadow), theme.colors.shadowKind)).apply {
         setTextViewText(R.id.widget_text, text)
         setTextViewTextSize(R.id.widget_text, TypedValue.COMPLEX_UNIT_SP, theme.sp(size).value)
         setTextColor(R.id.widget_text, (color ?: theme.colors.text).toArgb())
@@ -511,12 +514,12 @@ private fun ClockView(
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     val key = when {
-        font != null -> fontKey(theme.style, weight, font)
-        part == ClockPart.Date -> fontKey(theme.style, weight, WFont.Text)
+        font != null -> fontKey(theme.style, weight, font, theme.colors.shadow)
+        part == ClockPart.Date -> fontKey(theme.style, weight, WFont.Text, theme.colors.shadow)
         else -> when (theme.clockFont) {
-            ClockFont.System -> fontKey(theme.style, weight, WFont.Text)
+            ClockFont.System -> fontKey(theme.style, weight, WFont.Text, theme.colors.shadow)
             ClockFont.Digits -> "dg"
-            ClockFont.DigitsOutline -> if (part == ClockPart.Minutes) "ol" else "dg"
+            ClockFont.DigitsOutline -> if (part == ClockPart.Minutes && !theme.colors.shadow) "ol" else "dg"
         }
     }
     val (format12, format24) = when (part) {

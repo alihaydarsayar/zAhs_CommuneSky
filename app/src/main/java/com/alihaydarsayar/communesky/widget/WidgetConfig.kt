@@ -71,8 +71,14 @@ enum class BackgroundKind(@param:StringRes val labelRes: Int, val defaultTranspa
 /** Renk teması: gradyanın, düz rengin ve vurguların renkleri. */
 @Serializable
 enum class ColorTheme(@param:StringRes val labelRes: Int) {
-    /** 1.4'ün ortak görünümü: koyu zemin (#121316), açık yazı. */
+    /** "Gece": 1.4'ün ortak görünümü, koyu zemin (#121316), açık yazı. */
     Dark(R.string.widget_theme_dark),
+
+    /** "Kâğıt": açık, sıcak zemin (#F2EEE6), koyu yazı. */
+    Paper(R.string.widget_theme_paper),
+
+    /** "Mercan": koyu zemin, mercan kırmızısı vurgu ve saat rakamları. */
+    Coral(R.string.widget_theme_coral),
 
     /** Hava ve günün saatine göre değişen renkler. */
     Sky(R.string.widget_theme_sky),
@@ -87,6 +93,15 @@ enum class ColorTheme(@param:StringRes val labelRes: Int) {
 
     /** Zemin ve yazı renklerini kullanıcı seçer. */
     Custom(R.string.widget_theme_custom),
+    ;
+
+    companion object {
+        /** Ayar ekranında gösterilen hazır temalar. Diğerleri eski sürümlerden kalan kayıtlar için durur. */
+        val featured: List<ColorTheme> get() = listOf(Dark, Paper, Coral, Forest, Wallpaper, Custom)
+
+        /** "Gökyüzü" arka planında hava ve saate göre değişen gökyüzü renklerini kullanan temalar. */
+        val skyDriven: Set<ColorTheme> get() = setOf(Dark, Paper, Coral, Custom, Sky)
+    }
 }
 
 @Serializable
@@ -125,11 +140,16 @@ enum class InfoRow(@param:StringRes val labelRes: Int) {
     Pill(R.string.widget_info_pill),
 }
 
-/** Yazı duvar kâğıdının üstündeyken okunurluğu koruma yolu. */
+/**
+ * "Yazının arkası": yazı duvar kâğıdının üstündeyken (cam ve saydam) okunurluğu koruma yolu.
+ * İnce gölge: %30 siyah, 2 dp yayılma, 1 dp aşağı. Belirgin gölge: %45 siyah, 3 dp yayılma.
+ * Perde: yazının arkasında kenarları yumuşak, yarı saydam katman.
+ */
 @Serializable
 enum class Legibility(@param:StringRes val labelRes: Int) {
     Off(R.string.widget_legibility_off),
     Shadow(R.string.widget_legibility_shadow),
+    Strong(R.string.widget_legibility_strong),
     Scrim(R.string.widget_legibility_scrim),
 }
 
@@ -139,14 +159,14 @@ enum class Legibility(@param:StringRes val labelRes: Int) {
  * yükletmez); bu yüzden seçenekler sistemin normal ve dar rakamlarıdır.
  */
 @Serializable
-enum class ClockFont(@param:StringRes val labelRes: Int) {
-    System(R.string.widget_font_system),
+enum class ClockFont(@param:StringRes val labelRes: Int, @param:StringRes val shortLabelRes: Int) {
+    System(R.string.widget_font_system, R.string.widget_clock_font_short_system),
 
     /** Dar ve kalın rakamlar. */
-    Digits(R.string.widget_clock_font_digits),
+    Digits(R.string.widget_clock_font_digits, R.string.widget_clock_font_short_digits),
 
-    /** Saat dar ve kalın, dakika dar ve ince. */
-    DigitsOutline(R.string.widget_clock_font_digits_outline),
+    /** Saat dar ve kalın, dakika içi boş (dolu zeminde) ya da dar ve ince. */
+    DigitsOutline(R.string.widget_clock_font_digits_outline, R.string.widget_clock_font_short_outline),
 }
 
 /** Işınsal saatte çizgilerin saniyeyle birlikte parlaması. */
@@ -353,6 +373,14 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
         }
     }
 
+    /** Renk seçicide son kullanılan renkler (en yenisi başta); bütün widget'lar için ortak. */
+    suspend fun recentColors(): List<Int> =
+        dataStore.data.first()[RECENT_COLORS_KEY].orEmpty().split(',').mapNotNull { it.toIntOrNull() }.take(RECENT_COLORS)
+
+    suspend fun setRecentColors(colors: List<Int>) {
+        dataStore.edit { it[RECENT_COLORS_KEY] = colors.take(RECENT_COLORS).joinToString(",") }
+    }
+
     /** Önizlemeler en son hangi sürümde yayınlandı (Android 15+ seçici önizlemeleri). */
     suspend fun previewsPublishedVersion(): Int? = dataStore.data.first()[PREVIEWS_VERSION]
 
@@ -412,6 +440,10 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
     companion object {
         private const val TAG = "WidgetConfig"
         private const val CURRENT_VERSION = 2
+
+        /** Renk seçicide hatırlanan son renk sayısı. */
+        const val RECENT_COLORS = 6
+        private val RECENT_COLORS_KEY = stringPreferencesKey("recent_colors")
         private val PREVIEWS_VERSION = intPreferencesKey("previews_published_version")
 
         @Volatile private var instance: WidgetConfigStore? = null
