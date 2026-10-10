@@ -331,6 +331,75 @@ object WidgetBitmaps {
 
     enum class Dial { Plain, Field, Ring }
 
+    enum class Hand { Hour, Minute, Second }
+
+    /**
+     * Analog saatin bir kolu: dar ve kadran boyunda bir resim; ortası kadranın merkezine gelir ve
+     * yukarıyı (saat 12) gösterir. AnalogClock bu resmi merkez etrafında döndürür. Ölçüler 200
+     * birimlik kadrana göredir. Yalnızca boyut, stil ya da renk değişince yeniden çizilir.
+     */
+    fun hand(kind: Dial, hand: Hand, dialDp: Float, density: Float, color: Color, symbol: SecondSymbol = SecondSymbol.None): Bitmap {
+        val height = max(1, (dialDp * density).roundToInt())
+        val u = height / 200f
+        val width = max(1, ((if (hand == Hand.Second) 24f else 16f) * u).roundToInt())
+        return cached("h:$kind:$hand:$height:${color.toArgb()}:$symbol") {
+            Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
+                val canvas = Canvas(bitmap)
+                val cx = width / 2f
+                val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color.toArgb() }
+                fun y(unit: Float) = unit * u
+                fun polygon(vararg points: Float) {
+                    val path = Path()
+                    for (i in points.indices step 2) {
+                        val px = cx + (points[i] - 100f) * u
+                        if (i == 0) path.moveTo(px, y(points[i + 1])) else path.lineTo(px, y(points[i + 1]))
+                    }
+                    path.close()
+                    canvas.drawPath(path, fill)
+                }
+                when (hand) {
+                    Hand.Second -> {
+                        // İnce çizgi, kısa kuyruk, ortada küçük göbek; kuyrukta isteğe bağlı simge.
+                        canvas.drawRect(cx - 0.8f * u, y(18f), cx + 0.8f * u, y(132f), fill)
+                        canvas.drawCircle(cx, y(100f), 4.5f * u, fill)
+                        when (symbol) {
+                            SecondSymbol.Star -> polygon(
+                                100f, 113f, 102.7f, 120.3f, 110.5f, 120.6f, 104.4f, 125.4f, 106.5f, 133f,
+                                100f, 128.7f, 93.5f, 133f, 95.6f, 125.4f, 89.5f, 120.6f, 97.3f, 120.3f,
+                            )
+                            SecondSymbol.Circle -> canvas.drawCircle(cx, y(126f), 6.5f * u, fill)
+                            SecondSymbol.None -> Unit
+                        }
+                    }
+                    else -> {
+                        val hour = hand == Hand.Hour
+                        when (kind) {
+                            Dial.Plain -> if (hour) {
+                                canvas.drawRect(cx - 3.8f * u, y(50f), cx + 3.8f * u, y(106f), fill)
+                            } else {
+                                canvas.drawRect(cx - 2.6f * u, y(22f), cx + 2.6f * u, y(106f), fill)
+                            }
+                            Dial.Field -> if (hour) {
+                                polygon(100f, 46f, 105.5f, 62f, 103.5f, 105f, 96.5f, 105f, 94.5f, 62f)
+                            } else {
+                                polygon(100f, 18f, 104.5f, 36f, 102.8f, 105f, 97.2f, 105f, 95.5f, 36f)
+                            }
+                            Dial.Ring -> {
+                                val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                                    this.color = color.toArgb()
+                                    style = Paint.Style.STROKE
+                                    strokeCap = Paint.Cap.ROUND
+                                    strokeWidth = (if (hour) 6.5f else 4.5f) * u
+                                }
+                                canvas.drawLine(cx, y(100f), cx, y(if (hour) 56f else 30f), stroke)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Analog saatin kadranı. Kadran sabittir: yalnızca ayar (renkler, vurgulu rakamlar) ya da hava
      * halkasının verisi değişince yeniden çizilir; kolları Android'in AnalogClock'u çizer.

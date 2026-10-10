@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Kadranli saat (Android 12+). Kadran bos ve 1 dp oldugu icin saat bileseni olcekleme yapmaz;
+    kollar kodda, kadranin gercek boyutunda cizilip verilir. Boylece kadran widget'la birlikte buyur.
+    AnalogClock Android'in kendi bilesenidir: sistem dondurur, uygulama uyanmaz.
+-->
+<AnalogClock xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clock"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:dial="@drawable/widget_empty_dot"
+    android:hand_hour="@drawable/widget_empty_dot"
+    android:hand_minute="@drawable/widget_empty_dot" />

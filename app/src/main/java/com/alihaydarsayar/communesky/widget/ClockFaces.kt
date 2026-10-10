@@ -173,7 +173,8 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
     val dayWidth = if (showDay) 36f else 0f
     val weatherWidth = if (showWeather) (if (w >= 380f) 96f else 72f) else 0f
     // Rakamlar hem genişliğe hem yüksekliğe sığar: "17:22" ≈ 2,45 em; rakamın kendisi 0,71 em yüksek.
-    val digitsDp = min((w - 2 * ring - dayWidth - weatherWidth - 12f) / 2.3f, (h - 2 * ring - 8f) / 0.76f).coerceIn(28f, 132f)
+    // Rakamlar yatayda sıkıştırılır (RADIAL_SCALE_X): tasarımdaki gibi dar ve uzun, daha büyük.
+    val digitsDp = min((w - 2 * ring - dayWidth - weatherWidth - 8f) / 2.0f, (h - 2 * ring) / 0.76f).coerceIn(28f, 150f)
     val digits = dpToBase(digitsDp, theme, context)
     val current = data.snapshot.forecast.current
     Row(
@@ -188,10 +189,10 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
             }
         }
         HSpace(4.dp)
-        WClock(ClockPart.Hours, digits, color = theme.hourColor, font = WFont.Digits)
-        HSpace((digitsDp * 0.05f).dp)
-        ClockColon(digits, theme.hourColor)
-        HSpace((digitsDp * 0.05f).dp)
+        WClock(ClockPart.Hours, digits, color = theme.hourColor, font = WFont.Digits, scaleX = RADIAL_SCALE_X)
+        HSpace((digitsDp * 0.04f).dp)
+        ClockColon(digits * 1.15f, theme.hourColor)
+        HSpace((digitsDp * 0.04f).dp)
         // Çerçevenin rengi düzende sabit (açık ya da koyu); dakikaya özel renk seçildiyse ince dolu rakam.
         if (theme.clockFont == ClockFont.DigitsOutline && hollowGround != null && theme.style.minuteColor == null && theme.style.hourColor == null) {
             Box {
@@ -199,6 +200,7 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
                 RemoteViews(context.packageName, if (theme.colors.darkText) R.layout.wc_hollow_dark else R.layout.wc_hollow).apply {
                     for (id in intArrayOf(R.id.clock_halo_1, R.id.clock_halo_2, R.id.clock_halo_3, R.id.clock_halo_4, R.id.clock_halo_5, R.id.clock_halo_6, R.id.clock)) {
                         setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, theme.sp(digits).value)
+                        setFloat(id, "setTextScaleX", RADIAL_SCALE_X)
                         setCharSequence(id, "setFormat12Hour", "mm")
                         setCharSequence(id, "setFormat24Hour", "mm")
                     }
@@ -208,7 +210,7 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
               )
             }
         } else {
-            WClock(ClockPart.Minutes, digits, color = theme.minuteColor, font = if (theme.clockFont == ClockFont.DigitsOutline) WFont.Outline else WFont.Digits)
+            WClock(ClockPart.Minutes, digits, color = theme.minuteColor, font = if (theme.clockFont == ClockFont.DigitsOutline) WFont.Outline else WFont.Digits, scaleX = RADIAL_SCALE_X)
         }
         HSpace(4.dp)
         if (showWeather) {
@@ -236,6 +238,9 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
         }
     }
 }
+
+/** Işınsal saatin rakamları yatayda bu kadar sıkıştırılır: sistemin dar rakamları tasarımdaki oranlara yaklaşır. */
+private const val RADIAL_SCALE_X = 0.8f
 
 /** Hap içindeki hava ikonu: açık hapta güneş koyu sarı, yağış koyu mavi. */
 @Composable
@@ -277,7 +282,9 @@ fun ClockAnalogFace(styleId: WidgetStyleId, data: WidgetPlaceData) {
     val marks = style.numeralColor?.let { Color(it) } ?: onGround
     val hands = style.handColor?.let { Color(it) } ?: if (kind == WidgetBitmaps.Dial.Field) Color(0xFFF4F2EC) else onGround
     val accent = theme.colors.accent
-    val dial = min(size.width.value, size.height.value).coerceAtMost(200f)
+    // Android 12+: kadran widget'la birlikte büyür (kollar kadranın boyutunda çizilir). Öncesinde
+    // kolların boyutu sabit olduğu için kadran en fazla 200 dp.
+    val dial = min(size.width.value, size.height.value).coerceAtMost(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MAX_DIAL_DP else 200f)
     val scale = dial / 200f
     val forecast = data.snapshot.forecast
     val now = forecast.localNow()
@@ -337,7 +344,7 @@ fun ClockAnalogFace(styleId: WidgetStyleId, data: WidgetPlaceData) {
                 }
             }
             // Kollar en üstte; dokunmayı tutmaz, alttaki hava bilgisine ve kadrana geçer.
-            AndroidRemoteViews(analogHands(context, kind, style, hands, accent), GlanceModifier.fillMaxSize())
+            AndroidRemoteViews(analogHands(context, kind, style, hands, accent, dial), GlanceModifier.fillMaxSize())
         }
     }
 }
@@ -365,7 +372,7 @@ private fun AnalogWeather(kind: WidgetBitmaps.Dial, data: WidgetPlaceData, scale
         WidgetBitmaps.Dial.Field -> 66f
         WidgetBitmaps.Dial.Ring -> 50f
     } * scale
-    val widthDp = (if (kind == WidgetBitmaps.Dial.Field) 66f else 104f) * scale
+    val widthDp = (if (kind == WidgetBitmaps.Dial.Field) 56f else 104f) * scale
     Column(
         GlanceModifier.fillMaxSize().padding(top = top.dp).clickableApp(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -440,29 +447,30 @@ fun rainRange(context: Context, snapshot: WeatherSnapshot): String? {
     return "${hours[first].time.format(formatter)}–${hours[last].time.plusHours(1).format(formatter)}"
 }
 
-/** Analog saatin kolları. Android 12+: kol renkleri ve saniye kolunun simgesi ayardan gelir. */
-private fun analogHands(context: Context, kind: WidgetBitmaps.Dial, style: WidgetStyle, hands: Color, accent: Color): RemoteViews {
+private const val MAX_DIAL_DP = 400f
+
+/**
+ * Analog saatin kolları. Android 12+: kollar kadranın boyutunda ve seçilen renklerde çizilip
+ * AnalogClock'a verilir; saati yine AnalogClock döndürür. Öncesinde düzendeki sabit kollar kullanılır.
+ */
+private fun analogHands(context: Context, kind: WidgetBitmaps.Dial, style: WidgetStyle, hands: Color, accent: Color, dialDp: Float): RemoteViews {
     val seconds = style.secondHand
-    val layout = when (kind) {
-        WidgetBitmaps.Dial.Plain -> if (seconds) R.layout.widget_analog_plain_seconds else R.layout.widget_analog_plain
-        WidgetBitmaps.Dial.Field -> if (seconds) R.layout.widget_analog_field_seconds else R.layout.widget_analog_field
-        WidgetBitmaps.Dial.Ring -> if (seconds) R.layout.widget_analog_ring_seconds else R.layout.widget_analog_ring
-    }
-    return RemoteViews(context.packageName, layout).apply {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return@apply
-        val tint = ColorStateList.valueOf(hands.toArgb())
-        setColorStateList(R.id.clock, "setHourHandTintList", tint)
-        setColorStateList(R.id.clock, "setMinuteHandTintList", tint)
-        if (seconds) {
-            val symbol = when (style.secondSymbol) {
-                SecondSymbol.None -> R.drawable.widget_hand_second
-                SecondSymbol.Star -> R.drawable.widget_hand_second_star
-                SecondSymbol.Circle -> R.drawable.widget_hand_second_circle
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val density = context.resources.displayMetrics.density
+        return RemoteViews(context.packageName, R.layout.widget_analog_free).apply {
+            setIcon(R.id.clock, "setHourHand", Icon.createWithBitmap(WidgetBitmaps.hand(kind, WidgetBitmaps.Hand.Hour, dialDp, density, hands)))
+            setIcon(R.id.clock, "setMinuteHand", Icon.createWithBitmap(WidgetBitmaps.hand(kind, WidgetBitmaps.Hand.Minute, dialDp, density, hands)))
+            if (seconds) {
+                setIcon(R.id.clock, "setSecondHand", Icon.createWithBitmap(WidgetBitmaps.hand(kind, WidgetBitmaps.Hand.Second, dialDp, density, accent, style.secondSymbol)))
             }
-            setIcon(R.id.clock, "setSecondHand", Icon.createWithResource(context, symbol))
-            setColorStateList(R.id.clock, "setSecondHandTintList", ColorStateList.valueOf(accent.toArgb()))
         }
     }
+    val layout = when (kind) {
+        WidgetBitmaps.Dial.Plain -> R.layout.widget_analog_plain
+        WidgetBitmaps.Dial.Field -> R.layout.widget_analog_field
+        WidgetBitmaps.Dial.Ring -> R.layout.widget_analog_ring
+    }
+    return RemoteViews(context.packageName, layout)
 }
 
 /** Saate dokununca telefonun saat/alarm uygulaması; yoksa Commune Sky. */

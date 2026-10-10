@@ -463,6 +463,7 @@ fun WClock(
     uppercase: Boolean = false,
     contentAlignment: Alignment = Alignment.CenterStart,
     font: WFont? = null,
+    scaleX: Float = 1f,
 ) {
     val theme = LocalWidgetTheme.current
     val split = part == ClockPart.Time && color == null &&
@@ -478,7 +479,7 @@ fun WClock(
             }
         }
     } else {
-        Box(modifier, contentAlignment = contentAlignment) { ClockView(part, size, weight, color, dateSkeleton, uppercase, font) }
+        Box(modifier, contentAlignment = contentAlignment) { ClockView(part, size, weight, color, dateSkeleton, uppercase, font, scaleX = scaleX) }
     }
 }
 
@@ -505,6 +506,7 @@ private fun ClockView(
     uppercase: Boolean,
     font: WFont?,
     hour12: String = "hh",
+    scaleX: Float = 1f,
 ) {
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
@@ -534,6 +536,8 @@ private fun ClockView(
         // Biçimi ayrıca vermek saatin ilk çizimde de dolu gelmesini sağlar.
         setCharSequence(R.id.clock, "setFormat12Hour", format12)
         setCharSequence(R.id.clock, "setFormat24Hour", format24)
+        // Rakamları daraltıp uzatmak için (ışınsal saat): harfler yatayda sıkıştırılır.
+        if (scaleX != 1f) setFloat(R.id.clock, "setTextScaleX", scaleX)
         setOnClickPendingIntent(R.id.clock, clockAppIntent(context))
     }
     AndroidRemoteViews(views)
