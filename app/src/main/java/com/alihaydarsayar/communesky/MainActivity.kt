@@ -35,6 +35,7 @@ import com.alihaydarsayar.communesky.ui.home.HomeViewModel
 import com.alihaydarsayar.communesky.ui.home.placeholderScene
 import com.alihaydarsayar.communesky.ui.places.PlacesScreen
 import com.alihaydarsayar.communesky.ui.settings.HomeLocationScreen
+import com.alihaydarsayar.communesky.ui.settings.MyWidgetsScreen
 import com.alihaydarsayar.communesky.ui.settings.SettingsScreen
 import com.alihaydarsayar.communesky.ui.sky.SkyBackground
 import com.alihaydarsayar.communesky.ui.theme.CommuneSkyTheme
@@ -45,6 +46,7 @@ import kotlinx.serialization.Serializable
 @Serializable private object PlacesRoute
 @Serializable private object SettingsRoute
 @Serializable private object HomeLocationRoute
+@Serializable private object MyWidgetsRoute
 
 // AppCompatActivity: uygulama içinden dil değiştirmenin Android 12 ve altında da çalışması için.
 @AndroidEntryPoint
@@ -62,7 +64,10 @@ class MainActivity : AppCompatActivity() {
             viewModel.uiState.value.isLoading || viewModel.settings.value == null
         }
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) openHomeSettings.value = intent.wantsHomeSettings()
+        if (savedInstanceState == null) {
+            openHomeSettings.value = intent.wantsHomeSettings()
+            intent.selectWidgetPlace()
+        }
         // Arka plan hep renkli bir gökyüzü olduğu için durum çubuğu ikonları beyaz kalsın.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
@@ -82,6 +87,13 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.wantsHomeSettings()) openHomeSettings.value = true
+        intent.selectWidgetPlace()
+    }
+
+    /** Widget'ta havaya dokunulunca uygulama o widget'ın yeriyle açılır. */
+    private fun Intent?.selectWidgetPlace() {
+        val placeId = this?.getLongExtra(OpenPlaceKey.name, NO_PLACE) ?: NO_PLACE
+        if (placeId != NO_PLACE) viewModel.onPageSelected(placeId)
     }
 
     private fun Intent?.wantsHomeSettings(): Boolean = this?.getBooleanExtra(OpenHomeSettingsKey.name, false) == true
@@ -89,6 +101,11 @@ class MainActivity : AppCompatActivity() {
     companion object {
         /** Widget'tan uygulamayı açarken Ev ve konum ayarına gitmek için. */
         val OpenHomeSettingsKey = ActionParameters.Key<Boolean>("open_home_settings")
+
+        /** Widget'tan uygulamayı açarken seçilecek yerin kimliği. */
+        val OpenPlaceKey = ActionParameters.Key<Long>("open_place")
+
+        private const val NO_PLACE = Long.MIN_VALUE
     }
 }
 
@@ -140,7 +157,11 @@ private fun CommuneSkyApp(viewModel: HomeViewModel, openHomeSettings: Boolean, o
                         onBack = { navController.popBackStack() },
                         onManagePlaces = { navController.navigate(PlacesRoute) },
                         onOpenHomeLocation = { navController.navigate(HomeLocationRoute) },
+                        onOpenMyWidgets = { navController.navigate(MyWidgetsRoute) },
                     )
+                }
+                composable<MyWidgetsRoute> {
+                    MyWidgetsScreen(onBack = { navController.popBackStack() })
                 }
                 composable<HomeLocationRoute> {
                     HomeLocationScreen(

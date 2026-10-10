@@ -106,6 +106,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onManagePlaces: () -> Unit,
     onOpenHomeLocation: () -> Unit,
+    onOpenMyWidgets: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -157,6 +158,24 @@ fun SettingsScreen(
                         Column(Modifier.weight(1f)) {
                             Text(stringResource(R.string.home_settings_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
                             Text(stringResource(R.string.home_settings_summary), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                        }
+                        Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
+                    }
+                }
+            }
+            item {
+                GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.settings_widgets)) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable(onClick = onOpenMyWidgets)
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.my_widgets_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.my_widgets_summary), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
                         }
                         Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
                     }
