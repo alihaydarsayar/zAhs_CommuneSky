@@ -38,9 +38,21 @@ class CommuneSkyApp : Application(), Configuration.Provider {
             .setWorkerFactory(workerFactory)
             .build()
 
+    /** Sistem bellek isterse widget resimlerinin önbelleği bırakılır (gerektiğinde yeniden çizilir). */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level != TRIM_MEMORY_UI_HIDDEN) com.alihaydarsayar.communesky.widget.WidgetBitmaps.clearCache()
+    }
+
     @OptIn(FlowPreview::class)
     override fun onCreate() {
         super.onCreate()
+        if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+            // Debug sürümünde ana iş parçacığındaki disk ve ağ erişimleri loglanır (adb logcat -s StrictMode).
+            android.os.StrictMode.setThreadPolicy(
+                android.os.StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build(),
+            )
+        }
         // Birim, Ev ya da kayıtlı yerler değişince widget'lar hemen yeni hale geçsin
         // (hava verisi değişmediği için internete çıkılmaz). İlk değer atlanır: açılışta gereksiz çizim yok.
         appScope.launch {

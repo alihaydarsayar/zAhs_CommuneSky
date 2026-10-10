@@ -40,6 +40,9 @@ object WidgetBitmaps {
         override fun sizeOf(key: String, value: Bitmap) = value.byteCount
     }
 
+    /** Sistem bellek istediğinde (onTrimMemory) önbellek boşaltılır; resimler gerektiğinde yeniden çizilir. */
+    fun clearCache() = cache.evictAll()
+
     private inline fun cached(key: String, create: () -> Bitmap): Bitmap =
         cache.get(key) ?: create().also { cache.put(key, it) }
 
@@ -288,12 +291,29 @@ object WidgetBitmaps {
     const val RADIAL_LENGTH = 14f
     private const val RADIAL_STROKE = 1.5f
 
-    /** Çizgiler, saydam zeminde (saniye efekti yokken ya da cam ve saydam arka planlarda). */
-    fun radialTicks(widthDp: Float, heightDp: Float, density: Float, corner: Float, color: Color): Bitmap {
+    /**
+     * Çizgiler, saydam zeminde (saniye efekti yokken ya da cam ve saydam arka planlarda). Tek kanallı
+     * maske (piksel başına 1 bayt, renkli resmin dörtte biri); rengi çizerken boya ile verilir.
+     * Çizginin saydamlığı ([alpha]) maskenin içindedir: boya her sürümde aynı sonucu versin diye tam opak verilir.
+     */
+    fun radialTicks(widthDp: Float, heightDp: Float, density: Float, corner: Float, alpha: Float): Bitmap {
         val (w, h, scale) = pixels(widthDp, heightDp, density)
-        return cached("rt:$w:$h:$corner:${color.toArgb()}") {
-            Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { bitmap ->
-                drawRadial(Canvas(bitmap), widthDp, heightDp, corner, scale, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color.toArgb() })
+        val level = (alpha.coerceIn(0f, 1f) * 255).roundToInt()
+        return cached("rt:$w:$h:$corner:$level") {
+            Bitmap.createBitmap(w, h, Bitmap.Config.ALPHA_8).also { bitmap ->
+                drawRadial(Canvas(bitmap), widthDp, heightDp, corner, scale, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.argb(level, 0, 0, 0) })
+            }
+        }
+    }
+
+    /** Tek renkli zemin için şablon: tek kanallı maske (dolu, çizgilerde delik); zemin rengi boya ile verilir. */
+    fun radialStencilMask(widthDp: Float, heightDp: Float, density: Float, corner: Float): Bitmap {
+        val (w, h, scale) = pixels(widthDp, heightDp, density)
+        return cached("rm:$w:$h:$corner") {
+            Bitmap.createBitmap(w, h, Bitmap.Config.ALPHA_8).also { bitmap ->
+                val canvas = Canvas(bitmap)
+                canvas.drawColor(android.graphics.Color.BLACK)
+                drawRadial(canvas, widthDp, heightDp, corner, scale, Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) })
             }
         }
     }

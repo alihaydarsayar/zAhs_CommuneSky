@@ -379,6 +379,11 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
     }
 
     /** Widget ana ekrandan kaldırılınca ayarı da silinir (türün şablonu kalır). */
+    /** Kayıtlı bütün widget ayarlarının metin hâli (anahtar sırasıyla); çizim özeti için. */
+    suspend fun dump(): String = dataStore.data.first().asMap().entries
+        .sortedBy { it.key.name }
+        .joinToString(";") { it.key.name + "=" + it.value }
+
     suspend fun remove(appWidgetIds: IntArray) {
         dataStore.edit { prefs ->
             appWidgetIds.forEach {

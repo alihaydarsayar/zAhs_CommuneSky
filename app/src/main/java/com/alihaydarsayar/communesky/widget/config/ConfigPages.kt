@@ -299,7 +299,7 @@ fun ColorsPage(
     // Hazır renk temaları: her biri o temanın renkleriyle küçük bir "17:22" örneği.
     LazyRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (styleId == WidgetStyleId.ClockSS) {
-            items(SsClock.Preset.entries) { preset ->
+            items(SsClock.Preset.entries, key = { it.name }) { preset ->
                 val look = preset.look
                 ThemeCard(stringResource(preset.labelRes), SsClock.preset(style) == preset, Color(look.dial), Color(look.ink), Color(look.accent)) {
                     restyle { SsClock.apply(it, preset) }
@@ -308,7 +308,7 @@ fun ColorsPage(
         } else {
             // Eski sürümden kalan bir tema seçiliyse o da listede görünür.
             val themes = (ColorTheme.featured + style.colorTheme).distinct()
-            items(themes) { theme ->
+            items(themes, key = { it.name }) { theme ->
                 val palette = remember(theme, sky, style.customBackground) { WidgetPalettes.of(context, theme, sky, style.customBackground) }
                 val text = if (palette.solidDarkText) WidgetInk.Dark else WidgetInk.Light
                 ThemeCard(stringResource(theme.labelRes), style.colorTheme == theme, palette.solid, palette.hour ?: text, palette.minute ?: palette.hour ?: text) {

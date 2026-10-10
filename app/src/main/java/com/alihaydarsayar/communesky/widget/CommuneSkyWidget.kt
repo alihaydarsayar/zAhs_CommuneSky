@@ -31,9 +31,17 @@ import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.model.currentScene
 import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
 import com.alihaydarsayar.communesky.work.RefreshScheduler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Bütün widget'ların ortak sınıfı. Ayar ve veri akış olarak okunur; ayar, Ev, birimler ya da hava
@@ -259,11 +267,50 @@ object WeatherWidgetUpdater {
         }.onFailure { Log.w(TAG, "${kind.name} #$appWidgetId çizilemedi", it) }
     }
 
-    /** Önbellek ya da ayarlar değişince ana ekrandaki tüm widget'ları yeniden çizer. */
+    /** Kısa aralıkla gelen istekler tek çizimde birleşir (ör. tahmin ve istasyon ölçümü art arda yenilenince). */
+    private const val COALESCE_MS = 300L
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val lock = Any()
+    private val drawing = Mutex()
+    private var pending: Deferred<Unit>? = null
+
+    /**
+     * Önbellek ya da ayarlar değişince ana ekrandaki widget'ları yeniden çizer; çizim bitince döner.
+     *
+     * - Aynı anda gelen istekler birleşir: kısa bir bekleme sonunda tek çizim yapılır.
+     * - Gösterilecek içerik son çizimle aynıysa (bkz. [WidgetDigest]) hiç çizilmez.
+     * - Ana ekranda widget yoksa veri bile okunmaz.
+     */
     suspend fun updateAll(context: Context) {
-        WidgetKind.entries.forEach { kind ->
-            runCatching { kind.widget().updateAll(context) }.onFailure { Log.w(TAG, "${kind.name} çizilemedi", it) }
+        val app = context.applicationContext
+        val job = synchronized(lock) {
+            pending ?: scope.async {
+                delay(COALESCE_MS)
+                synchronized(lock) { pending = null }
+                drawing.withLock { drawIfChanged(app) }
+            }.also { pending = it }
         }
+        job.await()
+    }
+
+    private suspend fun drawIfChanged(context: Context) {
+        val ids = runCatching { WidgetDigest.widgetIds(context) }.getOrDefault(emptyList())
+        if (ids.isEmpty()) return
+        // Özet hesaplanamazsa her zamanki gibi çizilir.
+        val digest = runCatching { WidgetDigest.current(context, ids) }.getOrNull()
+        if (digest != null && digest == WidgetDigest.saved(context)) {
+            Log.d(TAG, "İçerik değişmedi; widget'lar yeniden çizilmedi")
+            return
+        }
+        var drawn = true
+        WidgetKind.entries.forEach { kind ->
+            runCatching { kind.widget().updateAll(context) }.onFailure {
+                drawn = false
+                Log.w(TAG, "${kind.name} çizilemedi", it)
+            }
+        }
+        if (drawn && digest != null) WidgetDigest.save(context, digest) else WidgetDigest.clear(context)
     }
 
     /**

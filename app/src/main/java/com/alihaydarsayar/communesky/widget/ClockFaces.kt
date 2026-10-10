@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
+import androidx.glance.ColorFilter
+import androidx.glance.unit.ColorProvider
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
@@ -102,18 +104,21 @@ fun ClockRadial(data: WidgetPlaceData) {
                     },
                     GlanceModifier.fillMaxSize(),
                 )
+                // Tek renkli zeminde şablon tek kanallı maskedir (dörtte bir bellek), zemin rengine boyanır.
                 Image(
-                    ImageProvider(WidgetBitmaps.radialStencil(w, h, density, corner, ground)),
+                    ImageProvider(if (ground.size == 1) WidgetBitmaps.radialStencilMask(w, h, density, corner) else WidgetBitmaps.radialStencil(w, h, density, corner, ground)),
                     contentDescription = null,
                     modifier = GlanceModifier.fillMaxSize(),
                     contentScale = ContentScale.FillBounds,
+                    colorFilter = if (ground.size == 1) ColorFilter.tint(ColorProvider(ground[0])) else null,
                 )
             } else {
                 Image(
-                    ImageProvider(WidgetBitmaps.radialTicks(w, h, density, corner, dim)),
+                    ImageProvider(WidgetBitmaps.radialTicks(w, h, density, corner, dim.alpha)),
                     contentDescription = null,
                     modifier = GlanceModifier.fillMaxSize(),
                     contentScale = ContentScale.FillBounds,
+                    colorFilter = ColorFilter.tint(ColorProvider(dim.copy(alpha = 1f))),
                 )
                 if (seconds == RadialSeconds.StripLine) {
                     AndroidRemoteViews(radialStrips(context, w, h, lit), GlanceModifier.fillMaxSize())

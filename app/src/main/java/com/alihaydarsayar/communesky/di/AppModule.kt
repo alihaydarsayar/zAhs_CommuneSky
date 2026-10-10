@@ -24,9 +24,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
@@ -43,6 +45,8 @@ annotation class ApplicationScope
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    private const val HTTP_CACHE_BYTES = 5L * 1024 * 1024
+
     @Provides
     @Singleton
     fun provideJson(): Json = Json {
@@ -53,8 +57,11 @@ object AppModule {
     /** Bütün servisler aynı bağlantı havuzunu paylaşır. Servisler uygulamayı adıyla tanır. */
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+    fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient = OkHttpClient.Builder()
         .callTimeout(20, TimeUnit.SECONDS)
+        // Yanıtlar sıkıştırılmış (gzip) istenir; bunu OkHttp kendiliğinden yapar. Sunucunun önbelleğe
+        // alınabilir dediği yanıtlar (HTTP başlıklarına göre) diskte tutulur, aynı veri yeniden indirilmez.
+        .cache(Cache(File(context.cacheDir, "http"), HTTP_CACHE_BYTES))
         .addInterceptor { chain ->
             chain.proceed(
                 chain.request().newBuilder()
