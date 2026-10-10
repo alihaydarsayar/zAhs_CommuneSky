@@ -29,8 +29,8 @@ data class Palette(
 
 /** Bütün widget'ların ortak renkleri (tasarım dili, 1.4). */
 object WidgetInk {
-    /** Koyu zeminde ana yazı. */
-    val Light = Color(0xFFF2F3F5)
+    /** Koyu zeminde ana yazı: tam beyaz. */
+    val Light = Color(0xFFFFFFFF)
 
     /** Açık zeminde ana yazı. */
     val Dark = Color(0xFF111214)
@@ -39,30 +39,30 @@ object WidgetInk {
     val Ground = Color(0xFF121316)
 
     /** Varsayılan vurgu: saniye çizgisi, gün adı, "Bugün", "Şimdi", uyarılar. */
-    val Accent = Color(0xFFE5484D)
-    val Sun = Color(0xFFF5A524)
-    val Rain = Color(0xFF5B9DFF)
-    val Moon = Color(0xFFFDE68A)
+    val Accent = Color(0xFFFF3B3B)
+    val Sun = Color(0xFFFFB000)
+    val Rain = Color(0xFF3D8BFF)
+    val Moon = Color(0xFFFFD84D)
 
     /** Sıcaklık aralığı: serin turkuazdan sıcak mercana. */
-    val Cool = Color(0xFF78C8BE)
-    val Warm = Color(0xFFFF8A65)
+    val Cool = Color(0xFF2ED3C0)
+    val Warm = Color(0xFFFF6B3D)
 
     /** Bilgi hapı: %38 #121A36. */
     val Pill = Color(0xFF121A36).copy(alpha = 0.38f)
 
     /** Renk seçicideki 12 hazır renk. */
     val Presets: List<Int> = listOf(
-        0xFFF2F3F5, 0xFF111214, 0xFFE5484D, 0xFFFF8A65, 0xFFF5A524, 0xFFFDE68A,
-        0xFF78C8BE, 0xFF46A758, 0xFF5B9DFF, 0xFF6E56CF, 0xFFD6409F, 0xFF8B8D98,
+        0xFFFFFFFF, 0xFF111214, 0xFFFF3B3B, 0xFFFF6B3D, 0xFFFFB000, 0xFFFFD84D,
+        0xFF2ED3C0, 0xFF30C85A, 0xFF3D8BFF, 0xFF7C4DFF, 0xFFFF3D9A, 0xFF8B8D98,
     ).map { it.toInt() }
 }
 
 /** Açık zeminde de canlı kalan, yine de okunur vurgu renkleri. */
 object VividOnLight {
-    val Sun = Color(0xFFF08C00)
-    val Rain = Color(0xFF2F7BF5)
-    val Moon = Color(0xFFD99A00)
+    val Sun = Color(0xFFFF9500)
+    val Rain = Color(0xFF1F6FFF)
+    val Moon = Color(0xFFE6A100)
 }
 
 object WidgetPalettes {

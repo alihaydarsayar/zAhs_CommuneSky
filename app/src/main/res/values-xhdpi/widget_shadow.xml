@@ -2,5 +2,4 @@
 <resources>
     <item name="widget_shadow_dy" format="float" type="dimen">4</item>
     <item name="widget_shadow_radius" format="float" type="dimen">12</item>
-    <item name="widget_outline_radius" format="float" type="dimen">3</item>
 </resources>

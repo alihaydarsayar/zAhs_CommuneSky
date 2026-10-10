@@ -42,6 +42,7 @@ import com.alihaydarsayar.communesky.model.WeatherCondition
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 // --- Dijital ışınsal --------------------------------------------------------------------------------
 
@@ -156,9 +157,10 @@ private fun radialStrips(context: Context, w: Float, h: Float, color: Color): Re
 
 /** Işınsal saatin içeriği: gün, saat : dakika, hava. Hepsi dikeyde tam ortalı. */
 /**
- * [hollowGround]: zemin tek renk ve tam doluysa o renk. O zaman dakika "içi boş" çizilir: aynı saat iki
- * katman halinde üst üste (altta kalın, dakika renginde; üstte ince, zemin renginde). Uygulamanın
- * kendi çizgi rakamlı yazı tipi widget'larda yüklenemediği için bu yol kullanılır; ikisi de TextClock.
+ * [hollowGround]: zemin tek renk ve tam doluysa o renk. O zaman dakika "içi boş" çizilir: ince rakamın
+ * çevresinde kaydırılmış kopyaları düz, keskin bir çerçeve oluşturur (dakika renginde), ortadaki kopya
+ * zemin rengiyle içini açar. Uygulamanın kendi çizgi rakamlı yazı tipi widget'larda yüklenemediği için
+ * bu yol kullanılır; hepsi TextClock.
  */
 @Composable
 private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
@@ -193,12 +195,19 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
         HSpace((digitsDp * 0.04f).dp)
         ClockColon(digits * 1.15f, theme.hourColor)
         HSpace((digitsDp * 0.04f).dp)
-        // Çerçevenin rengi düzende sabit (açık ya da koyu); dakikaya özel renk seçildiyse ince dolu rakam.
-        if (theme.clockFont == ClockFont.DigitsOutline && hollowGround != null && theme.style.minuteColor == null && theme.style.hourColor == null) {
+        if (theme.clockFont == ClockFont.DigitsOutline && hollowGround != null) {
+            // Çerçeve kalınlığı rakamın boyuna göre: yaklaşık yüzde 4,5.
+            val hollowLayout = when ((digitsDp * 0.045f).roundToInt().coerceIn(2, 5)) {
+                2 -> R.layout.wc_hollow_2
+                3 -> R.layout.wc_hollow_3
+                4 -> R.layout.wc_hollow_4
+                else -> R.layout.wc_hollow_5
+            }
             Box {
               AndroidRemoteViews(
-                RemoteViews(context.packageName, if (theme.colors.darkText) R.layout.wc_hollow_dark else R.layout.wc_hollow).apply {
-                    for (id in intArrayOf(R.id.clock_halo_1, R.id.clock_halo_2, R.id.clock_halo_3, R.id.clock_halo_4, R.id.clock_halo_5, R.id.clock_halo_6, R.id.clock)) {
+                RemoteViews(context.packageName, hollowLayout).apply {
+                    for (id in HOLLOW_FRAME_IDS) setTextColor(id, theme.minuteColor.toArgb())
+                    for (id in HOLLOW_FRAME_IDS + R.id.clock) {
                         setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, theme.sp(digits).value)
                         setFloat(id, "setTextScaleX", RADIAL_SCALE_X)
                         setCharSequence(id, "setFormat12Hour", "mm")
@@ -238,6 +247,16 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
         }
     }
 }
+
+/** İçi boş rakamın çerçevesini oluşturan kaydırılmış kopyalar (bkz. res/layout/wc_hollow_*.xml). */
+private val HOLLOW_FRAME_IDS = intArrayOf(
+    R.id.clock_halo_1, R.id.clock_halo_2, R.id.clock_halo_3, R.id.clock_halo_4, R.id.clock_halo_5, R.id.clock_halo_6,
+    R.id.clock_halo_7, R.id.clock_halo_8, R.id.clock_halo_9, R.id.clock_halo_10, R.id.clock_halo_11, R.id.clock_halo_12,
+    R.id.clock_halo_13, R.id.clock_halo_14, R.id.clock_halo_15, R.id.clock_halo_16, R.id.clock_halo_17, R.id.clock_halo_18,
+    R.id.clock_halo_19, R.id.clock_halo_20, R.id.clock_halo_21, R.id.clock_halo_22, R.id.clock_halo_23, R.id.clock_halo_24,
+    R.id.clock_halo_25, R.id.clock_halo_26, R.id.clock_halo_27, R.id.clock_halo_28, R.id.clock_halo_29, R.id.clock_halo_30,
+    R.id.clock_halo_31, R.id.clock_halo_32, R.id.clock_halo_33, R.id.clock_halo_34, R.id.clock_halo_35, R.id.clock_halo_36,
+)
 
 /** Işınsal saatin rakamları yatayda bu kadar sıkıştırılır: sistemin dar rakamları tasarımdaki oranlara yaklaşır. */
 private const val RADIAL_SCALE_X = 0.8f
