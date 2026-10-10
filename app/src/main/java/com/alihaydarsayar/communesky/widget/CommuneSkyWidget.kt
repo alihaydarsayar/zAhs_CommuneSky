@@ -3,6 +3,7 @@ package com.alihaydarsayar.communesky.widget
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.SystemClock
+import android.os.Trace
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -67,14 +68,18 @@ abstract class CommuneSkyWidget(
         provideContent {
             val config by configFlow.collectAsState(initialConfig)
             val input by inputFlow.collectAsState(initialInput)
+            // Çizim, sistem izlerinde (Perfetto, Macrobenchmark) "CommuneSky.widget.<tür>" bölümü olarak görünür;
+            // iz alınmıyorken bu çağrıların maliyeti yok denecek kadar azdır.
+            Trace.beginSection(WidgetTiming.section(kind))
             if (debug) {
-                // Debug sürümünde çizim süresi ölçülür: veri yüklendikten sonra 50 ms'yi geçmemeli.
+                // Debug sürümünde çizim süresi ayrıca loglanır: veri yüklendikten sonra 50 ms'yi geçmemeli.
                 val composeStart = SystemClock.elapsedRealtimeNanos()
                 WidgetRoot(kind, config, input)
                 WidgetTiming.log(kind, config, loadNanos = loaded - started, drawNanos = SystemClock.elapsedRealtimeNanos() - composeStart)
             } else {
                 WidgetRoot(kind, config, input)
             }
+            Trace.endSection()
         }
     }
 
@@ -137,6 +142,9 @@ object WidgetTiming {
     private const val TAG = "WidgetTiming"
 
     fun enabled(context: Context): Boolean = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+
+    /** Sistem izindeki bölüm adı. */
+    fun section(kind: WidgetKind): String = "CommuneSky.widget.${kind.name}"
 
     fun log(kind: WidgetKind, config: WidgetConfig, loadNanos: Long, drawNanos: Long) {
         Log.d(TAG, "${kind.name}/${config.style.styleId(kind).name} load=${loadNanos / 1_000_000.0}ms draw=${drawNanos / 1_000_000.0}ms")
