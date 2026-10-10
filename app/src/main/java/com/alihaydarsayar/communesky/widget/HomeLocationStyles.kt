@@ -27,7 +27,7 @@ import kotlin.math.min
 /**
  * Ev ve konum widget'ı. Üç durum (bkz. HomeDetection):
  * - Evde: ev; büyük sıcaklık, durum, sağda ikon, Y/D, hissedilen; altta 6 saat.
- * - Yakında: ev ana bilgi; altında "Tuzla Merkez'desin · 3 km · hava aynı" hapı ve yağmur uyarısı.
+ * - Yakında: ev ana bilgi; altında "Liverpool'dasın · 3 km · hava aynı" hapı ve yağmur uyarısı.
  * - Uzakta: ikiye bölünür, solda bulunduğun yer, sağda ev, altta koyu bir şerit.
  */
 @Composable
@@ -80,14 +80,29 @@ private fun MainPlace(data: WidgetPlaceData, hint: HomeLocationState.Hint? = nul
         else -> 0f
     }
     val temperature = temp(current.temperature)
+    val iconSize = if (big) 44f else 36f
+    val condition = context.getString(weatherDescriptionRes(current.weatherCode))
     val tempSize = fitTemperature(
         temperature,
-        max = if (big) 64f else 50f,
-        widthDp = size.width.value - 40f - 120f,
-        heightDp = size.height.value - 2 * vertical - bottom - lineHeightDp(if (big) 15f else 14f, theme) - lineHeightDp(if (big) 15f else 13f, theme) - 4f,
+        max = if (big) 68f else 56f,
+        widthDp = (size.width.value - 32f - iconSize - 12f) * 0.42f,
+        heightDp = size.height.value - 2 * vertical - bottom - lineHeightDp(if (big) 15f else 14f, theme) - 2f,
         theme = theme,
     )
-    WidgetSurface(onClick = openAppAction(openHomeSettings = hint == HomeLocationState.Hint.NoHome), horizontal = 20.dp, vertical = vertical.dp) {
+    // Sıcaklığın yanındaki sütun: durum, Y/D, hissedilen. Sığmayan satır düşer.
+    val sideWidth = size.width.value - 32f - iconSize - 12f - estimateWidthDp(temperature, tempSize, theme) - 12f
+    val sideHeight = lineHeightDp(tempSize, theme)
+    val highLowText = if (theme.shows(WidgetContent.HighLow) && today != null) highLow(today.maxTemperature, today.minTemperature) else null
+    val feelsText = if (theme.shows(WidgetContent.FeelsLike)) context.getString(R.string.widget_feels_like, temp(current.apparentTemperature)) else null
+    val sideLines = buildList {
+        if (estimateWidthDp(condition, 14f, theme) <= sideWidth) add(condition to false)
+        if (highLowText != null && estimateWidthDp(highLowText, 12f, theme) <= sideWidth) add(highLowText to true)
+        if (feelsText != null && estimateWidthDp(feelsText, 12f, theme) <= sideWidth) add(feelsText to true)
+    }.let { lines ->
+        var used = 0f
+        lines.takeWhile { (_, small) -> used += lineHeightDp(if (small) 12f else 14f, theme); used <= sideHeight }
+    }
+    WidgetSurface(onClick = openAppAction(openHomeSettings = hint == HomeLocationState.Hint.NoHome), horizontal = 16.dp, vertical = vertical.dp) {
         Column(GlanceModifier.fillMaxSize()) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Column(GlanceModifier.defaultWeight()) {
@@ -98,24 +113,17 @@ private fun MainPlace(data: WidgetPlaceData, hint: HomeLocationState.Hint? = nul
                             WClock(ClockPart.Time, 14f, weight = WWeight.Medium, color = theme.colors.secondary)
                         }
                     }
-                    WText(temperature, tempSize, weight = WWeight.Light)
-                    WText(context.getString(weatherDescriptionRes(current.weatherCode)), if (big) 15f else 13f, color = theme.colors.secondary)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    CurrentGlyph(data.snapshot, if (big) 52.dp else 40.dp)
-                    VSpace(if (big) 6.dp else 3.dp)
-                    if (theme.shows(WidgetContent.HighLow) && today != null) {
-                        WText(highLow(today.maxTemperature, today.minTemperature), 13f, align = TextAlign.End)
-                    }
-                    if (theme.shows(WidgetContent.FeelsLike)) {
-                        WText(
-                            context.getString(R.string.widget_feels_like, temp(current.apparentTemperature)),
-                            13f,
-                            color = theme.colors.secondary,
-                            align = TextAlign.End,
-                        )
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        WText(temperature, tempSize, weight = WWeight.Light)
+                        HSpace(10.dp)
+                        Column(GlanceModifier.padding(bottom = (tempSize * 0.1f).dp)) {
+                            sideLines.forEach { (text, small) ->
+                                WText(text, if (small) 12f else 14f, color = if (small) theme.colors.secondary else null, weight = if (small) WWeight.Regular else WWeight.Medium)
+                            }
+                        }
                     }
                 }
+                CurrentGlyph(data.snapshot, iconSize.dp)
             }
             Spacer(GlanceModifier.defaultWeight())
             when {
@@ -146,7 +154,7 @@ private fun NearbyPlace(state: HomeLocationState.Nearby) {
     val vertical = if (big) 16f else 12f
     val rain = if (theme.shows(WidgetContent.RainAlert)) WidgetPhrases.rainAlert(context, home.snapshot) else null
     // Hap tek satıra sığmazsa yazı küçülür, yine sığmazsa hava karşılaştırması düşer.
-    val pillWidth = size.width.value - 40f - 43f
+    val pillWidth = size.width.value - 32f - 43f
     var pillText = WidgetPhrases.nearbyPill(context, state.here, home, state.distanceKm, unit)
     var pillSize = 13f
     if (estimateWidthDp(pillText, pillSize, theme) > pillWidth) pillSize = 12f
@@ -156,11 +164,11 @@ private fun NearbyPlace(state: HomeLocationState.Nearby) {
     val tempSize = fitTemperature(
         temperature,
         max = if (big) 64f else 50f,
-        widthDp = size.width.value - 40f - 60f,
+        widthDp = size.width.value - 32f - 60f,
         heightDp = size.height.value - 2 * vertical - bottom - lineHeightDp(if (big) 15f else 14f, theme) - lineHeightDp(if (big) 15f else 13f, theme) - 4f,
         theme = theme,
     )
-    WidgetSurface(onClick = openAppAction(), horizontal = 20.dp, vertical = vertical.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = vertical.dp) {
         Column(GlanceModifier.fillMaxSize()) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Column(GlanceModifier.defaultWeight()) {
@@ -202,7 +210,7 @@ private fun SplitPlaces(here: WidgetPlaceData, home: WidgetPlaceData, distanceKm
     val sky = theme.style.background == BackgroundKind.Sky && theme.backgroundAlpha > 0f
     val halfHeight = if (showStrip) size.height - stripHeight else size.height
     // Şerit sığmazsa yazı küçülür; yine sığmazsa önce mesafe, sonra sıcaklık farkı düşer (yağmur en önemlisi).
-    val stripWidth = size.width.value - 40f
+    val stripWidth = size.width.value - 32f
     var items = allItems
     var stripText = 13f
     fun stripFits(list: List<WidgetPhrases.AwayItem>, sp: Float) =
@@ -222,8 +230,9 @@ private fun SplitPlaces(here: WidgetPlaceData, home: WidgetPlaceData, distanceKm
                     theme.colors.darkText -> lerp(theme.colors.palette.mid, Color.White, 0.45f).copy(alpha = theme.backgroundAlpha)
                     else -> theme.colors.strip.copy(alpha = theme.colors.strip.alpha * theme.backgroundAlpha)
                 }
+                if (!sky) HDivider()
                 Row(
-                    GlanceModifier.fillMaxWidth().height(stripHeight).background(stripColor).padding(horizontal = 20.dp),
+                    GlanceModifier.fillMaxWidth().height(stripHeight).background(stripColor).padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Her öğe tek bir satır: Glance bir satırda en çok 10 öğe çizer.
@@ -266,13 +275,17 @@ private fun Half(data: WidgetPlaceData, modifier: GlanceModifier, sky: Boolean, 
         )
     }
     val current = data.snapshot.forecast.current
+    // Düz zeminde yağışlı taraf hafif maviyle ayrılır.
+    if (!sky && theme.backgroundAlpha > 0f && (current.condition.isWet || current.condition == com.alihaydarsayar.communesky.model.WeatherCondition.Snow)) {
+        m = m.background(WidgetInk.Rain.copy(alpha = 0.10f * theme.backgroundAlpha))
+    }
     val temperature = temp(current.temperature)
     // Sıcaklık hem yarının genişliğine (ikon yanında) hem yüksekliğine sığacak boyutta.
     val iconSize = if (heightDp >= 110f) 40f else 30f
-    val textWidth = size.width.value / 2f - 36f - iconSize - 6f
+    val textWidth = size.width.value / 2f - 32f - iconSize - 6f
     val textHeight = heightDp - 26f - lineHeightDp(14f, theme) - lineHeightDp(13f, theme) - 6f
-    val tempSize = min(fitWidth(temperature, 52f, textWidth, theme), textHeight / (1.2f * theme.style.textSize.scale))
-    Column(m.padding(start = if (left) 20.dp else 16.dp, end = if (left) 16.dp else 20.dp, top = 14.dp, bottom = 12.dp)) {
+    val tempSize = min(fitWidth(temperature, 56f, textWidth, theme), textHeight / (1.2f * theme.style.textSize.scale))
+    Column(m.padding(horizontal = 16.dp, vertical = 12.dp)) {
         PlaceLabel(data, 14f)
         Spacer(GlanceModifier.defaultWeight())
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -439,7 +452,7 @@ fun HourlyStrip(data: WidgetPlaceData, count: Int, compact: Boolean = false) {
                 VSpace(if (compact) 2.dp else 3.dp)
                 WText(
                     temp(if (index == 0) forecast.current.temperature else hour.temperature),
-                    if (compact) 12f else 13f,
+                    if (compact) 13f else 15f,
                     weight = WWeight.Medium,
                     align = TextAlign.Center,
                 )
@@ -448,14 +461,24 @@ fun HourlyStrip(data: WidgetPlaceData, count: Int, compact: Boolean = false) {
     }
 }
 
-/** Yağmur uyarısı satırı: damla ikonu ve mavi yazı. */
+/** Yağmur uyarısı satırı: damla ikonu ve mavi yazı; "Bilgi satırı: Hap içinde" seçiliyse hap içinde. */
 @Composable
 fun RainLine(text: String, size: Float = 13f) {
     val theme = LocalWidgetTheme.current
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    InfoLine {
         WIcon(R.drawable.ic_wl_drop, (size + 2).dp, theme.colors.rain)
         HSpace(7.dp)
         WText(text, size, color = theme.colors.rain)
+    }
+}
+
+/** Bir bilgi satırı: ayara göre düz ya da hap içinde (%38 #121A36, tam yuvarlak). */
+@Composable
+fun InfoLine(content: @Composable () -> Unit) {
+    if (LocalWidgetTheme.current.style.infoRow == InfoRow.Pill) {
+        Pill { content() }
+    } else {
+        Row(verticalAlignment = Alignment.CenterVertically) { content() }
     }
 }
 

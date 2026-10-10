@@ -47,7 +47,7 @@ fun PrecipitationContent(style: WidgetStyleId, data: WidgetPlaceData) {
 
 /**
  * Tasarım "Sonraki 2 saat yağış": solda tek cümle; sağda önümüzdeki 2 saatin 15 dakikalık yağış
- * çubukları, altta Şimdi / +1 sa / +2 sa.
+ * çubukları, altta Şimdi ve bir, iki saat sonrasının saati.
  */
 @Composable
 private fun PrecipitationBars(data: WidgetPlaceData) {
@@ -66,11 +66,14 @@ private fun PrecipitationBars(data: WidgetPlaceData) {
         val lines = kotlin.math.ceil(estimateWidthDp(sentence, sp, theme) / (sentenceWidth - 4f) * 1.15f).toInt().coerceAtLeast(1)
         lines <= 3 && lines * lineHeightDp(sp, theme) <= sentenceHeight
     } ?: 12f
-    WidgetSurface(onClick = openAppAction(), horizontal = 20.dp, vertical = 10.dp, contentAlignment = Alignment.CenterStart) {
+    val formatter = timeFormatter(context)
+    val origin = nowcast.slices.firstOrNull()?.start ?: now
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 10.dp, contentAlignment = Alignment.CenterStart) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             Column(GlanceModifier.width(sentenceWidth.dp)) {
                 if (theme.shows(WidgetContent.PlaceName)) {
-                    PlaceLabel(data, 13f, weight = WWeight.Regular, color = theme.colors.rain)
+                    PlaceLabel(data, 13f)
+                    VSpace(2.dp)
                 }
                 WText(sentence, sentenceSize, weight = WWeight.Medium, maxLines = 3)
             }
@@ -87,7 +90,7 @@ private fun PrecipitationBars(data: WidgetPlaceData) {
                         Box(GlanceModifier.defaultWeight().padding(horizontal = 2.5.dp)) {
                             Box(
                                 GlanceModifier.fillMaxWidth().height(height.dp)
-                                    .rounded(if (wet) theme.colors.rain else theme.colors.text.copy(alpha = 0.18f), 4.dp),
+                                    .rounded(if (wet) theme.colors.rain else theme.colors.text.copy(alpha = 0.14f), 4.dp),
                             ) {}
                         }
                     }
@@ -98,9 +101,9 @@ private fun PrecipitationBars(data: WidgetPlaceData) {
                 Row(GlanceModifier.fillMaxWidth()) {
                     WText(context.getString(R.string.now), 11f, color = theme.colors.tertiary)
                     Spacer(GlanceModifier.defaultWeight())
-                    WText(context.getString(R.string.widget_plus_hours, 1), 11f, color = theme.colors.tertiary, align = TextAlign.Center)
+                    WText(origin.plusHours(1).format(formatter), 11f, color = theme.colors.tertiary, align = TextAlign.Center)
                     Spacer(GlanceModifier.defaultWeight())
-                    WText(context.getString(R.string.widget_plus_hours, 2), 11f, color = theme.colors.tertiary, align = TextAlign.End)
+                    WText(origin.plusHours(2).format(formatter), 11f, color = theme.colors.tertiary, align = TextAlign.End)
                 }
             }
         }
@@ -228,16 +231,20 @@ private fun DetailsTiles(data: WidgetPlaceData) {
     val columns = if (size.width >= 250.dp) 3 else 2
     val shown = tiles.take(if (twoRows) columns * 2 else columns)
     // Açıklama satırı sadece karolar yeterince yüksekse (ana ekranda 4×2 ve üstü).
-    val notes = theme.shows(WidgetContent.TileNotes) && size.height >= 190.dp
+    // Açıklama satırı sadece karolara sığıyorsa: başlık + değer + açıklama.
+    val valueSize = if (twoRows) 20f else 19f
+    val tileRows = if (twoRows) 2 else 1
+    val tileHeight = (size.height.value - 24f - lineHeightDp(20f, theme) - 8f - 8f * (tileRows - 1)) / tileRows - 8f
+    val notes = theme.shows(WidgetContent.TileNotes) &&
+        tileHeight >= lineHeightDp(11f, theme) + lineHeightDp(valueSize, theme) + lineHeightDp(10f, theme)
     WidgetSurface(onClick = openAppAction(), horizontal = 14.dp, vertical = 12.dp) {
         Column(GlanceModifier.fillMaxSize()) {
             Row(GlanceModifier.fillMaxWidth().padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 val current = data.snapshot.forecast.current
-                PlaceLabel(
-                    data, 14f, GlanceModifier.defaultWeight(),
-                    suffix = " · ${temp(current.temperature)} ${context.getString(weatherDescriptionRes(current.weatherCode))}",
-                )
-                WClock(ClockPart.Time, 12f, weight = WWeight.Regular, color = theme.colors.tertiary)
+                PlaceLabel(data, 15f, GlanceModifier.defaultWeight())
+                CurrentGlyph(data.snapshot, 18.dp)
+                HSpace(6.dp)
+                WText(temp(current.temperature), 20f, weight = WWeight.Medium)
             }
             VSpace(8.dp)
             shown.chunked(columns).forEachIndexed { rowIndex, row ->
@@ -248,15 +255,23 @@ private fun DetailsTiles(data: WidgetPlaceData) {
                         Column(
                             GlanceModifier.defaultWeight().fillMaxHeight()
                                 .rounded(theme.colors.surface, 16.dp)
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                                .padding(horizontal = 12.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            WText(tile.label, 12f, color = theme.colors.secondary)
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                WText(tile.value, if (twoRows) 19f else 17f, weight = WWeight.Medium)
-                                if (tile.unit != null) WText(" " + tile.unit, 11f, color = theme.colors.secondary)
+                            val tileWidth = (size.width.value - 28f - 8f * (columns - 1)) / columns - 24f
+                            WText(tile.label, 11f, color = theme.colors.secondary)
+                            if (notes) {
+                                WText(tile.value, valueSize, weight = WWeight.Medium)
+                                // Birim açıklamayla aynı satırda: "km/s · Kuzeydoğu". Sığmazsa açıklama düşer.
+                                val note = listOfNotNull(tile.unit, tile.note).joinToString(" · ")
+                                val shown = if (estimateWidthDp(note, 10f, theme) <= tileWidth) note else tile.unit ?: ""
+                                if (shown.isNotEmpty()) WText(shown, 10f, color = theme.colors.tertiary)
+                            } else {
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    WText(tile.value, valueSize, weight = WWeight.Medium)
+                                    if (tile.unit != null) WText(" " + tile.unit, 10f, color = theme.colors.secondary)
+                                }
                             }
-                            if (notes && tile.note != null) WText(tile.note, 11f, color = theme.colors.tertiary)
                         }
                     }
                 }

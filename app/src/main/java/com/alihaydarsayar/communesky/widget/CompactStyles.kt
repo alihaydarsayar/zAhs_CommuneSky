@@ -54,15 +54,15 @@ private fun SmallClassic(data: WidgetPlaceData) {
             val textRows = (if (theme.shows(WidgetContent.Condition)) 1 else 0) + (if (theme.shows(WidgetContent.HighLow)) 1 else 0)
             WText(
                 temperature,
-                fitTemperature(temperature, 56f, size.width.value - 32f, size.height.value - 28f - 30f - textRows * lineHeightDp(13f, theme) - 4f, theme),
+                fitTemperature(temperature, 64f, size.width.value - 32f, size.height.value - 28f - 30f - textRows * lineHeightDp(13f, theme) - 4f, theme),
                 weight = WWeight.Light,
             )
             Spacer(GlanceModifier.defaultWeight())
             if (theme.shows(WidgetContent.Condition)) {
-                WText(context.getString(weatherDescriptionRes(current.weatherCode)), 13f)
+                WText(context.getString(weatherDescriptionRes(current.weatherCode)), 13f, weight = WWeight.Medium)
             }
             if (theme.shows(WidgetContent.HighLow) && today != null) {
-                WText(highLow(today.maxTemperature, today.minTemperature), 13f, color = theme.colors.secondary)
+                WText(highLow(today.maxTemperature, today.minTemperature), 12f, color = theme.colors.secondary)
             }
         }
     }
@@ -168,37 +168,41 @@ private fun TextStack(data: WidgetPlaceData) {
     val size = LocalSize.current
     val current = data.snapshot.forecast.current
     val temperature = temp(current.temperature)
-    val tempSize = fitTemperature(temperature, 52f, size.width.value * 0.42f, size.height.value - 8f, theme)
+    val tempSize = fitTemperature(temperature, 52f, size.width.value * 0.4f, size.height.value - 8f, theme)
     // Sağ sütunun genişliği; sığmayan satırlar gösterilmez (yazı kesilmez).
-    val column = size.width.value - 24f - estimateWidthDp(temperature, tempSize, theme) - 12f
+    val column = size.width.value - 16f - estimateWidthDp(temperature, tempSize, theme) - 10f
     val name = data.snapshot.displayName(context)
     val condition = context.getString(weatherDescriptionRes(current.weatherCode))
     val rain = if (theme.shows(WidgetContent.RainAlert)) WidgetPhrases.rainShort(context, data.snapshot) else null
-    var height = size.height.value - 8f - lineHeightDp(16f, theme)
-    val showCondition = theme.shows(WidgetContent.Condition) && estimateWidthDp(condition, 14f, theme) <= column &&
-        height >= lineHeightDp(14f, theme)
-    if (showCondition) height -= lineHeightDp(14f, theme)
-    val showRain = rain != null && estimateWidthDp(rain, 13f, theme) <= column && height >= lineHeightDp(13f, theme)
-    WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = 4.dp, contentAlignment = Alignment.CenterStart) {
+    var height = size.height.value - 8f - lineHeightDp(15f, theme)
+    val showCondition = theme.shows(WidgetContent.Condition) && estimateWidthDp(condition, 13f, theme) <= column &&
+        height >= lineHeightDp(13f, theme)
+    if (showCondition) height -= lineHeightDp(13f, theme)
+    val showRain = rain != null && estimateWidthDp(rain, 13f, theme) + 17f <= column && height >= lineHeightDp(13f, theme)
+    WidgetSurface(onClick = openAppAction(), horizontal = 8.dp, vertical = 4.dp, contentAlignment = Alignment.CenterStart) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             WText(temperature, tempSize, weight = WWeight.Light)
-            HSpace(12.dp)
+            HSpace(10.dp)
             Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                if (theme.shows(WidgetContent.PlaceName) && estimateWidthDp(name, 15f, theme) + 20f <= column) {
+                    PlaceLabel(data, 15f)
+                } else {
                     CurrentGlyph(data.snapshot, 20.dp)
-                    if (theme.shows(WidgetContent.PlaceName) && estimateWidthDp(name, 16f, theme) + 26f <= column) {
-                        HSpace(6.dp)
-                        WText(name, 16f, weight = WWeight.Medium)
+                }
+                if (showCondition) WText(condition, 13f, color = theme.colors.secondary)
+                if (showRain) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        WIcon(com.alihaydarsayar.communesky.R.drawable.ic_wl_drop, 13.dp, theme.colors.rain)
+                        HSpace(4.dp)
+                        WText(rain!!, 13f, color = theme.colors.rain)
                     }
                 }
-                if (showCondition) WText(condition, 14f)
-                if (showRain) WText(rain!!, 13f, color = theme.colors.rain)
             }
         }
     }
 }
 
-/** Tek satır: "17° · Yayla · Parçalı bulutlu · 21:00'de yağmur"; sığmayan parçalar sondan düşer. */
+/** Tek satır: "17° · Beşiktaş · Parçalı bulutlu · 21:00'de yağmur"; sığmayan parçalar sondan düşer. */
 @Composable
 private fun TextLine(data: WidgetPlaceData) {
     val context = LocalContext.current
