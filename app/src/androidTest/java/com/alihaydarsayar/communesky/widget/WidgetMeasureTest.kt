@@ -26,7 +26,7 @@ import java.util.Locale
  * Önce/sonra karşılaştırması için ölçüm ve ekran görüntüleri. Sonuçlar
  * Android/data/com.alihaydarsayar.communesky/files/measure/ altına yazılır:
  *
- * - `shots/<Stil>_dark.png`, `<Stil>_light.png`: her stil, koyu ve açık duvar kâğıdında.
+ * - `shots/tr/<Stil>_dark.png`, `<Stil>_light.png` ve `shots/en/...`: her stil, koyu ve açık duvar kâğıdında, önce Türkçe sonra İngilizce.
  * - `widgets.csv`: her stil için launcher'a giden resimlerin toplamı (bayt) ve görünüm sayısı.
  *   Çizim süreleri logdan okunur: adb logcat -s WidgetTiming
  *
@@ -35,19 +35,35 @@ import java.util.Locale
 @RunWith(AndroidJUnit4::class)
 class WidgetMeasureTest {
 
-    private val context = localized(InstrumentationRegistry.getInstrumentation().targetContext, "tr")
-    private val input = WidgetSamples.input(context)
+    private var context = localized(InstrumentationRegistry.getInstrumentation().targetContext, "tr")
+    private var input = WidgetSamples.input(context)
     private val out = File(context.getExternalFilesDir(null), "measure").apply { mkdirs() }
 
+    /**
+     * İki set: önce Türkçe (shots/tr), sonra İngilizce (shots/en). Her sette metinler de tarih de
+     * aynı dildedir: tarihi yazan saat bileşeni sürecin varsayılan dilini kullandığı için o da değiştirilir.
+     */
     @Test
     fun screenshots() = runBlocking {
-        val shots = File(out, "shots").apply { mkdirs() }
-        for (style in WidgetStyleId.entries) {
-            val config = WidgetConfig(WidgetPlace.Smart, style.defaultStyle())
-            for (light in listOf(false, true)) {
-                val bitmap = draw(style, config, light)
-                File(shots, "${style.name}_${if (light) "light" else "dark"}.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val system = Locale.getDefault()
+        try {
+            for (language in listOf("tr", "en")) {
+                Locale.setDefault(Locale.forLanguageTag(language))
+                context = localized(InstrumentationRegistry.getInstrumentation().targetContext, language)
+                input = WidgetSamples.input(context)
+                val shots = File(out, "shots/$language").apply { mkdirs() }
+                for (style in WidgetStyleId.entries) {
+                    val config = WidgetConfig(WidgetPlace.Smart, style.defaultStyle())
+                    for (light in listOf(false, true)) {
+                        val bitmap = draw(style, config, light)
+                        File(shots, "${style.name}_${if (light) "light" else "dark"}.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                    }
+                }
             }
+        } finally {
+            Locale.setDefault(system)
+            context = localized(InstrumentationRegistry.getInstrumentation().targetContext, "tr")
+            input = WidgetSamples.input(context)
         }
     }
 

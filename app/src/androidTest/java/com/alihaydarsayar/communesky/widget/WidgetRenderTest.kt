@@ -28,7 +28,7 @@ import java.util.Locale
 
 /**
  * Bütün widget stillerini ana ekrana eklemeden, örnek veriyle çizer ve PNG olarak kaydeder:
- * Android/data/com.alihaydarsayar.communesky/files/widget_*.png
+ * Android/data/com.alihaydarsayar.communesky/files/widget_render/{tr,en}/widget_*.png
  * Hem çizimin hatasız çalıştığını doğrular hem de tasarımı görmeyi sağlar. Duvar kâğıdının
  * üstünde duran stiller (saydam, cam) hem koyu hem açık bir duvar kâğıdı üstünde çizilir.
  *
@@ -39,132 +39,162 @@ import java.util.Locale
 @RunWith(AndroidJUnit4::class)
 class WidgetRenderTest {
 
-    private val context = localized(InstrumentationRegistry.getInstrumentation().targetContext, "tr")
-    private val input = WidgetSamples.input(context)
+    private var context = localized(InstrumentationRegistry.getInstrumentation().targetContext, "tr")
+    private var input = WidgetSamples.input(context)
+
+    /**
+     * Çizimleri tek dilde, iki set olarak alır: önce Türkçe (files/widget_render/tr), sonra İngilizce
+     * (files/widget_render/en). Her sette metinler de tarih de aynı dildedir.
+     */
+    private suspend fun eachLanguage(block: suspend () -> Unit) {
+        val target = InstrumentationRegistry.getInstrumentation().targetContext
+        try {
+            for (language in listOf("tr", "en")) {
+                context = localized(target, language)
+                input = WidgetSamples.input(context)
+                block()
+            }
+        } finally {
+            context = localized(target, "tr")
+            input = WidgetSamples.input(context)
+        }
+    }
 
     @Test
     fun renderEveryStyle() = runBlocking {
-        for (style in WidgetStyleId.entries) {
-            val config = WidgetConfig(WidgetPlace.Smart, style.defaultStyle())
-            val onWallpaper = style.background == BackgroundKind.Transparent || style.background == BackgroundKind.Glass
-            render(style.kind, config, style.previewSize, "${style.name}_dark", lightWallpaper = false)
-            if (onWallpaper) render(style.kind, config, style.previewSize, "${style.name}_light", lightWallpaper = true)
-            // Büyük yazı boyutunda da hiçbir yazı kesilmemeli.
-            val large = config.copy(style = config.style.copy(textSize = TextSize.Large))
-            render(style.kind, large, style.previewSize, "${style.name}_large", lightWallpaper = false)
+        eachLanguage {
+            for (style in WidgetStyleId.entries) {
+                val config = WidgetConfig(WidgetPlace.Smart, style.defaultStyle())
+                val onWallpaper = style.background == BackgroundKind.Transparent || style.background == BackgroundKind.Glass
+                render(style.kind, config, style.previewSize, "${style.name}_dark", lightWallpaper = false)
+                if (onWallpaper) render(style.kind, config, style.previewSize, "${style.name}_light", lightWallpaper = true)
+                // Büyük yazı boyutunda da hiçbir yazı kesilmemeli.
+                val large = config.copy(style = config.style.copy(textSize = TextSize.Large))
+                render(style.kind, large, style.previewSize, "${style.name}_large", lightWallpaper = false)
+            }
         }
     }
 
     @Test
     fun renderSmallSizes() = runBlocking {
-        // Her türün en küçük boyutu: yazılar kesilmeden daha az bilgi gösterilmeli.
-        for (kind in WidgetKind.entries) {
-            val smallest = kind.sizes.minBy { it.width.value * it.height.value }
-            for (style in kind.styles) {
-                render(kind, WidgetConfig(WidgetPlace.Smart, style.defaultStyle()), smallest, "small_${style.name}", lightWallpaper = false)
+        eachLanguage {
+            // Her türün en küçük boyutu: yazılar kesilmeden daha az bilgi gösterilmeli.
+            for (kind in WidgetKind.entries) {
+                val smallest = kind.sizes.minBy { it.width.value * it.height.value }
+                for (style in kind.styles) {
+                    render(kind, WidgetConfig(WidgetPlace.Smart, style.defaultStyle()), smallest, "small_${style.name}", lightWallpaper = false)
+                }
             }
         }
     }
 
     @Test
     fun renderLooks() = runBlocking {
-        // Ortak kişiselleştirme: arka plan, renk teması, yazı rengi, köşe, yazı, okunurluk.
-        val base = WidgetStyleId.HomeSmart.defaultStyle()
-        val looks = mapOf(
-            "glass" to base.withBackground(BackgroundKind.Glass),
-            "glass_light_wallpaper" to base.withBackground(BackgroundKind.Glass),
-            "glass_scrim_light_wallpaper" to base.withBackground(BackgroundKind.Glass).copy(legibility = Legibility.Scrim),
-            "clear_scrim" to base.withBackground(BackgroundKind.Transparent).copy(legibility = Legibility.Scrim),
-            "solid_ocean" to base.withColorTheme(ColorTheme.Ocean),
-            "sky" to base.withBackground(BackgroundKind.Sky).withColorTheme(ColorTheme.Sky),
-            "sky_sunset_half" to base.withBackground(BackgroundKind.Sky).withColorTheme(ColorTheme.Sunset).withTransparency(50),
-            "pastel" to base.withColorTheme(ColorTheme.Pastel),
-            "wallpaper" to base.withColorTheme(ColorTheme.Wallpaper),
-            "custom" to base.withColorTheme(ColorTheme.Custom).copy(customBackground = 0xFF102A43.toInt(), customText = 0xFFFDE68A.toInt(), accent = 0xFF78C8BE.toInt()),
-            "large_text_round" to base.copy(textSize = TextSize.Large, corners = CornerSize.Large),
-            "bold" to base.copy(weight = WeightChoice.Bold),
-            "thin" to base.copy(weight = WeightChoice.Thin),
-            "info_pill" to base.copy(infoRow = InfoRow.Pill, contents = setOf(WidgetContent.RainAlert, WidgetContent.HighLow)),
-            "clear_dark_text_light_wallpaper" to base.withBackground(BackgroundKind.Transparent).copy(textColor = TextColorMode.Dark),
-        )
-        for ((name, style) in looks) {
-            render(
-                WidgetKind.HomeLocation, WidgetConfig(WidgetPlace.Smart, style), WidgetStyleId.HomeSmart.previewSize, "look_$name",
-                lightWallpaper = name.contains("light_wallpaper"),
-                input = WidgetSamples.input(context, scenario = WidgetSamples.Scenario.AtHome),
-                wallpaperPrefersDarkText = name.contains("light_wallpaper"),
+        eachLanguage {
+            // Ortak kişiselleştirme: arka plan, renk teması, yazı rengi, köşe, yazı, okunurluk.
+            val base = WidgetStyleId.HomeSmart.defaultStyle()
+            val looks = mapOf(
+                "glass" to base.withBackground(BackgroundKind.Glass),
+                "glass_light_wallpaper" to base.withBackground(BackgroundKind.Glass),
+                "glass_scrim_light_wallpaper" to base.withBackground(BackgroundKind.Glass).copy(legibility = Legibility.Scrim),
+                "clear_scrim" to base.withBackground(BackgroundKind.Transparent).copy(legibility = Legibility.Scrim),
+                "solid_ocean" to base.withColorTheme(ColorTheme.Ocean),
+                "sky" to base.withBackground(BackgroundKind.Sky).withColorTheme(ColorTheme.Sky),
+                "sky_sunset_half" to base.withBackground(BackgroundKind.Sky).withColorTheme(ColorTheme.Sunset).withTransparency(50),
+                "pastel" to base.withColorTheme(ColorTheme.Pastel),
+                "wallpaper" to base.withColorTheme(ColorTheme.Wallpaper),
+                "custom" to base.withColorTheme(ColorTheme.Custom).copy(customBackground = 0xFF102A43.toInt(), customText = 0xFFFDE68A.toInt(), accent = 0xFF78C8BE.toInt()),
+                "large_text_round" to base.copy(textSize = TextSize.Large, corners = CornerSize.Large),
+                "bold" to base.copy(weight = WeightChoice.Bold),
+                "thin" to base.copy(weight = WeightChoice.Thin),
+                "info_pill" to base.copy(infoRow = InfoRow.Pill, contents = setOf(WidgetContent.RainAlert, WidgetContent.HighLow)),
+                "clear_dark_text_light_wallpaper" to base.withBackground(BackgroundKind.Transparent).copy(textColor = TextColorMode.Dark),
             )
+            for ((name, style) in looks) {
+                render(
+                    WidgetKind.HomeLocation, WidgetConfig(WidgetPlace.Smart, style), WidgetStyleId.HomeSmart.previewSize, "look_$name",
+                    lightWallpaper = name.contains("light_wallpaper"),
+                    input = WidgetSamples.input(context, scenario = WidgetSamples.Scenario.AtHome),
+                    wallpaperPrefersDarkText = name.contains("light_wallpaper"),
+                )
+            }
         }
     }
 
     @Test
     fun renderClockOptions() = runBlocking {
-        val radial = WidgetStyleId.ClockRadial.defaultStyle()
-        val sizes = mapOf("4x2" to DpSize(340.dp, 150.dp), "5x2" to DpSize(420.dp, 170.dp), "4x2_tall" to DpSize(300.dp, 190.dp))
-        for ((label, size) in sizes) render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, radial), size, "radial_$label", lightWallpaper = false)
-        val radials = mapOf(
-            "red_hours" to radial.copy(hourColor = 0xFFE5484D.toInt()),
-            "light" to radial.withColorTheme(ColorTheme.Custom).copy(customBackground = 0xFFF4F2EC.toInt()),
-            "blue" to radial.withColorTheme(ColorTheme.Custom).copy(customBackground = 0xFF102A43.toInt(), minuteColor = 0xFF78C8FF.toInt(), lineColor = 0xFF78C8FF.toInt()),
-            "line" to radial.copy(secondEffect = SecondEffect.Line),
-            "off" to radial.copy(secondEffect = SecondEffect.Off),
-            "glass" to radial.withBackground(BackgroundKind.Glass),
-            "clear" to radial.withBackground(BackgroundKind.Transparent),
-            "sky" to radial.withBackground(BackgroundKind.Sky).withColorTheme(ColorTheme.Sky),
-            "digits_solid" to radial.copy(clockFont = ClockFont.Digits),
-        )
-        for ((name, style) in radials) render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), DpSize(340.dp, 150.dp), "radial_$name", lightWallpaper = false)
+        eachLanguage {
+            val radial = WidgetStyleId.ClockRadial.defaultStyle()
+            val sizes = mapOf("4x2" to DpSize(340.dp, 150.dp), "5x2" to DpSize(420.dp, 170.dp), "4x2_tall" to DpSize(300.dp, 190.dp))
+            for ((label, size) in sizes) render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, radial), size, "radial_$label", lightWallpaper = false)
+            val radials = mapOf(
+                "red_hours" to radial.copy(hourColor = 0xFFE5484D.toInt()),
+                "light" to radial.withColorTheme(ColorTheme.Custom).copy(customBackground = 0xFFF4F2EC.toInt()),
+                "blue" to radial.withColorTheme(ColorTheme.Custom).copy(customBackground = 0xFF102A43.toInt(), minuteColor = 0xFF78C8FF.toInt(), lineColor = 0xFF78C8FF.toInt()),
+                "line" to radial.copy(secondEffect = SecondEffect.Line),
+                "off" to radial.copy(secondEffect = SecondEffect.Off),
+                "glass" to radial.withBackground(BackgroundKind.Glass),
+                "clear" to radial.withBackground(BackgroundKind.Transparent),
+                "sky" to radial.withBackground(BackgroundKind.Sky).withColorTheme(ColorTheme.Sky),
+                "digits_solid" to radial.copy(clockFont = ClockFont.Digits),
+            )
+            for ((name, style) in radials) render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), DpSize(340.dp, 150.dp), "radial_$name", lightWallpaper = false)
 
-        val analogs = mapOf(
-            "plain_circle" to WidgetStyleId.ClockAnalog.defaultStyle().copy(secondSymbol = SecondSymbol.Circle),
-            "plain_no_seconds" to WidgetStyleId.ClockAnalog.defaultStyle().copy(secondHand = false),
-            "field_8_13" to WidgetStyleId.ClockField.defaultStyle().copy(highlighted = setOf(8, 13)),
-            "ring_colors" to WidgetStyleId.ClockRing.defaultStyle().copy(ringCool = 0xFF6E56CF.toInt(), ringWarm = 0xFFF5A524.toInt()),
-            "field_custom" to WidgetStyleId.ClockField.defaultStyle().copy(dialColor = 0xFF102A43.toInt(), handColor = 0xFFFDE68A.toInt(), accent = 0xFF78C8BE.toInt(), highlighted = setOf(12)),
-        )
-        for ((name, style) in analogs) render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), DpSize(170.dp, 170.dp), "analog_$name", lightWallpaper = false)
+            val analogs = mapOf(
+                "plain_circle" to WidgetStyleId.ClockAnalog.defaultStyle().copy(secondSymbol = SecondSymbol.Circle),
+                "plain_no_seconds" to WidgetStyleId.ClockAnalog.defaultStyle().copy(secondHand = false),
+                "field_8_13" to WidgetStyleId.ClockField.defaultStyle().copy(highlighted = setOf(8, 13)),
+                "ring_colors" to WidgetStyleId.ClockRing.defaultStyle().copy(ringCool = 0xFF6E56CF.toInt(), ringWarm = 0xFFF5A524.toInt()),
+                "field_custom" to WidgetStyleId.ClockField.defaultStyle().copy(dialColor = 0xFF102A43.toInt(), handColor = 0xFFFDE68A.toInt(), accent = 0xFF78C8BE.toInt(), highlighted = setOf(12)),
+            )
+            for ((name, style) in analogs) render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), DpSize(170.dp, 170.dp), "analog_$name", lightWallpaper = false)
 
-        // Mevcut saat stillerinde saat yazı tipi ve ayrı saat/dakika rengi.
-        for (font in ClockFont.entries) {
-            val style = WidgetStyleId.ClockBig.defaultStyle().copy(clockFont = font, minuteColor = 0xFFE5484D.toInt())
-            render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), WidgetStyleId.ClockBig.previewSize, "clockfont_${font.name}", lightWallpaper = false)
+            // Mevcut saat stillerinde saat yazı tipi ve ayrı saat/dakika rengi.
+            for (font in ClockFont.entries) {
+                val style = WidgetStyleId.ClockBig.defaultStyle().copy(clockFont = font, minuteColor = 0xFFE5484D.toInt())
+                render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), WidgetStyleId.ClockBig.previewSize, "clockfont_${font.name}", lightWallpaper = false)
+            }
         }
     }
 
     @Test
     fun renderSsClock() = runBlocking {
-        // SS saati: tasarımdaki beş hâl (design/png/ss-saat-final.png) ve boyutlar.
-        val base = WidgetStyleId.ClockSS.defaultStyle()
-        val weatherOnly = setOf(WidgetContent.WeatherIcon, WidgetContent.Temperature, WidgetContent.Condition)
-        val looks = mapOf(
-            "default" to base,
-            "weather_short" to base.copy(contents = weatherOnly),
-            "no_weather_no_date" to base.copy(contents = emptySet(), showDate = false),
-            "no_date" to base.copy(showDate = false),
-            "no_logo_no_seconds" to base.copy(logo = false, secondHand = false),
-            "dark" to SsClock.apply(base, SsClock.Preset.Dark),
-            "night_blue" to SsClock.apply(base, SsClock.Preset.NightBlue),
-            "custom_accent" to base.copy(accent = 0xFF30C85A.toInt(), windowColor = 0xFFFFD84D.toInt()),
-            "large_text" to base.copy(textSize = TextSize.Large),
-        )
-        val sample = WidgetSamples.input(context, scenario = WidgetSamples.Scenario.AtHome)
-        for ((name, style) in looks) {
-            render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), DpSize(170.dp, 170.dp), "ss_$name", lightWallpaper = false, input = sample)
+        eachLanguage {
+            // SS saati: tasarımdaki beş hâl (design/png/ss-saat-final.png) ve boyutlar.
+            val base = WidgetStyleId.ClockSS.defaultStyle()
+            val weatherOnly = setOf(WidgetContent.WeatherIcon, WidgetContent.Temperature, WidgetContent.Condition)
+            val looks = mapOf(
+                "default" to base,
+                "weather_short" to base.copy(contents = weatherOnly),
+                "no_weather_no_date" to base.copy(contents = emptySet(), showDate = false),
+                "no_date" to base.copy(showDate = false),
+                "no_logo_no_seconds" to base.copy(logo = false, secondHand = false),
+                "dark" to SsClock.apply(base, SsClock.Preset.Dark),
+                "night_blue" to SsClock.apply(base, SsClock.Preset.NightBlue),
+                "custom_accent" to base.copy(accent = 0xFF30C85A.toInt(), windowColor = 0xFFFFD84D.toInt()),
+                "large_text" to base.copy(textSize = TextSize.Large),
+            )
+            val sample = WidgetSamples.input(context, scenario = WidgetSamples.Scenario.AtHome)
+            for ((name, style) in looks) {
+                render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), DpSize(170.dp, 170.dp), "ss_$name", lightWallpaper = false, input = sample)
+            }
+            for (side in listOf(110, 150, 250, 330)) {
+                render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, base), DpSize(side.dp, side.dp), "ss_size_$side", lightWallpaper = false, input = sample)
+            }
+            render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, base), DpSize(340.dp, 170.dp), "ss_wide", lightWallpaper = false, input = sample)
         }
-        for (side in listOf(110, 150, 250, 330)) {
-            render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, base), DpSize(side.dp, side.dp), "ss_size_$side", lightWallpaper = false, input = sample)
-        }
-        render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, base), DpSize(340.dp, 170.dp), "ss_wide", lightWallpaper = false, input = sample)
     }
 
     @Test
     fun renderHomeScenarios() = runBlocking {
-        // Evde / yakında / uzakta / ev yok: Ev ve konum widget'ı ve saat + ev stili.
-        for (scenario in WidgetSamples.Scenario.entries) {
-            val sample = WidgetSamples.input(context, scenario = scenario)
-            for (style in listOf(WidgetStyleId.HomeSmart, WidgetStyleId.HomeRow, WidgetStyleId.HomeList, WidgetStyleId.ClockHome)) {
-                for (size in listOf(style.previewSize, DpSize(style.previewSize.width, style.previewSize.height + 40.dp))) {
-                    render(style.kind, WidgetConfig(WidgetPlace.Smart, style.defaultStyle()), size, "scenario_${scenario}_${style.name}_${size.height.value.toInt()}", lightWallpaper = false, input = sample)
+        eachLanguage {
+            // Evde / yakında / uzakta / ev yok: Ev ve konum widget'ı ve saat + ev stili.
+            for (scenario in WidgetSamples.Scenario.entries) {
+                val sample = WidgetSamples.input(context, scenario = scenario)
+                for (style in listOf(WidgetStyleId.HomeSmart, WidgetStyleId.HomeRow, WidgetStyleId.HomeList, WidgetStyleId.ClockHome)) {
+                    for (size in listOf(style.previewSize, DpSize(style.previewSize.width, style.previewSize.height + 40.dp))) {
+                        render(style.kind, WidgetConfig(WidgetPlace.Smart, style.defaultStyle()), size, "scenario_${scenario}_${style.name}_${size.height.value.toInt()}", lightWallpaper = false, input = sample)
+                    }
                 }
             }
         }
@@ -232,17 +262,23 @@ class WidgetRenderTest {
         val density = context.resources.displayMetrics.density
         // Ana ekrandaki gibi: içerik boyut basamağına göre çizilir, widget gerçek boyutunda durur.
         val draw = WidgetSizes.of(kind, size).draw
+        // Tarihi yazan saat bileşeni sürecin varsayılan dilini kullanır: çizim boyunca o da bu dile alınır.
+        val language = context.resources.configuration.locales[0]
+        val system = Locale.getDefault()
+        Locale.setDefault(language)
         WallpaperTone.override = wallpaperPrefersDarkText ?: lightWallpaper
-        val remoteViews = try {
-            kind.widget(config, input).compose(context, size = draw)
+        val bitmap = try {
+            val remoteViews = kind.widget(config, input).compose(context, size = draw)
+            withContext(Dispatchers.Main) {
+                val view = remoteViews.apply(context, FrameLayout(context))
+                draw(view, size, density, lightWallpaper, wallpaper)
+            }
         } finally {
             WallpaperTone.override = null
+            Locale.setDefault(system)
         }
-        val bitmap = withContext(Dispatchers.Main) {
-            val view = remoteViews.apply(context, FrameLayout(context))
-            draw(view, size, density, lightWallpaper, wallpaper)
-        }
-        val file = File(context.getExternalFilesDir(null), "widget_$name.png")
+        val folder = File(context.getExternalFilesDir(null), "widget_render/${language.language}").apply { mkdirs() }
+        val file = File(folder, "widget_$name.png")
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         assertTrue(file.length() > 0)
     }

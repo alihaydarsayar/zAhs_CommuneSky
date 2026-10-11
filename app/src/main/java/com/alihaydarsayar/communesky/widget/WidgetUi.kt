@@ -604,6 +604,31 @@ fun estimateWidthDp(text: String, sizeSp: Float, theme: WidgetTheme): Float {
     return text.length * sizeSp * em * theme.style.textSize.scale * theme.fontScaleFix
 }
 
+/**
+ * Yazının gerçek genişliği (dp): sistem yazı tipiyle ölçülür, yazı kutusunun kenar boşluğu dahil.
+ * [estimateWidthDp] bilerek bol tahmin eder; "bu satır sığıyor mu, yoksa bir bilgiyi düşüreyim mi"
+ * kararında bol tahmin, sığan bilgiyi de düşürüyordu. Kalın yazı seçilmişse kalın ölçülür.
+ */
+fun measureWidthDp(context: Context, text: String, sizeSp: Float, theme: WidgetTheme, weight: WWeight = WWeight.Regular): Float {
+    if (text.isEmpty()) return 0f
+    val family = when (fontKey(theme.style, weight, WFont.Text)) {
+        "s3" -> "sans-serif-light"
+        "s5" -> "sans-serif-medium"
+        else -> "sans-serif"
+    }
+    val bold = fontKey(theme.style, weight, WFont.Text) == "s7"
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = android.graphics.Typeface.create(family, if (bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        // dp cinsinden: sp × sistemin yazı ölçeği.
+        textSize = theme.sp(sizeSp).value * context.resources.configuration.fontScale
+    }
+    return paint.measureText(text) + 4f
+}
+
+/** Bugünün tarihi, widget'taki saat bileşeninin yazacağı biçimde ("10 Ekim Cumartesi"); sığma hesabı için. */
+fun todayText(context: Context, dateSkeleton: String): String =
+    DateFormat.format(DateFormat.getBestDateTimePattern(locale(context), dateSkeleton), java.util.Calendar.getInstance()).toString()
+
 /** [text] [availableDp] genişliğe sığacak en büyük boyut, [max]'ı geçmeden. */
 fun fitWidth(text: String, max: Float, availableDp: Float, theme: WidgetTheme): Float {
     val atOne = estimateWidthDp(text, 1f, theme)

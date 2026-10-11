@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -32,12 +33,14 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -196,19 +199,36 @@ fun CfgRadioRow(title: String, selected: Boolean, onClick: () -> Unit, modifier:
 }
 
 @Composable
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 fun CfgSlider(value: Float, onValueChange: (Float) -> Unit, valueRange: ClosedFloatingPointRange<Float>, description: String, modifier: Modifier = Modifier) {
+    val interaction = remember { MutableInteractionSource() }
+    val colors = SliderDefaults.colors(
+        thumbColor = Color.White,
+        activeTrackColor = C.text,
+        inactiveTrackColor = C.box,
+        activeTickColor = Color.Transparent,
+        inactiveTickColor = Color.Transparent,
+    )
     Slider(
         value = value,
         onValueChange = onValueChange,
         valueRange = valueRange,
         modifier = modifier.fillMaxWidth().semantics { contentDescription = description },
-        colors = SliderDefaults.colors(
-            thumbColor = C.text,
-            activeTrackColor = C.text,
-            inactiveTrackColor = C.box,
-            activeTickColor = Color.Transparent,
-            inactiveTickColor = Color.Transparent,
-        ),
+        colors = colors,
+        interactionSource = interaction,
+        // Tutamak: beyaz daire, ince kenarlı ve hafif gölgeli (açık zeminde de seçilsin).
+        thumb = {
+            Box(
+                Modifier
+                    .size(24.dp)
+                    .shadow(3.dp, CircleShape)
+                    .background(Color.White, CircleShape)
+                    .border(1.dp, Color.Black.copy(alpha = 0.12f), CircleShape),
+            )
+        },
+        track = { state ->
+            SliderDefaults.Track(sliderState = state, colors = colors, drawStopIndicator = null, thumbTrackGapSize = 0.dp, modifier = Modifier.height(6.dp))
+        },
     )
 }
 

@@ -73,16 +73,16 @@ private fun clockSize(max: Float, widthDp: Float, heightDp: Float, ems: Float = 
     return min(max, min(widthDp / (ems * scale), heightDp / (1.2f * scale))).coerceAtLeast(18f)
 }
 
-/** Tarih iskeleti, [widthDp] genişliğe sığan en uzun hâliyle: "10 Ekim Cumartesi" → "10 Ekim Cmt" → "10 Ekim". */
+/**
+ * Tarih iskeleti, [widthDp] genişliğe sığan en uzun hâliyle: "10 Ekim Cumartesi" → "10 Ekim Cmt" → "10 Ekim".
+ * Bugünün tarihi gerçek genişliğiyle ölçülür; widget en geç bir saat sonra yeniden çizildiği için
+ * gün değişince biçim de yenilenir.
+ */
 @Composable
 private fun dateSkeletonFor(widthDp: Float, sizeSp: Float): String {
+    val context = LocalContext.current
     val theme = LocalWidgetTheme.current
-    // En uzun ay ve gün adına göre: "30 September Wednesday" ≈ 22 harf.
-    return when {
-        estimateWidthDp("30 September Wednesday", sizeSp, theme) <= widthDp -> "EEEEdMMMM"
-        estimateWidthDp("30 September Wed", sizeSp, theme) <= widthDp -> "EEEdMMMM"
-        else -> "dMMMM"
-    }
+    return listOf("EEEEdMMMM", "EEEdMMMM").firstOrNull { measureWidthDp(context, todayText(context, it), sizeSp, theme) <= widthDp } ?: "dMMMM"
 }
 
 /** Tasarım "Saat ve hava": solda saat ve tarih, sağda hava; altta yağmur uyarısı. */
@@ -96,19 +96,19 @@ private fun ClockWeather(data: WidgetPlaceData) {
     val temperature = temp(data.snapshot.forecast.current.temperature)
     val inner = size.width.value - 32f
     val pinned = theme.shows(WidgetContent.PlaceName) && placeIcon(data) != null
-    // Sağ sütun: ikon + sıcaklık, altında "yer · Y/D". Widget'ın yarısına sığmayan ayrıntı sondan düşer.
+    // Sağ sütun: ikon + sıcaklık, altında "yer · Y/D". Ayrıntı gerçek genişliğiyle ölçülür; saate en az
+    // 48 sp'lik yer kalmıyorsa (büyük yazı boyutu, uzun yer adı) sondan düşer.
+    val clockFloor = theme.clockEms * 48f * theme.style.textSize.scale * theme.fontScaleFix
+    fun detailWidth(text: String) = if (text.isEmpty()) 0f else measureWidthDp(context, text, 13f, theme) + (if (pinned) 16f else 0f)
     val detailParts = buildList {
         if (theme.shows(WidgetContent.PlaceName)) add(data.snapshot.displayName(context))
         if (theme.shows(WidgetContent.HighLow) && today != null) add(highLow(today.maxTemperature, today.minTemperature))
     }
     val detail = if (!theme.shows(WidgetContent.Weather)) "" else generateSequence(detailParts) { if (it.size > 1) it.dropLast(1) else null }
         .map { it.joinToString(" · ") }
-        .firstOrNull { estimateWidthDp(it, 13f, theme) + (if (pinned) 16f else 0f) <= inner * 0.5f }
+        .firstOrNull { detailWidth(it) + 12f <= inner - clockFloor }
         .orEmpty()
-    val side = if (!theme.shows(WidgetContent.Weather)) 0f else maxOf(
-        38f + 8f + estimateWidthDp(temperature, 38f, theme),
-        estimateWidthDp(detail, 13f, theme) + (if (pinned) 16f else 0f),
-    ) + 12f
+    val side = if (!theme.shows(WidgetContent.Weather)) 0f else maxOf(38f + 8f + estimateWidthDp(temperature, 38f, theme), detailWidth(detail)) + 12f
     val clockWidth = inner - side
     WidgetSurface(horizontal = 16.dp, vertical = 16.dp) {
         Column(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
@@ -369,7 +369,10 @@ private fun ClockSun(data: WidgetPlaceData) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         WClock(ClockPart.Date, 14f, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = "EEEEdMMMM")
                         val place = " · " + data.snapshot.displayName(context)
-                        if (theme.shows(WidgetContent.PlaceName) && estimateWidthDp("30 September Wednesday" + place, 14f, theme) <= size.width.value - 32f - 100f) {
+                        // Sağdaki ikon ve sıcaklıktan kalan yer; tarih ve yer adı gerçek genişlikleriyle ölçülür.
+                        val weatherWidth = if (theme.shows(WidgetContent.Weather)) 30f + 8f + estimateWidthDp(temp(current.temperature), 30f, theme) + 8f else 0f
+                        val lineWidth = measureWidthDp(context, todayText(context, "EEEEdMMMM"), 14f, theme) + measureWidthDp(context, place, 14f, theme)
+                        if (theme.shows(WidgetContent.PlaceName) && lineWidth <= size.width.value - 32f - weatherWidth) {
                             WText(place, 14f, color = theme.colors.secondary)
                         }
                     }
