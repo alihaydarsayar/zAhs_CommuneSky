@@ -165,6 +165,10 @@ fun openAppAction(openHomeSettings: Boolean = false): Action {
     }
 }
 
+/** Birden çok yer gösteren widget'larda (ev ve konum, yerlerim) dokunulan yerle uygulamayı açar. */
+fun openPlaceAction(placeId: Long): Action =
+    actionStartActivity<MainActivity>(actionParametersOf(MainActivity.OpenPlaceKey to placeId))
+
 /**
  * Debug sürümünde launcher'ın bildirdiği bütün widget ölçülerini ve her çizimin hangi ölçüyle, hangi
  * düzenle yapıldığını loglar ("adb logcat -s WidgetSize"). Üretici launcher'ları ölçüyü Pixel'den farklı
@@ -296,7 +300,7 @@ object WidgetScale {
         WidgetStyleId.TextLine -> DpSize(220.dp, 40.dp)
         WidgetStyleId.TextTemperature -> DpSize(100.dp, 40.dp)
         WidgetStyleId.PlacesColumns -> DpSize(260.dp, 64.dp)
-        WidgetStyleId.PlacesList -> DpSize(270.dp, 130.dp)
+        WidgetStyleId.PlacesList -> DpSize(270.dp, 104.dp)
         WidgetStyleId.PrecipitationBars -> DpSize(270.dp, 90.dp)
         WidgetStyleId.PrecipitationSentence -> DpSize(220.dp, 80.dp)
         WidgetStyleId.DetailsTiles -> DpSize(270.dp, 120.dp)

@@ -55,4 +55,60 @@ class PinWidgetTest {
         // Test bitince süreç kapanır; çizimin launcher'a ulaşması için kısa bir bekleme.
         kotlinx.coroutines.delay(3_000)
     }
+
+    /**
+     * Ana ekrandaki her türün widget'larına o türün [round]. stilini verir (stili o kadar olmayan tür
+     * olduğu gibi kalır): bütün stiller birkaç turda ana ekranda denenir.
+     *   -e round 0 [-e background Solid]
+     */
+    @Test
+    fun restyleRound() = kotlinx.coroutines.runBlocking<Unit> {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val arguments = InstrumentationRegistry.getArguments()
+        val round = arguments.getString("round")?.toInt() ?: 0
+        val store = WidgetConfigStore.get(context)
+        for (kind in WidgetKind.entries) {
+            val id = kind.styles.getOrNull(round) ?: continue
+            var style = id.defaultStyle()
+            arguments.getString("background")?.let { style = style.withBackground(BackgroundKind.valueOf(it)) }
+            for (widget in AppWidgetManager.getInstance(context).getAppWidgetIds(ComponentName(context, kind.receiverClass))) {
+                store.set(widget, WidgetConfig(WidgetPlace.Smart, style), kind)
+                WeatherWidgetUpdater.update(context, kind, widget)
+                android.util.Log.i("WidgetAdd", "${kind.name} #$widget -> ${id.name}")
+            }
+        }
+        kotlinx.coroutines.delay(4_000)
+    }
+
+    /**
+     * Aynı türden birden çok widget'a ayrı ayrı ayar verir (stil, tema, arka plan, içerik) ve her birinin
+     * yalnız kendi ayarını sakladığını denetler: -e kind Clock
+     */
+    @Test
+    fun distinct() = kotlinx.coroutines.runBlocking<Unit> {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val kind = WidgetKind.valueOf(InstrumentationRegistry.getArguments().getString("kind") ?: "Clock")
+        val store = WidgetConfigStore.get(context)
+        val ids = AppWidgetManager.getInstance(context).getAppWidgetIds(ComponentName(context, kind.receiverClass)).sorted()
+        val styles = kind.styles
+        val configs = ids.mapIndexed { index, id ->
+            var style = styles[(index * 5 + 7) % styles.size].defaultStyle()
+            style = when (index % 3) {
+                0 -> style.withThemePreset(ColorTheme.Paper)
+                1 -> style.withBackground(BackgroundKind.Glass).copy(contents = kind.contents.take(2).toSet())
+                else -> style.withBackground(BackgroundKind.Solid).copy(corners = CornerSize.Large)
+            }
+            id to WidgetConfig(WidgetPlace.Smart, style)
+        }
+        for ((id, config) in configs) {
+            store.set(id, config, kind)
+            WeatherWidgetUpdater.update(context, kind, id)
+        }
+        // Hepsi yazıldıktan sonra her biri kendi ayarını döndürmeli (sonuncusu öncekileri ezmemeli).
+        for ((id, config) in configs) {
+            org.junit.Assert.assertEquals("Widget #$id başka bir widget'ın ayarını aldı", config, store.get(id, kind))
+            android.util.Log.i("WidgetAdd", "${kind.name} #$id kendi ayarında: ${config.style.styleId(kind).name}")
+        }
+        kotlinx.coroutines.delay(4_000)
+    }
 }

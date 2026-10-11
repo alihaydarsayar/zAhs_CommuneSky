@@ -494,16 +494,19 @@ fun hourFormatter(context: Context): DateTimeFormatter {
  * "9:00 PM" → "9 PM" → "9p". Saat asla "…" ile kısaltılmaz.
  */
 fun hourLabel(context: Context, time: java.time.temporal.TemporalAccessor, columnDp: Float, sizeSp: Float, theme: WidgetTheme, full: Boolean = true): String {
+    val formatters = listOfNotNull(if (full) timeFormatter(context) else null, hourFormatter(context))
+    // Satırdaki bütün saatler aynı yazımla çıksın diye karar en geniş saatlerle ("10 AM", "22:00") verilir.
+    val widest = listOf(java.time.LocalTime.of(10, 0), java.time.LocalTime.of(22, 0))
+    val formatter = formatters.firstOrNull { f -> widest.all { measureWidthDp(context, f.format(it), sizeSp, theme) <= columnDp } }
+    if (formatter != null) return formatter.format(time)
     val hour = time.get(java.time.temporal.ChronoField.HOUR_OF_DAY)
-    val shortest = if (WidgetLanguage.is24Hour(context)) "%02d".format(hour) else "${if (hour % 12 == 0) 12 else hour % 12}${if (hour < 12) "a" else "p"}"
-    val candidates = listOfNotNull(if (full) timeFormatter(context).format(time) else null, hourFormatter(context).format(time))
-    // Satırdaki bütün saatler aynı yazımla çıksın diye en geniş saatle ("10 PM", "22:00") de denenir.
-    val widest = java.time.LocalTime.of(22, 0)
-    val index = candidates.indices.firstOrNull { i ->
-        val formatter = if (full && i == 0) timeFormatter(context) else hourFormatter(context)
-        maxOf(measureWidthDp(context, candidates[i], sizeSp, theme), measureWidthDp(context, formatter.format(widest), sizeSp, theme)) <= columnDp * FIT_MARGIN
-    }
-    return index?.let { candidates[it] } ?: shortest
+    if (WidgetLanguage.is24Hour(context)) return "%02d".format(hour)
+    // En kısa 12 saatlik yazım: dilin kendi dar eki ("9p", Türkçede "9ös").
+    val calendar = java.util.Calendar.getInstance().apply { set(java.util.Calendar.HOUR_OF_DAY, hour) }
+    val narrow = android.icu.text.SimpleDateFormat("haaaaa", locale(context))
+    // O da sığmıyorsa (çok dar sütun, iki harfli ek) yalnız saat sayısı kalır; kesilmez.
+    val widestNarrow = widest.maxOf { measureWidthDp(context, narrow.format(java.util.Calendar.getInstance().apply { set(java.util.Calendar.HOUR_OF_DAY, it.hour) }.time), sizeSp, theme) }
+    return if (widestNarrow <= columnDp) narrow.format(calendar.time) else (if (hour % 12 == 0) 12 else hour % 12).toString()
 }
 
 /** "Cmt", "Paz"; bugün için "Bugün". */
@@ -736,7 +739,8 @@ fun measureWidthDp(context: Context, text: String, sizeSp: Float, theme: WidgetT
         // Tasarım dp'si cinsinden (büyüme hariç): sığma hesapları tasarım ölçüsünde yapılır.
         textSize = theme.sp(sizeSp).value / theme.grow * context.resources.configuration.fontScale
     }
-    return paint.measureText(text) + 4f
+    // Yazı kutusunun kenar boşluğu (2 dp + 2 dp) büyümeyle ölçeklenmez; tasarım ölçüsüne çevrilir.
+    return paint.measureText(text) + 4f / theme.grow
 }
 
 /** Bugünün tarihi, widget'taki saat bileşeninin yazacağı biçimde ("10 Ekim Cumartesi"); sığma hesabı için. */

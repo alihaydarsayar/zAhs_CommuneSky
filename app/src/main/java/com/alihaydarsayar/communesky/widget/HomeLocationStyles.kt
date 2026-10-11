@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.widget
 
+import androidx.glance.action.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
@@ -70,11 +71,12 @@ private fun MainPlace(data: WidgetPlaceData, hint: HomeLocationState.Hint? = nul
     val current = data.snapshot.forecast.current
     val now = data.snapshot.forecast.localNow()
     val today = data.snapshot.forecast.today(now)
-    val showHourly = hint == null && roomy && theme.shows(WidgetContent.Hourly)
+    // Ev seçilmemişken de (alttaki ipucuyla birlikte) saatlik şerit gösterilir; yer varsa ortası boş kalmaz.
+    val hintHeight = if (hint != null) lineHeightDp(12f, theme) * 2 else 0f
+    val showHourly = theme.shows(WidgetContent.Hourly) && if (hint == null) roomy else size.height >= 170.dp
     val rain = if (hint == null && !showHourly && theme.shows(WidgetContent.RainAlert)) WidgetPhrases.rainAlert(context, data.snapshot) else null
     val vertical = if (big) 16f else 12f
-    val bottom = when {
-        hint != null -> lineHeightDp(12f, theme) * 2
+    val bottom = hintHeight + when {
         showHourly -> 1f + (if (big) 12f else 8f) + if (big) lineHeightDp(12f, theme) + lineHeightDp(13f, theme) + 24f else lineHeightDp(11f, theme) + lineHeightDp(12f, theme) + 20f
         rain != null -> lineHeightDp(13f, theme)
         else -> 0f
@@ -127,14 +129,15 @@ private fun MainPlace(data: WidgetPlaceData, hint: HomeLocationState.Hint? = nul
             }
             Spacer(GlanceModifier.defaultWeight())
             when {
-                hint != null -> HintLine(hint)
                 showHourly -> {
                     HDivider()
                     VSpace(if (big) 12.sd else 8.sd)
-                    HourlyStrip(data, count = if (size.width >= 300.dp) 6 else 5, compact = !big)
+                    HourlyStrip(data, count = if (size.width >= 300.dp) 6 else 5, compact = !big || hint != null)
+                    if (hint != null) VSpace(6.sd)
                 }
                 rain != null -> RainLine(rain)
             }
+            if (hint != null) HintLine(hint)
         }
     }
 }
@@ -286,7 +289,8 @@ private fun Half(data: WidgetPlaceData, modifier: GlanceModifier, sky: Boolean, 
     val textWidth = size.width.value / 2f - 32f - iconSize - 6f
     val textHeight = heightDp - 26f - lineHeightDp(14f, theme) - lineHeightDp(13f, theme) - 6f
     val tempSize = min(fitWidth(temperature, 56f, textWidth, theme), textHeight / (1.2f * theme.style.textSize.scale))
-    Column(m.padding(horizontal = 16.sd, vertical = 12.sd)) {
+    // Her yarı kendi yerini açar: "buradasın" tarafı o anki yeri, ev tarafı evi.
+    Column(m.clickable(openPlaceAction(data.snapshot.placeId)).padding(horizontal = 16.sd, vertical = 12.sd)) {
         PlaceLabel(data, 14f)
         Spacer(GlanceModifier.defaultWeight())
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

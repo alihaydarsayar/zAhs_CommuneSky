@@ -174,11 +174,15 @@ private fun HourlyRowStyle(data: WidgetPlaceData) {
     val forecast = data.snapshot.forecast
     val count = if (size.width >= 300.dp) 5 else if (size.width >= 250.dp) 4 else 3
     val hours = forecast.upcomingHours(forecast.localNow(), count = count + 1).drop(1)
-    // Sütun dar ise "22" gibi kısa saat. Soldaki sıcaklık ve yer sütunu için 96 dp ayrılır.
-    val column = (size.width.value - 32f - 96f) / count
+    // Soldaki sıcaklık ve yer sütununun genişliği önce ayrılır (uzun yer adı en çok alanın %38'i; gerisi
+    // kısalır): saat sütunlarına kalan yer baştan bellidir ve saatler asla kesilmez.
+    val inner = size.width.value - 32f
+    val placeWidth = measureWidthDp(context, data.snapshot.displayName(context), 12f, theme) + 18f
+    val left = maxOf(estimateWidthDp(temp(forecast.current.temperature), 30f, theme) / FIT_MARGIN, minOf(placeWidth, inner * 0.38f))
+    val column = (inner - left - 8f) / count
     WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 8.sd, contentAlignment = Alignment.CenterStart) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-            Column {
+            Column(GlanceModifier.width(left.sd)) {
                 WText(temp(forecast.current.temperature), 30f, weight = WWeight.Light)
                 PlaceLabel(data, 12f, weight = WWeight.Regular, color = theme.colors.secondary)
             }
