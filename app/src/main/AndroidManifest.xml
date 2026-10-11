@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Bildirimler (meteorolojik uyarı, sabah özeti); izin yalnızca kullanıcı bir bildirimi açarken istenir. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!--
         Yaklaşık konum yeterli; hassas konum isteğe bağlı (Android 12+ kullanıcı "Yaklaşık"ı seçebilir).
         Hassas konum sadece cihazda, mahalle adı ve en yakın istasyon için kullanılır; dışarıya giden

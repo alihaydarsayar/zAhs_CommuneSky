@@ -390,6 +390,13 @@ fun gradientBitmap(
     )
 }
 
+/** Uyarı renkleri (sarı, turuncu, kırmızı); uygulamadaki şeritle aynı. */
+fun alertColor(level: com.alihaydarsayar.communesky.model.AlertLevel): Color = when (level) {
+    com.alihaydarsayar.communesky.model.AlertLevel.Yellow -> Color(0xFFF2C230)
+    com.alihaydarsayar.communesky.model.AlertLevel.Orange -> Color(0xFFF08A24)
+    com.alihaydarsayar.communesky.model.AlertLevel.Red -> Color(0xFFE5484D)
+}
+
 /**
  * Tek renkli bir katman: tek kanallı maske ya da beyaz çizilmiş vektör, [color] ile boyanır. Rengin
  * saydamlığı ayrıca verilir (boya her Android sürümünde aynı sonucu versin diye opaktır).
@@ -449,7 +456,13 @@ fun PlaceLabel(
     var name = data.snapshot.displayName(context)
     if (uppercase) name = name.uppercase(context.resources.configuration.locales[0])
     if (suffix != null) name += suffix
+    // Bu yer için meteorolojik uyarı varsa adın yanında uyarının renginde küçük bir nokta.
+    val alert = data.snapshot.alerts.firstOrNull()
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        if (alert != null) {
+            TintedLayer(ImageProvider(R.drawable.widget_dot), alertColor(alert.level), GlanceModifier.size((size * 0.5f).sd))
+            Spacer(GlanceModifier.width(4.sd))
+        }
         if (icon != null && !iconAfter) {
             WIcon(icon, iconSize, color, description = context.getString(if (data.isHome) R.string.home_place else R.string.current_location))
             Spacer(GlanceModifier.width(4.sd))

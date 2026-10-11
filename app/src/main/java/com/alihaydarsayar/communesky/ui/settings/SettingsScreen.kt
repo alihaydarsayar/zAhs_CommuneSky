@@ -78,6 +78,8 @@ class SettingsViewModel @Inject constructor(
     fun setWindUnit(unit: WindUnit) = viewModelScope.launch { settingsRepository.setWindUnit(unit) }
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settingsRepository.setThemeMode(mode) }
+
+    fun setAlertNotifications(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAlertNotifications(enabled) }
 }
 
 /**
@@ -257,6 +259,30 @@ fun SettingsScreen(
                                 com.alihaydarsayar.communesky.widget.WeatherWidgetUpdater.updateAll(appContext)
                             }
                         },
+                    )
+                }
+            }
+            item {
+                GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.settings_notifications)) {
+                    // Android 13+: bildirim izni yalnızca kullanıcı bir bildirimi açarken istenir.
+                    val askPermission = androidx.activity.compose.rememberLauncherForActivityResult(
+                        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+                    ) { }
+                    fun ensurePermission() {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                            !com.alihaydarsayar.communesky.work.AlertNotifier.canNotify(appContext)
+                        ) {
+                            askPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                    com.alihaydarsayar.communesky.ui.common.GlassSwitchRow(
+                        title = stringResource(R.string.settings_alert_notifications),
+                        checked = settings.alertNotifications,
+                        onCheckedChange = { on ->
+                            viewModel.setAlertNotifications(on)
+                            if (on) ensurePermission()
+                        },
+                        subtitle = stringResource(R.string.settings_alert_notifications_hint),
                     )
                 }
             }

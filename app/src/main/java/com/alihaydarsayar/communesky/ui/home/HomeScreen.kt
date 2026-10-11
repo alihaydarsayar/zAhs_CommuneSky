@@ -446,6 +446,8 @@ private fun ForecastList(
                 },
             )
         }
+        // Meteorolojik uyarı varsa renkli şerit.
+        if (weather.alerts.isNotEmpty()) item(key = "alerts") { AlertBanner(weather.alerts, now.toLocalDate()) }
         // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.
         weather.sources?.rainNote?.let { note -> item(key = "rainNote") { RainNoteLine(note) } }
         item(key = "hourly") { HourlyCard(forecast.current, hours) }

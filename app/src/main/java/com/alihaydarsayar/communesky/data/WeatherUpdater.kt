@@ -29,6 +29,7 @@ class WeatherUpdater @Inject constructor(
     private val placesRepository: PlacesRepository,
     private val observationRepository: ObservationRepository,
     private val extrasRepository: com.alihaydarsayar.communesky.data.extras.ExtrasRepository,
+    private val settingsRepository: com.alihaydarsayar.communesky.data.settings.SettingsRepository,
 ) {
     /** Konum izni varsa cihaz konumunu bulur; yoksa en mantıklı yedeği seçer. Hata fırlatmaz. */
     suspend fun resolveDevicePlace(): ResolvedPlace {
@@ -102,6 +103,10 @@ class WeatherUpdater @Inject constructor(
         val device = if (showsDevice) weatherRepository.devicePlace() ?: fallbackPlace() else null
         refresh(listOfNotNull(device) + saved.map { it.toPlace() })
         refreshObservations()
+        // Yeni turuncu/kırmızı uyarı varsa bildirim (aynı uyarı için bir kez); ek uyanma yok.
+        com.alihaydarsayar.communesky.work.AlertNotifier.check(
+            context, weatherRepository.allWeather.first().values, settingsRepository.settings.first().alertNotifications,
+        )
     }
 
     private fun fallbackPlace() = Place(DEVICE_PLACE_ID, City.Istanbul, isCurrentLocation = false)

@@ -6,6 +6,8 @@ data class AppSettings(
     val windUnit: WindUnit = WindUnit.KilometersPerHour,
     val themeMode: ThemeMode = ThemeMode.System,
     val homeAway: HomeAwaySettings = HomeAwaySettings(),
+    /** Turuncu ve kırmızı meteorolojik uyarı ilk kez çıkınca bildirim. */
+    val alertNotifications: Boolean = true,
 )
 
 /**

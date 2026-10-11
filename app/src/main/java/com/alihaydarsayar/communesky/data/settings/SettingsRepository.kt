@@ -33,6 +33,7 @@ class SettingsRepository @Inject constructor(
                 temperatureUnit = prefs[TEMPERATURE_UNIT].toEnum(TemperatureUnit.Celsius),
                 windUnit = prefs[WIND_UNIT].toEnum(WindUnit.KilometersPerHour),
                 themeMode = prefs[THEME_MODE].toEnum(ThemeMode.System),
+                alertNotifications = prefs[ALERT_NOTIFICATIONS] ?: true,
                 homeAway = HomeAwaySettings(
                     nearbyRadiusKm = (prefs[NEARBY_RADIUS_KM] ?: HomeDetection.DEFAULT_NEARBY_KM)
                         .coerceIn(HomeDetection.MIN_NEARBY_KM, HomeDetection.MAX_NEARBY_KM),
@@ -53,6 +54,10 @@ class SettingsRepository @Inject constructor(
     suspend fun setWindUnit(unit: WindUnit) = set(WIND_UNIT, unit.name)
 
     suspend fun setThemeMode(mode: ThemeMode) = set(THEME_MODE, mode.name)
+
+    suspend fun setAlertNotifications(enabled: Boolean) {
+        dataStore.edit { it[ALERT_NOTIFICATIONS] = enabled }
+    }
 
     suspend fun setHomeAway(settings: HomeAwaySettings) {
         dataStore.edit {
@@ -83,6 +88,7 @@ class SettingsRepository @Inject constructor(
         val AWAY_HOME_RAIN = booleanPreferencesKey("away_home_rain")
         val AWAY_DISTANCE = booleanPreferencesKey("away_distance")
         val NEARBY_SHOW_BOTH = booleanPreferencesKey("nearby_show_both")
+        val ALERT_NOTIFICATIONS = booleanPreferencesKey("alert_notifications")
     }
 }
 
