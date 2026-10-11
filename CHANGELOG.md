@@ -21,6 +21,7 @@ What's new in each version of Commune Sky.
 - Smoother style swiping on the widget setup screen: while you swipe, the styles beside the current one are shown as ready pictures; the style you stop on switches to the live preview without any visible change.
 - Housekeeping: build warnings fixed.
 - **In Türkiye, forecasts now come from the Turkish State Meteorological Service (MGM).** Hourly and daily temperatures and the weather icon come from MGM; rain chance, UV and pressure still come from Open-Meteo. If MGM cannot be reached, the app quietly uses the ECMWF model and returns to MGM as soon as it answers.
+- A small line under the forecast shows where it comes from (for example "Forecast: MGM · Rain: Open-Meteo"); tap it for details. Settings › About lists all sources.
 
 ## 1.4 — October 11, 2026
 

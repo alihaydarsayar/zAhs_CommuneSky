@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.ui.home
 
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -144,7 +145,11 @@ private fun HourHeader(label: String, hour: HourlyForecast, isNow: Boolean) {
             contentDescription = stringResource(weatherDescriptionRes(hour.weatherCode)),
         )
         Spacer(Modifier.height(2.dp))
-        PrecipitationChance(hour.precipitationProbability, MaterialTheme.typography.labelSmall)
+        // Hava durumu ulusal servisten "yağışlı" geliyorsa çelişen düşük yüzde gösterilmez (yeri boş kalır, hizalama bozulmaz).
+        PrecipitationChance(
+            hour.precipitationProbability, MaterialTheme.typography.labelSmall,
+            modifier = if (hour.showProbability) Modifier else Modifier.alpha(0f),
+        )
     }
 }
 

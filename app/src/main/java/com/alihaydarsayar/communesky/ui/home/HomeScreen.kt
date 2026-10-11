@@ -446,8 +446,11 @@ private fun ForecastList(
                 },
             )
         }
+        // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.
+        weather.sources?.rainNote?.let { note -> item(key = "rainNote") { RainNoteLine(note) } }
         item(key = "hourly") { HourlyCard(forecast.current, hours) }
         item(key = "daily") { DailyCard(days, forecast.current.temperature) }
+        if (weather.sources != null) item(key = "sources") { SourceLine(weather) }
         item(key = "details") { DetailTiles(forecast.current, today, now) }
         item(key = "attribution") { Attribution() }
     }

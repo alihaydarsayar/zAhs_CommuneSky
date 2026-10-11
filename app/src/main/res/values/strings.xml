@@ -15,7 +15,7 @@
     <string name="updating">Updating…</string>
     <string name="update_failed">Couldn\'t update · showing saved data</string>
     <string name="loading_weather">Loading the sky…</string>
-    <string name="data_attribution">Forecast: Open-Meteo.com · Observations: MGM, NOAA Aviation Weather Center</string>
+    <string name="data_attribution">Open-Meteo.com (CC BY 4.0) · MGM · ECMWF (CC BY 4.0) · NOAA Aviation Weather Center</string>
     <string name="station_label_mgm">%1$s station</string>
     <string name="station_label_airport">%1$s airport</string>
     <string name="observation_just_now">just now</string>
@@ -184,7 +184,7 @@
     </plurals>
     <string name="no_saved_places_short">No saved places yet</string>
     <string name="settings_about">About</string>
-    <string name="settings_data_sources">Forecast data by Open-Meteo.com. Current conditions are checked against the nearest station: Turkish State Meteorological Service (MGM) stations in Türkiye, airport reports (METAR) from the NOAA Aviation Weather Center elsewhere. Place search by Photon, using © OpenStreetMap contributors data.</string>
+    <string name="settings_data_sources">Forecasts: in Türkiye, hourly and daily temperatures and the weather come from the Turkish State Meteorological Service (MGM); elsewhere, and for rain, UV and pressure everywhere, from Open-Meteo.com (CC BY 4.0). The ECMWF model (IFS and AIFS, © ECMWF, CC BY 4.0) is used through Open-Meteo as a backup and for comparison. Current conditions are checked against the nearest station: MGM stations in Türkiye, airport reports (METAR) from the NOAA Aviation Weather Center elsewhere. Place search: Photon, © OpenStreetMap contributors.</string>
     <string name="unit_celsius" translatable="false">°C</string>
     <string name="unit_fahrenheit" translatable="false">°F</string>
 
@@ -563,4 +563,27 @@
     <string name="widget_ss_hands_hint">Only the hour and minute hands change. The dial, the colors and the second hand stay the same.</string>
     <string name="widget_config_theme_solid_note">Background set to Solid: a theme\'s ground doesn\'t show on a clear or glass background.</string>
     <string name="widget_config_theme_cleared_note">The colors you had picked one by one were cleared so the theme shows.</string>
+    <string name="source_mgm_short">MGM</string>
+    <string name="source_mgm">the Turkish State Meteorological Service (MGM)</string>
+    <string name="source_ecmwf">ECMWF</string>
+    <string name="source_ecmwf_full">the ECMWF model (IFS, 9 km)</string>
+    <string name="source_ecmwf_aifs">ECMWF AIFS</string>
+    <string name="source_ecmwf_aifs_full">the ECMWF AI model (AIFS)</string>
+    <string name="source_open_meteo">Open-Meteo</string>
+    <string name="source_open_meteo_full">Open-Meteo (best model for the place)</string>
+    <string name="source_meteo_france">Météo-France</string>
+    <string name="source_meteo_france_full">Météo-France (AROME/ARPEGE)</string>
+    <string name="source_met_office">Met Office</string>
+    <string name="source_met_office_full">the UK Met Office (UKV 2 km)</string>
+    <string name="source_line">Forecast: %1$s · Rain: %2$s</string>
+    <string name="source_line_single">Forecast: %1$s</string>
+    <string name="source_line_unavailable">Could not reach %1$s; using %2$s</string>
+    <string name="source_info_title">Where this forecast comes from</string>
+    <string name="source_info_forecast">Forecast source for this place: %1$s.</string>
+    <string name="source_info_unavailable">%1$s could not be reached just now. The app goes back to it as soon as it answers.</string>
+    <string name="source_info_precipitation">Rain chance and amount, UV, pressure and visibility: %1$s.</string>
+    <string name="source_info_observation">The current temperature is a real measurement from the nearest station.</string>
+    <string name="dialog_close">Close</string>
+    <string name="rain_expected_by">Rain expected (%1$s)</string>
+    <string name="rain_chance_note">Chance of rain %1$d%%</string>
 </resources>

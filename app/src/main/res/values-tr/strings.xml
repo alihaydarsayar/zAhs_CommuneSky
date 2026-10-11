@@ -13,7 +13,7 @@
     <string name="updating">Güncelleniyor…</string>
     <string name="update_failed">Güncellenemedi · kayıtlı veri gösteriliyor</string>
     <string name="loading_weather">Gökyüzü yükleniyor…</string>
-    <string name="data_attribution">Tahmin: Open-Meteo.com · Ölçüm: MGM, NOAA Aviation Weather Center</string>
+    <string name="data_attribution">Open-Meteo.com (CC BY 4.0) · MGM · ECMWF (CC BY 4.0) · NOAA Aviation Weather Center</string>
     <string name="station_label_mgm">%1$s istasyonu</string>
     <string name="station_label_airport">%1$s Havalimanı</string>
     <string name="observation_just_now">az önce</string>
@@ -180,7 +180,7 @@
     </plurals>
     <string name="no_saved_places_short">Henüz kayıtlı yer yok</string>
     <string name="settings_about">Hakkında</string>
-    <string name="settings_data_sources">Tahmin verileri: Open-Meteo.com. Anlık durum en yakın istasyonun ölçümüyle doğrulanır: Türkiye\'de Meteoroloji Genel Müdürlüğü (MGM) istasyonları, diğer yerlerde NOAA Aviation Weather Center üzerinden havalimanı ölçümleri (METAR). Yer arama: Photon, © OpenStreetMap katkıcılarının verileriyle.</string>
+    <string name="settings_data_sources">Tahminler: Türkiye’de saatlik ve günlük sıcaklık ile hava durumu Meteoroloji Genel Müdürlüğü’nden (MGM); diğer yerlerde ve her yerde yağış, UV ve basınç Open-Meteo.com’dan (CC BY 4.0) gelir. ECMWF modeli (IFS ve AIFS, © ECMWF, CC BY 4.0) Open-Meteo üzerinden yedek ve karşılaştırma için kullanılır. Anlık durum en yakın istasyonun ölçümüyle doğrulanır: Türkiye’de MGM istasyonları, diğer yerlerde NOAA Aviation Weather Center üzerinden havalimanı ölçümleri (METAR). Yer arama: Photon, © OpenStreetMap katkıcıları.</string>
 
     <!-- Widget'lar: seçicideki 9 widget -->
     <string name="widget_kind_home">Ev ve konum</string>
@@ -557,4 +557,27 @@
     <string name="widget_ss_hands_hint">Yalnızca akrep ve yelkovan değişir. Kadran, renkler ve saniye kolu aynı kalır.</string>
     <string name="widget_config_theme_solid_note">Arka plan “Düz” yapıldı: temanın zemini saydam ya da cam arka planda görünmez.</string>
     <string name="widget_config_theme_cleared_note">Tema görünsün diye tek tek seçtiğin renkler temizlendi.</string>
+    <string name="source_mgm_short">MGM</string>
+    <string name="source_mgm">Meteoroloji Genel Müdürlüğü</string>
+    <string name="source_ecmwf">ECMWF</string>
+    <string name="source_ecmwf_full">ECMWF modeli (IFS, 9 km)</string>
+    <string name="source_ecmwf_aifs">ECMWF AIFS</string>
+    <string name="source_ecmwf_aifs_full">ECMWF yapay zekâ modeli (AIFS)</string>
+    <string name="source_open_meteo">Open-Meteo</string>
+    <string name="source_open_meteo_full">Open-Meteo (yer için en uygun model)</string>
+    <string name="source_meteo_france">Météo-France</string>
+    <string name="source_meteo_france_full">Météo-France (AROME/ARPEGE)</string>
+    <string name="source_met_office">Met Office</string>
+    <string name="source_met_office_full">Birleşik Krallık Met Office (UKV 2 km)</string>
+    <string name="source_line">Tahmin: %1$s · Yağış: %2$s</string>
+    <string name="source_line_single">Tahmin: %1$s</string>
+    <string name="source_line_unavailable">%1$s’ye ulaşılamadı, %2$s kullanılıyor</string>
+    <string name="source_info_title">Bu tahmin nereden geliyor</string>
+    <string name="source_info_forecast">Bu yer için tahmin kaynağı: %1$s.</string>
+    <string name="source_info_unavailable">%1$s şu an cevap vermedi. Cevap verir vermez yeniden ona dönülür.</string>
+    <string name="source_info_precipitation">Yağış ihtimali ve miktarı, UV, basınç ve görüş: %1$s.</string>
+    <string name="source_info_observation">Şu anki sıcaklık en yakın istasyonun gerçek ölçümüdür.</string>
+    <string name="dialog_close">Kapat</string>
+    <string name="rain_expected_by">Yağmur bekleniyor (%1$s)</string>
+    <string name="rain_chance_note">Yağmur ihtimali %%%1$d</string>
 </resources>
