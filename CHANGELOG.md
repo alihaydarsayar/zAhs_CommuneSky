@@ -35,6 +35,7 @@ What's new in each version of Commune Sky.
 - Tap any detail tile to open a full page: today's chart hour by hour, a comparison with yesterday, the week ahead and a plain explanation. Pages for feels like, wind, humidity, UV, visibility, pressure, cloud, precipitation and the sun.
 - Air quality from the Copernicus service (CAMS): a card on the home screen and a page with the European index, pollutants, the next 48 hours, three days ahead and health advice. An optional notification warns when the air turns poor, and the run tip takes it into account.
 - A moon page worked out entirely on your phone: phase and how much is lit, moonrise and moonset, the next full and new moon and the 30 days ahead.
+- In France the forecast now comes from the Météo-France models and in the United Kingdom from the Met Office models (both through Open-Meteo); in Ireland the app measures which one is closer and picks it by itself.
 
 ## 1.4 — October 11, 2026
 

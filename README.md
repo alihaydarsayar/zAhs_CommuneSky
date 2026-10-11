@@ -66,6 +66,7 @@ Kotlin · Jetpack Compose · Material 3 · MVVM · Hilt · Retrofit + kotlinx.se
 - Weather data by [Open-Meteo.com](https://open-meteo.com/), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - In Türkiye, forecasts, weather warnings, seasonal normals and station measurements from the [Turkish State Meteorological Service (MGM)](https://www.mgm.gov.tr/).
 - ECMWF forecasts (IFS and AIFS) through Open-Meteo: © [ECMWF](https://www.ecmwf.int/en/forecasts/datasets/open-data), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- In France, [Météo-France](https://meteofrance.com/) models (AROME, ARPEGE; [Etalab Open Licence 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/)); in the United Kingdom and Ireland, [Met Office](https://www.metoffice.gov.uk/) models (UKV, global; © Crown copyright, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)); both through Open-Meteo.
 - Air quality from the [Copernicus Atmosphere Monitoring Service (CAMS)](https://atmosphere.copernicus.eu/) through the [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - Airport reports (METAR) from the [NOAA Aviation Weather Center](https://aviationweather.gov/).
 - Place search by [Photon](https://photon.komoot.io/) (komoot), using data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, and [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api) (GeoNames).

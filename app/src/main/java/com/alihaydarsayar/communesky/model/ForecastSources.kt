@@ -74,6 +74,9 @@ data class PlaceExtras(
 ) {
     val isNational: Boolean get() = centerId != null
 
+    /** Yerin bölgesi: hangi yerel modelin isteneceğini ve varsayılan kaynağı belirler. */
+    val region: ForecastRegion get() = ForecastRegion.of(queryLatitude, queryLongitude)
+
     fun series(source: ForecastSource): CandidateSeries? =
         if (source == national?.source) national else models.firstOrNull { it.source == source }
 }
@@ -149,10 +152,16 @@ object ForecastMerge {
 
     data class Result(val forecast: Forecast, val sources: ForecastSources)
 
+    /**
+     * Hakem karar verene kadar kullanılan kaynak: Türkiye'de MGM; Fransa'da Météo-France, Birleşik Krallık'ta
+     * Met Office modeli (Open-Meteo üzerinden); diğer yerlerde Open-Meteo'nun kendi seçimi.
+     */
+    fun defaultSource(extras: PlaceExtras): ForecastSource = if (extras.isNational) ForecastSource.Mgm else extras.region.defaultSource
+
     /** Kaynak sırası: hakemin seçtiği (yoksa varsayılan), sonra yedekler. */
     fun order(extras: PlaceExtras): List<ForecastSource> {
-        val default = if (extras.isNational) ForecastSource.Mgm else ForecastSource.OpenMeteo
-        val fallbacks = if (extras.isNational) listOf(ForecastSource.Mgm, ForecastSource.EcmwfIfs, ForecastSource.OpenMeteo) else listOf(ForecastSource.OpenMeteo)
+        val default = defaultSource(extras)
+        val fallbacks = if (extras.isNational) listOf(ForecastSource.Mgm, ForecastSource.EcmwfIfs, ForecastSource.OpenMeteo) else listOf(default, ForecastSource.OpenMeteo)
         return (listOfNotNull(extras.chosen, default) + fallbacks).distinct()
     }
 

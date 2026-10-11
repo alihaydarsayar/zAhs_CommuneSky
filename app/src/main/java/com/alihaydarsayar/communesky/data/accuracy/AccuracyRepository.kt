@@ -159,7 +159,7 @@ class AccuracyRepository @Inject constructor(
         }.groupBy({ it.first }, { it.second })
 
         val summary = AccuracyStats.summarize(pairs, maxPairs)
-        val default = if (extras.isNational) ForecastSource.Mgm else ForecastSource.OpenMeteo
+        val default = com.alihaydarsayar.communesky.model.ForecastMerge.defaultSource(extras)
         val chosen = ForecastReferee.choose(default, summary)
         val used = chosen ?: default
         val correction = LearnedCorrection.compute(pairs.filter { it.source == used }, observed.maxByOrNull { it.hour }?.stationKm)

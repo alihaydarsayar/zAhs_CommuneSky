@@ -173,8 +173,10 @@ object ExtrasFreshness {
     fun isStale(fetchedAtMillis: Long, nowMillis: Long, thresholdMillis: Long, force: Boolean): Boolean =
         force || fetchedAtMillis <= 0 || nowMillis - fetchedAtMillis >= thresholdMillis || nowMillis < fetchedAtMillis
 
-    /** Bu yer için Open-Meteo'dan istenecek modeller: hakemin karşılaştıracağı adaylar. */
-    @Suppress("UNUSED_PARAMETER")
+    /**
+     * Bu yer için Open-Meteo'dan istenecek modeller: hakemin karşılaştıracağı adaylar. Fransa'da Météo-France,
+     * Birleşik Krallık ve İrlanda'da Met Office modeli de istenir (Open-Meteo'nun kendi seçimine dahil değildir).
+     */
     fun modelsFor(extras: PlaceExtras): List<ForecastSource> =
-        listOf(ForecastSource.EcmwfIfs, ForecastSource.EcmwfAifs, ForecastSource.OpenMeteo)
+        listOfNotNull(extras.region.localModel, ForecastSource.EcmwfIfs, ForecastSource.EcmwfAifs, ForecastSource.OpenMeteo)
 }
