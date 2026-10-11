@@ -713,4 +713,7 @@
     <string name="tip_cold_risk_some">Biraz: gece ile gündüz arasında %1$d° fark var</string>
     <string name="tip_cold_risk_low">Düşük</string>
     <string name="tips_disclaimer">Tahmine dayalı genel önerilerdir; tıbbi tavsiye değildir.</string>
+    <string name="yesterday_colder">Dünden %1$d° daha soğuk</string>
+    <string name="yesterday_warmer">Dünden %1$d° daha sıcak</string>
+    <string name="yesterday_same">Dünle aynı</string>
 </resources>

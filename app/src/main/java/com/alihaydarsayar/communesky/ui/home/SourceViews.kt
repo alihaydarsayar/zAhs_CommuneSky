@@ -28,7 +28,10 @@ import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.ForecastSource
 import com.alihaydarsayar.communesky.model.ForecastSources
 import com.alihaydarsayar.communesky.model.RainNote
+import com.alihaydarsayar.communesky.model.TemperatureUnit
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
+import com.alihaydarsayar.communesky.model.today.YesterdayLine
+import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
 import com.alihaydarsayar.communesky.ui.theme.TextPrimary
 import com.alihaydarsayar.communesky.ui.theme.TextSecondary
 
@@ -142,6 +145,18 @@ fun SeasonalNormalLine(difference: Int, modifier: Modifier = Modifier) {
         difference > 0 -> stringResource(R.string.normal_above, difference)
         difference < 0 -> stringResource(R.string.normal_below, -difference)
         else -> stringResource(R.string.normal_same)
+    }
+    Text(text, color = TextSecondary, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, modifier = modifier.fillMaxWidth())
+}
+
+/** "Dünden 4° daha soğuk"; fark 1°'den küçükse "Dünle aynı". [differenceCelsius]: bugün − dün. */
+@Composable
+fun YesterdayLineText(differenceCelsius: Double, modifier: Modifier = Modifier) {
+    val scale = if (LocalAppSettings.current.temperatureUnit == TemperatureUnit.Fahrenheit) 1.8 else 1.0
+    val text = when (val line = YesterdayLine.of(differenceCelsius, scale)) {
+        YesterdayLine.Same -> stringResource(R.string.yesterday_same)
+        is YesterdayLine.Warmer -> stringResource(R.string.yesterday_warmer, line.degrees)
+        is YesterdayLine.Colder -> stringResource(R.string.yesterday_colder, line.degrees)
     }
     Text(text, color = TextSecondary, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, modifier = modifier.fillMaxWidth())
 }

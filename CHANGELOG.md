@@ -28,6 +28,7 @@ What's new in each version of Commune Sky.
 - **Temperatures learn from nearby measurements.** When the forecast is steadily a little too warm or too cold for your place, it is adjusted (by at most 3°) and a small note says so.
 - A "What to wear" card suggests clothes for the day from the feels-like temperature, rain, wind and UV, with a morning, midday and evening breakdown. Tell it "I was cold" or "I was too warm" and it adapts to you; Settings has "I get cold easily / Normal / I get warm easily".
 - Everyday tips worked out on your phone from the forecast: umbrella, sunscreen, drying laundry, the best two hours for a run or walk, car wash, stargazing and the risk of catching a cold.
+- The home screen says how today compares with yesterday, for example "4° colder than yesterday".
 
 ## 1.4 — October 11, 2026
 

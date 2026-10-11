@@ -719,4 +719,7 @@
     <string name="tip_cold_risk_some">A little: %1$d° between day and night</string>
     <string name="tip_cold_risk_low">Low</string>
     <string name="tips_disclaimer">General suggestions from the forecast, not medical advice.</string>
+    <string name="yesterday_colder">%1$d° colder than yesterday</string>
+    <string name="yesterday_warmer">%1$d° warmer than yesterday</string>
+    <string name="yesterday_same">Same as yesterday</string>
 </resources>

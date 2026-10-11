@@ -79,6 +79,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.alihaydarsayar.communesky.model.today.Clothing
+import com.alihaydarsayar.communesky.model.today.YesterdayComparison
 import com.alihaydarsayar.communesky.ui.common.GlassCard
 import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
 import com.alihaydarsayar.communesky.ui.today.WearSection
@@ -389,6 +390,7 @@ private fun ForecastList(
     val today = remember(weather) { forecast.today(now) }
     val hours = remember(weather) { forecast.upcomingHours(now) }
     val days = remember(weather) { forecast.upcomingDays(now) }
+    val yesterday = remember(weather) { YesterdayComparison.of(forecast, now)?.temperatureDifference }
     val wearShift = LocalAppSettings.current.wear.shift
     val wear = remember(weather, wearShift) { Clothing.advise(forecast, now, wearShift) }
     val status = when {
@@ -465,7 +467,15 @@ private fun ForecastList(
         }
         // Bugünün en yükseği mevsim normaline göre nerede (ulusal servisin uzun yıllar ortalaması).
         val normal = weather.normal
-        if (normal != null && today != null) item(key = "normal") { SeasonalNormalLine(normal.difference(today.maxTemperature)) }
+        if (yesterday != null || (normal != null && today != null)) {
+            item(key = "normal") {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // Dünle karşılaştırma: "Dünden 4° daha soğuk".
+                    if (yesterday != null) YesterdayLineText(yesterday)
+                    if (normal != null && today != null) SeasonalNormalLine(normal.difference(today.maxTemperature))
+                }
+            }
+        }
         // Meteorolojik uyarı varsa renkli şerit.
         if (weather.alerts.isNotEmpty()) item(key = "alerts") { AlertBanner(weather.alerts, now.toLocalDate()) }
         // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.
