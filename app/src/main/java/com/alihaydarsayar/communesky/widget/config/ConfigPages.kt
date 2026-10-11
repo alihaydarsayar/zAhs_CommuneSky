@@ -1,5 +1,12 @@
 package com.alihaydarsayar.communesky.widget.config
 
+import androidx.compose.foundation.layout.aspectRatio
+import com.alihaydarsayar.communesky.widget.SsHands
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.Image
 import android.graphics.Typeface
 import android.os.Build
 import androidx.annotation.StringRes
@@ -114,8 +121,13 @@ fun SettingsList(kind: WidgetKind, config: WidgetConfig, places: List<SavedPlace
         }
         CfgRow(R.drawable.ic_cfg_palette, stringResource(R.string.widget_config_colors), themeName, { onOpen(ConfigPage.Colors) }, dots = dots)
         CfgDivider()
-        val digits = if (kind == WidgetKind.Clock && !styleId.isAnalog) stringResource((style.clockFont ?: styleId.clockFont).shortLabelRes) + " · " else ""
-        CfgRow(R.drawable.ic_cfg_text, stringResource(R.string.widget_config_text), digits + stringResource(style.weight.labelRes), { onOpen(ConfigPage.Text) })
+        if (styleId == WidgetStyleId.ClockSS) {
+            // SS saatinde yazı ayarları yerine kol seçimi.
+            CfgRow(R.drawable.ic_cfg_hands, stringResource(R.string.widget_ss_hands), stringResource(style.ssHands.labelRes), { onOpen(ConfigPage.Text) })
+        } else {
+            val digits = if (kind == WidgetKind.Clock && !styleId.isAnalog) stringResource((style.clockFont ?: styleId.clockFont).shortLabelRes) + " · " else ""
+            CfgRow(R.drawable.ic_cfg_text, stringResource(R.string.widget_config_text), digits + stringResource(style.weight.labelRes), { onOpen(ConfigPage.Text) })
+        }
         if (styleId.contents.isNotEmpty() || kind == WidgetKind.Clock) {
             CfgDivider()
             val enabled = style.contents ?: kind.defaultContents
@@ -493,6 +505,43 @@ private fun OtherColor(current: Int, onChange: (Int?) -> Unit) {
                 .semantics { contentDescription = hexLabel },
         )
     }
+}
+
+// --- Kollar (SS saati) ------------------------------------------------------------------------------
+
+/** Üç kol seçeneği; her kutucukta o kolların 10:09 konumundaki küçük önizlemesi, saatin kendi renkleriyle. */
+@Composable
+fun HandsPage(style: WidgetStyle, restyle: ((WidgetStyle) -> WidgetStyle) -> Unit) {
+    val look = SsClock.look(style)
+    val ink = Color(look.ink)
+    Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        SsHands.entries.forEach { hands ->
+            CfgTile(selected = style.ssHands == hands, label = stringResource(hands.labelRes), onClick = { restyle { it.copy(ssHands = hands) } }, modifier = Modifier.weight(1f)) {
+                Box(Modifier.fillMaxWidth().height(96.dp).clip(RoundedCornerShape(11.dp)).background(C.box), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(84.dp).clip(CircleShape).background(Color(look.dial)).border(1.dp, ink.copy(alpha = 0.14f), CircleShape), contentAlignment = Alignment.Center) {
+                        // 10:09 → akrep 304,5°, yelkovan 54°. Kol vektörleri 12'yi gösterir ve merkezleri ortadadır.
+                        HandPreview(hands.hourRes, 304.5f, ink)
+                        HandPreview(hands.minuteRes, 54f, ink)
+                        Box(Modifier.size(5.dp).background(Color(look.accent), CircleShape))
+                    }
+                }
+            }
+        }
+    }
+    CfgNote(stringResource(R.string.widget_ss_hands_hint))
+}
+
+@Composable
+private fun HandPreview(@androidx.annotation.DrawableRes res: Int, degrees: Float, color: Color) {
+    // Kol vektörü kadran yüksekliğinde, kendi dar genişliğinde çizilir; merkezi kadranın merkezine denk gelir.
+    val painter = painterResource(res)
+    Image(
+        painter,
+        contentDescription = null,
+        modifier = Modifier.fillMaxHeight().aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height).rotate(degrees),
+        contentScale = ContentScale.FillBounds,
+        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(color),
+    )
 }
 
 // --- Yazı -------------------------------------------------------------------------------------------

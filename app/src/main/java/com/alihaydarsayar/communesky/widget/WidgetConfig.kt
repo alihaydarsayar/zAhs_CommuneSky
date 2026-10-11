@@ -3,6 +3,7 @@ package com.alihaydarsayar.communesky.widget
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -201,6 +202,17 @@ enum class SecondSymbol(@param:StringRes val labelRes: Int) {
     Circle(R.string.widget_symbol_circle),
 }
 
+/**
+ * SS saatinin kolları. Yeni bir stil değil, SS stilinin bir ayarı: kadran ve renkler aynı kalır.
+ * Saniye kolu üç seçenekte de aynıdır.
+ */
+@Serializable
+enum class SsHands(@param:StringRes val labelRes: Int, @param:DrawableRes val hourRes: Int, @param:DrawableRes val minuteRes: Int) {
+    Cathedral(R.string.widget_ss_hands_cathedral, R.drawable.widget_ss_hand_hour, R.drawable.widget_ss_hand_minute),
+    SlimCathedral(R.string.widget_ss_hands_slim, R.drawable.widget_ss_hand_hour_slim, R.drawable.widget_ss_hand_minute_slim),
+    Breguet(R.string.widget_ss_hands_breguet, R.drawable.widget_ss_hand_hour_breguet, R.drawable.widget_ss_hand_minute_breguet),
+}
+
 /** Stilin önerdiği, ama kullanıcı elle değiştirince artık stile bağlı olmayan ayarlar. */
 @Serializable
 enum class StyleField { Background, Transparency, ColorTheme }
@@ -259,6 +271,8 @@ data class WidgetStyle(
     val windowColor: Int? = null,
     val logo: Boolean = true,
     val showDate: Boolean = true,
+    /** SS saati: kollar. Eski kayıtlarda bu alan yoktur; onlar Katedral açılır. */
+    val ssHands: SsHands = SsHands.Cathedral,
 ) {
     fun styleId(kind: WidgetKind): WidgetStyleId =
         WidgetStyleId.entries.firstOrNull { it.name == style && it.kind == kind } ?: kind.defaultStyle

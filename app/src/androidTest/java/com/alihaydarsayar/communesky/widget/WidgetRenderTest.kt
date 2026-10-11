@@ -210,6 +210,26 @@ class WidgetRenderTest {
         }
     }
 
+    /**
+     * SS saatinin kol seçenekleri: iki saatte, klasik ve koyu temada.
+     * Dosyalar: widget_ss_kollar_<kol>_<saat>_<tema>.png
+     */
+    @Test
+    fun renderSsHands() = runBlocking {
+        eachLanguage {
+            val sample = WidgetSamples.input(context, scenario = WidgetSamples.Scenario.AtHome)
+            for (hands in SsHands.entries) {
+                for (time in listOf(LocalTime.of(10, 9, 40), LocalTime.of(4, 37, 12))) {
+                    for (preset in listOf(SsClock.Preset.Classic, SsClock.Preset.Dark)) {
+                        val style = SsClock.apply(WidgetStyleId.ClockSS.defaultStyle(), preset).copy(ssHands = hands)
+                        val name = "ss_kollar_%s_%02d%02d%02d_%s".format(Locale.ROOT, hands.name.lowercase(Locale.ROOT), time.hour, time.minute, time.second, preset.name.lowercase(Locale.ROOT))
+                        render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), DpSize(250.dp, 250.dp), name, lightWallpaper = false, input = sample, time = time)
+                    }
+                }
+            }
+        }
+    }
+
     @Test
     fun renderHomeScenarios() = runBlocking {
         eachLanguage {

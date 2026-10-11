@@ -21,6 +21,8 @@ What's new in each version of Commune Sky.
 - **Crisper text shadows.** On glass and clear backgrounds the shadow behind text is thinner and sharper, with a stronger option if you need it.
 - **Lighter widgets.** Widgets are redrawn only when what they show has changed, and the radial clock sends a much smaller picture to your home screen.
 - Fixed: on the widget setup screen, some styles showed an empty preview after swiping through a few of them.
+- Choose cathedral, slim cathedral or Breguet hands for the SS clock.
+- On the SS clock the date, the seal and the weather sit farther from the center, so the hands cover them less.
 - Example places in previews are now Besiktas, Liverpool and Limerick.
 
 ## 1.3 — in testing

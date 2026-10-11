@@ -5,6 +5,7 @@ import android.content.res.ColorStateList
 import android.os.Build
 import android.widget.RemoteViews
 import androidx.annotation.DrawableRes
+import androidx.annotation.LayoutRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -231,16 +232,27 @@ private fun SsWeather(data: WidgetPlaceData, u: Float) {
     }
 }
 
+/** Bir kol seçeneğinin üç düzeni: kollar, kollar + saniye (Android 12+), açık renkli kollar (Android 12 öncesi). */
+private class HandLayouts(@param:LayoutRes val plain: Int, @param:LayoutRes val seconds: Int, @param:LayoutRes val light: Int)
+
+private fun SsHands.layouts(): HandLayouts = when (this) {
+    SsHands.Cathedral -> HandLayouts(R.layout.widget_ss_hands, R.layout.widget_ss_hands_seconds, R.layout.widget_ss_hands_light)
+    SsHands.SlimCathedral -> HandLayouts(R.layout.widget_ss_hands_slim, R.layout.widget_ss_hands_slim_seconds, R.layout.widget_ss_hands_slim_light)
+    SsHands.Breguet -> HandLayouts(R.layout.widget_ss_hands_breguet, R.layout.widget_ss_hands_breguet_seconds, R.layout.widget_ss_hands_breguet_light)
+}
+
 /**
- * Kollar: düzendeki vektörlerle AnalogClock. Android 12+: kollar mürekkep, saniye kolu vurgu rengine
+ * Kollar: düzendeki vektörlerle AnalogClock. AnalogClock kolları yalnızca XML'den aldığı için her kol
+ * seçeneğinin kendi düzenleri vardır. Android 12+: kollar mürekkep, saniye kolu vurgu rengine
  * boyanır. Öncesinde saniye kolu yoktur ve kol rengi değiştirilemez; koyu kadranda açık renkli
- * kolları olan ikinci düzen kullanılır.
+ * kolları olan düzen kullanılır.
  */
 private fun ssHands(context: Context, style: WidgetStyle, ink: Color, accent: Color): RemoteViews {
+    val layouts = style.ssHands.layouts()
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-        return RemoteViews(context.packageName, if (ink.luminance() > 0.45f) R.layout.widget_ss_hands_light else R.layout.widget_ss_hands)
+        return RemoteViews(context.packageName, if (ink.luminance() > 0.45f) layouts.light else layouts.plain)
     }
-    return RemoteViews(context.packageName, if (style.secondHand) R.layout.widget_ss_hands_seconds else R.layout.widget_ss_hands).apply {
+    return RemoteViews(context.packageName, if (style.secondHand) layouts.seconds else layouts.plain).apply {
         val tint = ColorStateList.valueOf(ink.toArgb())
         setColorStateList(R.id.clock, "setHourHandTintList", tint)
         setColorStateList(R.id.clock, "setMinuteHandTintList", tint)

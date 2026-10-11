@@ -552,4 +552,9 @@
     <string name="color_name_forest">Forest green</string>
     <string name="color_name_green">Green</string>
     <string name="color_name_brown">Brown</string>
+    <string name="widget_ss_hands">Hands</string>
+    <string name="widget_ss_hands_cathedral">Cathedral</string>
+    <string name="widget_ss_hands_slim">Slim cathedral</string>
+    <string name="widget_ss_hands_breguet">Breguet</string>
+    <string name="widget_ss_hands_hint">Only the hour and minute hands change. The dial, the colors and the second hand stay the same.</string>
 </resources>

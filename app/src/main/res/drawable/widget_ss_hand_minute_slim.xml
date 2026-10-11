@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SS saati: yelkovan (ince katedral), 12'yi gosterir. Android 12+ murekkep rengine boyanir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="25.2dp"
+    android:height="360dp"
+    android:viewportWidth="28"
+    android:viewportHeight="400">
+    <group android:translateX="-186">
+        <path
+            android:fillColor="#FF16171A"
+            android:fillType="evenOdd"
+            android:pathData="M197.21 205.98 L196.93 222.00 L203.07 222.00 L202.79 205.98 Q203.55 205.63 204.25 204.98 Q204.95 204.33 205.48 203.49 Q206.02 202.65 206.31 201.74 Q206.60 200.84 206.60 200.00 Q206.60 199.13 206.29 198.20 Q205.99 197.27 205.42 196.41 Q204.86 195.56 204.12 194.91 Q203.38 194.26 202.58 193.92 L201.92 156.32 C212.60 142.88 212.00 99.20 202.30 79.04 L200.00 32.00 L197.70 79.04 C188.00 99.20 187.40 142.88 198.08 156.32 L197.42 193.92 Q196.62 194.26 195.88 194.91 Q195.14 195.56 194.58 196.41 Q194.01 197.27 193.71 198.20 Q193.40 199.13 193.40 200.00 Q193.40 200.84 193.69 201.74 Q193.98 202.65 194.52 203.49 Q195.05 204.33 195.75 204.98 Q196.45 205.63 197.21 205.98 Z M200.00 84.92 C190.88 103.40 190.40 140.36 200.00 150.44 C209.60 140.36 209.12 103.40 200.00 84.92 Z" />
+    </group>
+</vector>

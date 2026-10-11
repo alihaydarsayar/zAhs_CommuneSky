@@ -322,13 +322,14 @@ private fun WidgetConfigScreen(
                 }
             } else {
                 Sheet(
-                    title = stringResource(open.titleRes()),
+                    // SS saatinde "Yazı" sayfasının yerinde kol seçimi var.
+                    title = stringResource(if (open == ConfigPage.Text && style.styleId(kind) == WidgetStyleId.ClockSS) R.string.widget_ss_hands else open.titleRes()),
                     onDone = { page = null },
                 ) {
                     when (open) {
                         ConfigPage.Background -> BackgroundPage(style, sky, ::restyle)
                         ConfigPage.Colors -> ColorsPage(kind, style, sky, recent, ::restyle, ::pickColor)
-                        ConfigPage.Text -> TextPage(kind, style, ::restyle)
+                        ConfigPage.Text -> if (style.styleId(kind) == WidgetStyleId.ClockSS) HandsPage(style, ::restyle) else TextPage(kind, style, ::restyle)
                         ConfigPage.Contents -> ContentsPage(kind, style, ::restyle)
                         ConfigPage.Place -> PlacePage(current, places, deviceName) { place -> update { it.copy(place = place) } }
                     }
