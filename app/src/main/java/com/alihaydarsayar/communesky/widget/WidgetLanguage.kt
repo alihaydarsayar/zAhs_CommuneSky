@@ -65,12 +65,37 @@ object WidgetLanguage {
         return Resources.getSystem().configuration.locales[0]
     }
 
+    private const val KEY_CLOCK = "clock_format"
+
     /**
-     * Saat 24 saatlik mi yazılacak? Widget'taki saati ana ekran uygulaması telefonun ayarıyla ve diliyle
-     * çizer; widget'ın kendi yazdığı saatler ("21:00'de yağmur") ve önizleme de aynı kuralı kullanır.
-     * (Uygulama Türkçe, telefon İngilizce iken önizleme 13:52, ana ekran 1:52 gösteriyordu.)
+     * Ayarlar'daki "Saat biçimi". Kullanıcı seçmediyse varsayılan dile göredir ([defaultClockFormat]).
+     * Widget'lar uygulama kapalıyken de okuyabilsin diye burada (küçük bir tercih dosyasında) saklanır.
      */
-    fun is24Hour(context: Context): Boolean =
+    fun clockFormat(context: Context): ClockFormat {
+        val stored = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CLOCK, null)
+        return ClockFormat.entries.firstOrNull { it.name == stored } ?: defaultClockFormat(context(context).resources.configuration.locales[0].language)
+    }
+
+    fun setClockFormat(context: Context, format: ClockFormat) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_CLOCK, format.name).apply()
+    }
+
+    /** Varsayılan saat biçimi: Türkçede 24 saat ("9öö", "12ös" yazılmasın); diğer dillerde telefonla aynı. Saf; test edilir. */
+    fun defaultClockFormat(language: String): ClockFormat = if (language == "tr") ClockFormat.H24 else ClockFormat.System
+
+    /**
+     * Saat 24 saatlik mi yazılacak? Ayarlar'daki "Saat biçimi"ne göre; "Telefonla aynı" seçiliyse telefonun
+     * ayarı ve dili. Widget'taki saat bileşeni, widget'ın kendi yazdığı saatler ("21:00'de yağmur"), önizleme
+     * ve uygulamanın ekranları aynı kuralı kullanır.
+     */
+    fun is24Hour(context: Context): Boolean = when (clockFormat(context)) {
+        ClockFormat.H24 -> true
+        ClockFormat.H12 -> false
+        ClockFormat.System -> phoneIs24Hour(context)
+    }
+
+    /** Telefonun kendi kuralı: sistem ayarı; "dilin varsayılanı" seçiliyse telefonun dili. */
+    fun phoneIs24Hour(context: Context): Boolean =
         when (runCatching { android.provider.Settings.System.getString(context.contentResolver, android.provider.Settings.System.TIME_12_24) }.getOrNull()) {
             "24" -> true
             "12" -> false
@@ -90,6 +115,9 @@ object WidgetLanguage {
 
     fun differsFromSystem(context: Context): Boolean = differs(context.resources.configuration.locales[0], systemLocale(context))
 }
+
+/** Ayarlar › Saat biçimi. */
+enum class ClockFormat { System, H24, H12 }
 
 /**
  * Tarih metin olarak yazıldığında (uygulama dili telefonunkinden farklıyken) gün değişince widget'ları

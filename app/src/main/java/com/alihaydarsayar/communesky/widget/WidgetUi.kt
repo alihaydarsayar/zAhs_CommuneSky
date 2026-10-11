@@ -650,13 +650,10 @@ private fun ClockView(
         ClockPart.Minutes -> "mm" to "mm"
         ClockPart.Date -> DateFormat.getBestDateTimePattern(locale(context), dateSkeleton).let { it to it }
     }
-    // Diller farklıyken saat bileşeni çizildiği yerin diline göre 12/24 seçer (önizlemede uygulamanın,
-    // ana ekranda telefonun dili). İkisi aynı çıksın diye biçim telefonun kuralıyla burada sabitlenir.
-    val (format12, format24) = if (theme.staticDate) {
-        (if (WidgetLanguage.is24Hour(context)) formats.second else formats.first).let { it to it }
-    } else {
-        formats
-    }
+    // Saat bileşeni 12/24'ü çizildiği yerin (önizlemede uygulamanın, ana ekranda telefonun) ayarına göre
+    // seçer. Ayarlar'daki "Saat biçimi" geçerli olsun ve önizleme ile ana ekran aynı çıksın diye iki biçime
+    // de seçilen yazım verilir.
+    val (format12, format24) = (if (WidgetLanguage.is24Hour(context)) formats.second else formats.first).let { it to it }
     val textColor = color ?: when (part) {
         ClockPart.Minutes -> theme.minuteColor
         ClockPart.Date -> theme.colors.text

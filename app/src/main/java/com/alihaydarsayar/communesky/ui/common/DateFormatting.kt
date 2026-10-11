@@ -19,9 +19,14 @@ import java.util.Locale
 @Composable
 fun currentLocale(): Locale = LocalConfiguration.current.locales[0]
 
+/** Ayarlar'da saat biçimi değişince artar; saat yazan ekranlar yeniden çizilir. */
+object ClockFormatChanges {
+    val version = androidx.compose.runtime.mutableIntStateOf(0)
+}
+
 /**
- * Saat biçimi telefonun ayarına uyar: 24 saat açıksa "14:00", kapalıysa "2 PM".
- * Desen dile göre Android tarafından seçilir.
+ * Saat biçimi Ayarlar'daki "Saat biçimi"ne uyar ("Telefonla aynı" seçiliyse telefonun ayarına): 24 saatte
+ * "14:00", 12 saatte "2 PM". Desen dile göre Android tarafından seçilir.
  */
 @Composable
 fun rememberHourFormatter(): DateTimeFormatter = rememberTimeFormatter(withMinutes = false)
@@ -30,7 +35,9 @@ fun rememberHourFormatter(): DateTimeFormatter = rememberTimeFormatter(withMinut
 @Composable
 fun rememberTimeFormatter(withMinutes: Boolean = true): DateTimeFormatter {
     val locale = currentLocale()
-    val is24Hour = DateFormat.is24HourFormat(LocalContext.current)
+    // Ayarlar'daki "Saat biçimi" (widget'larla aynı kural); seçim değişince yeniden hesaplanır.
+    ClockFormatChanges.version.intValue
+    val is24Hour = com.alihaydarsayar.communesky.widget.WidgetLanguage.is24Hour(LocalContext.current)
     return remember(locale, is24Hour, withMinutes) {
         val skeleton = when {
             is24Hour -> "Hm"

@@ -119,6 +119,7 @@ fun SettingsScreen(
     val placeCount by viewModel.placeCount.collectAsStateWithLifecycle()
     var language by remember { mutableStateOf(AppLanguage.current()) }
     val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
+    var clockFormat by remember(language) { mutableStateOf(com.alihaydarsayar.communesky.widget.WidgetLanguage.clockFormat(appContext)) }
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Column(Modifier.fillMaxSize()) {
@@ -236,6 +237,25 @@ fun SettingsScreen(
                             language = AppLanguage.entries[index]
                             // Ekran yeni dilde yeniden oluşturulur; widget'lar da hemen yeni dille çizilir.
                             AppLanguage.apply(language, appContext)
+                        },
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Label(stringResource(R.string.settings_clock_format))
+                    GlassSegmented(
+                        options = listOf(
+                            stringResource(R.string.clock_format_system),
+                            stringResource(R.string.clock_format_24),
+                            stringResource(R.string.clock_format_12),
+                        ),
+                        selectedIndex = clockFormat.ordinal,
+                        onSelect = { index ->
+                            clockFormat = com.alihaydarsayar.communesky.widget.ClockFormat.entries[index]
+                            // Uygulamanın ekranları ve widget'lar (önizleme dahil) hemen yeni biçimle yazılır.
+                            com.alihaydarsayar.communesky.widget.WidgetLanguage.setClockFormat(appContext, clockFormat)
+                            com.alihaydarsayar.communesky.ui.common.ClockFormatChanges.version.intValue++
+                            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
+                                com.alihaydarsayar.communesky.widget.WeatherWidgetUpdater.updateAll(appContext)
+                            }
                         },
                     )
                 }

@@ -170,6 +170,10 @@
     <string name="theme_dark">Dark</string>
     <string name="settings_language">Language</string>
     <string name="language_system">System</string>
+    <string name="settings_clock_format">Clock format</string>
+    <string name="clock_format_system">Same as phone</string>
+    <string name="clock_format_24">24-hour</string>
+    <string name="clock_format_12">12-hour</string>
     <string name="language_turkish" translatable="false">Türkçe</string>
     <string name="language_english" translatable="false">English</string>
     <string name="settings_places">Places</string>

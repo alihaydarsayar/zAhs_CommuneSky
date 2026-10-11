@@ -20,4 +20,12 @@ class WidgetLanguageTest {
         assertFalse(WidgetLanguage.differs(Locale.forLanguageTag("tr"), Locale.forLanguageTag("tr-TR")))
         assertFalse(WidgetLanguage.differs(Locale.forLanguageTag("en-GB"), Locale.forLanguageTag("en-US")))
     }
+
+    @Test
+    fun `the clock is 24-hour by default in Turkish and follows the phone in other languages`() {
+        // Türkçede "9öö", "12ös" yazılmasın: kullanıcı seçmediyse 24 saat.
+        org.junit.Assert.assertEquals(ClockFormat.H24, WidgetLanguage.defaultClockFormat("tr"))
+        org.junit.Assert.assertEquals(ClockFormat.System, WidgetLanguage.defaultClockFormat("en"))
+        org.junit.Assert.assertEquals(ClockFormat.System, WidgetLanguage.defaultClockFormat("de"))
+    }
 }

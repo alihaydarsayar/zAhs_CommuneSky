@@ -168,6 +168,10 @@
     <string name="theme_dark">Koyu</string>
     <string name="settings_language">Dil</string>
     <string name="language_system">Sistem</string>
+    <string name="settings_clock_format">Saat biçimi</string>
+    <string name="clock_format_system">Telefonla aynı</string>
+    <string name="clock_format_24">24 saat</string>
+    <string name="clock_format_12">12 saat</string>
     <string name="settings_places">Yerler</string>
     <string name="manage_places">Yerleri yönet</string>
     <plurals name="saved_places_count">
