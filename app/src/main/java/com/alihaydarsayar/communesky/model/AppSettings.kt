@@ -13,6 +13,8 @@ data class AppSettings(
     val alertNotifications: Boolean = true,
     val wear: WearSettings = WearSettings(),
     /** Sabah özeti bildirimi (varsayılan kapalı) ve saati (gece yarısından itibaren dakika; varsayılan 07:30). */
+    /** Hava kalitesi "kötü" olunca bildirim (varsayılan kapalı). */
+    val airQualityNotifications: Boolean = false,
     val morningSummary: Boolean = false,
     val morningSummaryMinutes: Int = 7 * 60 + 30,
 )

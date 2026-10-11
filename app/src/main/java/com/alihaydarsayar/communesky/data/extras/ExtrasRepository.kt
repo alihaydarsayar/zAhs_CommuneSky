@@ -41,6 +41,7 @@ import javax.inject.Singleton
 class ExtrasRepository @Inject constructor(
     private val mgm: Lazy<MgmForecastApi>,
     private val modelsApi: Lazy<OpenMeteoModelsApi>,
+    private val airApi: Lazy<com.alihaydarsayar.communesky.data.remote.AirQualityApi>,
     private val store: ExtrasStore,
 ) {
     private val mutex = Mutex()
@@ -86,6 +87,13 @@ class ExtrasRepository @Inject constructor(
             }?.takeIf { it.isNotEmpty() }
         }
 
+        // Hava kalitesi: saatte bir, öteki isteklerle aynı anda.
+        val air = async {
+            if (!ExtrasFreshness.isStale(extras.airFetchedAt, millis, ExtrasFreshness.AIR, force)) return@async null
+            attempt("hava kalitesi") { airApi.get().airQuality(CoordinatePrivacy.round(lat), CoordinatePrivacy.round(lon)).toModel() }
+                ?.takeIf { quality -> quality.hours.any { it.aqi != null } }
+        }
+
         if (ObservationRepository.isInTurkey(lat, lon)) {
             if (extras.centerId == null) {
                 attempt("MGM merkez") { mgm.get().center(CoordinatePrivacy.round(lat), CoordinatePrivacy.round(lon)) }?.let { center ->
@@ -124,6 +132,7 @@ class ExtrasRepository @Inject constructor(
             }
         }
         models.await()?.let { extras = extras.copy(models = it, modelsFetchedAt = millis) }
+        air.await()?.let { extras = extras.copy(airQuality = it, airFetchedAt = millis) }
 
         if (extras == saved) return@coroutineScope false
         store.save(place.id, extras)
@@ -154,6 +163,9 @@ object ExtrasFreshness {
 
     /** Uyarılar: 15 dakika. */
     const val ALERTS = 15 * 60_000L
+
+    /** Hava kalitesi: saatte bir (model saatlik güncellenir). */
+    const val AIR = 55 * 60_000L
 
     /** Gelmeyen bir verinin yeniden denenmesi: bir saat. */
     const val RETRY = 60 * 60_000L

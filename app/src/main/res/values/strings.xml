@@ -184,7 +184,7 @@
     </plurals>
     <string name="no_saved_places_short">No saved places yet</string>
     <string name="settings_about">About</string>
-    <string name="settings_data_sources">Forecasts: in Türkiye, hourly and daily temperatures and the weather come from the Turkish State Meteorological Service (MGM); elsewhere, and for rain, UV and pressure everywhere, from Open-Meteo.com (CC BY 4.0). The ECMWF model (IFS and AIFS, © ECMWF, CC BY 4.0) is used through Open-Meteo as a backup and for comparison. Current conditions are checked against the nearest station: MGM stations in Türkiye, airport reports (METAR) from the NOAA Aviation Weather Center elsewhere. Place search: Photon, © OpenStreetMap contributors.</string>
+    <string name="settings_data_sources">Forecasts: in Türkiye, hourly and daily temperatures and the weather come from the Turkish State Meteorological Service (MGM); elsewhere, and for rain, UV and pressure everywhere, from Open-Meteo.com (CC BY 4.0). The ECMWF model (IFS and AIFS, © ECMWF, CC BY 4.0) is used through Open-Meteo as a backup and for comparison. Current conditions are checked against the nearest station: MGM stations in Türkiye, airport reports (METAR) from the NOAA Aviation Weather Center elsewhere. Air quality: Copernicus Atmosphere Monitoring Service (CAMS) through Open-Meteo (CC BY 4.0). Place search: Photon, © OpenStreetMap contributors.</string>
     <string name="unit_celsius" translatable="false">°C</string>
     <string name="unit_fahrenheit" translatable="false">°F</string>
 
@@ -833,4 +833,38 @@
     <string name="what_cloud">Cloud cover is the share of the sky that is covered by cloud. Under 20% the sky is clear; above 85% it is overcast. Thin, high clouds can cover the whole sky and still let the sun through, while low, thick clouds block it. Clear nights cool down faster; cloudy nights stay milder.</string>
     <string name="what_precipitation">The chance of precipitation is how likely it is that at least a little rain or snow falls at your place in that hour. The amount, in millimetres, tells how much: 1 mm is one litre of water on each square metre. Under 1 mm an hour is light, 1 to 4 mm is steady rain, more is heavy. A high chance with a small amount means a brief, light shower.</string>
     <string name="what_sun">Sunrise and sunset are the moments when the upper edge of the sun crosses the horizon. The time between them is the length of the day; it grows from late December to late June and shrinks for the rest of the year. It stays light for about half an hour before sunrise and after sunset. The UV is strongest when the sun is highest, around the middle of the day.</string>
+    <string name="air_quality">Air quality</string>
+    <string name="aqi_level_good">Good</string>
+    <string name="aqi_level_fair">Fair</string>
+    <string name="aqi_level_moderate">Moderate</string>
+    <string name="aqi_level_poor">Poor</string>
+    <string name="aqi_level_very_poor">Very poor</string>
+    <string name="aqi_level_extremely_poor">Extremely poor</string>
+    <string name="aqi_advice_good">The air is clean. Enjoy being outdoors.</string>
+    <string name="aqi_advice_fair">The air is fine for almost everyone.</string>
+    <string name="aqi_advice_moderate">Sensitive groups should take it easier during long or tiring activity outdoors.</string>
+    <string name="aqi_advice_poor">Sensitive groups should not stay outdoors for long. Everyone else should cut down on tiring activity outside.</string>
+    <string name="aqi_advice_very_poor">Sensitive groups should stay indoors. Everyone should avoid tiring activity outdoors.</string>
+    <string name="aqi_advice_extremely_poor">Stay indoors if you can and keep the windows closed.</string>
+    <string name="aqi_sensitive">Sensitive groups: children, older people, pregnant women and people with heart or lung conditions.</string>
+    <string name="aqi_advice_title">Health advice</string>
+    <string name="aqi_index_name">European Air Quality Index (0 is the cleanest)</string>
+    <string name="aqi_pollutants">Pollutants</string>
+    <string name="aqi_pm25">Fine particles (PM2.5)</string>
+    <string name="aqi_pm10">Particles (PM10)</string>
+    <string name="aqi_ozone">Ozone (O₃)</string>
+    <string name="aqi_no2">Nitrogen dioxide (NO₂)</string>
+    <string name="aqi_so2">Sulphur dioxide (SO₂)</string>
+    <string name="aqi_co">Carbon monoxide (CO)</string>
+    <string name="aqi_micrograms">%1$s µg/m³</string>
+    <string name="aqi_next_48">Next 48 hours</string>
+    <string name="aqi_three_days">3 days</string>
+    <string name="aqi_days_note">The highest value expected each day.</string>
+    <string name="aqi_card_line">%1$d · %2$s</string>
+    <string name="aqi_none">There is no air quality data for this place yet.</string>
+    <string name="aqi_source">Air quality: CAMS / Open-Meteo</string>
+    <string name="aqi_notification_title">%1$s · Air quality: %2$s</string>
+    <string name="settings_air_notifications">Poor air quality</string>
+    <string name="settings_air_notifications_hint">A notification when the air at one of your places turns poor or worse. At most once a day for each place.</string>
+    <string name="what_air_quality">The European Air Quality Index sums up how clean the air is, from the pollutant that is worst at that moment: fine particles, ozone, nitrogen dioxide or sulphur dioxide. Fine particles (PM2.5) matter most for health because they reach deep into the lungs. The values are a model forecast from the Copernicus Atmosphere Monitoring Service for an area of about ten kilometres, so a busy street can be worse than the number shown. Air is often worst on calm, cold mornings and during rush hours.</string>
 </resources>

@@ -65,6 +65,9 @@ class MainActivity : AppCompatActivity() {
     /** "Bugün için" widget'ına ya da sabah özetine dokunulunca uygulama o bölümle açılır. */
     private val openToday = mutableStateOf(false)
 
+    /** Bildirime dokunulunca açılacak ayrıntı sekmesi (ör. hava kalitesi). */
+    private val openTab = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Açılış ekranı, önbellekteki hava durumu ve ayarlar okunana kadar (genelde birkaç on
         // milisaniye) ekranda kalır; böylece kullanıcı boş ekran yerine doğrudan dolu ekranı görür.
@@ -77,6 +80,7 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             openHomeSettings.value = intent.wantsHomeSettings()
             openToday.value = intent.wantsToday()
+            openTab.value = intent.wantedTab()
             intent.selectWidgetPlace()
         }
         // Arka plan hep renkli bir gökyüzü olduğu için durum çubuğu ikonları beyaz kalsın.
@@ -92,6 +96,8 @@ class MainActivity : AppCompatActivity() {
                     onHomeSettingsOpened = { openHomeSettings.value = false },
                     openToday = openToday.value,
                     onTodayOpened = { openToday.value = false },
+                    openTab = openTab.value,
+                    onTabOpened = { openTab.value = null },
                 )
             }
         }
@@ -101,6 +107,7 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         if (intent.wantsHomeSettings()) openHomeSettings.value = true
         if (intent.wantsToday()) openToday.value = true
+        intent.wantedTab()?.let { openTab.value = it }
         intent.selectWidgetPlace()
     }
 
@@ -117,7 +124,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun Intent?.wantsToday(): Boolean = this?.getBooleanExtra(OpenTodayKey.name, false) == true
 
+    private fun Intent?.wantedTab(): String? =
+        if (this?.getBooleanExtra(OpenAirQualityKey.name, false) == true) com.alihaydarsayar.communesky.ui.detail.DetailTab.AirQuality.name else null
+
     companion object {
+        /** Hava kalitesi bildiriminden uygulamayı o sayfayla açmak için. */
+        val OpenAirQualityKey = ActionParameters.Key<Boolean>("open_air_quality")
+
         /** Widget'tan ya da bildirimden uygulamayı "Bugün için" bölümüyle açmak için. */
         val OpenTodayKey = ActionParameters.Key<Boolean>("open_today")
 
@@ -138,6 +151,8 @@ private fun CommuneSkyApp(
     onHomeSettingsOpened: () -> Unit,
     openToday: Boolean,
     onTodayOpened: () -> Unit,
+    openTab: String?,
+    onTabOpened: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -152,6 +167,12 @@ private fun CommuneSkyApp(
     val weather = uiState.selectedPage?.weather
     val scene = remember(weather) { weather?.currentScene() ?: placeholderScene() }
     val navController = rememberNavController()
+    LaunchedEffect(openTab) {
+        if (openTab != null) {
+            navController.navigate(DetailRoute(openTab)) { launchSingleTop = true }
+            onTabOpened()
+        }
+    }
     LaunchedEffect(openToday) {
         if (openToday) {
             navController.navigate(TodayRoute) { launchSingleTop = true }
@@ -182,6 +203,7 @@ private fun CommuneSkyApp(
                         onOpenDetail = { metric ->
                             navController.navigate(DetailRoute(com.alihaydarsayar.communesky.ui.detail.DetailTab.of(metric).name)) { launchSingleTop = true }
                         },
+                        onOpenTab = { tab -> navController.navigate(DetailRoute(tab.name)) { launchSingleTop = true } },
                     )
                 }
                 composable<DetailRoute> { entry ->

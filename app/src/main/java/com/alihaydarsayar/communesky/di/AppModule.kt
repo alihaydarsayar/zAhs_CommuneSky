@@ -132,6 +132,12 @@ object AppModule {
         retrofit(OpenMeteoApi.BASE_URL, client, json).create(com.alihaydarsayar.communesky.data.remote.OpenMeteoModelsApi::class.java)
 
     @Provides
+    @Singleton
+    fun provideAirQualityApi(client: OkHttpClient, json: Json): com.alihaydarsayar.communesky.data.remote.AirQualityApi =
+        retrofit(com.alihaydarsayar.communesky.data.remote.AirQualityApi.BASE_URL, client, json)
+            .create(com.alihaydarsayar.communesky.data.remote.AirQualityApi::class.java)
+
+    @Provides
     fun provideWeatherCacheDao(database: WeatherDatabase): WeatherCacheDao = database.weatherCacheDao()
 
     @Provides

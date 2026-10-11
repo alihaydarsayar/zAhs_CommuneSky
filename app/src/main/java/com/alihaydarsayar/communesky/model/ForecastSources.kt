@@ -68,6 +68,9 @@ data class PlaceExtras(
     /** Son karnenin özeti (bilgi kutusunda gösterilir) ve karnenin çıkarıldığı gün. */
     val accuracy: List<StoredAccuracy> = emptyList(),
     val decidedDay: Long = -1,
+    /** Hava kalitesi (CAMS); gelmediyse null. */
+    val airQuality: AirQuality? = null,
+    val airFetchedAt: Long = 0,
 ) {
     val isNational: Boolean get() = centerId != null
 

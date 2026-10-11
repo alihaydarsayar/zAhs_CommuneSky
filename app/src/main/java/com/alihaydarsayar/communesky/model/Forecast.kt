@@ -186,7 +186,12 @@ data class WeatherSnapshot(
     /** Bu yer için geçerli meteorolojik uyarılar (süresi dolanlar hariç), en ağırı önce. */
     val alerts: List<WeatherAlert> = emptyList(),
     val normal: SeasonalNormal? = null,
-)
+    /** Hava kalitesi; veri yoksa ya da eskiyse null. */
+    val airQuality: AirQuality? = null,
+) {
+    /** Şu anki hava kalitesi "kötü" ya da daha kötü mü (koşu önerisi buna bakar). */
+    val airQualityPoor: Boolean get() = airQuality?.at(forecast.localNow())?.level?.isPoor == true
+}
 
 /** Yağış uyarısı; anlık durum istasyon ölçümünden geliyorsa çelişkiler gösterilmez. */
 fun WeatherSnapshot.rainOutlook(now: LocalDateTime = forecast.localNow()): RainOutlook? =

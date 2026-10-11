@@ -198,8 +198,12 @@ fun DetailScreen(weather: WeatherSnapshot?, initial: DetailTab, title: String?, 
                     .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = bottom + 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                val metric = tabs[index].metric
-                if (metric != null) MetricPage(metric, weather)
+                val tab = tabs[index]
+                val metric = tab.metric
+                when {
+                    metric != null -> MetricPage(metric, weather)
+                    tab == DetailTab.AirQuality -> AirQualityPage(weather)
+                }
             }
         }
     }
@@ -216,9 +220,16 @@ enum class DetailTab(val metric: Metric?) {
     Cloud(Metric.Cloud),
     Precipitation(Metric.Precipitation),
     Sun(Metric.Sun),
+
+    /** Kendi düzeni olan sayfalar. */
+    AirQuality(null),
     ;
 
-    val label: Int get() = MetricText.tab(metric!!)
+    val label: Int
+        get() = when (this) {
+            AirQuality -> R.string.air_quality
+            else -> MetricText.tab(metric!!)
+        }
 
     companion object {
         fun of(metric: Metric): DetailTab = entries.first { it.metric == metric }

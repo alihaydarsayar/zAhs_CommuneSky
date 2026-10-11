@@ -66,7 +66,7 @@ val TipStatus.color: Color
 @Composable
 fun rememberTodayAdvice(weather: WeatherSnapshot): TodayAdvice {
     val shift = LocalAppSettings.current.wear.shift
-    return remember(weather, shift) { TodayAdvice.of(weather.forecast, weather.forecast.localNow(), shift) }
+    return remember(weather, shift) { TodayAdvice.of(weather.forecast, weather.forecast.localNow(), shift, weather.airQualityPoor) }
 }
 
 /**

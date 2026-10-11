@@ -124,6 +124,7 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenToday: () -> Unit = {},
     onOpenDetail: (com.alihaydarsayar.communesky.model.detail.Metric) -> Unit = {},
+    onOpenTab: (com.alihaydarsayar.communesky.ui.detail.DetailTab) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -168,8 +169,8 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
-    val actions = remember(viewModel, onOpenToday, onOpenDetail) {
-        HomeActions(onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday, onOpenDetail = onOpenDetail)
+    val actions = remember(viewModel, onOpenToday, onOpenDetail, onOpenTab) {
+        HomeActions(onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday, onOpenDetail = onOpenDetail, onOpenTab = onOpenTab)
     }
     androidx.compose.runtime.CompositionLocalProvider(LocalHomeActions provides actions) {
     HomeContent(
@@ -202,6 +203,8 @@ class HomeActions(
     val onOpenToday: () -> Unit = {},
     /** Bir ayrıntı kutucuğuna dokunuldu: o bilginin sayfası. */
     val onOpenDetail: (com.alihaydarsayar.communesky.model.detail.Metric) -> Unit = {},
+    /** Kendi düzeni olan bir ayrıntı sayfası (hava kalitesi, ay). */
+    val onOpenTab: (com.alihaydarsayar.communesky.ui.detail.DetailTab) -> Unit = {},
 )
 
 val LocalHomeActions = androidx.compose.runtime.staticCompositionLocalOf { HomeActions() }
@@ -493,6 +496,13 @@ private fun ForecastList(
         item(key = "hourly") { HourlyCard(forecast.current, hours) }
         item(key = "daily") { DailyCard(days, forecast.current.temperature) }
         if (weather.sources != null) item(key = "sources") { SourceLine(weather) }
+        // Hava kalitesi: küçük kart; dokununca sayfası açılır.
+        weather.airQuality?.let { air ->
+            item(key = "air") {
+                val actions = LocalHomeActions.current
+                com.alihaydarsayar.communesky.ui.detail.AirQualityCard(air, weather, onOpen = { actions.onOpenTab(com.alihaydarsayar.communesky.ui.detail.DetailTab.AirQuality) })
+            }
+        }
         item(key = "details") { DetailTiles(forecast.current, today, now, onOpen = LocalHomeActions.current.onOpenDetail) }
         item(key = "attribution") { Attribution() }
     }

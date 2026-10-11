@@ -114,6 +114,8 @@ class WeatherUpdater @Inject constructor(
         // Yeni turuncu/kırmızı uyarı varsa bildirim (aynı uyarı için bir kez); ek uyanma yok.
         val settings = settingsRepository.settings.first()
         com.alihaydarsayar.communesky.work.AlertNotifier.check(context, weatherRepository.allWeather.first().values, settings.alertNotifications)
+        // Hava kalitesi kötüleştiyse (ve kullanıcı istediyse) bildirim; yer başına günde en çok bir kez.
+        com.alihaydarsayar.communesky.work.AirQualityNotifier.check(context, weatherRepository.allWeather.first().values, settings.airQualityNotifications)
         // Sabah özeti alarmı telefon yeniden başlayınca silinir; burada geri kurulur (aynı alarm, ek uyanma yok).
         com.alihaydarsayar.communesky.work.MorningSummary.schedule(context, settings.morningSummary, settings.morningSummaryMinutes)
     }

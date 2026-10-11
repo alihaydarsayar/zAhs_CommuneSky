@@ -180,7 +180,7 @@
     </plurals>
     <string name="no_saved_places_short">Henüz kayıtlı yer yok</string>
     <string name="settings_about">Hakkında</string>
-    <string name="settings_data_sources">Tahminler: Türkiye’de saatlik ve günlük sıcaklık ile hava durumu Meteoroloji Genel Müdürlüğü’nden (MGM); diğer yerlerde ve her yerde yağış, UV ve basınç Open-Meteo.com’dan (CC BY 4.0) gelir. ECMWF modeli (IFS ve AIFS, © ECMWF, CC BY 4.0) Open-Meteo üzerinden yedek ve karşılaştırma için kullanılır. Anlık durum en yakın istasyonun ölçümüyle doğrulanır: Türkiye’de MGM istasyonları, diğer yerlerde NOAA Aviation Weather Center üzerinden havalimanı ölçümleri (METAR). Yer arama: Photon, © OpenStreetMap katkıcıları.</string>
+    <string name="settings_data_sources">Tahminler: Türkiye’de saatlik ve günlük sıcaklık ile hava durumu Meteoroloji Genel Müdürlüğü’nden (MGM); diğer yerlerde ve her yerde yağış, UV ve basınç Open-Meteo.com’dan (CC BY 4.0) gelir. ECMWF modeli (IFS ve AIFS, © ECMWF, CC BY 4.0) Open-Meteo üzerinden yedek ve karşılaştırma için kullanılır. Anlık durum en yakın istasyonun ölçümüyle doğrulanır: Türkiye’de MGM istasyonları, diğer yerlerde NOAA Aviation Weather Center üzerinden havalimanı ölçümleri (METAR). Hava kalitesi: Copernicus Atmosfer İzleme Servisi (CAMS), Open-Meteo üzerinden (CC BY 4.0). Yer arama: Photon, © OpenStreetMap katkıcıları.</string>
 
     <!-- Widget'lar: seçicideki 9 widget -->
     <string name="widget_kind_home">Ev ve konum</string>
@@ -827,4 +827,38 @@
     <string name="what_cloud">Bulutluluk, gökyüzünün bulutla kaplı kısmının oranıdır. %20 altında gökyüzü açıktır; %85 üstünde kapalıdır. İnce, yüksek bulutlar bütün gökyüzünü kaplasa da güneşi geçirir; alçak, kalın bulutlar ise keser. Açık geceler çabuk soğur; bulutlu geceler daha ılık kalır.</string>
     <string name="what_precipitation">Yağış ihtimali, o saatte bulunduğun yere en azından biraz yağmur ya da kar düşme olasılığıdır. Milimetre cinsinden miktar ise ne kadar düşeceğini söyler: 1 mm, her metrekareye bir litre su demektir. Saatte 1 mm altı hafif, 1–4 mm sürekli yağmur, daha fazlası kuvvetli yağıştır. İhtimal yüksek ama miktar azsa kısa ve hafif bir geçiş beklenir.</string>
     <string name="what_sun">Gün doğumu ve gün batımı, güneşin üst kenarının ufuk çizgisinden geçtiği anlardır. İkisinin arası gün uzunluğudur; aralık sonundan haziran sonuna kadar uzar, yılın geri kalanında kısalır. Gün doğumundan önce ve gün batımından sonra yaklaşık yarım saat hava aydınlıktır. UV, güneşin en yüksekte olduğu öğle saatlerinde en kuvvetlidir.</string>
+    <string name="air_quality">Hava kalitesi</string>
+    <string name="aqi_level_good">İyi</string>
+    <string name="aqi_level_fair">Makul</string>
+    <string name="aqi_level_moderate">Orta</string>
+    <string name="aqi_level_poor">Kötü</string>
+    <string name="aqi_level_very_poor">Çok kötü</string>
+    <string name="aqi_level_extremely_poor">Son derece kötü</string>
+    <string name="aqi_advice_good">Hava temiz. Dışarıda rahatça vakit geçirebilirsin.</string>
+    <string name="aqi_advice_fair">Hava hemen herkes için uygun.</string>
+    <string name="aqi_advice_moderate">Hassas gruplar dışarıda uzun ve yorucu etkinlikleri azaltsın.</string>
+    <string name="aqi_advice_poor">Hassas gruplar uzun süre dışarıda kalmasın. Herkes dışarıdaki yorucu etkinlikleri azaltsın.</string>
+    <string name="aqi_advice_very_poor">Hassas gruplar içeride kalsın. Herkes dışarıda yorucu etkinlikten kaçınsın.</string>
+    <string name="aqi_advice_extremely_poor">Mümkünse içeride kal ve pencereleri kapalı tut.</string>
+    <string name="aqi_sensitive">Hassas gruplar: çocuklar, yaşlılar, hamileler ve kalp ya da akciğer rahatsızlığı olanlar.</string>
+    <string name="aqi_advice_title">Sağlık önerisi</string>
+    <string name="aqi_index_name">Avrupa Hava Kalitesi İndeksi (0 en temiz)</string>
+    <string name="aqi_pollutants">Kirleticiler</string>
+    <string name="aqi_pm25">İnce partiküller (PM2.5)</string>
+    <string name="aqi_pm10">Partiküller (PM10)</string>
+    <string name="aqi_ozone">Ozon (O₃)</string>
+    <string name="aqi_no2">Azot dioksit (NO₂)</string>
+    <string name="aqi_so2">Kükürt dioksit (SO₂)</string>
+    <string name="aqi_co">Karbon monoksit (CO)</string>
+    <string name="aqi_micrograms">%1$s µg/m³</string>
+    <string name="aqi_next_48">Önümüzdeki 48 saat</string>
+    <string name="aqi_three_days">3 gün</string>
+    <string name="aqi_days_note">Her gün için beklenen en yüksek değer.</string>
+    <string name="aqi_card_line">%1$d · %2$s</string>
+    <string name="aqi_none">Bu yer için hava kalitesi verisi henüz yok.</string>
+    <string name="aqi_source">Hava kalitesi: CAMS / Open-Meteo</string>
+    <string name="aqi_notification_title">%1$s · Hava kalitesi: %2$s</string>
+    <string name="settings_air_notifications">Kötü hava kalitesi</string>
+    <string name="settings_air_notifications_hint">Yerlerinden birinde hava kalitesi kötü ya da daha kötü olunca bir bildirim. Her yer için günde en çok bir kez.</string>
+    <string name="what_air_quality">Avrupa Hava Kalitesi İndeksi, havanın ne kadar temiz olduğunu o an en kötü durumdaki kirleticiye göre özetler: ince partiküller, ozon, azot dioksit ya da kükürt dioksit. İnce partiküller (PM2.5) akciğerin derinlerine ulaştığı için sağlık açısından en önemlisidir. Değerler, Copernicus Atmosfer İzleme Servisi\'nin yaklaşık on kilometrelik bir alan için model tahminidir; işlek bir caddede hava gösterilenden kötü olabilir. Hava çoğu zaman rüzgârsız, soğuk sabahlarda ve trafiğin yoğun olduğu saatlerde en kirlidir.</string>
 </resources>

@@ -52,7 +52,7 @@ fun openTodayAction(): Action {
 @Composable
 private fun todayAdvice(data: WidgetPlaceData): TodayAdvice {
     val forecast = data.snapshot.forecast
-    return TodayAdvice.of(forecast, forecast.localNow(), LocalAppSettings.current.wear.shift)
+    return TodayAdvice.of(forecast, forecast.localNow(), LocalAppSettings.current.wear.shift, data.snapshot.airQualityPoor)
 }
 
 /** En kısa ad ("Kazak"): dar widget'larda. */

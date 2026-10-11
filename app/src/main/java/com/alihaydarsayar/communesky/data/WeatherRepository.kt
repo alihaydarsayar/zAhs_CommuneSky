@@ -164,6 +164,8 @@ fun WeatherSnapshot.withExtras(extras: com.alihaydarsayar.communesky.model.Place
         sources = merged.sources,
         alerts = extras.alerts.filter { it.endsAt.isAfter(now) },
         normal = extras.normal?.takeIf { it.month == now.monthValue && it.day == now.dayOfMonth },
+        // Şimdiki saati içermeyen (eskimiş) hava kalitesi gösterilmez.
+        airQuality = extras.airQuality?.takeIf { it.at(now) != null },
     )
 }
 

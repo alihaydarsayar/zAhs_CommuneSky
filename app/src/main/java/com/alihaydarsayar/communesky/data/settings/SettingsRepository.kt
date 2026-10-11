@@ -38,6 +38,7 @@ class SettingsRepository @Inject constructor(
                 windUnit = prefs[WIND_UNIT].toEnum(WindUnit.KilometersPerHour),
                 themeMode = prefs[THEME_MODE].toEnum(ThemeMode.System),
                 alertNotifications = prefs[ALERT_NOTIFICATIONS] ?: true,
+                airQualityNotifications = prefs[AIR_NOTIFICATIONS] ?: false,
                 morningSummary = prefs[MORNING_SUMMARY] ?: false,
                 morningSummaryMinutes = (prefs[MORNING_SUMMARY_MINUTES] ?: AppSettings().morningSummaryMinutes).coerceIn(0, 24 * 60 - 1),
                 wear = WearSettings(
@@ -67,6 +68,10 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setAlertNotifications(enabled: Boolean) {
         dataStore.edit { it[ALERT_NOTIFICATIONS] = enabled }
+    }
+
+    suspend fun setAirQualityNotifications(enabled: Boolean) {
+        dataStore.edit { it[AIR_NOTIFICATIONS] = enabled }
     }
 
     suspend fun setMorningSummary(enabled: Boolean) {
@@ -120,6 +125,7 @@ class SettingsRepository @Inject constructor(
         val NEARBY_SHOW_BOTH = booleanPreferencesKey("nearby_show_both")
         val ALERT_NOTIFICATIONS = booleanPreferencesKey("alert_notifications")
         val WEAR_SENSITIVITY = stringPreferencesKey("wear_sensitivity")
+        val AIR_NOTIFICATIONS = booleanPreferencesKey("air_quality_notifications")
         val MORNING_SUMMARY = booleanPreferencesKey("morning_summary")
         val MORNING_SUMMARY_MINUTES = intPreferencesKey("morning_summary_minutes")
         val WEAR_FEEDBACK = doublePreferencesKey("wear_feedback")

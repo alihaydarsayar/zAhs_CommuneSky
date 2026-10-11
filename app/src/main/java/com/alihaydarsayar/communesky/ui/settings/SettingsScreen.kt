@@ -82,6 +82,8 @@ class SettingsViewModel @Inject constructor(
 
     fun setAlertNotifications(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAlertNotifications(enabled) }
 
+    fun setAirQualityNotifications(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAirQualityNotifications(enabled) }
+
     /** Sabah özeti: ayarı kaydeder ve alarmı kurar ya da kaldırır. */
     fun setMorningSummary(context: android.content.Context, enabled: Boolean, minutes: Int) = viewModelScope.launch {
         settingsRepository.setMorningSummary(enabled)
@@ -332,6 +334,16 @@ fun SettingsScreen(
                             if (on) ensurePermission()
                         },
                         subtitle = stringResource(R.string.settings_alert_notifications_hint),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    com.alihaydarsayar.communesky.ui.common.GlassSwitchRow(
+                        title = stringResource(R.string.settings_air_notifications),
+                        checked = settings.airQualityNotifications,
+                        onCheckedChange = { on ->
+                            viewModel.setAirQualityNotifications(on)
+                            if (on) ensurePermission()
+                        },
+                        subtitle = stringResource(R.string.settings_air_notifications_hint),
                     )
                     Spacer(Modifier.height(8.dp))
                     // Sabah özeti: varsayılan kapalı; açılınca saat seçilebilir.
