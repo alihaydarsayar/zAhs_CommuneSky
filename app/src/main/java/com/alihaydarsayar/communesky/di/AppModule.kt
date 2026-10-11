@@ -93,6 +93,11 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideMgmForecastApi(client: OkHttpClient, json: Json): com.alihaydarsayar.communesky.data.mgm.MgmForecastApi =
+        retrofit(MgmApi.BASE_URL, client, json).create(com.alihaydarsayar.communesky.data.mgm.MgmForecastApi::class.java)
+
+    @Provides
+    @Singleton
     fun provideAviationWeatherApi(client: OkHttpClient, json: Json): AviationWeatherApi =
         retrofit(AviationWeatherApi.BASE_URL, client, json).create(AviationWeatherApi::class.java)
 

@@ -21,7 +21,7 @@ What's new in each version of Commune Sky.
 - Smoother style swiping on the widget setup screen: while you swipe, the styles beside the current one are shown as ready pictures; the style you stop on switches to the live preview without any visible change.
 - Housekeeping: build warnings fixed.
 
-## 1.4 — 11 October 2026
+## 1.4 — October 11, 2026
 
 - **Widgets keep your settings.** Choosing another style no longer resets your background, colors, corners or anything else you picked; only the style changes. Switching the background keeps the transparency you set.
 - **What you see is what you get.** The preview on the setup screen is now drawn at the real size of the widget on your home screen, so the saved widget looks the same as the preview.
