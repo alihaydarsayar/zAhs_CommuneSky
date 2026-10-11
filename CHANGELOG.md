@@ -2,11 +2,26 @@
 
 What's new in each version of Commune Sky.
 
-## 1.6 — in testing
+## 1.5 — in testing
 
+- Fixed: on some home screens a clock showed a small, different layout in a corner instead of the style you saved. Widgets now keep their style and fill their space at every size.
+- Fixed: picking a color theme did not always change the widget. A theme now replaces the colors you chose one by one (you can undo it), and the color list shows only the colors that widget really uses.
+- Fixed: widgets used the phone's language instead of the language you chose in the app.
+- Fixed: temperatures could be shortened to "…" in a narrow widget. Numbers are never cut; the text gets smaller instead.
+- Fixed: hour labels could be cut in the hourly widgets when your phone uses the 12-hour clock.
+- Fixed: the Home & location widget had an empty middle when no home was set.
+- Fixed: when you are away, tapping the home side of the widget now opens home and tapping the other side opens where you are. In My places and in the clock with your places, each place opens its own page.
+- Fixed: tapping the place name on a clock widget did nothing; it now opens Commune Sky.
+- The widget setup screen uses less memory while you swipe through styles.
+- **Sharper widgets.** Analog dials, clock hands and the soft veil behind text are now drawn as shapes that stay crisp at any size. The temperature curve, the radial clock lines and the sun path are drawn at your screen's full resolution.
+- The accent color ("Today", the "now" dot) is lightened or darkened automatically when it would be hard to read on the widget's background, for example red on a blue sky.
+- Widgets now refresh on the hour, so "Now" and the hourly strip show the right hour. No extra wake-ups: the hourly update is simply timed to the full hour.
+- The radial clock with a sky background and the seconds effect sends a much smaller picture to your home screen and looks the same. If a widget's pictures would ever be too large for the home screen, it shows a simple layout instead of staying empty.
+- **New: Settings › Clock format.** Choose "Same as phone", 24-hour or 12-hour for the app and all widgets. In Turkish the default is 24-hour; in other languages it follows your phone. The widget preview and the home screen always match.
+- Smoother style swiping on the widget setup screen: while you swipe, the styles beside the current one are shown as ready pictures; the style you stop on switches to the live preview without any visible change.
 - Housekeeping: build warnings fixed.
 
-## 1.4 — in testing
+## 1.4 — 11 October 2026
 
 - **Widgets keep your settings.** Choosing another style no longer resets your background, colors, corners or anything else you picked; only the style changes. Switching the background keeps the transparency you set.
 - **What you see is what you get.** The preview on the setup screen is now drawn at the real size of the widget on your home screen, so the saved widget looks the same as the preview.
@@ -28,21 +43,6 @@ What's new in each version of Commune Sky.
 - Choose cathedral, slim cathedral or Breguet hands for the SS clock.
 - On the SS clock the date, the seal and the weather sit farther from the center, so the hands cover them less.
 - Example places in previews are now Besiktas, Liverpool and Limerick.
-- Fixed: on some home screens a clock showed a small, different layout in a corner instead of the style you saved. Widgets now keep their style and fill their space at every size.
-- Fixed: picking a color theme did not always change the widget. A theme now replaces the colors you chose one by one (you can undo it), and the color list shows only the colors that widget really uses.
-- Fixed: widgets used the phone's language instead of the language you chose in the app.
-- Fixed: temperatures could be shortened to "…" in a narrow widget. Numbers are never cut; the text gets smaller instead.
-- Fixed: hour labels could be cut in the hourly widgets when your phone uses the 12-hour clock.
-- Fixed: the Home & location widget had an empty middle when no home was set.
-- Fixed: when you are away, tapping the home side of the widget now opens home and tapping the other side opens where you are. In My places and in the clock with your places, each place opens its own page.
-- Fixed: tapping the place name on a clock widget did nothing; it now opens Commune Sky.
-- The widget setup screen uses less memory while you swipe through styles.
-- **Sharper widgets.** Analog dials, clock hands and the soft veil behind text are now drawn as shapes that stay crisp at any size. The temperature curve, the radial clock lines and the sun path are drawn at your screen's full resolution.
-- The accent color ("Today", the "now" dot) is lightened or darkened automatically when it would be hard to read on the widget's background, for example red on a blue sky.
-- Widgets now refresh on the hour, so "Now" and the hourly strip show the right hour. No extra wake-ups: the hourly update is simply timed to the full hour.
-- The radial clock with a sky background and the seconds effect sends a much smaller picture to your home screen and looks the same. If a widget's pictures would ever be too large for the home screen, it shows a simple layout instead of staying empty.
-- **New: Settings › Clock format.** Choose "Same as phone", 24-hour or 12-hour for the app and all widgets. In Turkish the default is 24-hour; in other languages it follows your phone. The widget preview and the home screen always match.
-- Smoother style swiping on the widget setup screen: while you swipe, the styles beside the current one are shown as ready pictures; the style you stop on switches to the live preview without any visible change.
 
 ## 1.3 — in testing
 
