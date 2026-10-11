@@ -95,7 +95,10 @@ class MainActivity : AppCompatActivity() {
     /** Widget'ta havaya dokunulunca uygulama o widget'ın yeriyle açılır. */
     private fun Intent?.selectWidgetPlace() {
         val placeId = this?.getLongExtra(OpenPlaceKey.name, NO_PLACE) ?: NO_PLACE
-        if (placeId != NO_PLACE) viewModel.onPageSelected(placeId)
+        if (placeId == NO_PLACE) return
+        // Debug sürümünde hangi yerin istendiği loglanır (yalnız kimlik numarası; denetim için).
+        if (com.alihaydarsayar.communesky.widget.WidgetTiming.enabled(this@MainActivity)) android.util.Log.d("WidgetTap", "open_place=$placeId")
+        viewModel.onPageSelected(placeId)
     }
 
     private fun Intent?.wantsHomeSettings(): Boolean = this?.getBooleanExtra(OpenHomeSettingsKey.name, false) == true

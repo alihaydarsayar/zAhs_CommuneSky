@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.widget
 
+import androidx.glance.action.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceModifier
@@ -290,7 +291,8 @@ private fun PlacesColumns(places: List<WidgetPlaceData>) {
                 if (index > 0) VDivider(GlanceModifier.fillMaxHeight().padding(vertical = 8.sd))
                 val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
                 Column(
-                    GlanceModifier.defaultWeight().fillMaxHeight(),
+                    // Her yer kendi sayfasını açar.
+                    GlanceModifier.defaultWeight().fillMaxHeight().clickable(openPlaceAction(data.snapshot.placeId)),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -340,7 +342,7 @@ private fun PlacesList(places: List<WidgetPlaceData>) {
                 if (index > 0) HDivider()
                 val current = data.snapshot.forecast.current
                 val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
-                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                Row(GlanceModifier.fillMaxWidth().defaultWeight().clickable(openPlaceAction(data.snapshot.placeId)), verticalAlignment = Alignment.CenterVertically) {
                     Column(GlanceModifier.defaultWeight()) {
                         PlaceLabel(data, 14f)
                         WText(context.getString(weatherDescriptionRes(current.weatherCode)), 12f, color = theme.colors.secondary)

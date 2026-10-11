@@ -165,7 +165,7 @@ private fun ClockBig(data: WidgetPlaceData) {
     val showWeather = theme.shows(WidgetContent.Weather)
     WidgetSurface(horizontal = 16.sd, vertical = 16.sd, contentAlignment = Alignment.CenterStart) {
         Column(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-            if (theme.shows(WidgetContent.PlaceName)) PlaceLabel(data, 16f, iconAfter = true)
+            if (theme.shows(WidgetContent.PlaceName)) PlaceLabel(data, 16f, GlanceModifier.clickableApp(), iconAfter = true)
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 WClock(ClockPart.Time, clockSize(96f, size.width.value - 32f - (if (showWeather) 82f else 0f), size.height.value - 32f - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(16f, theme) else 0f) - lineHeightDp(22f, theme) - 4f), GlanceModifier.defaultWeight())
                 if (showWeather) {
@@ -207,7 +207,7 @@ private fun ClockSide(data: WidgetPlaceData) {
             Column(horizontalAlignment = Alignment.End) {
                 WClock(ClockPart.Time, clockSize(88f, clockWidth, size.height.value - 32f - lineHeightDp(17f, theme) - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(15f, theme) else 0f)), contentAlignment = Alignment.CenterEnd)
                 WClock(ClockPart.Date, 17f, weight = WWeight.Regular, dateSkeleton = dateSkeletonFor(clockWidth, 17f), contentAlignment = Alignment.CenterEnd)
-                if (theme.shows(WidgetContent.PlaceName)) PlaceLabel(data, 15f, weight = WWeight.Regular, color = theme.colors.secondary, iconAfter = true)
+                if (theme.shows(WidgetContent.PlaceName)) PlaceLabel(data, 15f, GlanceModifier.clickableApp(), weight = WWeight.Regular, color = theme.colors.secondary, iconAfter = true)
             }
             if (weather) {
                 HSpace(20.sd)
@@ -245,7 +245,7 @@ private fun ClockLine(data: WidgetPlaceData) {
                 WClock(ClockPart.Date, 15f, weight = WWeight.Regular, dateSkeleton = "dMMMMEEE")
                 if (showPlace) {
                     LineSeparator()
-                    PlaceLabel(data, 15f, weight = WWeight.Regular)
+                    PlaceLabel(data, 15f, GlanceModifier.clickableApp(), weight = WWeight.Regular)
                 }
                 if (theme.shows(WidgetContent.Weather)) {
                     LineSeparator()
@@ -354,10 +354,11 @@ private fun ClockHome(input: WidgetInput) {
                 WClock(ClockPart.Date, 17f, weight = WWeight.Regular, dateSkeleton = dateSkeletonFor(size.width.value - 32f - 12f - side, 17f))
             }
             HSpace(12.sd)
-            Column(GlanceModifier.width(side.sd).clickableApp()) {
+            Column(GlanceModifier.width(side.sd)) {
                 rows.forEachIndexed { index, (data, extra) ->
                     if (index > 0) VSpace(12.sd)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Her yer kendi sayfasını açar.
+                    Row(GlanceModifier.fillMaxWidth().clickable(openPlaceAction(data.snapshot.placeId)), verticalAlignment = Alignment.CenterVertically) {
                         CurrentGlyph(data.snapshot, 30.sd)
                         HSpace(8.sd)
                         Column {
