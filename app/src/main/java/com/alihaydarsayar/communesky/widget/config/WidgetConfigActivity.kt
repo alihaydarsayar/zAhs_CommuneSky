@@ -475,7 +475,9 @@ private fun PreviewStage(
                     .semantics { contentDescription = description },
                 contentAlignment = Alignment.Center,
             ) {
-                WidgetRender(kind, styled, size, scale, input, wallpaperDarkText = darkText)
+                // Açılışta önce ekrandaki stil çizilir; diğer sayfalar uzaklıklarına göre sırayla.
+                val wait = 80L + 150L * kotlin.math.abs(index - pager.currentPage).coerceAtMost(8)
+                WidgetRender(kind, styled, size, scale, input, wallpaperDarkText = darkText, delayMs = wait)
             }
         }
         if (!compact) {

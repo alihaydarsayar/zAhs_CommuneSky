@@ -66,6 +66,7 @@ class WidgetStyleSavingTest {
         windowColor = 0xFF0F2233.toInt(),
         logo = false,
         showDate = false,
+        ssHands = SsHands.Breguet,
     )
 
     @Test
@@ -76,7 +77,7 @@ class WidgetStyleSavingTest {
             "style", "background", "transparency", "colorTheme", "textColor", "corners", "textSize", "contents", "touched",
             "weight", "infoRow", "legibility", "accent", "customBackground", "customText", "customSecondary", "clockFont", "hourColor",
             "minuteColor", "lineColor", "pillColor", "secondEffect", "secondHand", "secondSymbol", "dialColor", "numeralColor",
-            "handColor", "highlighted", "ringCool", "ringWarm", "ringRain", "windowColor", "logo", "showDate",
+            "handColor", "highlighted", "ringCool", "ringWarm", "ringRain", "windowColor", "logo", "showDate", "ssHands",
         )
         val a = everything.toString().removePrefix("WidgetStyle(").removeSuffix(")")
         val b = defaults.toString().removePrefix("WidgetStyle(").removeSuffix(")")
@@ -263,6 +264,8 @@ class WidgetStyleSavingTest {
         assertEquals(SsClock.Preset.Classic, SsClock.preset(style))
         assertEquals(0xFFD93A3F.toInt(), SsClock.look(style).accent)
         assertTrue(style.logo && style.showDate && style.secondHand)
+        // Kol ayarı gelmeden kaydedilmiş SS saatleri Katedral kollarla açılır.
+        assertEquals(SsHands.Cathedral, style.ssHands)
 
         val night = SsClock.apply(style, SsClock.Preset.NightBlue)
         assertEquals(SsClock.Preset.NightBlue, SsClock.preset(night))

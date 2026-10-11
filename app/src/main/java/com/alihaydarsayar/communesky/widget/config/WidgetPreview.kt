@@ -103,12 +103,14 @@ fun WidgetRender(
     input: WidgetInput,
     /** Önizleme hangi zeminde duruyor: true açık (koyu yazı), false koyu, null telefonun duvar kâğıdı. */
     wallpaperDarkText: Boolean? = null,
+    /** Çizimden önceki bekleme. Görünmeyen sayfalar daha geç çizilir: önce ekrandaki önizleme gelir. */
+    delayMs: Long = 80,
 ) {
     val context = LocalContext.current
     var views by remember { mutableStateOf<RemoteViews?>(null) }
     // Ayar değişmedikçe yeniden çizilmez; art arda gelen değişiklikler (kaydırıcı) tek çizimde birleşir.
     LaunchedEffect(kind, config, size, wallpaperDarkText) {
-        delay(80)
+        delay(delayMs)
         // Bileşim arka planda: stil kaydırılırken ekran takılmasın.
         views = withContext(Dispatchers.Default) {
             runCatching {
