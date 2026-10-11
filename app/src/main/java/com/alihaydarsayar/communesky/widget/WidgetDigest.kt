@@ -75,11 +75,14 @@ internal object WidgetDigest {
         return listOf(
             info.lastUpdateTime,
             Build.VERSION.SDK_INT,
+            // Uygulamanın seçili dili ve bugünün tarihi (tarih metin olarak yazılıyorsa gün değişince yenilenir).
+            WidgetLanguage.tag(context),
+            java.time.LocalDate.now(),
             configuration.locales.toLanguageTags(),
             configuration.fontScale,
             configuration.densityDpi,
             configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK,
-            DateFormat.is24HourFormat(context),
+            WidgetLanguage.is24Hour(context),
             TimeZone.getDefault().id,
             WallpaperTone.prefersDarkText(context),
             WallpaperTone.colors(context),

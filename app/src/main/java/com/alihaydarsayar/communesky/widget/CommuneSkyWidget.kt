@@ -82,7 +82,13 @@ abstract class CommuneSkyWidget(
         val loaded = SystemClock.elapsedRealtimeNanos()
         val debug = WidgetTiming.enabled(context)
         if (debug) WidgetSizeLog.options(context, kind, id)
+        // Ana ekrandaki widget uygulamanın seçili diliyle çizilir (süreç telefonun diliyle çalışır).
+        // Önizleme ve testlerde verilen bağlam zaten doğru dildedir.
+        val drawContext = if (previewConfig == null) WidgetLanguage.context(context) else context
+        // Tarih metin olarak yazılıyorsa (diller farklı) gün değişince bir kez yenilenmesi planlanır.
+        if (previewConfig == null && WidgetLanguage.differsFromSystem(drawContext)) WidgetDateReceiver.schedule(context)
         provideContent {
+            CompositionLocalProvider(LocalContext provides drawContext) {
             val config by configFlow.collectAsState(initialConfig)
             val input by inputFlow.collectAsState(initialInput)
             // Çizim, sistem izlerinde (Perfetto, Macrobenchmark) "CommuneSky.widget.<tür>" bölümü olarak görünür;
@@ -98,6 +104,7 @@ abstract class CommuneSkyWidget(
                 WidgetRoot(kind, config, input, previewWallpaperDarkText)
             }
             Trace.endSection()
+            }
         }
     }
 
@@ -106,8 +113,11 @@ abstract class CommuneSkyWidget(
      * Seçici görselinde kullanıcının kendi yeri (evi, mahallesi) görünmez.
      */
     override suspend fun providePreview(context: Context, widgetCategory: Int) {
-        val input = WidgetSamples.input(context, scenario = WidgetSamples.Scenario.AtHome)
-        provideContent { WidgetRoot(kind, WidgetConfig.default(kind), input) }
+        val drawContext = WidgetLanguage.context(context)
+        val input = WidgetSamples.input(drawContext, scenario = WidgetSamples.Scenario.AtHome)
+        provideContent {
+            CompositionLocalProvider(LocalContext provides drawContext) { WidgetRoot(kind, WidgetConfig.default(kind), input) }
+        }
     }
 
     /**
@@ -198,12 +208,20 @@ object WidgetSizeLog {
             .map { it.activityInfo.packageName }.filter { it != "com.android.settings" }.distinct().joinToString("+")
     }.getOrNull()?.ifEmpty { null } ?: "?"
 
+    /** Ayarın kısa özeti: kaydedilen ile çizilen ayar aynı mı diye karşılaştırmak için (içeriği loglanmaz). */
+    private fun digest(config: WidgetConfig): Int = config.toString().hashCode()
+
+    /** Ayar ekranı "Kaydet"e basınca: hangi widget'a hangi ayar yazıldı. Debug sürümünde loglanır. */
+    fun saved(context: Context, kind: WidgetKind, appWidgetId: Int, config: WidgetConfig) {
+        if (WidgetTiming.enabled(context)) Log.d(TAG, "${kind.name} #$appWidgetId kaydedildi stil=${config.style.styleId(kind).name} ayar=%08x".format(java.util.Locale.ROOT, digest(config)))
+    }
+
     fun drawn(kind: WidgetKind, config: WidgetConfig, size: DpSize) {
         val style = config.style.styleId(kind)
         val real = WidgetScale.real(style, size)
         val grow = WidgetScale.grow(style, real)
         val layout = if (WidgetScale.compact(style, real)) "yedek(kucuk)" else "stil"
-        Log.d(TAG, "${kind.name}/${style.name} cizim=%.0fx%.0fdp buyume=%.2f duzen=%s".format(java.util.Locale.ROOT, size.width.value, size.height.value, grow, layout))
+        Log.d(TAG, "${kind.name}/${style.name} cizim=%.0fx%.0fdp buyume=%.2f duzen=%s ayar=%08x".format(java.util.Locale.ROOT, size.width.value, size.height.value, grow, layout, digest(config)))
     }
 }
 
@@ -343,6 +361,7 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput, wallp
         style = config.style,
         colors = WidgetColors.resolve(context, config.style, primary.skyTheme(), wallpaperDarkText ?: WallpaperTone.prefersDarkText(context)),
         fontScaleFix = WidgetTheme.fontScaleFix(context),
+        staticDate = WidgetLanguage.differsFromSystem(context),
         grow = grow,
         compact = WidgetScale.compact(styleId, real),
     )
@@ -475,7 +494,7 @@ object WeatherWidgetUpdater {
         val store = WidgetConfigStore.get(context)
         val version = androidx.core.content.pm.PackageInfoCompat
             .getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0))
-            .let { code -> "$code:${locale(context).toLanguageTag()}:$PREVIEWS_REVISION".hashCode() }
+            .let { code -> "$code:${locale(WidgetLanguage.context(context)).toLanguageTag()}:$PREVIEWS_REVISION".hashCode() }
         if (store.previewsPublishedVersion() == version) return
         val manager = GlanceAppWidgetManager(context)
         var allPublished = true

@@ -58,6 +58,15 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info_home" />
         </receiver>
+        <!-- Tarih metin olarak yazıldığında (uygulama dili telefonunkinden farklıyken) gün, saat ya da saat dilimi değişince widget'ları yeniler. -->
+        <receiver
+            android:name=".widget.WidgetDateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
         <receiver
             android:name=".widget.ClockWidgetReceiver"
             android:exported="true"

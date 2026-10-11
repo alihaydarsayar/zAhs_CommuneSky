@@ -95,8 +95,14 @@ enum class AppLanguage(val tag: String) {
             return entries.firstOrNull { it.tag == tag && it != System } ?: System
         }
 
-        fun apply(language: AppLanguage) {
+        /** Dili değiştirir; widget'lar da seçimi öğrenir ve hemen yeni dille yeniden çizilir. */
+        fun apply(language: AppLanguage, context: android.content.Context) {
+            val app = context.applicationContext
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.tag))
+            com.alihaydarsayar.communesky.widget.WidgetLanguage.remember(app, language.tag)
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
+                com.alihaydarsayar.communesky.widget.WeatherWidgetUpdater.updateAll(app)
+            }
         }
     }
 }
@@ -112,6 +118,7 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val placeCount by viewModel.placeCount.collectAsStateWithLifecycle()
     var language by remember { mutableStateOf(AppLanguage.current()) }
+    val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Column(Modifier.fillMaxSize()) {
@@ -227,8 +234,8 @@ fun SettingsScreen(
                         selectedIndex = language.ordinal,
                         onSelect = { index ->
                             language = AppLanguage.entries[index]
-                            // Ekran yeni dilde yeniden oluşturulur.
-                            AppLanguage.apply(language)
+                            // Ekran yeni dilde yeniden oluşturulur; widget'lar da hemen yeni dille çizilir.
+                            AppLanguage.apply(language, appContext)
                         },
                     )
                 }

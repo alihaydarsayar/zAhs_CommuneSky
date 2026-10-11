@@ -64,6 +64,11 @@ data class WidgetTheme(
     /** Sistem yazı boyutu çok büyükse widget düzeni bozulmasın diye ölçek en fazla 1,15 sayılır. */
     val fontScaleFix: Float,
     /**
+     * Tarih normal metin olarak mı yazılsın? Çizim dili telefonun dilinden farklıysa evet: Android'in
+     * saat bileşeni tarihi ana ekran uygulamasının diliyle yazar (bkz. [WidgetLanguage.differs]).
+     */
+    val staticDate: Boolean = false,
+    /**
      * Ölçek: widget, stilin tasarım boyutundan büyükse 1'den büyük, stilin sığdığı en küçük boyuttan
      * küçükse 1'den küçük (bkz. [WidgetScale]). Stil kendini "tasarım dp"siyle çizer ([sd]); yazı, ikon,
      * boşluk ve kenar boşluğu bu oranla birlikte büyür ya da küçülür: büyük widget'ta içerik alanı
@@ -82,8 +87,8 @@ data class WidgetTheme(
     /** "18:03" yazısının genişliği, yazı boyutu cinsinden (dar rakamlar daha az yer tutar). */
     val clockEms: Float get() = if (clockFont == ClockFont.Digits || clockFont == ClockFont.DigitsOutline) 2.35f else 2.6f
 
-    val hourColor: Color get() = style.hourColor?.let { Color(it) } ?: colors.palette.hour?.takeIf { !colors.onWallpaper } ?: colors.text
-    val minuteColor: Color get() = style.minuteColor?.let { Color(it) } ?: colors.palette.minute?.takeIf { !colors.onWallpaper && style.hourColor == null } ?: hourColor
+    val hourColor: Color get() = ClockDigitColors.hour(styleId, style, colors)
+    val minuteColor: Color get() = ClockDigitColors.minute(styleId, style, colors)
 
     fun shows(content: WidgetContent): Boolean = style.shows(kind, content)
 
@@ -96,6 +101,30 @@ data class WidgetTheme(
             return min(scale, 1.15f) / scale
         }
     }
+}
+
+/**
+ * Saat ve dakika rakamlarının rengi. Hem çizim hem ayar ekranındaki renk listesi bu kuralı kullanır;
+ * böylece listede görünen renk, widget'ta gerçekten kullanılan renktir.
+ *
+ * Kullanıcı seçtiyse o renk. Seçmediyse temanın saat/dakika rengi; yazı duvar kâğıdının üstündeyse
+ * (saydam, cam) okunurluk için otomatik yazı rengi. "Kalın" stili dolu zeminde temanın açık kutusunun
+ * koyu tonlarını kullanır.
+ */
+object ClockDigitColors {
+    fun hour(styleId: WidgetStyleId, style: WidgetStyle, colors: WidgetColors): Color {
+        style.hourColor?.let { return Color(it) }
+        if (styleId == WidgetStyleId.ClockBold) return if (boldFilled(style)) colors.palette.onContainer else colors.text
+        return colors.palette.hour?.takeIf { !colors.onWallpaper } ?: colors.text
+    }
+
+    fun minute(styleId: WidgetStyleId, style: WidgetStyle, colors: WidgetColors): Color {
+        style.minuteColor?.let { return Color(it) }
+        if (styleId == WidgetStyleId.ClockBold) return if (boldFilled(style)) colors.palette.containerAccent else colors.secondary
+        return colors.palette.minute?.takeIf { !colors.onWallpaper && style.hourColor == null } ?: hour(styleId, style, colors)
+    }
+
+    fun boldFilled(style: WidgetStyle): Boolean = style.background == BackgroundKind.Solid || style.background == BackgroundKind.Sky
 }
 
 val LocalWidgetTheme = staticCompositionLocalOf<WidgetTheme> { error("Widget teması verilmedi") }
@@ -450,14 +479,31 @@ fun locale(context: Context) = context.resources.configuration.locales[0]
 
 /** "21:00" ya da "9:00 PM", telefonun ayarına göre. */
 fun timeFormatter(context: Context): DateTimeFormatter {
-    val skeleton = if (DateFormat.is24HourFormat(context)) "Hm" else "hm"
+    val skeleton = if (WidgetLanguage.is24Hour(context)) "Hm" else "hm"
     return DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale(context), skeleton), locale(context))
 }
 
 /** Saat ekseni: "20" ya da "8 PM". */
 fun hourFormatter(context: Context): DateTimeFormatter {
-    val pattern = if (DateFormat.is24HourFormat(context)) "HH" else DateFormat.getBestDateTimePattern(locale(context), "h a")
+    val pattern = if (WidgetLanguage.is24Hour(context)) "HH" else DateFormat.getBestDateTimePattern(locale(context), "h a")
     return DateTimeFormatter.ofPattern(pattern, locale(context))
+}
+
+/**
+ * Dar bir sütundaki saat etiketi: sığan en uzun yazım. "21:00" → "21"; 12 saatlik düzende
+ * "9:00 PM" → "9 PM" → "9p". Saat asla "…" ile kısaltılmaz.
+ */
+fun hourLabel(context: Context, time: java.time.temporal.TemporalAccessor, columnDp: Float, sizeSp: Float, theme: WidgetTheme, full: Boolean = true): String {
+    val hour = time.get(java.time.temporal.ChronoField.HOUR_OF_DAY)
+    val shortest = if (WidgetLanguage.is24Hour(context)) "%02d".format(hour) else "${if (hour % 12 == 0) 12 else hour % 12}${if (hour < 12) "a" else "p"}"
+    val candidates = listOfNotNull(if (full) timeFormatter(context).format(time) else null, hourFormatter(context).format(time))
+    // Satırdaki bütün saatler aynı yazımla çıksın diye en geniş saatle ("10 PM", "22:00") de denenir.
+    val widest = java.time.LocalTime.of(22, 0)
+    val index = candidates.indices.firstOrNull { i ->
+        val formatter = if (full && i == 0) timeFormatter(context) else hourFormatter(context)
+        maxOf(measureWidthDp(context, candidates[i], sizeSp, theme), measureWidthDp(context, formatter.format(widest), sizeSp, theme)) <= columnDp * FIT_MARGIN
+    }
+    return index?.let { candidates[it] } ?: shortest
 }
 
 /** "Cmt", "Paz"; bugün için "Bugün". */
@@ -583,11 +629,18 @@ private fun ClockView(
             ClockFont.DigitsOutline -> if (part == ClockPart.Minutes && !theme.colors.shadow) "ol" else "dg"
         }
     }
-    val (format12, format24) = when (part) {
+    val formats = when (part) {
         ClockPart.Time -> "h:mm" to "HH:mm"
         ClockPart.Hours -> hour12 to "HH"
         ClockPart.Minutes -> "mm" to "mm"
         ClockPart.Date -> DateFormat.getBestDateTimePattern(locale(context), dateSkeleton).let { it to it }
+    }
+    // Diller farklıyken saat bileşeni çizildiği yerin diline göre 12/24 seçer (önizlemede uygulamanın,
+    // ana ekranda telefonun dili). İkisi aynı çıksın diye biçim telefonun kuralıyla burada sabitlenir.
+    val (format12, format24) = if (theme.staticDate) {
+        (if (WidgetLanguage.is24Hour(context)) formats.second else formats.first).let { it to it }
+    } else {
+        formats
     }
     val textColor = color ?: when (part) {
         ClockPart.Minutes -> theme.minuteColor
@@ -596,6 +649,19 @@ private fun ClockView(
     }
     // Android 11 ve öncesinde launcher uygulamanın yazı tipini yükler: içi boş rakam tek TextClock.
     val layout = if (key == "ol" && part == ClockPart.Minutes && OUTLINE_FONT_IN_WIDGETS) R.layout.wc_outline else WidgetLayouts.clock(key, theme.colors.shadowKind, uppercase)
+    if (part == ClockPart.Date && theme.staticDate) {
+        // Uygulama dili telefonunkinden farklı: tarih bu dilde, normal metin olarak yazılır. Gün değişince
+        // widget bir kez yeniden çizilir (bkz. WidgetDateReceiver); saat ve dakika yine sistemin bileşenidir.
+        val text = todayText(context, dateSkeleton).let { if (uppercase) it.uppercase(locale(context)) else it }
+        val static = RemoteViews(context.packageName, WidgetLayouts.text(key, theme.colors.shadowKind)).apply {
+            setTextViewText(R.id.widget_text, text)
+            setTextViewTextSize(R.id.widget_text, TypedValue.COMPLEX_UNIT_SP, theme.sp(size).value)
+            setTextColor(R.id.widget_text, textColor.toArgb())
+            setOnClickPendingIntent(R.id.widget_text, clockAppIntent(context))
+        }
+        AndroidRemoteViews(static)
+        return
+    }
     val views = RemoteViews(context.packageName, layout).apply {
         setTextViewTextSize(R.id.clock, TypedValue.COMPLEX_UNIT_SP, theme.sp(size).value)
         setTextColor(R.id.clock, textColor.toArgb())
@@ -664,6 +730,8 @@ fun measureWidthDp(context: Context, text: String, sizeSp: Float, theme: WidgetT
     val bold = fontKey(theme.style, weight, WFont.Text) == "s7"
     val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         typeface = android.graphics.Typeface.create(family, if (bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        // Widget yazıları sabit genişlikli rakamla çizilir (düzenlerdeki "tnum"); ölçüm de öyle yapılır.
+        fontFeatureSettings = "tnum"
         // dp cinsinden: sp × sistemin yazı ölçeği.
         // Tasarım dp'si cinsinden (büyüme hariç): sığma hesapları tasarım ölçüsünde yapılır.
         textSize = theme.sp(sizeSp).value / theme.grow * context.resources.configuration.fontScale
@@ -672,8 +740,10 @@ fun measureWidthDp(context: Context, text: String, sizeSp: Float, theme: WidgetT
 }
 
 /** Bugünün tarihi, widget'taki saat bileşeninin yazacağı biçimde ("10 Ekim Cumartesi"); sığma hesabı için. */
-fun todayText(context: Context, dateSkeleton: String): String =
-    DateFormat.format(DateFormat.getBestDateTimePattern(locale(context), dateSkeleton), java.util.Calendar.getInstance()).toString()
+fun todayText(context: Context, dateSkeleton: String): String {
+    val locale = locale(context)
+    return DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, dateSkeleton), locale).format(LocalDate.now())
+}
 
 /** [text] [availableDp] genişliğe sığacak en büyük boyut, [max]'ı geçmeden. */
 fun fitWidth(text: String, max: Float, availableDp: Float, theme: WidgetTheme): Float {

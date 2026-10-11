@@ -64,6 +64,8 @@ class MainActivity : AppCompatActivity() {
             viewModel.uiState.value.isLoading || viewModel.settings.value == null
         }
         super.onCreate(savedInstanceState)
+        // Widget'lar uygulama kapalıyken de seçili dili bilsin (bkz. WidgetLanguage).
+        com.alihaydarsayar.communesky.widget.WidgetLanguage.remember(applicationContext, com.alihaydarsayar.communesky.ui.settings.AppLanguage.current().tag)
         if (savedInstanceState == null) {
             openHomeSettings.value = intent.wantsHomeSettings()
             intent.selectWidgetPlace()
