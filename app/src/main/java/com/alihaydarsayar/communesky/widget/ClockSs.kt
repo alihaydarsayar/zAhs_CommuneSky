@@ -158,11 +158,14 @@ private fun SsDate(u: Float, accent: Color, window: Color, ink: Color) {
     val theme = LocalWidgetTheme.current
     // Gün numarası pencerenin üstünde okunmalı: mürekkep rengi pencereyle aynı tondaysa karşıtı.
     val dayColor = if (Contrast.ratio(ink.toArgb(), window.toArgb()) >= 3.0) ink else if (window.luminance() > 0.45f) WidgetInk.Dark else Color.White
-    val text = dpToBase(13.5f * u, theme, context)
+    // Çok küçük kadranda pencereye ay ve gün birlikte sığmaz (gün numarası ikiye bölünüp yarısı görünüyordu):
+    // yalnız gün numarası, biraz daha büyük yazılır.
+    val dayOnly = 72f * u < 30f
+    val text = dpToBase((if (dayOnly) 17f else 13.5f) * u, theme, context)
     Box(GlanceModifier.fillMaxSize().padding(start = (270f * u).dp, top = (185f * u).dp)) {
         Box(GlanceModifier.width((72f * u).dp).height((30f * u).dp), contentAlignment = Alignment.Center) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                WClock(ClockPart.Date, text, weight = WWeight.Bold, color = accent, dateSkeleton = "MMM", uppercase = true, font = WFont.Text)
+                if (!dayOnly) WClock(ClockPart.Date, text, weight = WWeight.Bold, color = accent, dateSkeleton = "MMM", uppercase = true, font = WFont.Text)
                 WClock(ClockPart.Date, text, weight = WWeight.Bold, color = dayColor, dateSkeleton = "d", font = WFont.Text)
             }
         }

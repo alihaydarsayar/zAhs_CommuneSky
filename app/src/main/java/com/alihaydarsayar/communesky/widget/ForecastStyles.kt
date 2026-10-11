@@ -81,8 +81,6 @@ private fun HourlyCurve(data: WidgetPlaceData) {
     if (hours.size < 2) return HourlyIconsStyle(data)
     val temps = hours.mapIndexed { i, hour -> tempValue(if (i == 0) forecast.current.temperature else hour.temperature) }
     val showRain = theme.shows(WidgetContent.Precipitation)
-    val hourFormat = hourFormatter(context)
-
     // Eğri alanının yüksekliği: yüzeyin iç boşlukları, başlık ve saat satırı çıkınca kalan.
     val scale = theme.style.textSize.scale
     // Alçak widget'ta başlık küçülür ve yüzde yazıları düşer: eğriye yer kalsın.
@@ -138,9 +136,10 @@ private fun HourlyCurve(data: WidgetPlaceData) {
             }
             VSpace(4.sd)
             Row(GlanceModifier.fillMaxWidth()) {
+                val axisColumn = (size.width.value - 32f) / hours.size
                 hours.forEachIndexed { i, hour ->
                     WText(
-                        if (i == 0 && estimateWidthDp(context.getString(R.string.now), 11f, theme) + 6f <= (size.width.value - 32f) / hours.size) context.getString(R.string.now) else hour.time.format(hourFormat),
+                        if (i == 0 && estimateWidthDp(context.getString(R.string.now), 11f, theme) + 6f <= axisColumn) context.getString(R.string.now) else hourLabel(context, hour.time, axisColumn, 11f, theme, full = false),
                         11f,
                         GlanceModifier.defaultWeight(),
                         color = if (i == 0) theme.colors.text else theme.colors.tertiary,
@@ -175,9 +174,8 @@ private fun HourlyRowStyle(data: WidgetPlaceData) {
     val forecast = data.snapshot.forecast
     val count = if (size.width >= 300.dp) 5 else if (size.width >= 250.dp) 4 else 3
     val hours = forecast.upcomingHours(forecast.localNow(), count = count + 1).drop(1)
-    // Sütun dar ise "22" gibi kısa saat.
-    val column = (size.width.value - 32f - 80f) / count
-    val hourFormat = if (column < 40f) hourFormatter(context) else timeFormatter(context)
+    // Sütun dar ise "22" gibi kısa saat. Soldaki sıcaklık ve yer sütunu için 96 dp ayrılır.
+    val column = (size.width.value - 32f - 96f) / count
     WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 8.sd, contentAlignment = Alignment.CenterStart) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             Column {
@@ -187,7 +185,7 @@ private fun HourlyRowStyle(data: WidgetPlaceData) {
             HSpace(8.sd)
             hours.forEach { hour ->
                 Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    WText(hour.time.format(hourFormat), 11f, color = theme.colors.tertiary, align = TextAlign.Center)
+                    WText(hourLabel(context, hour.time, column, 11f, theme, full = column >= 40f), 11f, color = theme.colors.tertiary, align = TextAlign.Center)
                     WeatherGlyph(hour.condition, !hour.isDay, 18.sd)
                     WText(temp(hour.temperature), 12f, weight = WWeight.Medium, align = TextAlign.Center)
                 }

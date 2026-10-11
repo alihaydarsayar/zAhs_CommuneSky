@@ -59,7 +59,10 @@ class WidgetSizeAuditTest {
                 val input = WidgetSamples.input(context)
                 val out = File(context.getExternalFilesDir(null), "audit/$language").apply { mkdirs() }
                 val lines = mutableListOf("style,size,layout,grow,fill_width_pct,fill_height_pct,cut_texts")
-                for (style in WidgetStyleId.entries) {
+                // Tek bir stili ya da boyutu denemek için: -e style ClockSide,ClockBold -e size 530x530
+                val onlyStyle = InstrumentationRegistry.getArguments().getString("style")
+                val onlySize = InstrumentationRegistry.getArguments().getString("size")
+                for (style in WidgetStyleId.entries.filter { onlyStyle == null || it.name in onlyStyle.split(",") }) {
                     // İçeriğin kapladığı alan ölçülebilsin diye arka plansız ve gölgesiz çizilir.
                     val measured = style.defaultStyle().let { if (style.scalesItself || style == WidgetStyleId.ClockBold) it else it.withBackground(BackgroundKind.Transparent).copy(legibility = Legibility.Off) }
                     // Launcher ölçüleri, stilin kendi düzeniyle çizildiği en küçük boyut ve ölçü bildirilmeyen durum.
@@ -70,6 +73,7 @@ class WidgetSizeAuditTest {
                             index == sizes.size -> "enkucuk"
                             else -> "%dx%d".format(Locale.ROOT, size.width.value.toInt(), size.height.value.toInt())
                         }
+                        if (onlySize != null && label != onlySize) continue
                         // Görüntü, kullanıcının göreceği hâliyle (varsayılan arka plan); ölçüm arka plansız.
                         val shot = draw(context, input, style, style.defaultStyle(), size, File(out, "${style.kind.name}_${style.name}_$label.png"))
                         val result = draw(context, input, style, measured, size, null)
@@ -78,7 +82,7 @@ class WidgetSizeAuditTest {
                         val layout = if (WidgetScale.compact(style, drawn)) "yedek" else "stil"
                         val cut = result.third.cut
                         lines += "%s,%s,%s,%.2f,%d,%d,%s".format(Locale.ROOT, style.name, label, layout, grow, result.third.fillWidth, result.third.fillHeight, cut.joinToString(" | ").replace(",", ";"))
-                        cut.filter { text -> text.any { it.isDigit() } && text.contains("°") }.forEach { shortened += "$language ${style.name} $label: $it" }
+                        cut.filter { text -> text.any { it.isDigit() } }.forEach { shortened += "$language ${style.name} $label: $it" }
                     }
                 }
                 File(out, "olcu.csv").writeText(lines.joinToString("\n"))
@@ -86,7 +90,7 @@ class WidgetSizeAuditTest {
         } finally {
             Locale.setDefault(system)
         }
-        assertTrue("Kısaltılan sıcaklıklar:\n" + shortened.joinToString("\n"), shortened.isEmpty())
+        assertTrue("Kısaltılan sıcaklık, saat ve sayılar:\n" + shortened.joinToString("\n"), shortened.isEmpty())
     }
 
     /** Çizer; (genişlik dp, yükseklik dp, ölçüm) döner. [size] null: launcher ölçü bildirmedi. */
@@ -127,10 +131,14 @@ class WidgetSizeAuditTest {
         val layout = view.layout ?: return
         val ellipsized = (0 until layout.lineCount).any { layout.getEllipsisCount(it) > 0 }
         val room = view.width - view.paddingLeft - view.paddingRight
-        val clipped = (0 until layout.lineCount).any { layout.getLineWidth(it) > room + 1f }
+        val clipped = (0 until layout.lineCount).any { layout.getLineMax(it) > room + 1f }
         // Yüksekliği yetmeyen yazı da kırpılır (alt satırı ya da harflerin altı görünmez).
-        val squeezed = layout.height > view.height - view.paddingTop - view.paddingBottom + 2
-        if (ellipsized || clipped || squeezed) into += view.text.toString()
+        // (Yazı tipinin kendi satır boşluğu kadar küçük farklar sayılmaz.)
+        val squeezed = layout.height - (view.height - view.paddingTop - view.paddingBottom) > 0.25f * layout.height / layout.lineCount.coerceAtLeast(1)
+        if (ellipsized || clipped || squeezed) {
+            android.util.Log.i("WidgetAudit", "'${view.text}' kisaltma=$ellipsized tasma=$clipped sikisma=$squeezed yazi=${layout.width}x${layout.height} kutu=${view.width}x${view.height}")
+            into += view.text.toString()
+        }
     }
 
     /** Widget'ın dışına taşan (ve bu yüzden kırpılan) yazı ve resimler. */

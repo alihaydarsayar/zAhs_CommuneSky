@@ -64,7 +64,9 @@ private fun PrecipitationBars(data: WidgetPlaceData) {
     val sentenceHeight = size.height.value - 24f - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(13f, theme) else 0f)
     val sentenceSize = listOf(19f, 17f, 15f, 14f, 13f, 12f).firstOrNull { sp ->
         val lines = kotlin.math.ceil(estimateWidthDp(sentence, sp, theme) / (sentenceWidth - 4f) * 1.15f).toInt().coerceAtLeast(1)
-        lines <= 3 && lines * lineHeightDp(sp, theme) <= sentenceHeight
+        // En uzun sözcük de sütuna sığmalı; yoksa sözcüğün sonu kırpılır.
+        val longest = sentence.split(' ').maxOf { measureWidthDp(context, it, sp, theme, WWeight.Medium) }
+        lines <= 3 && lines * lineHeightDp(sp, theme) <= sentenceHeight && longest <= (sentenceWidth - 4f) * FIT_MARGIN
     } ?: 12f
     val formatter = timeFormatter(context)
     val origin = nowcast.slices.firstOrNull()?.start ?: now
@@ -124,13 +126,23 @@ private fun PrecipitationSentence(data: WidgetPlaceData) {
     // Cümle iki satıra sığacak boyutta yazılır; en küçük boyutta da sığmıyorsa kesilmez, kısa düzen çizilir.
     val room = size.width.value - 32f - 26f - 12f
     if (estimateWidthDp(sentence, 12f, theme) > room * 2f * FIT_MARGIN) return PrecipitationTiny(data)
-    val sentenceSize = listOf(16f, 15f, 14f, 13f, 12f).first { estimateWidthDp(sentence, it, theme) <= room * 2f * FIT_MARGIN }
+    // Yüksekliğe de sığmalı: iki satır ve yer adı sığmıyorsa önce yazı küçülür, sonra yer adı düşer.
+    val height = (size.height.value - 24f) * FIT_MARGIN
+    fun fits(sp: Float, placeHeight: Float): Boolean {
+        val width = estimateWidthDp(sentence, sp, theme)
+        val lines = if (width <= room * FIT_MARGIN) 1 else 2
+        return width <= room * 2f * FIT_MARGIN && lines * lineHeightDp(sp, theme) + placeHeight <= height
+    }
+    val sizes = listOf(16f, 15f, 14f, 13f, 12f)
+    val placeHeight = if (theme.shows(WidgetContent.PlaceName) && size.height >= 76.dp) lineHeightDp(12f, theme) else 0f
+    val withPlace = sizes.firstOrNull { placeHeight > 0f && fits(it, placeHeight) }
+    val sentenceSize = withPlace ?: sizes.firstOrNull { fits(it, 0f) } ?: return PrecipitationTiny(data)
     WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 12.sd, contentAlignment = Alignment.CenterStart) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             WIcon(R.drawable.ic_wl_drop, 26.sd, theme.colors.rain)
             HSpace(12.sd)
             Column {
-                if (theme.shows(WidgetContent.PlaceName) && size.height >= 76.dp) PlaceLabel(data, 12f, weight = WWeight.Regular, color = theme.colors.secondary)
+                if (withPlace != null) PlaceLabel(data, 12f, weight = WWeight.Regular, color = theme.colors.secondary)
                 WText(sentence, sentenceSize, weight = WWeight.Medium, maxLines = 2)
             }
         }
@@ -277,7 +289,9 @@ private fun DetailsTiles(data: WidgetPlaceData) {
                             } else {
                                 Row(verticalAlignment = Alignment.Bottom) {
                                     WText(tile.value, valueSize, weight = WWeight.Medium)
-                                    if (tile.unit != null) WText(" " + tile.unit, 10f, color = theme.colors.secondary)
+                                    // Birim, değerin yanına sığıyorsa yazılır; kesilmez.
+                                    val unit = tile.unit?.takeIf { maxOf(estimateWidthDp(tile.value, valueSize, theme), measureWidthDp(context, tile.value, valueSize, theme, WWeight.Medium)) + measureWidthDp(context, " $it", 10f, theme) <= tileWidth * FIT_MARGIN }
+                                    if (unit != null) WText(" $unit", 10f, color = theme.colors.secondary)
                                 }
                             }
                         }
@@ -358,8 +372,10 @@ private fun SunDetails(data: WidgetPlaceData) {
                     WText(dayLength, 12f, color = theme.colors.secondary, align = TextAlign.End)
                 }
             } else {
-                WText(other, 12f, color = theme.colors.secondary)
-                WText(dayLength, 12f, color = theme.colors.secondary)
+                // Alt alta da sığmıyorsa yazı küçülür; kesilmez.
+                val room = size.width.value - 32f - 4f
+                WText(other, fitWidth(other, 12f, room, theme).coerceAtLeast(9f), color = theme.colors.secondary)
+                WText(dayLength, fitWidth(dayLength, 12f, room, theme).coerceAtLeast(9f), color = theme.colors.secondary)
             }
         }
     }

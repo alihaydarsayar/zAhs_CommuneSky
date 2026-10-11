@@ -438,13 +438,16 @@ fun HourlyStrip(data: WidgetPlaceData, count: Int, compact: Boolean = false) {
     val theme = LocalWidgetTheme.current
     val forecast = data.snapshot.forecast
     val hours = forecast.upcomingHours(forecast.localNow(), count = count)
-    val formatter = timeFormatter(context)
+    val labelSize = if (compact) 11f else 12f
+    val column = (LocalSize.current.width.value - 32f) / count.coerceAtLeast(1)
+    val nowText = context.getString(R.string.now)
     Row(GlanceModifier.fillMaxWidth()) {
         hours.forEachIndexed { index, hour ->
             Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                 WText(
-                    if (index == 0) context.getString(R.string.now) else hour.time.format(formatter),
-                    if (compact) 11f else 12f,
+                    // Saat sütuna sığan en uzun yazımla; "Şimdi" sığmıyorsa onun yerine saat.
+                    if (index == 0 && measureWidthDp(context, nowText, labelSize, theme) <= column * FIT_MARGIN) nowText else hourLabel(context, hour.time, column, labelSize, theme),
+                    labelSize,
                     color = theme.colors.secondary,
                     align = TextAlign.Center,
                 )

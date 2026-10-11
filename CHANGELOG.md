@@ -24,6 +24,10 @@ What's new in each version of Commune Sky.
 - Choose cathedral, slim cathedral or Breguet hands for the SS clock.
 - On the SS clock the date, the seal and the weather sit farther from the center, so the hands cover them less.
 - Example places in previews are now Besiktas, Liverpool and Limerick.
+- Fixed: on some home screens a clock showed a small, different layout in a corner instead of the style you saved. Widgets now keep their style and fill their space at every size.
+- Fixed: picking a color theme did not always change the widget. A theme now replaces the colors you chose one by one (you can undo it), and the color list shows only the colors that widget really uses.
+- Fixed: widgets used the phone's language instead of the language you chose in the app.
+- Fixed: temperatures could be shortened to "…" in a narrow widget. Numbers are never cut; the text gets smaller instead.
 
 ## 1.3 — in testing
 

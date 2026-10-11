@@ -185,26 +185,38 @@ private fun ClockBig(data: WidgetPlaceData) {
 /** Tasarım "Yan yana": sağa yaslı saat, tarih ve yer; ince dikey çizgi; ikon, sıcaklık, Y/D. */
 @Composable
 private fun ClockSide(data: WidgetPlaceData) {
+    val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
     val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
+    val weather = theme.shows(WidgetContent.Weather)
+    val temperature = temp(data.snapshot.forecast.current.temperature)
+    val inner = size.width.value - 32f
+    // Hava sütununun genişliği önce ayrılır: sıcaklık asla kısaltılmaz. Y/D sığmıyorsa o düşer.
+    val gap = 20f + 1.5f + 20f
+    val tempWidth = estimateWidthDp(temperature, 38f, theme) / FIT_MARGIN
+    // Ölçülen genişliğe %10 pay eklenir: küçültülmüş ya da büyütülmüş yazı ölçümden birkaç piksel geniş çıkabiliyor.
+    val highLowText = if (weather && theme.shows(WidgetContent.HighLow) && today != null) highLow(today.maxTemperature, today.minTemperature) else null
+    val highLowWidth = highLowText?.let { measureWidthDp(context, it, 13f, theme) / FIT_MARGIN } ?: 0f
+    val highLow = highLowText?.takeIf { highLowWidth <= inner * 0.4f }
+    val weatherWidth = if (weather) maxOf(46f, tempWidth, if (highLow != null) highLowWidth else 0f) else 0f
+    // Saat sütunu kalan yere sığar; tarih de o genişliğe göre kısalır (uzun gün ve ay adları taşmasın).
+    val clockWidth = inner - (if (weather) gap + weatherWidth else 0f)
     WidgetSurface(horizontal = 16.sd, vertical = 16.sd, contentAlignment = Alignment.Center) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(horizontalAlignment = Alignment.End) {
-                WClock(ClockPart.Time, clockSize(88f, size.width.value - 32f - (if (theme.shows(WidgetContent.Weather)) 140f else 0f), size.height.value - 32f - lineHeightDp(17f, theme) - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(15f, theme) else 0f)), contentAlignment = Alignment.CenterEnd)
-                WClock(ClockPart.Date, 17f, weight = WWeight.Regular, dateSkeleton = "dMMMMEEEE", contentAlignment = Alignment.CenterEnd)
+                WClock(ClockPart.Time, clockSize(88f, clockWidth, size.height.value - 32f - lineHeightDp(17f, theme) - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(15f, theme) else 0f)), contentAlignment = Alignment.CenterEnd)
+                WClock(ClockPart.Date, 17f, weight = WWeight.Regular, dateSkeleton = dateSkeletonFor(clockWidth, 17f), contentAlignment = Alignment.CenterEnd)
                 if (theme.shows(WidgetContent.PlaceName)) PlaceLabel(data, 15f, weight = WWeight.Regular, color = theme.colors.secondary, iconAfter = true)
             }
-            if (theme.shows(WidgetContent.Weather)) {
+            if (weather) {
                 HSpace(20.sd)
                 VDivider(GlanceModifier.height(min(120f, size.height.value * 0.7f).sd), width = 1.5.sd)
                 HSpace(20.sd)
-                Column(GlanceModifier.clickableApp()) {
+                Column(GlanceModifier.width(weatherWidth.sd).clickableApp()) {
                     CurrentGlyph(data.snapshot, 46.sd)
-                    WText(temp(data.snapshot.forecast.current.temperature), 38f, weight = WWeight.Light)
-                    if (theme.shows(WidgetContent.HighLow) && today != null) {
-                        WText(highLow(today.maxTemperature, today.minTemperature), 13f, color = theme.colors.secondary)
-                    }
+                    WText(temperature, 38f, weight = WWeight.Light)
+                    if (highLow != null) WText(highLow, 13f, color = theme.colors.secondary)
                 }
             }
         }
@@ -221,7 +233,8 @@ private fun ClockLine(data: WidgetPlaceData) {
     val rainTime = if (theme.shows(WidgetContent.RainAlert)) WidgetPhrases.rainTime(context, data.snapshot) else null
     val temperature = temp(data.snapshot.forecast.current.temperature)
     val available = size.width.value - 32f
-    var used = estimateWidthDp("09 Ekim Cum", 15f, theme) + (if (theme.shows(WidgetContent.Weather)) 41f + estimateWidthDp(temperature, 15f, theme) else 0f)
+    // Tarih bugünkü gerçek yazısıyla ölçülür ("Sun, October 11", "9 Ekim Cum"dan uzundur).
+    var used = measureWidthDp(context, todayText(context, "dMMMMEEE"), 15f, theme) / FIT_MARGIN + (if (theme.shows(WidgetContent.Weather)) 41f + estimateWidthDp(temperature, 15f, theme) else 0f)
     val showRain = rainTime != null && used + 39f + estimateWidthDp(rainTime, 15f, theme) <= available
     if (showRain) used += 39f + estimateWidthDp(rainTime!!, 15f, theme)
     val showPlace = theme.shows(WidgetContent.PlaceName) && used + 41f + estimateWidthDp(data.snapshot.displayName(context), 15f, theme) <= available
@@ -270,9 +283,9 @@ private fun ClockBold(data: WidgetPlaceData) {
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
     val palette = theme.colors.palette
-    val filled = theme.style.background == BackgroundKind.Solid || theme.style.background == BackgroundKind.Sky
-    val hourColor = theme.style.hourColor?.let { Color(it) } ?: if (filled) palette.onContainer else theme.colors.text
-    val minuteColor = theme.style.minuteColor?.let { Color(it) } ?: if (filled) palette.containerAccent else theme.colors.secondary
+    val filled = ClockDigitColors.boldFilled(theme.style)
+    val hourColor = theme.hourColor
+    val minuteColor = theme.minuteColor
     val digits = clockSize(72f, size.width.value - 32f, (size.height.value - 32f - lineHeightDp(15f, theme) - 6f) / 2f, ems = theme.clockEms / 2f)
     val content: @Composable () -> Unit = {
         Column(GlanceModifier.fillMaxSize()) {
@@ -532,7 +545,8 @@ private fun ClockCompact(data: WidgetPlaceData) {
             val weatherSize = (h * 0.13f).coerceIn(12f, 18f)
             val below = (if (showDate) lineHeightDp(dateSize, theme) else 0f) + (if (showWeather) lineHeightDp(weatherSize, theme) + 4f else 0f)
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalAlignment = Alignment.CenterVertically) {
-                WClock(ClockPart.Time, clockSize(h * 0.6f, (w - 24f) * 0.92f, h - 16f - below), contentAlignment = Alignment.Center)
+                // Saat ve dakika ayrı renkteyse satır biraz daha yüksek çizilir (bkz. WClock); pay bırakılır.
+                WClock(ClockPart.Time, clockSize(h * 0.6f, (w - 24f) * 0.92f, (h - 16f - below) * 0.9f), contentAlignment = Alignment.Center)
                 if (showDate) WClock(ClockPart.Date, dateSize, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = dateSkeletonFor(w - 24f, dateSize, short = true), contentAlignment = Alignment.Center)
                 if (showWeather) {
                     VSpace(4.sd)
@@ -551,7 +565,7 @@ private fun ClockCompact(data: WidgetPlaceData) {
             val weatherWidth = if (weather) weatherSize * 1.1f + 6f + estimateWidthDp(temperature, weatherSize, theme) + 16f else 0f
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    WClock(ClockPart.Time, clockSize(h * 0.62f, (w - 24f - weatherWidth) * 0.92f, h - 16f - (if (showDate) lineHeightDp(dateSize, theme) else 0f)), contentAlignment = Alignment.Center)
+                    WClock(ClockPart.Time, clockSize(h * 0.62f, (w - 24f - weatherWidth) * 0.92f, (h - 16f - (if (showDate) lineHeightDp(dateSize, theme) else 0f)) * 0.9f), contentAlignment = Alignment.Center)
                     if (showDate) WClock(ClockPart.Date, dateSize, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = "EEEdMMM", contentAlignment = Alignment.Center)
                 }
                 if (weather) {
