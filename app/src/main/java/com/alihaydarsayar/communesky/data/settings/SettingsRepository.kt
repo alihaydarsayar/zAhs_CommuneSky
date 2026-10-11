@@ -38,6 +38,8 @@ class SettingsRepository @Inject constructor(
                 windUnit = prefs[WIND_UNIT].toEnum(WindUnit.KilometersPerHour),
                 themeMode = prefs[THEME_MODE].toEnum(ThemeMode.System),
                 alertNotifications = prefs[ALERT_NOTIFICATIONS] ?: true,
+                morningSummary = prefs[MORNING_SUMMARY] ?: false,
+                morningSummaryMinutes = (prefs[MORNING_SUMMARY_MINUTES] ?: AppSettings().morningSummaryMinutes).coerceIn(0, 24 * 60 - 1),
                 wear = WearSettings(
                     sensitivity = prefs[WEAR_SENSITIVITY].toEnum(Sensitivity.Normal),
                     feedback = (prefs[WEAR_FEEDBACK] ?: 0.0).coerceIn(-Clothing.FEEDBACK_LIMIT, Clothing.FEEDBACK_LIMIT),
@@ -65,6 +67,14 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setAlertNotifications(enabled: Boolean) {
         dataStore.edit { it[ALERT_NOTIFICATIONS] = enabled }
+    }
+
+    suspend fun setMorningSummary(enabled: Boolean) {
+        dataStore.edit { it[MORNING_SUMMARY] = enabled }
+    }
+
+    suspend fun setMorningSummaryMinutes(minutes: Int) {
+        dataStore.edit { it[MORNING_SUMMARY_MINUTES] = minutes.coerceIn(0, 24 * 60 - 1) }
     }
 
     suspend fun setWearSensitivity(sensitivity: Sensitivity) = set(WEAR_SENSITIVITY, sensitivity.name)
@@ -110,6 +120,8 @@ class SettingsRepository @Inject constructor(
         val NEARBY_SHOW_BOTH = booleanPreferencesKey("nearby_show_both")
         val ALERT_NOTIFICATIONS = booleanPreferencesKey("alert_notifications")
         val WEAR_SENSITIVITY = stringPreferencesKey("wear_sensitivity")
+        val MORNING_SUMMARY = booleanPreferencesKey("morning_summary")
+        val MORNING_SUMMARY_MINUTES = intPreferencesKey("morning_summary_minutes")
         val WEAR_FEEDBACK = doublePreferencesKey("wear_feedback")
     }
 }

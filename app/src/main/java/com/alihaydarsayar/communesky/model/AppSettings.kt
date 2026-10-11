@@ -12,6 +12,9 @@ data class AppSettings(
     /** Turuncu ve kırmızı meteorolojik uyarı ilk kez çıkınca bildirim. */
     val alertNotifications: Boolean = true,
     val wear: WearSettings = WearSettings(),
+    /** Sabah özeti bildirimi (varsayılan kapalı) ve saati (gece yarısından itibaren dakika; varsayılan 07:30). */
+    val morningSummary: Boolean = false,
+    val morningSummaryMinutes: Int = 7 * 60 + 30,
 )
 
 /** "Ne giysem" için kişisel ayar; telefonda kalır. */

@@ -82,6 +82,13 @@ class SettingsViewModel @Inject constructor(
 
     fun setAlertNotifications(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAlertNotifications(enabled) }
 
+    /** Sabah özeti: ayarı kaydeder ve alarmı kurar ya da kaldırır. */
+    fun setMorningSummary(context: android.content.Context, enabled: Boolean, minutes: Int) = viewModelScope.launch {
+        settingsRepository.setMorningSummary(enabled)
+        settingsRepository.setMorningSummaryMinutes(minutes)
+        com.alihaydarsayar.communesky.work.MorningSummary.schedule(context.applicationContext, enabled, minutes)
+    }
+
     fun setWearSensitivity(sensitivity: Sensitivity) = viewModelScope.launch { settingsRepository.setWearSensitivity(sensitivity) }
 
     fun resetWearFeedback() = viewModelScope.launch { settingsRepository.resetWearFeedback() }
@@ -326,6 +333,41 @@ fun SettingsScreen(
                         },
                         subtitle = stringResource(R.string.settings_alert_notifications_hint),
                     )
+                    Spacer(Modifier.height(8.dp))
+                    // Sabah özeti: varsayılan kapalı; açılınca saat seçilebilir.
+                    com.alihaydarsayar.communesky.ui.common.GlassSwitchRow(
+                        title = stringResource(R.string.settings_morning_summary),
+                        checked = settings.morningSummary,
+                        onCheckedChange = { on ->
+                            viewModel.setMorningSummary(appContext, on, settings.morningSummaryMinutes)
+                            if (on) ensurePermission()
+                        },
+                        subtitle = stringResource(R.string.settings_morning_summary_hint),
+                    )
+                    if (settings.morningSummary) {
+                        val activity = androidx.activity.compose.LocalActivity.current
+                        val time = java.time.LocalTime.of(settings.morningSummaryMinutes / 60, settings.morningSummaryMinutes % 60)
+                        val formatter = com.alihaydarsayar.communesky.ui.common.rememberTimeFormatter()
+                        val is24Hour = com.alihaydarsayar.communesky.widget.WidgetLanguage.is24Hour(appContext)
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.medium)
+                                .clickable {
+                                    android.app.TimePickerDialog(
+                                        activity ?: return@clickable,
+                                        { _, hour, minute -> viewModel.setMorningSummary(appContext, true, hour * 60 + minute) },
+                                        time.hour, time.minute, is24Hour,
+                                    ).show()
+                                }
+                                .padding(vertical = 10.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(stringResource(R.string.settings_morning_summary_time), color = TextPrimary, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                            Text(time.format(formatter), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                            Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
+                        }
+                    }
                 }
             }
             item {

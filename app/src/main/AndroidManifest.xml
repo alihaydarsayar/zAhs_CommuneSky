@@ -69,6 +69,10 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
+        <!-- Sabah özeti bildirimi: günde bir, gevşek pencereli alarm (kesin alarm izni yok). -->
+        <receiver
+            android:name=".work.MorningSummaryReceiver"
+            android:exported="false" />
         <receiver
             android:name=".widget.ClockWidgetReceiver"
             android:exported="true"

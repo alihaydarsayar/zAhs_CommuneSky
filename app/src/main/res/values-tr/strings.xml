@@ -735,4 +735,13 @@
     <string name="tip_short_umbrella_must">Mutlaka al</string>
     <string name="tip_short_sunscreen_good">İyi olur</string>
     <string name="tip_short_sunscreen_must">Gerekli</string>
+    <string name="summary_range">Bugün %1$d–%2$d°</string>
+    <string name="summary_rain">%1$s yağmur</string>
+    <string name="summary_snow">%1$s kar</string>
+    <string name="summary_with">%1$s, %2$s</string>
+    <string name="summary_sentences">%1$s. %2$s</string>
+    <string name="summary_channel">Sabah özeti</string>
+    <string name="settings_morning_summary">Sabah özeti</string>
+    <string name="settings_morning_summary_hint">Her sabah tek bildirim: günün sıcaklığı, yağmurun saati ve ne giymen gerektiği. Evin için; ev seçilmediyse bulunduğun yer için.</string>
+    <string name="settings_morning_summary_time">Saat</string>
 </resources>
