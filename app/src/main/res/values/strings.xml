@@ -722,4 +722,7 @@
     <string name="yesterday_colder">%1$d° colder than yesterday</string>
     <string name="yesterday_warmer">%1$d° warmer than yesterday</string>
     <string name="yesterday_same">Same as yesterday</string>
+    <string name="today_card_title">For today</string>
+    <string name="today_see_all">See all</string>
+    <string name="today_tips_title">Everyday tips</string>
 </resources>

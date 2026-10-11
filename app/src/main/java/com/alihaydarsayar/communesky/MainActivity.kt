@@ -47,6 +47,7 @@ import kotlinx.serialization.Serializable
 @Serializable private object SettingsRoute
 @Serializable private object HomeLocationRoute
 @Serializable private object MyWidgetsRoute
+@Serializable private object TodayRoute
 
 // AppCompatActivity: uygulama içinden dil değiştirmenin Android 12 ve altında da çalışması için.
 @AndroidEntryPoint
@@ -56,6 +57,9 @@ class MainActivity : AppCompatActivity() {
 
     /** Widget "Evi ayarla" notuna dokunulunca doğrudan Ayarlar > Ev ve konum açılır. */
     private val openHomeSettings = mutableStateOf(false)
+
+    /** "Bugün için" widget'ına ya da sabah özetine dokunulunca uygulama o bölümle açılır. */
+    private val openToday = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Açılış ekranı, önbellekteki hava durumu ve ayarlar okunana kadar (genelde birkaç on
@@ -68,6 +72,7 @@ class MainActivity : AppCompatActivity() {
         com.alihaydarsayar.communesky.widget.WidgetLanguage.remember(applicationContext, com.alihaydarsayar.communesky.ui.settings.AppLanguage.current().tag)
         if (savedInstanceState == null) {
             openHomeSettings.value = intent.wantsHomeSettings()
+            openToday.value = intent.wantsToday()
             intent.selectWidgetPlace()
         }
         // Arka plan hep renkli bir gökyüzü olduğu için durum çubuğu ikonları beyaz kalsın.
@@ -81,6 +86,8 @@ class MainActivity : AppCompatActivity() {
                     viewModel = viewModel,
                     openHomeSettings = openHomeSettings.value,
                     onHomeSettingsOpened = { openHomeSettings.value = false },
+                    openToday = openToday.value,
+                    onTodayOpened = { openToday.value = false },
                 )
             }
         }
@@ -89,6 +96,7 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.wantsHomeSettings()) openHomeSettings.value = true
+        if (intent.wantsToday()) openToday.value = true
         intent.selectWidgetPlace()
     }
 
@@ -103,7 +111,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun Intent?.wantsHomeSettings(): Boolean = this?.getBooleanExtra(OpenHomeSettingsKey.name, false) == true
 
+    private fun Intent?.wantsToday(): Boolean = this?.getBooleanExtra(OpenTodayKey.name, false) == true
+
     companion object {
+        /** Widget'tan ya da bildirimden uygulamayı "Bugün için" bölümüyle açmak için. */
+        val OpenTodayKey = ActionParameters.Key<Boolean>("open_today")
+
         /** Widget'tan uygulamayı açarken Ev ve konum ayarına gitmek için. */
         val OpenHomeSettingsKey = ActionParameters.Key<Boolean>("open_home_settings")
 
@@ -115,7 +128,13 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-private fun CommuneSkyApp(viewModel: HomeViewModel, openHomeSettings: Boolean, onHomeSettingsOpened: () -> Unit) {
+private fun CommuneSkyApp(
+    viewModel: HomeViewModel,
+    openHomeSettings: Boolean,
+    onHomeSettingsOpened: () -> Unit,
+    openToday: Boolean,
+    onTodayOpened: () -> Unit,
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val appSettings = settings ?: AppSettings()
@@ -129,6 +148,12 @@ private fun CommuneSkyApp(viewModel: HomeViewModel, openHomeSettings: Boolean, o
     val weather = uiState.selectedPage?.weather
     val scene = remember(weather) { weather?.currentScene() ?: placeholderScene() }
     val navController = rememberNavController()
+    LaunchedEffect(openToday) {
+        if (openToday) {
+            navController.navigate(TodayRoute) { launchSingleTop = true }
+            onTodayOpened()
+        }
+    }
     LaunchedEffect(openHomeSettings) {
         if (openHomeSettings) {
             navController.navigate(HomeLocationRoute)
@@ -149,6 +174,14 @@ private fun CommuneSkyApp(viewModel: HomeViewModel, openHomeSettings: Boolean, o
                         viewModel = viewModel,
                         onOpenPlaces = { navController.navigate(PlacesRoute) },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenToday = { navController.navigate(TodayRoute) { launchSingleTop = true } },
+                    )
+                }
+                composable<TodayRoute> {
+                    com.alihaydarsayar.communesky.ui.today.TodayScreen(
+                        weather = uiState.selectedPage?.weather,
+                        onFeedback = viewModel::addWearFeedback,
+                        onBack = { navController.popBackStack() },
                     )
                 }
                 composable<PlacesRoute> {

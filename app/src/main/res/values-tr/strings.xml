@@ -716,4 +716,7 @@
     <string name="yesterday_colder">Dünden %1$d° daha soğuk</string>
     <string name="yesterday_warmer">Dünden %1$d° daha sıcak</string>
     <string name="yesterday_same">Dünle aynı</string>
+    <string name="today_card_title">Bugün için</string>
+    <string name="today_see_all">Tümünü gör</string>
+    <string name="today_tips_title">Günlük öneriler</string>
 </resources>

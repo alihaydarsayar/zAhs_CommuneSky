@@ -72,20 +72,22 @@ fun WearIcons(advice: ClothingAdvice, modifier: Modifier = Modifier, size: Dp = 
  * düğmeleri açılır.
  */
 @Composable
-fun WearSection(advice: ClothingAdvice, onFeedback: (feltCold: Boolean) -> Unit, modifier: Modifier = Modifier) {
+fun WearSection(advice: ClothingAdvice, onFeedback: (feltCold: Boolean) -> Unit, modifier: Modifier = Modifier, alwaysExpanded: Boolean = false) {
     val strings = rememberStrings()
     val unit = LocalAppSettings.current.temperatureUnit
     val sentence = remember(advice, strings, unit) { WearText.sentence(advice, strings) { unit.fromCelsius(it).roundToInt() } }
-    var expanded by rememberSaveable { mutableStateOf(false) }
+    var opened by rememberSaveable { mutableStateOf(false) }
+    val expanded = opened || alwaysExpanded
     Column(modifier.fillMaxWidth()) {
         Column(
             Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
                 .clickable(
+                    enabled = !alwaysExpanded,
                     role = Role.Button,
                     onClickLabel = stringResource(if (expanded) R.string.wear_details_hide else R.string.wear_details_show),
-                ) { expanded = !expanded }
+                ) { opened = !opened }
                 .padding(vertical = 4.dp),
         ) {
             WearIcons(advice)

@@ -78,11 +78,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import com.alihaydarsayar.communesky.model.today.Clothing
 import com.alihaydarsayar.communesky.model.today.YesterdayComparison
-import com.alihaydarsayar.communesky.ui.common.GlassCard
-import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
-import com.alihaydarsayar.communesky.ui.today.WearSection
+import com.alihaydarsayar.communesky.ui.today.TodayCard
+import com.alihaydarsayar.communesky.ui.today.rememberTodayAdvice
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -124,6 +122,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onOpenPlaces: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenToday: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -168,7 +167,7 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
-    val actions = remember(viewModel) { HomeActions(onWearFeedback = viewModel::addWearFeedback) }
+    val actions = remember(viewModel, onOpenToday) { HomeActions(onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday) }
     androidx.compose.runtime.CompositionLocalProvider(LocalHomeActions provides actions) {
     HomeContent(
         uiState = uiState,
@@ -196,6 +195,8 @@ fun HomeScreen(
 class HomeActions(
     /** "Üşüdüm" (true) / "Bunaldım" (false). */
     val onWearFeedback: (Boolean) -> Unit = {},
+    /** "Tümünü gör": "Bugün için" sayfası. */
+    val onOpenToday: () -> Unit = {},
 )
 
 val LocalHomeActions = androidx.compose.runtime.staticCompositionLocalOf { HomeActions() }
@@ -391,8 +392,7 @@ private fun ForecastList(
     val hours = remember(weather) { forecast.upcomingHours(now) }
     val days = remember(weather) { forecast.upcomingDays(now) }
     val yesterday = remember(weather) { YesterdayComparison.of(forecast, now)?.temperatureDifference }
-    val wearShift = LocalAppSettings.current.wear.shift
-    val wear = remember(weather, wearShift) { Clothing.advise(forecast, now, wearShift) }
+    val todayAdvice = rememberTodayAdvice(weather)
     val status = when {
         uiState.isRefreshing -> HeaderStatus.Refreshing
         uiState.error != null -> HeaderStatus.Failed
@@ -476,18 +476,15 @@ private fun ForecastList(
                 }
             }
         }
+        // "Bugün için": ne giysem, en önemli iki öneri ve hepsine giden bağlantı.
+        item(key = "today") {
+            val actions = LocalHomeActions.current
+            TodayCard(todayAdvice, actions.onWearFeedback, actions.onOpenToday)
+        }
         // Meteorolojik uyarı varsa renkli şerit.
         if (weather.alerts.isNotEmpty()) item(key = "alerts") { AlertBanner(weather.alerts, now.toLocalDate()) }
         // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.
         weather.sources?.rainNote?.let { note -> item(key = "rainNote") { RainNoteLine(note) } }
-        // Bugün ne giysem (akşam geç saatte yarın için).
-        if (wear != null) {
-            item(key = "wear") {
-                GlassCard(Modifier.fillMaxWidth(), title = stringResource(if (wear.forTomorrow) R.string.wear_title_tomorrow else R.string.wear_title)) {
-                    WearSection(wear, LocalHomeActions.current.onWearFeedback)
-                }
-            }
-        }
         item(key = "hourly") { HourlyCard(forecast.current, hours) }
         item(key = "daily") { DailyCard(days, forecast.current.temperature) }
         if (weather.sources != null) item(key = "sources") { SourceLine(weather) }
