@@ -49,6 +49,7 @@ class WeatherRepository @Inject constructor(
     private val dao: WeatherCacheDao,
     private val json: Json,
     private val observationStore: ObservationStore,
+    private val extrasStore: com.alihaydarsayar.communesky.data.extras.ExtrasStore,
 ) {
     /** Çözülmüş satırlar: değişmeyen yerin JSON'u her yenilemede baştan çözülmesin. */
     private val decoded = ConcurrentHashMap<Long, Pair<WeatherCacheEntity, WeatherSnapshot?>>()
@@ -63,16 +64,17 @@ class WeatherRepository @Inject constructor(
             entities.mapNotNull { entity -> entity.cachedSnapshot()?.let { entity.id to it } }.toMap()
         },
         observationStore.observeAll(),
+        extrasStore.observeAll(),
         minuteTicker(),
-    ) { weather, observations, now ->
-        weather.mapValues { (id, snapshot) -> ObservationBlend.apply(snapshot, observations[id], now) }
+    ) { weather, observations, extras, now ->
+        weather.mapValues { (id, snapshot) -> ObservationBlend.apply(snapshot.withExtras(extras[id]), observations[id], now) }
     }
         .distinctUntilChanged()
         // JSON çözümleme ana iş parçacığını meşgul etmesin.
         .flowOn(Dispatchers.Default)
 
     suspend fun snapshot(placeId: Long): WeatherSnapshot? = withContext(Dispatchers.Default) {
-        dao.get(placeId)?.cachedSnapshot()?.let { ObservationBlend.apply(it, observationStore.get(placeId), Instant.now()) }
+        dao.get(placeId)?.cachedSnapshot()?.let { ObservationBlend.apply(it.withExtras(extrasStore.get(placeId)), observationStore.get(placeId), Instant.now()) }
     }
 
     /** "Bulunduğum yer" satırındaki son yer (izin yoksa yedek şehir); hiç yoksa null. */
@@ -146,6 +148,22 @@ class WeatherRepository @Inject constructor(
             accuracyMeters = accuracyMeters,
         )
     }
+}
+
+/**
+ * Ana tahmini yerin ek verileriyle birleştirir: seçilen kaynağın sıcaklığı ve hava durumu, geçerli uyarılar
+ * ve mevsim normali. Ek veri yoksa tahmin olduğu gibi kalır.
+ */
+fun WeatherSnapshot.withExtras(extras: com.alihaydarsayar.communesky.model.PlaceExtras?): WeatherSnapshot {
+    if (extras == null) return this
+    val now = forecast.localNow()
+    val merged = com.alihaydarsayar.communesky.model.ForecastMerge.merge(forecast, extras, now)
+    return copy(
+        forecast = merged.forecast,
+        sources = merged.sources,
+        alerts = extras.alerts.filter { it.endsAt.isAfter(now) },
+        normal = extras.normal?.takeIf { it.month == now.monthValue && it.day == now.dayOfMonth },
+    )
 }
 
 /**

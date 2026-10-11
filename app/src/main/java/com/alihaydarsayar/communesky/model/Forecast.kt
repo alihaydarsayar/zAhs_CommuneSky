@@ -114,6 +114,11 @@ data class HourlyForecast(
     val weatherCode: Int,
     val precipitationProbability: Int,
     val isDay: Boolean,
+    /**
+     * Yağış yüzdesi gösterilsin mi? Hava durumu ulusal servisten geliyor ve yağış diyorsa, ana tahminin
+     * düşük yüzdesi onunla çelişir; o zaman yüzde gösterilmez.
+     */
+    val showProbability: Boolean = true,
 ) {
     val condition: WeatherCondition get() = WeatherCondition.fromCode(weatherCode)
 }
@@ -144,6 +149,11 @@ data class WeatherSnapshot(
     val accuracyMeters: Float? = null,
     /** İstasyon ölçümü kullanıldıysa nasıl kullanıldığı (anlık durumu belirledi ya da uyarı). */
     val observation: ObservationUse? = null,
+    /** Tahminin kaynakları; eski önbellekte ya da ek veri yokken null. */
+    val sources: ForecastSources? = null,
+    /** Bu yer için geçerli meteorolojik uyarılar (süresi dolanlar hariç), en ağırı önce. */
+    val alerts: List<WeatherAlert> = emptyList(),
+    val normal: SeasonalNormal? = null,
 )
 
 /** Yağış uyarısı; anlık durum istasyon ölçümünden geliyorsa çelişkiler gösterilmez. */

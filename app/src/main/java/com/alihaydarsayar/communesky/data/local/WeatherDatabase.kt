@@ -11,6 +11,7 @@ import androidx.room.RoomDatabase
  *    olduğu gibi "Bulunduğum yer" önbelleği olarak kalır.
  * 3 (1.2): istasyon ölçümleri ve yer başına bulunan MGM istasyonu.
  * 4 (1.2): yere en yakın MGM istasyonları listesi ve "Bulunduğum yer" için ilçe adı.
+ * 5 (1.5): yer başına ek veriler (ulusal servisin tahmini, uyarılar, öteki modeller).
  * Geçişleri Room şema dosyalarından üretir (app/schemas).
  */
 @Database(
@@ -19,16 +20,19 @@ import androidx.room.RoomDatabase
         PlaceEntity::class,
         ObservationEntity::class,
         MgmStationEntity::class,
+        com.alihaydarsayar.communesky.data.extras.PlaceExtrasEntity::class,
     ],
-    version = 4,
+    version = 5,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5),
     ],
 )
 abstract class WeatherDatabase : RoomDatabase() {
     abstract fun weatherCacheDao(): WeatherCacheDao
     abstract fun placeDao(): PlaceDao
     abstract fun observationDao(): ObservationDao
+    abstract fun placeExtrasDao(): com.alihaydarsayar.communesky.data.extras.PlaceExtrasDao
 }

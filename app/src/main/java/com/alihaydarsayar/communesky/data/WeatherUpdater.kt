@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.data
 
+import kotlinx.coroutines.async
 import android.content.Context
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
 import com.alihaydarsayar.communesky.data.location.LocationRepository
@@ -27,6 +28,7 @@ class WeatherUpdater @Inject constructor(
     private val locationRepository: LocationRepository,
     private val placesRepository: PlacesRepository,
     private val observationRepository: ObservationRepository,
+    private val extrasRepository: com.alihaydarsayar.communesky.data.extras.ExtrasRepository,
 ) {
     /** Konum izni varsa cihaz konumunu bulur; yoksa en mantıklı yedeği seçer. Hata fırlatmaz. */
     suspend fun resolveDevicePlace(): ResolvedPlace {
@@ -51,10 +53,10 @@ class WeatherUpdater @Inject constructor(
      * Ekrandaki bütün yerleri tek istekle yeniler: "Bulunduğum yer" (gösteriliyorsa) ve
      * kayıtlı yerler. Önbelleği ve widget'ları günceller; ağ hatasında istisna fırlatır.
      */
-    suspend fun refreshAll(resolved: ResolvedPlace) {
+    suspend fun refreshAll(resolved: ResolvedPlace, force: Boolean = false) {
         val saved = placesRepository.all()
         val device = resolved.place.takeIf { PlaceSelection.showsDevicePage(resolved.hasPermission, saved.size) }
-        refresh(listOfNotNull(device) + saved.map { it.toPlace() })
+        refresh(listOfNotNull(device) + saved.map { it.toPlace() }, force)
     }
 
     /**
@@ -81,8 +83,12 @@ class WeatherUpdater @Inject constructor(
     }
 
     /** Sadece verilen yerleri yeniler (ör. yeni eklenen yer). */
-    suspend fun refresh(places: List<Place>) {
+    suspend fun refresh(places: List<Place>, force: Boolean = false) = kotlinx.coroutines.coroutineScope {
+        // Ek veriler (ulusal servis, öteki modeller, uyarılar) ana tahminle aynı anda istenir; hata fırlatmaz
+        // ve ana tahmini bekletmez. [force]: kullanıcı aşağı çekip yeniledi, tazelik eşiklerine bakılmaz.
+        val extras = async { extrasRepository.refresh(places, force) }
         weatherRepository.refresh(places)
+        extras.await()
         WeatherWidgetUpdater.updateAll(context)
     }
 

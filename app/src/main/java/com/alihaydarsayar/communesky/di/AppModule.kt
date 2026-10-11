@@ -121,6 +121,14 @@ object AppModule {
     fun provideObservationDao(database: WeatherDatabase): ObservationDao = database.observationDao()
 
     @Provides
+    fun providePlaceExtrasDao(database: WeatherDatabase): com.alihaydarsayar.communesky.data.extras.PlaceExtrasDao = database.placeExtrasDao()
+
+    @Provides
+    @Singleton
+    fun provideOpenMeteoModelsApi(client: OkHttpClient, json: Json): com.alihaydarsayar.communesky.data.remote.OpenMeteoModelsApi =
+        retrofit(OpenMeteoApi.BASE_URL, client, json).create(com.alihaydarsayar.communesky.data.remote.OpenMeteoModelsApi::class.java)
+
+    @Provides
     fun provideWeatherCacheDao(database: WeatherDatabase): WeatherCacheDao = database.weatherCacheDao()
 
     @Provides

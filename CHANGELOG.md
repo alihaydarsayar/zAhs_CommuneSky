@@ -20,6 +20,7 @@ What's new in each version of Commune Sky.
 - **New: Settings › Clock format.** Choose "Same as phone", 24-hour or 12-hour for the app and all widgets. In Turkish the default is 24-hour; in other languages it follows your phone. The widget preview and the home screen always match.
 - Smoother style swiping on the widget setup screen: while you swipe, the styles beside the current one are shown as ready pictures; the style you stop on switches to the live preview without any visible change.
 - Housekeeping: build warnings fixed.
+- **In Türkiye, forecasts now come from the Turkish State Meteorological Service (MGM).** Hourly and daily temperatures and the weather icon come from MGM; rain chance, UV and pressure still come from Open-Meteo. If MGM cannot be reached, the app quietly uses the ECMWF model and returns to MGM as soon as it answers.
 
 ## 1.4 — October 11, 2026
 

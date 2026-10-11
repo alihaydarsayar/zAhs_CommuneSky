@@ -158,7 +158,7 @@ class HomeViewModel @Inject constructor(
                 else -> LocationStatus.Unavailable
             }
             val error = try {
-                updater.refreshAll(resolved)
+                updater.refreshAll(resolved, force = userInitiated)
                 null
             } catch (e: CancellationException) {
                 throw e
