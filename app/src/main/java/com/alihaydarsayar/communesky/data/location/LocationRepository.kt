@@ -29,7 +29,7 @@ import kotlin.coroutines.resume
 /** Cihazın konumunu bulur ve koordinatı şehir/semt adına çevirir. */
 @Singleton
 class LocationRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
 
     private val locationClient by lazy { LocationServices.getFusedLocationProviderClient(context) }
@@ -81,6 +81,7 @@ class LocationRepository @Inject constructor(
     }
 
     @SuppressLint("MissingPermission")
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private suspend fun requestLocation(priority: Int, timeoutMs: Long): Location? {
         val request = CurrentLocationRequest.Builder()
             .setPriority(priority)

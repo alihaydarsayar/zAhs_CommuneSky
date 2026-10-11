@@ -22,7 +22,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class WeatherUpdater @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val weatherRepository: WeatherRepository,
     private val locationRepository: LocationRepository,
     private val placesRepository: PlacesRepository,

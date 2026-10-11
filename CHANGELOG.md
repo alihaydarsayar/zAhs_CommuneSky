@@ -2,6 +2,10 @@
 
 What's new in each version of Commune Sky.
 
+## 1.6 — in testing
+
+- Housekeeping: build warnings fixed.
+
 ## 1.4 — in testing
 
 - **Widgets keep your settings.** Choosing another style no longer resets your background, colors, corners or anything else you picked; only the style changes. Switching the background keeps the transparency you set.

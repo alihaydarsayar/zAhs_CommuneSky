@@ -52,7 +52,7 @@ fun weatherDescriptionRes(code: Int): Int = when (code) {
 }
 
 /** Gökyüzü gradyanının üst, orta ve alt renkleri (res/values/sky_colors.xml). */
-data class SkyColorRes(@ColorRes val top: Int, @ColorRes val mid: Int, @ColorRes val bottom: Int)
+data class SkyColorRes(@param:ColorRes val top: Int, @param:ColorRes val mid: Int, @param:ColorRes val bottom: Int)
 
 val SkyTheme.colorRes: SkyColorRes
     get() = when (this) {

@@ -226,7 +226,7 @@ fun BackgroundPage(style: WidgetStyle, sky: SkyTheme, restyle: ((WidgetStyle) ->
 /** Bir rengin rolü: adı, o anki değeri, varsayılanı, karşısındaki zemin ve nasıl değiştirileceği. */
 class ColorRole(
     val key: String,
-    @StringRes val label: Int,
+    @param:StringRes val label: Int,
     val value: Int?,
     val default: Color,
     /** Okunurluk bu renge karşı ölçülür (yazı için zemin, zemin için yazı); null ise ölçülmez. */

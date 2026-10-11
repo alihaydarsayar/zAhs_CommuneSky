@@ -22,7 +22,7 @@ import kotlin.coroutines.resume
 
 /** Android'in yerleşik Geocoder'ı ile yer arama (cihazda Google servisleri varsa Google'a sorar). */
 class AndroidFallbackGeocoder @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) : FallbackGeocoder {
 
     override suspend fun search(query: String, locale: Locale): List<PlaceSearchResult>? {
@@ -69,7 +69,7 @@ class AndroidFallbackGeocoder @Inject constructor(
 
 /** Telefonun bağlı olduğu ağın ve SIM'in ülkesi ile dil ayarındaki ülke. Ağa bir şey gönderilmez. */
 class TelephonyCountryHints @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) : CountryHints {
     override fun countries(locale: Locale): Set<String> {
         val telephony = context.getSystemService(TelephonyManager::class.java)
