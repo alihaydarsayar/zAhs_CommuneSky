@@ -113,6 +113,18 @@ sealed interface RainNote {
 }
 
 /**
+ * Hissedilen sıcaklık (Steadman'ın gölgedeki "apparent temperature" formülü; Avustralya Meteoroloji Bürosu'nun
+ * kullandığı biçim): sıcaklık, nem ve rüzgârdan. Saf hesap; test edilir.
+ */
+object ApparentTemperature {
+    fun of(temperature: Double, humidityPercent: Int?, windKmh: Double?): Double? {
+        if (humidityPercent == null || windKmh == null) return null
+        val vapour = humidityPercent / 100.0 * 6.105 * Math.exp(17.27 * temperature / (237.7 + temperature))
+        return temperature + 0.33 * vapour - 0.70 * (windKmh / 3.6) - 4.0
+    }
+}
+
+/**
  * Ana tahmini (Open-Meteo) seçilen kaynağın sıcaklık ve hava durumuyla birleştirir. Saf mantık; test edilir.
  *
  * - Saatlik sıcaklık: kaynağın adımları seyrekse (MGM 3 saatte bir) aradaki saatler komşu değerlerden
@@ -159,7 +171,18 @@ object ForecastMerge {
             val code = series.hours.filter { it.weatherCode != null }
                 .minByOrNull { Duration.between(it.at, hour.time).abs() }
                 ?.takeIf { Duration.between(it.at, hour.time).abs() <= NEAREST }?.weatherCode
-            val merged = hour.copy(temperature = temperature, weatherCode = code ?: hour.weatherCode)
+            val humidity = valueAt(series.hours, hour.time) { it.humidity?.toDouble() }?.let { Math.round(it).toInt() } ?: hour.humidity
+            val wind = valueAt(series.hours, hour.time) { it.windSpeed } ?: hour.windSpeed
+            val gust = valueAt(series.hours, hour.time) { it.gust } ?: hour.windGust
+            val merged = hour.copy(
+                temperature = temperature,
+                weatherCode = code ?: hour.weatherCode,
+                humidity = humidity,
+                windSpeed = wind,
+                windGust = gust,
+                // Hissedilen, ekrandaki sıcaklık, nem ve rüzgârla yeniden hesaplanır: ikisi hep tutarlı kalır.
+                apparentTemperature = ApparentTemperature.of(temperature, humidity, wind) ?: hour.apparentTemperature?.let { it + (temperature - hour.temperature) },
+            )
             // Kaynak yağış diyor, ihtimal düşük: çelişen yüzde gösterilmez.
             if (code != null && merged.condition.isWet && hour.precipitationProbability < LOW_CHANCE) merged.copy(showProbability = false) else merged
         }
@@ -181,7 +204,10 @@ object ForecastMerge {
             base.copy(hourly = hourly, daily = daily)
         } else {
             base.copy(
-                hourly = hourly.map { it.copy(temperature = it.temperature + if (it.isDay) day else night) },
+                hourly = hourly.map { hour ->
+                    val shift = if (hour.isDay) day else night
+                    hour.copy(temperature = hour.temperature + shift, apparentTemperature = hour.apparentTemperature?.plus(shift))
+                },
                 daily = daily.map { it.copy(maxTemperature = it.maxTemperature + day, minTemperature = it.minTemperature + night) },
             )
         }
@@ -203,15 +229,18 @@ object ForecastMerge {
     }
 
     /** [time] anındaki sıcaklık: tam o saatin değeri ya da iki komşu değerin doğrusal karışımı. */
-    fun temperatureAt(hours: List<NationalHour>, time: LocalDateTime): Double? {
-        val known = hours.filter { it.temperature != null }
+    fun temperatureAt(hours: List<NationalHour>, time: LocalDateTime): Double? = valueAt(hours, time) { it.temperature }
+
+    /** Herhangi bir sayısal alan için aynı hesap (nem, rüzgâr, hamle). */
+    fun valueAt(hours: List<NationalHour>, time: LocalDateTime, value: (NationalHour) -> Double?): Double? {
+        val known = hours.filter { value(it) != null }
         val before = known.lastOrNull { !it.at.isAfter(time) } ?: return null
-        if (before.at == time) return before.temperature
+        if (before.at == time) return value(before)
         val after = known.firstOrNull { it.at.isAfter(time) } ?: return null
         val gap = Duration.between(before.at, after.at)
         if (gap > MAX_GAP) return null
         val share = Duration.between(before.at, time).toMinutes().toDouble() / gap.toMinutes()
-        return before.temperature!! + (after.temperature!! - before.temperature) * share
+        return value(before)!! + (value(after)!! - value(before)!!) * share
     }
 
     /** Önümüzdeki 12 saat için: ikon ile yağış ihtimali çelişiyorsa ekranda duracak tek bilgi. */

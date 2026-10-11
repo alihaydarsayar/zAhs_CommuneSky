@@ -47,6 +47,7 @@ import com.alihaydarsayar.communesky.model.AppSettings
 import com.alihaydarsayar.communesky.model.TemperatureUnit
 import com.alihaydarsayar.communesky.model.ThemeMode
 import com.alihaydarsayar.communesky.model.WindUnit
+import com.alihaydarsayar.communesky.model.today.Sensitivity
 import com.alihaydarsayar.communesky.ui.common.GlassCard
 import com.alihaydarsayar.communesky.ui.common.GlassSegmented
 import com.alihaydarsayar.communesky.ui.common.ScreenTopBar
@@ -80,6 +81,10 @@ class SettingsViewModel @Inject constructor(
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settingsRepository.setThemeMode(mode) }
 
     fun setAlertNotifications(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAlertNotifications(enabled) }
+
+    fun setWearSensitivity(sensitivity: Sensitivity) = viewModelScope.launch { settingsRepository.setWearSensitivity(sensitivity) }
+
+    fun resetWearFeedback() = viewModelScope.launch { settingsRepository.resetWearFeedback() }
 }
 
 /**
@@ -260,6 +265,43 @@ fun SettingsScreen(
                             }
                         },
                     )
+                }
+            }
+            item {
+                GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.settings_wear)) {
+                    val labels = listOf(R.string.wear_sensitivity_cold, R.string.wear_sensitivity_normal, R.string.wear_sensitivity_warm)
+                    Sensitivity.entries.forEachIndexed { index, sensitivity ->
+                        com.alihaydarsayar.communesky.ui.common.GlassRadioRow(
+                            title = stringResource(labels[index]),
+                            selected = settings.wear.sensitivity == sensitivity,
+                            onClick = { viewModel.setWearSensitivity(sensitivity) },
+                        )
+                    }
+                    Text(
+                        stringResource(R.string.settings_wear_hint),
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp, start = 4.dp),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    // "Üşüdüm" / "Bunaldım" düğmeleriyle birikmiş kaydırma ve sıfırlama.
+                    val feedback = settings.wear.feedback
+                    val decimal = com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat()
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            when {
+                                feedback > 0 -> stringResource(R.string.settings_wear_reset_colder, decimal.format(feedback))
+                                feedback < 0 -> stringResource(R.string.settings_wear_reset_warmer, decimal.format(-feedback))
+                                else -> stringResource(R.string.settings_wear_reset_none)
+                            },
+                            color = TextSecondary,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f).padding(end = 12.dp),
+                        )
+                        if (feedback != 0.0) {
+                            com.alihaydarsayar.communesky.ui.today.GlassPill(stringResource(R.string.settings_wear_reset)) { viewModel.resetWearFeedback() }
+                        }
+                    }
                 }
             }
             item {

@@ -3,6 +3,7 @@ package com.alihaydarsayar.communesky.data.settings
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -12,7 +13,10 @@ import com.alihaydarsayar.communesky.model.HomeAwaySettings
 import com.alihaydarsayar.communesky.model.HomeDetection
 import com.alihaydarsayar.communesky.model.TemperatureUnit
 import com.alihaydarsayar.communesky.model.ThemeMode
+import com.alihaydarsayar.communesky.model.WearSettings
 import com.alihaydarsayar.communesky.model.WindUnit
+import com.alihaydarsayar.communesky.model.today.Clothing
+import com.alihaydarsayar.communesky.model.today.Sensitivity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -34,6 +38,10 @@ class SettingsRepository @Inject constructor(
                 windUnit = prefs[WIND_UNIT].toEnum(WindUnit.KilometersPerHour),
                 themeMode = prefs[THEME_MODE].toEnum(ThemeMode.System),
                 alertNotifications = prefs[ALERT_NOTIFICATIONS] ?: true,
+                wear = WearSettings(
+                    sensitivity = prefs[WEAR_SENSITIVITY].toEnum(Sensitivity.Normal),
+                    feedback = (prefs[WEAR_FEEDBACK] ?: 0.0).coerceIn(-Clothing.FEEDBACK_LIMIT, Clothing.FEEDBACK_LIMIT),
+                ),
                 homeAway = HomeAwaySettings(
                     nearbyRadiusKm = (prefs[NEARBY_RADIUS_KM] ?: HomeDetection.DEFAULT_NEARBY_KM)
                         .coerceIn(HomeDetection.MIN_NEARBY_KM, HomeDetection.MAX_NEARBY_KM),
@@ -57,6 +65,18 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setAlertNotifications(enabled: Boolean) {
         dataStore.edit { it[ALERT_NOTIFICATIONS] = enabled }
+    }
+
+    suspend fun setWearSensitivity(sensitivity: Sensitivity) = set(WEAR_SENSITIVITY, sensitivity.name)
+
+    /** "Üşüdüm" ([feltCold]) ya da "Bunaldım" düğmesi: öneri eşiği yarım derece kayar. */
+    suspend fun addWearFeedback(feltCold: Boolean) {
+        dataStore.edit { it[WEAR_FEEDBACK] = Clothing.afterFeedback(it[WEAR_FEEDBACK] ?: 0.0, feltCold) }
+    }
+
+    /** "Sıfırla": düğmelerle yapılan kaydırma silinir (Çabuk üşürüm / Sıcaklarım seçimi kalır). */
+    suspend fun resetWearFeedback() {
+        dataStore.edit { it.remove(WEAR_FEEDBACK) }
     }
 
     suspend fun setHomeAway(settings: HomeAwaySettings) {
@@ -89,6 +109,8 @@ class SettingsRepository @Inject constructor(
         val AWAY_DISTANCE = booleanPreferencesKey("away_distance")
         val NEARBY_SHOW_BOTH = booleanPreferencesKey("nearby_show_both")
         val ALERT_NOTIFICATIONS = booleanPreferencesKey("alert_notifications")
+        val WEAR_SENSITIVITY = stringPreferencesKey("wear_sensitivity")
+        val WEAR_FEEDBACK = doublePreferencesKey("wear_feedback")
     }
 }
 

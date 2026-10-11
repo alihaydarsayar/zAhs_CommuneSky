@@ -16,9 +16,12 @@ interface OpenMeteoApi {
         @Query("current") current: String = CURRENT_FIELDS,
         @Query("hourly") hourly: String = HOURLY_FIELDS,
         @Query("daily") daily: String = DAILY_FIELDS,
-        // Saatlik veri şu anki saatten başlar. 36 saat alıyoruz ki önbellek birkaç saat eskise de
-        // önümüzdeki 24 saati gösterebilelim.
-        @Query("forecast_hours") forecastHours: Int = 36,
+        // Saatlik veri 48 saat önceden başlar ve 48 saat sonraya kadar gider: önbellek birkaç saat eskise de
+        // önümüzdeki 24 saat gösterilebilir, bugünün ve dünün bütün saatleri de elde olur.
+        @Query("forecast_hours") forecastHours: Int = 48,
+        // Dünle karşılaştırma için geçmiş 48 saat ve dünün günlük değerleri; aynı istekte, ek istek yok.
+        @Query("past_hours") pastHours: Int = 48,
+        @Query("past_days") pastDays: Int = 1,
         @Query("forecast_days") forecastDays: Int = 7,
         // 15 dakikalık yağış: "yağmur X dk içinde başlıyor" uyarısı için. Orta Avrupa ve Kuzey
         // Amerika'da gerçek 15 dakikalık modellerden, diğer yerlerde saatlik verinin ara
@@ -40,7 +43,10 @@ interface OpenMeteoApi {
         @Query("current") current: String = CURRENT_FIELDS,
         @Query("hourly") hourly: String = HOURLY_FIELDS,
         @Query("daily") daily: String = DAILY_FIELDS,
-        @Query("forecast_hours") forecastHours: Int = 36,
+        @Query("forecast_hours") forecastHours: Int = 48,
+        // Dünle karşılaştırma için geçmiş 48 saat ve dünün günlük değerleri; aynı istekte, ek istek yok.
+        @Query("past_hours") pastHours: Int = 48,
+        @Query("past_days") pastDays: Int = 1,
         @Query("forecast_days") forecastDays: Int = 7,
         @Query("minutely_15") minutely15: String = "precipitation",
         @Query("forecast_minutely_15") forecastMinutely15: Int = 12,
@@ -59,10 +65,13 @@ interface OpenMeteoApi {
         private const val HOURLY_FIELDS =
             "temperature_2m,weather_code,precipitation_probability,is_day," +
                 "cloud_cover_low,cloud_cover_mid,cloud_cover_high,sunshine_duration," +
-                "precipitation,showers,snowfall"
+                "precipitation,showers,snowfall," +
+                "apparent_temperature,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m," +
+                "wind_direction_10m,uv_index,visibility,pressure_msl,cloud_cover"
 
         private const val DAILY_FIELDS =
             "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max," +
-                "sunrise,sunset,uv_index_max,sunshine_duration,daylight_duration,precipitation_sum"
+                "sunrise,sunset,uv_index_max,sunshine_duration,daylight_duration,precipitation_sum," +
+                "wind_speed_10m_max,wind_gusts_10m_max"
     }
 }

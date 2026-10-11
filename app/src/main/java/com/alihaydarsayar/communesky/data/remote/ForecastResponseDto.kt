@@ -64,6 +64,17 @@ data class HourlyDto(
     val precipitation: List<Double?> = emptyList(),
     val showers: List<Double?> = emptyList(),
     val snowfall: List<Double?> = emptyList(),
+    // Aşağıdakiler 1.5 ile geldi; eski önbellekte yoktur.
+    @SerialName("apparent_temperature") val apparentTemperature: List<Double?> = emptyList(),
+    @SerialName("relative_humidity_2m") val humidity: List<Double?> = emptyList(),
+    @SerialName("dew_point_2m") val dewPoint: List<Double?> = emptyList(),
+    @SerialName("wind_speed_10m") val windSpeed: List<Double?> = emptyList(),
+    @SerialName("wind_gusts_10m") val windGust: List<Double?> = emptyList(),
+    @SerialName("wind_direction_10m") val windDirection: List<Double?> = emptyList(),
+    @SerialName("uv_index") val uvIndex: List<Double?> = emptyList(),
+    val visibility: List<Double?> = emptyList(),
+    @SerialName("pressure_msl") val pressure: List<Double?> = emptyList(),
+    @SerialName("cloud_cover") val cloudCover: List<Double?> = emptyList(),
 )
 
 /** 15 dakikalık dilimler: her değer bir önceki 15 dakikada düşen yağıştır (mm). */
@@ -86,4 +97,6 @@ data class DailyDto(
     @SerialName("sunshine_duration") val sunshineDuration: List<Double?> = emptyList(),
     @SerialName("daylight_duration") val daylightDuration: List<Double?> = emptyList(),
     @SerialName("precipitation_sum") val precipitationSum: List<Double?> = emptyList(),
+    @SerialName("wind_speed_10m_max") val windSpeedMax: List<Double?> = emptyList(),
+    @SerialName("wind_gusts_10m_max") val windGustMax: List<Double?> = emptyList(),
 )

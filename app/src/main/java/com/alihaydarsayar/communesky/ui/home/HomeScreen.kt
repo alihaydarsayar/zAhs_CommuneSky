@@ -78,6 +78,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import com.alihaydarsayar.communesky.model.today.Clothing
+import com.alihaydarsayar.communesky.ui.common.GlassCard
+import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
+import com.alihaydarsayar.communesky.ui.today.WearSection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -163,6 +167,8 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
+    val actions = remember(viewModel) { HomeActions(onWearFeedback = viewModel::addWearFeedback) }
+    androidx.compose.runtime.CompositionLocalProvider(LocalHomeActions provides actions) {
     HomeContent(
         uiState = uiState,
         onRefresh = { viewModel.refresh(userInitiated = true) },
@@ -182,7 +188,16 @@ fun HomeScreen(
             }
         },
     )
+    }
 }
+
+/** Ana ekrandaki kartların tetiklediği işler; her katmandan tek tek geçirmemek için yukarıdan sağlanır. */
+class HomeActions(
+    /** "Üşüdüm" (true) / "Bunaldım" (false). */
+    val onWearFeedback: (Boolean) -> Unit = {},
+)
+
+val LocalHomeActions = androidx.compose.runtime.staticCompositionLocalOf { HomeActions() }
 
 /** Telefon ayarlarında bu uygulamanın sayfasını açar (izinler oradan verilebilir). */
 private fun appSettingsIntent(context: Context) = Intent(
@@ -374,6 +389,8 @@ private fun ForecastList(
     val today = remember(weather) { forecast.today(now) }
     val hours = remember(weather) { forecast.upcomingHours(now) }
     val days = remember(weather) { forecast.upcomingDays(now) }
+    val wearShift = LocalAppSettings.current.wear.shift
+    val wear = remember(weather, wearShift) { Clothing.advise(forecast, now, wearShift) }
     val status = when {
         uiState.isRefreshing -> HeaderStatus.Refreshing
         uiState.error != null -> HeaderStatus.Failed
@@ -453,6 +470,14 @@ private fun ForecastList(
         if (weather.alerts.isNotEmpty()) item(key = "alerts") { AlertBanner(weather.alerts, now.toLocalDate()) }
         // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.
         weather.sources?.rainNote?.let { note -> item(key = "rainNote") { RainNoteLine(note) } }
+        // Bugün ne giysem (akşam geç saatte yarın için).
+        if (wear != null) {
+            item(key = "wear") {
+                GlassCard(Modifier.fillMaxWidth(), title = stringResource(if (wear.forTomorrow) R.string.wear_title_tomorrow else R.string.wear_title)) {
+                    WearSection(wear, LocalHomeActions.current.onWearFeedback)
+                }
+            }
+        }
         item(key = "hourly") { HourlyCard(forecast.current, hours) }
         item(key = "daily") { DailyCard(days, forecast.current.temperature) }
         if (weather.sources != null) item(key = "sources") { SourceLine(weather) }

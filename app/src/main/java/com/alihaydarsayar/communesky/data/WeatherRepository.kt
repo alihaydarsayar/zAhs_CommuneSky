@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.data
 
+import kotlin.math.roundToInt
 import com.alihaydarsayar.communesky.data.local.WeatherCacheDao
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity
 import com.alihaydarsayar.communesky.data.local.WeatherCacheEntity.Companion.DEVICE_PLACE_ID
@@ -265,6 +266,18 @@ private fun HourlyDto.toModel(daily: DailyDto): List<HourlyForecast> = time.indi
         ),
         precipitationProbability = precipitationProbability.getOrNull(i) ?: 0,
         isDay = isDay.getOrNull(i) == 1,
+        apparentTemperature = apparentTemperature.getOrNull(i),
+        humidity = humidity.getOrNull(i)?.roundToInt(),
+        dewPoint = dewPoint.getOrNull(i),
+        windSpeed = windSpeed.getOrNull(i),
+        windGust = windGust.getOrNull(i),
+        windDirection = windDirection.getOrNull(i)?.roundToInt(),
+        uvIndex = uvIndex.getOrNull(i),
+        visibility = visibility.getOrNull(i),
+        pressure = pressure.getOrNull(i),
+        cloudCover = cloudCover.getOrNull(i)?.roundToInt(),
+        // Yağış "bir önceki saatin toplamı"dır: bu saat içinde düşen miktar bir sonraki satırdadır.
+        precipitation = precipitation.getOrNull(i + 1),
     )
 }
 
@@ -295,6 +308,8 @@ private fun DailyDto.toModel(): List<DailyForecast> = time.indices.mapNotNull { 
         sunset = sunset.getOrNull(i)?.let(LocalDateTime::parse),
         uvIndexMax = uvIndexMax.getOrNull(i),
         precipitationSum = precipitationSum.getOrNull(i),
+        windSpeedMax = windSpeedMax.getOrNull(i),
+        windGustMax = windGustMax.getOrNull(i),
     )
 }
 

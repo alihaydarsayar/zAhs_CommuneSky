@@ -175,6 +175,11 @@ class HomeViewModel @Inject constructor(
     }
 
     /** Ekran açıkken ölçümleri tazeler (aynı yer için 3 dakikadan sık sorulmaz). */
+    /** "Ne giysem" kartındaki "Üşüdüm" / "Bunaldım" düğmeleri. */
+    fun addWearFeedback(feltCold: Boolean) {
+        viewModelScope.launch { settingsRepository.addWearFeedback(feltCold) }
+    }
+
     fun refreshObservations() {
         if (refreshState.value.isRefreshing) return
         viewModelScope.launch { updater.refreshObservations() }

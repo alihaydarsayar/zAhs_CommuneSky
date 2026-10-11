@@ -119,6 +119,24 @@ data class HourlyForecast(
      * düşük yüzdesi onunla çelişir; o zaman yüzde gösterilmez.
      */
     val showProbability: Boolean = true,
+    // Saatlik ek değerler (1.5); eski önbellekte ya da kaynak vermediyse null.
+    val apparentTemperature: Double? = null,
+    val humidity: Int? = null,
+    val dewPoint: Double? = null,
+    /** km/sa. */
+    val windSpeed: Double? = null,
+    /** Hamle, km/sa. */
+    val windGust: Double? = null,
+    val windDirection: Int? = null,
+    val uvIndex: Double? = null,
+    /** Metre. */
+    val visibility: Double? = null,
+    /** hPa. */
+    val pressure: Double? = null,
+    /** %. */
+    val cloudCover: Int? = null,
+    /** Bu saat içinde düşen yağış (mm). */
+    val precipitation: Double? = null,
 ) {
     val condition: WeatherCondition get() = WeatherCondition.fromCode(weatherCode)
 }
@@ -134,6 +152,9 @@ data class DailyForecast(
     val uvIndexMax: Double?,
     /** Günlük toplam yağış (mm). */
     val precipitationSum: Double? = null,
+    /** Günün en yüksek rüzgâr hızı ve hamlesi (km/sa). */
+    val windSpeedMax: Double? = null,
+    val windGustMax: Double? = null,
 ) {
     val condition: WeatherCondition get() = WeatherCondition.fromCode(weatherCode)
 }

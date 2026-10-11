@@ -1,5 +1,8 @@
 package com.alihaydarsayar.communesky.model
 
+import com.alihaydarsayar.communesky.model.today.Clothing
+import com.alihaydarsayar.communesky.model.today.Sensitivity
+
 /** Kullanıcı ayarları. Hava verisi hep °C ve km/sa olarak saklanır; birim sadece gösterirken çevrilir. */
 data class AppSettings(
     val temperatureUnit: TemperatureUnit = TemperatureUnit.Celsius,
@@ -8,7 +11,18 @@ data class AppSettings(
     val homeAway: HomeAwaySettings = HomeAwaySettings(),
     /** Turuncu ve kırmızı meteorolojik uyarı ilk kez çıkınca bildirim. */
     val alertNotifications: Boolean = true,
+    val wear: WearSettings = WearSettings(),
 )
+
+/** "Ne giysem" için kişisel ayar; telefonda kalır. */
+data class WearSettings(
+    val sensitivity: Sensitivity = Sensitivity.Normal,
+    /** "Üşüdüm" (+) / "Bunaldım" (−) düğmelerinin toplamı (°C, en çok ±4). */
+    val feedback: Double = 0.0,
+) {
+    /** Eşiklerin toplam kayması (°C). */
+    val shift: Double get() = Clothing.personalShift(sensitivity, feedback)
+}
 
 /**
  * Ayarlar > Ev ve konum. Evde/yakında/uzakta kararı ve widget'ın uzaktayken neleri göstereceği.
