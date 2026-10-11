@@ -65,12 +65,27 @@ data class PlaceExtras(
     /** Öğrenen düzeltme (°C): gündüz ve gece saatlerinin sıcaklığına eklenir; 0 ise düzeltme yok. */
     val dayCorrection: Double = 0.0,
     val nightCorrection: Double = 0.0,
+    /** Son karnenin özeti (bilgi kutusunda gösterilir) ve karnenin çıkarıldığı gün. */
+    val accuracy: List<StoredAccuracy> = emptyList(),
+    val decidedDay: Long = -1,
 ) {
     val isNational: Boolean get() = centerId != null
 
     fun series(source: ForecastSource): CandidateSeries? =
         if (source == national?.source) national else models.firstOrNull { it.source == source }
 }
+
+/** Bir kaynağın son 30 günlük karnesi, saklanacak kadarıyla. */
+@Serializable
+data class StoredAccuracy(
+    val source: ForecastSource,
+    /** Karşılaştırma yapılabilen gün sayısı. */
+    val days: Int = 0,
+    /** 24 saat sonrası için ortalama mutlak hata (°C). */
+    val dayAheadError: Double? = null,
+    /** Yarının en yüksek sıcaklığındaki ortalama mutlak hata (°C). */
+    val nextDayMaxError: Double? = null,
+)
 
 /** Ekranda görünen tahminin kaynakları ("Tahmin: MGM · Yağış: Open-Meteo"). */
 data class ForecastSources(
@@ -84,6 +99,8 @@ data class ForecastSources(
     /** Uygulanan öğrenen düzeltme (°C); yoksa 0. */
     val dayCorrection: Double = 0.0,
     val nightCorrection: Double = 0.0,
+    /** Kaynakların karnesi; henüz yeterli veri yoksa boş. */
+    val accuracy: List<StoredAccuracy> = emptyList(),
 )
 
 /** İkon ile yağış ihtimali çeliştiğinde ekranda tek bir bilgi durur. */
@@ -156,8 +173,22 @@ object ForecastMerge {
                 weatherCode = from.weatherCode ?: day.weatherCode,
             )
         }
-        val merged = base.copy(hourly = hourly, daily = daily)
+        // Öğrenen düzeltme: gündüz ve gece saatlerine ayrı; günün en yükseği gündüz, en düşüğü gece düzeltmesini alır.
+        val day = extras.dayCorrection
+        val night = extras.nightCorrection
+        val corrected = day != 0.0 || night != 0.0
+        val merged = if (!corrected) {
+            base.copy(hourly = hourly, daily = daily)
+        } else {
+            base.copy(
+                hourly = hourly.map { it.copy(temperature = it.temperature + if (it.isDay) day else night) },
+                daily = daily.map { it.copy(maxTemperature = it.maxTemperature + day, minTemperature = it.minTemperature + night) },
+            )
+        }
         val sources = ForecastSources(
+            dayCorrection = day,
+            nightCorrection = night,
+            accuracy = extras.accuracy,
             forecast = chosen,
             nationalUnavailable = extras.isNational && chosen != ForecastSource.Mgm && extras.chosen != chosen,
             rainNote = if (chosen == ForecastSource.OpenMeteo) null else rainNote(merged, chosen, now),

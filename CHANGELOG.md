@@ -24,6 +24,8 @@ What's new in each version of Commune Sky.
 - A small line under the forecast shows where it comes from (for example "Forecast: MGM · Rain: Open-Meteo"); tap it for details. Settings › About lists all sources.
 - **Weather warnings from MGM.** A yellow, orange or red banner on the home screen when a warning covers your place; tap it to read the full text. Widgets show a small dot in the warning's color. Optional notification for orange and red warnings (Settings › Notifications).
 - How today compares with the seasonal normal in Türkiye (for example "4° above the seasonal normal").
+- **The app checks its own forecasts.** Every hour it notes what each source predicted and compares it with what the nearest station then measured, all on your phone. If another source proves clearly more accurate for a place, the app switches to it by itself. Tap the source line to see how accurate the forecast has been.
+- **Temperatures learn from nearby measurements.** When the forecast is steadily a little too warm or too cold for your place, it is adjusted (by at most 3°) and a small note says so.
 
 ## 1.4 — October 11, 2026
 

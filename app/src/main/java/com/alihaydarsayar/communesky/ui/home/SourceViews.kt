@@ -81,6 +81,18 @@ fun SourceLine(weather: WeatherSnapshot, modifier: Modifier = Modifier) {
             .clickable(role = Role.Button, onClickLabel = stringResource(R.string.source_info_title)) { showInfo = true }
             .padding(vertical = 10.dp, horizontal = 12.dp),
     )
+    // Öğrenen düzeltme uygulanıyorsa küçük bir not: şu anki (gündüz ya da gece) düzeltme.
+    val correction = if (weather.forecast.current.isDay) sources.dayCorrection else sources.nightCorrection
+    if (correction != 0.0) {
+        val decimal = com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat()
+        Text(
+            text = stringResource(R.string.correction_note, (if (correction > 0) "+" else "−") + decimal.format(kotlin.math.abs(correction))),
+            color = TextSecondary.copy(alpha = 0.7f),
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
     if (showInfo) SourceInfoDialog(weather, sources, onDismiss = { showInfo = false })
 }
 
@@ -107,6 +119,20 @@ private fun sourceInfoLines(weather: WeatherSnapshot, sources: ForecastSources):
     if (sources.nationalUnavailable) add(stringResource(R.string.source_info_unavailable, stringResource(R.string.source_mgm)))
     if (sources.forecast != sources.precipitation) add(stringResource(R.string.source_info_precipitation, stringResource(sources.precipitation.fullNameRes)))
     if (weather.observation != null) add(stringResource(R.string.source_info_observation))
+    // Karne: yeterli gün birikince yarının en yükseğindeki ortalama hata, öteki kaynaklarla yan yana.
+    val decimal = com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat()
+    val own = sources.accuracy.firstOrNull { it.source == sources.forecast }
+    val ownError = own?.nextDayMaxError ?: own?.dayAheadError
+    if (own == null || own.days < com.alihaydarsayar.communesky.model.ForecastReferee.MIN_DAYS || ownError == null) {
+        add(stringResource(R.string.accuracy_measuring))
+    } else {
+        val others = sources.accuracy.filter { it.source != sources.forecast }
+            .mapNotNull { other -> (other.nextDayMaxError ?: other.dayAheadError)?.let { stringResource(other.source.shortNameRes) + " " + decimal.format(it) + "°" } }
+        val line = stringResource(R.string.accuracy_summary, decimal.format(ownError))
+        add(if (others.isEmpty()) line else line + " " + stringResource(R.string.accuracy_others, others.joinToString(", ")))
+    }
+    if (sources.dayCorrection != 0.0) add(stringResource(R.string.correction_day, decimal.format(kotlin.math.abs(sources.dayCorrection))))
+    if (sources.nightCorrection != 0.0) add(stringResource(R.string.correction_night, decimal.format(kotlin.math.abs(sources.nightCorrection))))
 }
 
 /** "Mevsim normalinin 4° üstünde"; fark 2°'den küçükse (0) "Mevsim normallerinde". */

@@ -614,4 +614,10 @@
     <string name="normal_above">Mevsim normalinin %1$d° üstünde</string>
     <string name="normal_below">Mevsim normalinin %1$d° altında</string>
     <string name="normal_same">Mevsim normallerinde</string>
+    <string name="accuracy_measuring">Doğruluk ölçülüyor; ilk sonuçlar birkaç gün içinde.</string>
+    <string name="accuracy_summary">Son 30 günde yarının en yüksek sıcaklığı ortalama %1$s° şaştı.</string>
+    <string name="accuracy_others">(%1$s)</string>
+    <string name="correction_day">Yerel ölçümlere göre gündüz sıcaklıkları %1$s° düzeltiliyor.</string>
+    <string name="correction_night">Yerel ölçümlere göre gece sıcaklıkları %1$s° düzeltiliyor.</string>
+    <string name="correction_note">Yerel ölçümlere göre düzeltildi (%1$s°)</string>
 </resources>

@@ -34,6 +34,9 @@ interface PlaceExtrasDao {
 
     @Query("DELETE FROM place_extras WHERE placeId = :placeId")
     suspend fun delete(placeId: Long)
+
+    @Query("DELETE FROM place_extras WHERE placeId NOT IN (:placeIds)")
+    suspend fun deleteExcept(placeIds: List<Long>)
 }
 
 /** Ek verilerin cihazda saklandığı yer. */
@@ -53,6 +56,9 @@ class ExtrasStore @Inject constructor(
     }
 
     suspend fun delete(placeId: Long) = dao.delete(placeId)
+
+    /** Silinmiş yerlerin ek verilerini temizler. */
+    suspend fun deleteExcept(placeIds: List<Long>) = dao.deleteExcept(placeIds)
 
     // Uygulama güncellemesiyle biçim uyumsuz hale gelirse çökmek yerine veri yok sayılır; yeniden indirilir.
     private fun decode(row: PlaceExtrasEntity): PlaceExtras? =

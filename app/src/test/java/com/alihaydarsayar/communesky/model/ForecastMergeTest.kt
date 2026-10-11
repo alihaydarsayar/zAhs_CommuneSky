@@ -182,4 +182,18 @@ class ForecastMergeTest {
         assertTrue(ExtrasFreshness.isStale(0, now, ExtrasFreshness.FORECAST, force = false))
         assertTrue(ExtrasFreshness.isStale(now - 1_000, now, ExtrasFreshness.FORECAST, force = true))
     }
+
+    @Test
+    fun `the learned correction shifts day and night temperatures apart`() {
+        val night = base().let { forecast -> forecast.copy(hourly = forecast.hourly.mapIndexed { i, hour -> hour.copy(isDay = i < 10) }) }
+        val result = ForecastMerge.merge(night, PlaceExtras(dayCorrection = -1.0, nightCorrection = 1.5), now)
+        // Gündüz saatleri 1° düşer, gece saatleri 1,5° artar; en yüksek gündüz, en düşük gece düzeltmesini alır.
+        assertEquals(9.0, result.forecast.hourly[0].temperature, 0.001)
+        assertEquals(11.5, result.forecast.hourly[12].temperature, 0.001)
+        assertEquals(11.0, result.forecast.daily[0].maxTemperature, 0.001)
+        assertEquals(6.5, result.forecast.daily[0].minTemperature, 0.001)
+        assertEquals(-1.0, result.sources.dayCorrection, 0.0)
+        // Düzeltme yoksa hiçbir şey değişmez.
+        assertEquals(night.hourly, ForecastMerge.merge(night, PlaceExtras(), now).forecast.hourly)
+    }
 }

@@ -27,6 +27,7 @@ interface WidgetEntryPoint {
     fun weatherRepository(): WeatherRepository
     fun placesRepository(): PlacesRepository
     fun settingsRepository(): SettingsRepository
+    fun weatherUpdater(): com.alihaydarsayar.communesky.data.WeatherUpdater
 }
 
 /** Widget'ta gösterilecek bir yer: önbellekteki havası ve Ev olup olmadığı. */

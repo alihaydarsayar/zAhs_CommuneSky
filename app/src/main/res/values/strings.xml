@@ -620,4 +620,10 @@
     <string name="normal_above">%1$d° above the seasonal normal</string>
     <string name="normal_below">%1$d° below the seasonal normal</string>
     <string name="normal_same">Around the seasonal normal</string>
+    <string name="accuracy_measuring">Accuracy is being measured; the first results will be here in a few days.</string>
+    <string name="accuracy_summary">Over the last 30 days tomorrow’s high was off by %1$s° on average.</string>
+    <string name="accuracy_others">(%1$s)</string>
+    <string name="correction_day">Daytime temperatures are adjusted by %1$s° using local measurements.</string>
+    <string name="correction_night">Night temperatures are adjusted by %1$s° using local measurements.</string>
+    <string name="correction_note">Adjusted with local measurements (%1$s°)</string>
 </resources>

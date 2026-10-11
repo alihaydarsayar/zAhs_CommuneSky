@@ -30,6 +30,8 @@ class WeatherUpdater @Inject constructor(
     private val observationRepository: ObservationRepository,
     private val extrasRepository: com.alihaydarsayar.communesky.data.extras.ExtrasRepository,
     private val settingsRepository: com.alihaydarsayar.communesky.data.settings.SettingsRepository,
+    private val accuracyRepository: com.alihaydarsayar.communesky.data.accuracy.AccuracyRepository,
+    private val extrasStore: com.alihaydarsayar.communesky.data.extras.ExtrasStore,
 ) {
     /** Konum izni varsa cihaz konumunu bulur; yoksa en mantıklı yedeği seçer. Hata fırlatmaz. */
     suspend fun resolveDevicePlace(): ResolvedPlace {
@@ -101,8 +103,14 @@ class WeatherUpdater @Inject constructor(
         val saved = placesRepository.all()
         val showsDevice = PlaceSelection.showsDevicePage(locationRepository.hasPermission(), saved.size)
         val device = if (showsDevice) weatherRepository.devicePlace() ?: fallbackPlace() else null
-        refresh(listOfNotNull(device) + saved.map { it.toPlace() })
+        val places = listOfNotNull(device) + saved.map { it.toPlace() }
+        refresh(places)
         refreshObservations()
+        // Doğruluk kaydı: adayların tahminleri ve o saatin ölçümü; günde bir karne, hakem ve düzeltme.
+        // Aynı çalışmanın içinde, telefonda; ek istek yok.
+        val offsets = weatherRepository.allWeather.first().mapValues { it.value.forecast.utcOffsetSeconds }
+        accuracyRepository.update(places, { offsets[it] }, { observationRepository.observation(it) })
+        extrasStore.deleteExcept(places.map { it.id })
         // Yeni turuncu/kırmızı uyarı varsa bildirim (aynı uyarı için bir kez); ek uyanma yok.
         com.alihaydarsayar.communesky.work.AlertNotifier.check(
             context, weatherRepository.allWeather.first().values, settingsRepository.settings.first().alertNotifications,

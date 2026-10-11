@@ -121,6 +121,9 @@ object AppModule {
     fun provideObservationDao(database: WeatherDatabase): ObservationDao = database.observationDao()
 
     @Provides
+    fun provideAccuracyDao(database: WeatherDatabase): com.alihaydarsayar.communesky.data.accuracy.AccuracyDao = database.accuracyDao()
+
+    @Provides
     fun providePlaceExtrasDao(database: WeatherDatabase): com.alihaydarsayar.communesky.data.extras.PlaceExtrasDao = database.placeExtrasDao()
 
     @Provides
