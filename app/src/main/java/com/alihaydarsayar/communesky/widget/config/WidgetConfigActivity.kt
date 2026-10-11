@@ -455,6 +455,8 @@ private fun PreviewStage(
     val scope = rememberCoroutineScope()
     Box(modifier.clip(StageShape).background(Brush.verticalGradient(ground))) {
         val current = config.style.styleId(kind)
+        // Stil sayfalarının hazır resimleri (sayfa numarası → ayarın anahtarı ve resim).
+        val snapshots = remember { androidx.compose.runtime.mutableStateMapOf<Int, Pair<Any, androidx.compose.ui.graphics.ImageBitmap>>() }
         // Stil sayfaları: yandaki stillerin kenarı soluk görünür.
         HorizontalPager(
             state = pager,
@@ -482,9 +484,33 @@ private fun PreviewStage(
                     .semantics { contentDescription = description },
                 contentAlignment = Alignment.Center,
             ) {
-                // Açılışta önce ekrandaki stil çizilir; diğer sayfalar uzaklıklarına göre sırayla.
-                val wait = 80L + 150L * kotlin.math.abs(index - pager.currentPage).coerceAtMost(8)
-                WidgetRender(kind, styled, size, scale, input, wallpaperDarkText = darkText, delayMs = wait)
+                // Duran sayfa canlı önizlemedir (saat işler). Yandaki sayfalar, bir kez canlı çizildikten sonra o
+                // çizimin hazır resmiyle gösterilir: kaydırırken ekranda tek canlı önizleme kalır. Kaydırma bitince
+                // yeni sayfa canlıya geçer; canlısı kurulana kadar altında aynı resim durur, görünüm zıplamaz.
+                val key = remember(styled, size, darkText, scale) { listOf(styled, size, darkText, scale) }
+                val snapshot = snapshots[index]?.takeIf { it.first == key }?.second
+                val live = index == pager.settledPage || (!pager.isScrollInProgress && index == pager.currentPage)
+                var ready by remember(key, live) { mutableStateOf(false) }
+                if (snapshot != null && !(live && ready)) {
+                    androidx.compose.foundation.Image(
+                        bitmap = snapshot,
+                        contentDescription = null,
+                        modifier = Modifier.size(size.frame.width * scale, size.frame.height * scale),
+                    )
+                }
+                if (live || snapshot == null) {
+                    // Açılışta önce ekrandaki stil çizilir; diğer sayfalar uzaklıklarına göre sırayla.
+                    val wait = if (snapshot != null) 0L else 80L + 150L * kotlin.math.abs(index - pager.currentPage).coerceAtMost(8)
+                    WidgetRender(
+                        kind, styled, size, scale, input, wallpaperDarkText = darkText, delayMs = wait,
+                        onApplied = { ready = true },
+                        onSnapshot = { image ->
+                            snapshots[index] = key to image
+                            // Bellek: yalnız yakındaki sayfaların resmi tutulur.
+                            snapshots.keys.filter { kotlin.math.abs(it - pager.currentPage) > 3 }.forEach { snapshots.remove(it) }
+                        },
+                    )
+                }
             }
         }
         if (!compact) {

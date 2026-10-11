@@ -38,6 +38,7 @@ What's new in each version of Commune Sky.
 - Widgets now refresh on the hour, so "Now" and the hourly strip show the right hour. No extra wake-ups: the hourly update is simply timed to the full hour.
 - The radial clock with a sky background and the seconds effect sends a much smaller picture to your home screen and looks the same. If a widget's pictures would ever be too large for the home screen, it shows a simple layout instead of staying empty.
 - **New: Settings › Clock format.** Choose "Same as phone", 24-hour or 12-hour for the app and all widgets. In Turkish the default is 24-hour; in other languages it follows your phone. The widget preview and the home screen always match.
+- Smoother style swiping on the widget setup screen: while you swipe, the styles beside the current one are shown as ready pictures; the style you stop on switches to the live preview without any visible change.
 
 ## 1.3 — in testing
 

@@ -15,6 +15,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -103,9 +111,37 @@ fun WidgetRender(
     wallpaperDarkText: Boolean? = null,
     /** Çizimden önceki bekleme. Görünmeyen sayfalar daha geç çizilir: önce ekrandaki önizleme gelir. */
     delayMs: Long = 80,
+    /** Canlı önizleme ekrana kurulunca çağrılır. */
+    onApplied: (() -> Unit)? = null,
+    /**
+     * Canlı önizlemenin, ekranda göründüğü hâliyle (aynı piksellerle) alınmış resmi. Stil kaydırılırken
+     * sayfa bu hazır resimle gösterilir; canlı önizlemeye geçerken görünüm değişmez.
+     */
+    onSnapshot: ((ImageBitmap) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     var views by remember { mutableStateOf<RemoteViews?>(null) }
+    val layer = rememberGraphicsLayer()
+    var applied by remember { mutableIntStateOf(0) }
+    val notifyApplied = rememberUpdatedState(onApplied)
+    val notifySnapshot = rememberUpdatedState(onSnapshot)
+    // Önizleme kurulduktan sonra birkaç kare beklenir (yerleşim ve çizim bitsin), sonra resmi alınır.
+    LaunchedEffect(applied) {
+        if (applied == 0) return@LaunchedEffect
+        withFrameNanos { }
+        notifyApplied.value?.invoke()
+        if (notifySnapshot.value == null) return@LaunchedEffect
+        // Ekranın dışındaki sayfa henüz çizilmemiş olabilir: boş resim saklanmaz, biraz sonra yeniden denenir.
+        repeat(8) {
+            delay(200)
+            withFrameNanos { }
+            val image = runCatching { layer.toImageBitmap() }.getOrNull()
+            if (image != null && !image.isBlank()) {
+                notifySnapshot.value?.invoke(image)
+                return@LaunchedEffect
+            }
+        }
+    }
     // Ayar değişmedikçe yeniden çizilmez; art arda gelen değişiklikler (kaydırıcı) tek çizimde birleşir.
     LaunchedEffect(kind, config, size, wallpaperDarkText) {
         delay(delayMs)
@@ -116,7 +152,16 @@ fun WidgetRender(
             }.onFailure { android.util.Log.w("WidgetPreview", "Önizleme hazırlanamadı", it) }.getOrNull()
         }
     }
-    Box(Modifier.size(size.frame.width * scale, size.frame.height * scale), contentAlignment = Alignment.Center) {
+    Box(
+        Modifier
+            .size(size.frame.width * scale, size.frame.height * scale)
+            // Çizilen içerik bir katmana da kaydedilir: hazır resim bu katmandan, ekrandaki pikselleriyle alınır.
+            .drawWithContent {
+                layer.record { this@drawWithContent.drawContent() }
+                drawLayer(layer)
+            },
+        contentAlignment = Alignment.Center,
+    ) {
         AndroidView(
             factory = { FrameLayout(it) },
             update = { frame ->
@@ -138,6 +183,7 @@ fun WidgetRender(
                             frame.removeAllViews()
                             frame.addView(view)
                             frame.requestLayout()
+                            applied++
                         }
                 }
             },
@@ -160,3 +206,12 @@ fun WidgetRender(
 @Composable
 fun WidgetRender(kind: WidgetKind, config: WidgetConfig, size: DpSize, scale: Float, input: WidgetInput) =
     WidgetRender(kind, config, PreviewSize(size, size), scale, input)
+
+/** Resim tamamen saydam mı? (Henüz çizilmemiş bir önizlemenin resmi.) Seyrek bir ızgarada bakılır. */
+private fun ImageBitmap.isBlank(): Boolean {
+    val bitmap = asAndroidBitmap().let { if (it.config == android.graphics.Bitmap.Config.HARDWARE) it.copy(android.graphics.Bitmap.Config.ARGB_8888, false) else it } ?: return true
+    val stepX = (bitmap.width / 24).coerceAtLeast(1)
+    val stepY = (bitmap.height / 24).coerceAtLeast(1)
+    for (y in 0 until bitmap.height step stepY) for (x in 0 until bitmap.width step stepX) if (bitmap.getPixel(x, y) ushr 24 != 0) return false
+    return true
+}
