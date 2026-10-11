@@ -35,36 +35,34 @@ import kotlin.math.ceil
 /**
  * Önizlemenin, ana ekrandaki widget'la aynı boyutta çizilmesi için boyut hesapları.
  *
- * Ana ekranda widget [frame] boyutunda durur, ama içeriği Glance'in o boyuta en uygun bulduğu
- * basamağa ([draw]) göre çizilir. Önizleme de aynısını yapar; böylece kaydedilen görünüm ile ana
- * ekrandaki görünüm aynı olur.
+ * Ana ekranda widget [frame] boyutunda durur ve içeriği de launcher'ın bildirdiği o boyuta ([draw])
+ * göre çizilir. Önizleme de aynısını yapar; böylece kaydedilen görünüm ile ana ekrandaki görünüm aynı olur.
  */
 data class PreviewSize(val draw: DpSize, val frame: DpSize)
 
 object WidgetSizes {
 
     /**
-     * Boyut basamaklarından [actual] boyuta sığan en yakını; hiçbiri sığmıyorsa en küçüğü
-     * (Android'in ve Glance'in kullandığı kural). Saf mantık; test edilir.
+     * Ana ekrandaki widget'ın çizileceği boyut (dikey ekran): launcher bildirmediyse null. Ana ekranla
+     * aynı kural: Android 12+'da launcher'ın verdiği ölçü listesinden (OPTION_APPWIDGET_SIZES) dikey
+     * ekranınki, yoksa en küçük genişlik × en büyük yükseklik. Glance de widget'ı bu ölçüyle çizer;
+     * önizleme başka bir ölçü kullanırsa kaydedilen widget önizlemeden farklı görünür.
      */
-    fun responsive(sizes: Set<DpSize>, actual: DpSize): DpSize {
-        fun fits(size: DpSize) =
-            ceil(actual.width.value) + 1 > size.width.value && ceil(actual.height.value) + 1 > size.height.value
-        fun distance(size: DpSize): Float {
-            val dw = actual.width.value - size.width.value
-            val dh = actual.height.value - size.height.value
-            return dw * dw + dh * dh
-        }
-        return sizes.filter(::fits).minByOrNull(::distance) ?: sizes.minBy { it.width.value * it.height.value }
-    }
-
-    /** Ana ekrandaki widget'ın gerçek boyutu (dikey ekran): launcher bildirmediyse null. */
     fun actual(context: Context, appWidgetId: Int): DpSize? {
         val options = runCatching { AppWidgetManager.getInstance(context).getAppWidgetOptions(appWidgetId) }.getOrNull() ?: return null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            @Suppress("DEPRECATION")
+            val sizes = options.getParcelableArrayList<android.util.SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
+            portrait(sizes?.map { DpSize(it.width.dp, it.height.dp) }.orEmpty())?.let { return it }
+        }
         val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
         val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
         return if (width > 0 && height > 0) DpSize(width.dp, height.dp) else null
     }
+
+    /** Ölçü listesinden dikey ekranınki: en dar olan (yatayda widget daha geniş ve daha alçaktır). Saf mantık; test edilir. */
+    fun portrait(sizes: List<DpSize>): DpSize? =
+        sizes.filter { it.width.value > 0f && it.height.value > 0f }.minByOrNull { it.width.value }
 
     /** Yeni eklenen widget'ın seçicideki hedef hücre boyutu (Android 12+), öncesinde en küçük boyutu. */
     fun target(context: Context, info: AppWidgetProviderInfo?): DpSize? {
@@ -84,9 +82,9 @@ object WidgetSizes {
         return of(kind, frame)
     }
 
-    /** Saat widget'ı gerçek boyutuyla, diğerleri boyut basamağıyla çizilir (bkz. CommuneSkyWidget.sizeMode). */
-    fun of(kind: WidgetKind, frame: DpSize): PreviewSize =
-        PreviewSize(draw = if (kind == WidgetKind.Clock) frame else responsive(kind.sizes, frame), frame = frame)
+    /** Bütün widget'lar gerçek boyutlarıyla çizilir (bkz. CommuneSkyWidget.sizeMode). */
+    @Suppress("UNUSED_PARAMETER")
+    fun of(kind: WidgetKind, frame: DpSize): PreviewSize = PreviewSize(draw = frame, frame = frame)
 }
 
 /**

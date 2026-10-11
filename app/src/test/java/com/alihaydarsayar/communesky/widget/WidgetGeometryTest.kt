@@ -34,22 +34,6 @@ class WidgetGeometryTest {
     }
 
     @Test
-    fun `the preview is drawn at the size the home screen uses`() {
-        val sizes = WidgetKind.Hourly.sizes
-        // Sığan en yakın basamak seçilir.
-        assertEquals(DpSize(250.dp, 150.dp), WidgetSizes.responsive(sizes, DpSize(344.dp, 190.dp)))
-        assertEquals(DpSize(250.dp, 100.dp), WidgetSizes.responsive(sizes, DpSize(344.dp, 120.dp)))
-        assertEquals(DpSize(180.dp, 40.dp), WidgetSizes.responsive(sizes, DpSize(200.dp, 90.dp)))
-        // Hiçbiri sığmıyorsa en küçüğü.
-        assertEquals(DpSize(180.dp, 40.dp), WidgetSizes.responsive(sizes, DpSize(120.dp, 30.dp)))
-        // Saat widget'ı gerçek boyutuyla çizilir; diğerleri basamağıyla, ama gerçek boyutta durur.
-        val frame = DpSize(344.dp, 190.dp)
-        assertEquals(frame, WidgetSizes.of(WidgetKind.Clock, frame).draw)
-        assertEquals(DpSize(250.dp, 150.dp), WidgetSizes.of(WidgetKind.Hourly, frame).draw)
-        assertEquals(frame, WidgetSizes.of(WidgetKind.Hourly, frame).frame)
-    }
-
-    @Test
     fun `numbers use the narrow digits and words do not`() {
         for (text in listOf("16°", "-3°", "−3°", "1022", "14", "%64", "64%", "7.5")) assertTrue(text, isNumeric(text, 14f))
         for (text in listOf("16° Açık", "19° / 12°", "18:00", "Y 19°", "km", "", "–")) assertTrue(text, !isNumeric(text, 14f))

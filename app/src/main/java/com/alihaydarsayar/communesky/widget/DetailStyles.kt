@@ -68,18 +68,18 @@ private fun PrecipitationBars(data: WidgetPlaceData) {
     } ?: 12f
     val formatter = timeFormatter(context)
     val origin = nowcast.slices.firstOrNull()?.start ?: now
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 12.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 12.sd, contentAlignment = Alignment.CenterStart) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-            Column(GlanceModifier.width(sentenceWidth.dp)) {
+            Column(GlanceModifier.width(sentenceWidth.sd)) {
                 if (theme.shows(WidgetContent.PlaceName)) {
                     PlaceLabel(data, 13f)
-                    VSpace(2.dp)
+                    VSpace(2.sd)
                 }
                 WText(sentence, sentenceSize, weight = WWeight.Medium, maxLines = 3)
             }
-            HSpace(16.dp)
+            HSpace(16.sd)
             Column(GlanceModifier.defaultWeight()) {
-                Row(GlanceModifier.fillMaxWidth().height(barArea.dp), verticalAlignment = Alignment.Bottom) {
+                Row(GlanceModifier.fillMaxWidth().height(barArea.sd), verticalAlignment = Alignment.Bottom) {
                     val slices = nowcast.slices
                     // Glance bir satırda en çok 10 öğe çizer: aralık, her çubuğun kendi kenar boşluğu.
                     (0 until PRECIP_SLOTS).forEach { i ->
@@ -87,17 +87,17 @@ private fun PrecipitationBars(data: WidgetPlaceData) {
                         val mm = slice?.precipitationMm ?: 0.0
                         val wet = slice?.isWet == true
                         val height = if (!wet) 3f else max(6f, (mm / maxMm * (barArea - 2f)).toFloat())
-                        Box(GlanceModifier.defaultWeight().padding(horizontal = 2.5.dp)) {
+                        Box(GlanceModifier.defaultWeight().padding(horizontal = 2.5.sd)) {
                             Box(
-                                GlanceModifier.fillMaxWidth().height(height.dp)
-                                    .rounded(if (wet) theme.colors.rain else theme.colors.text.copy(alpha = 0.14f), 4.dp),
+                                GlanceModifier.fillMaxWidth().height(height.sd)
+                                    .rounded(if (wet) theme.colors.rain else theme.colors.text.copy(alpha = 0.14f), 4.sd),
                             ) {}
                         }
                     }
                 }
-                VSpace(1.dp)
+                VSpace(1.sd)
                 HDivider()
-                VSpace(3.dp)
+                VSpace(3.sd)
                 Row(GlanceModifier.fillMaxWidth()) {
                     WText(context.getString(R.string.now), 11f, color = theme.colors.tertiary)
                     Spacer(GlanceModifier.defaultWeight())
@@ -119,13 +119,19 @@ private fun PrecipitationSentence(data: WidgetPlaceData) {
     val theme = LocalWidgetTheme.current
     val now = data.snapshot.forecast.localNow()
     val nowcast = WidgetPhrases.nowcast(data.snapshot, now)
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 12.dp, contentAlignment = Alignment.CenterStart) {
+    val size = LocalSize.current
+    val sentence = WidgetPhrases.nowcastSentence(context, nowcast, now)
+    // Cümle iki satıra sığacak boyutta yazılır; en küçük boyutta da sığmıyorsa kesilmez, kısa düzen çizilir.
+    val room = size.width.value - 32f - 26f - 12f
+    if (estimateWidthDp(sentence, 12f, theme) > room * 2f * FIT_MARGIN) return PrecipitationTiny(data)
+    val sentenceSize = listOf(16f, 15f, 14f, 13f, 12f).first { estimateWidthDp(sentence, it, theme) <= room * 2f * FIT_MARGIN }
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 12.sd, contentAlignment = Alignment.CenterStart) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            WIcon(R.drawable.ic_wl_drop, 26.dp, theme.colors.rain)
-            HSpace(12.dp)
+            WIcon(R.drawable.ic_wl_drop, 26.sd, theme.colors.rain)
+            HSpace(12.sd)
             Column {
-                if (theme.shows(WidgetContent.PlaceName)) PlaceLabel(data, 12f, weight = WWeight.Regular, color = theme.colors.secondary)
-                WText(WidgetPhrases.nowcastSentence(context, nowcast, now), 16f, weight = WWeight.Medium, maxLines = 2)
+                if (theme.shows(WidgetContent.PlaceName) && size.height >= 76.dp) PlaceLabel(data, 12f, weight = WWeight.Regular, color = theme.colors.secondary)
+                WText(sentence, sentenceSize, weight = WWeight.Medium, maxLines = 2)
             }
         }
     }
@@ -137,6 +143,7 @@ private fun PrecipitationSentence(data: WidgetPlaceData) {
 fun DetailsContent(style: WidgetStyleId, data: WidgetPlaceData) {
     val size = LocalSize.current
     when {
+        size.height.value < TINY_HEIGHT -> TinyRow(data)
         style == WidgetStyleId.DetailsSun || size.width < 180.dp -> SunDetails(data)
         style == WidgetStyleId.DetailsList -> DetailsList(data)
         else -> DetailsTiles(data)
@@ -236,30 +243,31 @@ private fun DetailsTiles(data: WidgetPlaceData) {
     val tileRows = if (twoRows) 2 else 1
     val tileHeight = (size.height.value - 24f - lineHeightDp(20f, theme) - 8f - 8f * (tileRows - 1)) / tileRows - 8f
     val notes = theme.shows(WidgetContent.TileNotes) &&
-        tileHeight >= lineHeightDp(11f, theme) + lineHeightDp(valueSize, theme) + lineHeightDp(10f, theme)
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 12.dp) {
+        tileHeight >= lineHeightDp(11f, theme) + lineHeightDp(valueSize, theme) + lineHeightDp(10f, theme) + 8f
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 12.sd) {
         Column(GlanceModifier.fillMaxSize()) {
-            Row(GlanceModifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(GlanceModifier.fillMaxWidth().padding(horizontal = 4.sd), verticalAlignment = Alignment.CenterVertically) {
                 val current = data.snapshot.forecast.current
                 PlaceLabel(data, 15f, GlanceModifier.defaultWeight())
-                CurrentGlyph(data.snapshot, 18.dp)
-                HSpace(8.dp)
+                CurrentGlyph(data.snapshot, 18.sd)
+                HSpace(8.sd)
                 WText(temp(current.temperature), 20f, weight = WWeight.Medium)
             }
-            VSpace(8.dp)
+            VSpace(8.sd)
             shown.chunked(columns).forEachIndexed { rowIndex, row ->
-                if (rowIndex > 0) VSpace(8.dp)
+                if (rowIndex > 0) VSpace(8.sd)
                 Row(GlanceModifier.fillMaxWidth().defaultWeight()) {
                     row.forEachIndexed { index, tile ->
-                        if (index > 0) HSpace(8.dp)
+                        if (index > 0) HSpace(8.sd)
                         Column(
                             GlanceModifier.defaultWeight().fillMaxHeight()
-                                .rounded(theme.colors.surface, 16.dp)
-                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                                .rounded(theme.colors.surface, 16.sd)
+                                .padding(horizontal = 12.sd, vertical = 4.sd),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             val tileWidth = (size.width.value - 32f - 8f * (columns - 1)) / columns - 24f
-                            WText(tile.label, 11f, color = theme.colors.secondary)
+                            // Başlık karoya sığacak boyutta; kesilmez.
+                            WText(tile.label, fitWidth(tile.label, 11f, tileWidth, theme).coerceAtLeast(8f), color = theme.colors.secondary)
                             if (notes) {
                                 WText(tile.value, valueSize, weight = WWeight.Medium)
                                 // Birim açıklamayla aynı satırda: "km/s · Kuzeydoğu". Sığmazsa açıklama düşer.
@@ -289,10 +297,10 @@ private fun DetailsList(data: WidgetPlaceData) {
     val tiles = detailTiles(context, data.snapshot, LocalAppSettings.current)
     val rows = ((size.height.value - 50f) / (24f * theme.style.textSize.scale)).toInt().coerceIn(2, tiles.size)
     val notes = theme.shows(WidgetContent.TileNotes) && size.width >= 250.dp
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 12.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 12.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             PlaceLabel(data, 14f)
-            VSpace(4.dp)
+            VSpace(4.sd)
             // Glance bir sütunda en çok 10 öğe çizer: satırlar eşit yükseklikte kendi sütunlarında.
             Column(GlanceModifier.fillMaxWidth().defaultWeight()) {
                 tiles.take(rows).forEach { tile ->
@@ -301,7 +309,7 @@ private fun DetailsList(data: WidgetPlaceData) {
                         Spacer(GlanceModifier.defaultWeight())
                         if (notes && tile.note != null) {
                             WText(tile.note, 11f, color = theme.colors.tertiary, align = TextAlign.End)
-                            HSpace(8.dp)
+                            HSpace(8.sd)
                         }
                         WText(tile.value + (tile.unit?.let { " $it" } ?: ""), 14f, weight = WWeight.Medium, align = TextAlign.End)
                     }
@@ -324,7 +332,7 @@ private fun SunDetails(data: WidgetPlaceData) {
     val timeSize = min(30f, size.height.value * 0.18f)
     // Yay, yazılardan (en kötü durumda alt satır ikiye bölünür) kalan alana sığar.
     val arcHeight = (size.height.value - 32f - lineHeightDp(12f, theme) * 3 - lineHeightDp(timeSize, theme) - 6f).coerceIn(16f, 60f)
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 16.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 16.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             val title = context.getString(if (nextIsSunrise) R.string.sunrise else R.string.sunset)
             WText(title, fitWidth(title, 12f, size.width.value - 32f - 8f, theme).coerceAtLeast(9f), color = theme.colors.secondary)
@@ -332,10 +340,10 @@ private fun SunDetails(data: WidgetPlaceData) {
             Spacer(GlanceModifier.defaultWeight())
             val bitmap = WidgetBitmaps.sunArc(
                 if (phase.isDay) phase.progress else 0f,
-                size.width.value - 32f, arcHeight, context.resources.displayMetrics.density,
+                size.width.value - 32f, arcHeight, bitmapDensity(),
                 accent = theme.colors.sun, faint = theme.colors.sun.copy(alpha = 0.35f), horizon = theme.colors.text.copy(alpha = 0.2f),
             )
-            Image(ImageProvider(bitmap), null, GlanceModifier.fillMaxWidth().height(arcHeight.dp), contentScale = ContentScale.FillBounds)
+            Image(ImageProvider(bitmap), null, GlanceModifier.fillMaxWidth().height(arcHeight.sd), contentScale = ContentScale.FillBounds)
             Spacer(GlanceModifier.defaultWeight())
             val other = if (nextIsSunrise) {
                 context.getString(R.string.widget_sunset_short, phase.sunset.format(formatter))
@@ -365,11 +373,16 @@ private fun PrecipitationTiny(data: WidgetPlaceData) {
     val size = LocalSize.current
     val now = data.snapshot.forecast.localNow()
     val sentence = WidgetPhrases.nowcastSentence(context, WidgetPhrases.nowcast(data.snapshot, now), now)
-    val textSize = fitWidth(sentence, 15f, size.width.value - 24f - 26f, theme).coerceAtLeast(11f)
-    WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = 4.dp, contentAlignment = Alignment.CenterStart) {
+    // İki satıra bile sığmıyorsa cümle kesilmez; yerine ikon, sıcaklık ve kısa uyarı gösterilir.
+    val room = size.width.value - 24f - 26f
+    if (estimateWidthDp(sentence, 11f, theme) > room * 2f * FIT_MARGIN) {
+        return TinyRow(data, extra = WidgetPhrases.rainShort(context, data.snapshot), extraColor = theme.colors.rain, showName = false)
+    }
+    val textSize = fitWidth(sentence, 15f, room, theme).coerceAtLeast(11f)
+    WidgetSurface(onClick = openAppAction(), horizontal = 12.sd, vertical = 4.sd, contentAlignment = Alignment.CenterStart) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            WIcon(R.drawable.ic_wl_drop, 18.dp, theme.colors.rain)
-            HSpace(8.dp)
+            WIcon(R.drawable.ic_wl_drop, 18.sd, theme.colors.rain)
+            HSpace(8.sd)
             WText(sentence, textSize, weight = WWeight.Medium, maxLines = 2)
         }
     }

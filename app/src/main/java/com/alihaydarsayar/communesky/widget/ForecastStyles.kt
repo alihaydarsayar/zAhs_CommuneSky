@@ -57,12 +57,12 @@ private fun HourlyHeader(data: WidgetPlaceData, tempSize: Float = 34f) {
         .firstOrNull { estimateWidthDp(it, 12f, theme) <= detailWidth }
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         WText(temperature, tempSize, weight = WWeight.Light)
-        HSpace(8.dp)
+        HSpace(8.sd)
         Column(GlanceModifier.defaultWeight()) {
             PlaceLabel(data, 14f)
             if (!detail.isNullOrEmpty()) WText(detail, 12f, color = theme.colors.secondary)
         }
-        CurrentGlyph(data.snapshot, 26.dp)
+        CurrentGlyph(data.snapshot, 26.sd)
     }
 }
 
@@ -110,23 +110,23 @@ private fun HourlyCurve(data: WidgetPlaceData) {
         widthDp = size.width.value - 32f,
         heightDp = areaHeight,
         barBottomDp = barBottom,
-        density = context.resources.displayMetrics.density,
+        density = bitmapDensity(),
         line = theme.colors.text,
         bar = theme.colors.rain.copy(alpha = 0.9f),
         // "Şimdi" noktası vurgu renginde.
         now = theme.colors.accent,
     )
 
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 16.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 16.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             HourlyHeader(data, tempSize = headerTemp)
-            VSpace(4.dp)
-            Box(GlanceModifier.fillMaxWidth().height(areaHeight.dp)) {
+            VSpace(4.sd)
+            Box(GlanceModifier.fillMaxWidth().height(areaHeight.sd)) {
                 Image(ImageProvider(bitmap), contentDescription = null, modifier = GlanceModifier.fillMaxSize(), contentScale = ContentScale.FillBounds)
                 Row(GlanceModifier.fillMaxSize()) {
                     temps.forEachIndexed { i, t ->
                         Column(GlanceModifier.defaultWeight().fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Spacer(GlanceModifier.height(labelTops[i].dp))
+                            Spacer(GlanceModifier.height(labelTops[i].sd))
                             WText("$t°", labelSize, weight = WWeight.Medium, align = TextAlign.Center)
                             Spacer(GlanceModifier.defaultWeight())
                             if (showPct && probabilities[i] >= 30) {
@@ -136,11 +136,11 @@ private fun HourlyCurve(data: WidgetPlaceData) {
                     }
                 }
             }
-            VSpace(4.dp)
+            VSpace(4.sd)
             Row(GlanceModifier.fillMaxWidth()) {
                 hours.forEachIndexed { i, hour ->
                     WText(
-                        if (i == 0) context.getString(R.string.now) else hour.time.format(hourFormat),
+                        if (i == 0 && estimateWidthDp(context.getString(R.string.now), 11f, theme) + 6f <= (size.width.value - 32f) / hours.size) context.getString(R.string.now) else hour.time.format(hourFormat),
                         11f,
                         GlanceModifier.defaultWeight(),
                         color = if (i == 0) theme.colors.text else theme.colors.tertiary,
@@ -157,7 +157,7 @@ private fun HourlyCurve(data: WidgetPlaceData) {
 @Composable
 private fun HourlyIconsStyle(data: WidgetPlaceData) {
     val size = LocalSize.current
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 16.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 16.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             HourlyHeader(data, tempSize = if (size.height >= 150.dp) 34f else 28f)
             Spacer(GlanceModifier.defaultWeight())
@@ -178,17 +178,17 @@ private fun HourlyRowStyle(data: WidgetPlaceData) {
     // Sütun dar ise "22" gibi kısa saat.
     val column = (size.width.value - 32f - 80f) / count
     val hourFormat = if (column < 40f) hourFormatter(context) else timeFormatter(context)
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 8.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 8.sd, contentAlignment = Alignment.CenterStart) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             Column {
                 WText(temp(forecast.current.temperature), 30f, weight = WWeight.Light)
                 PlaceLabel(data, 12f, weight = WWeight.Regular, color = theme.colors.secondary)
             }
-            HSpace(8.dp)
+            HSpace(8.sd)
             hours.forEach { hour ->
                 Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                     WText(hour.time.format(hourFormat), 11f, color = theme.colors.tertiary, align = TextAlign.Center)
-                    WeatherGlyph(hour.condition, !hour.isDay, 18.dp)
+                    WeatherGlyph(hour.condition, !hour.isDay, 18.sd)
                     WText(temp(hour.temperature), 12f, weight = WWeight.Medium, align = TextAlign.Center)
                 }
             }
@@ -202,6 +202,8 @@ private fun HourlyRowStyle(data: WidgetPlaceData) {
 fun WeeklyContent(style: WidgetStyleId, data: WidgetPlaceData) {
     val size = LocalSize.current
     when {
+        // En küçük boyut: günler sığmaz; ikon, sıcaklık ve (sığarsa) yer.
+        size.height.value < TINY_HEIGHT || size.width < 150.dp -> TinyRow(data)
         style == WidgetStyleId.WeeklyColumns || size.height < 150.dp -> WeeklyColumns(data)
         style == WidgetStyleId.WeeklyList -> WeeklyRows(data, bars = false)
         else -> WeeklyRows(data, bars = true)
@@ -229,26 +231,22 @@ private fun WeeklyRows(data: WidgetPlaceData, bars: Boolean) {
     val weekMax = days.maxOf { it.maxTemperature }
     val span = max(1.0, weekMax - weekMin)
     val showPct = theme.shows(WidgetContent.Precipitation) && size.width >= 250.dp
-    val density = context.resources.displayMetrics.density
+    val density = bitmapDensity()
     val barWidth = size.width.value - 32f - 56f - 26f - (if (showPct) 40f else 0f) - 32f - 32f - 30f
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 16.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 16.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             if (header) {
                 Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     PlaceLabel(data, 15f, GlanceModifier.defaultWeight())
                     val current = forecast.current
-                    WText(
-                        context.getString(
-                            R.string.widget_now_summary,
-                            temp(current.temperature),
-                            context.getString(weatherDescriptionRes(current.weatherCode)),
-                        ),
-                        13f,
-                        color = theme.colors.secondary,
-                        align = TextAlign.End,
-                    )
+                    val nameWidth = measureWidthDp(context, data.snapshot.displayName(context), 15f, theme, WWeight.Medium) + 24f
+                    val summary = listOf(
+                        context.getString(R.string.widget_now_summary, temp(current.temperature), context.getString(weatherDescriptionRes(current.weatherCode))),
+                        temp(current.temperature),
+                    ).firstOrNull { nameWidth + measureWidthDp(context, it, 13f, theme) + 8f <= size.width.value - 32f }
+                    if (summary != null) WText(summary, 13f, color = theme.colors.secondary, align = TextAlign.End)
                 }
-                VSpace(8.dp)
+                VSpace(8.sd)
                 HDivider()
             }
             // Glance bir sütunda en çok 10 öğe çizer: günler kendi sütunlarında, eşit yükseklikte.
@@ -257,24 +255,24 @@ private fun WeeklyRows(data: WidgetPlaceData, bars: Boolean) {
                     Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
                         val isToday = day.date == now.toLocalDate()
                         WText(
-                            dayName(context, day.date, now.toLocalDate()), 14f, GlanceModifier.width(56.dp),
+                            dayName(context, day.date, now.toLocalDate()), 14f, GlanceModifier.width(56.sd),
                             weight = if (isToday) WWeight.Bold else WWeight.Medium,
                             color = if (isToday) theme.colors.accent else null,
                         )
-                        WeatherGlyph(day.condition, isNight = false, size = 22.dp)
-                        HSpace(4.dp)
+                        WeatherGlyph(day.condition, isNight = false, size = 22.sd)
+                        HSpace(4.sd)
                         if (showPct) {
                             val pct = day.precipitationProbability
                             WText(
                                 if (pct > 0) context.getString(R.string.precipitation_value, pct) else "",
                                 12f,
-                                GlanceModifier.width(40.dp),
+                                GlanceModifier.width(40.sd),
                                 color = if (pct >= 30) theme.colors.rain else theme.colors.tertiary,
                             )
                         }
                         if (bars) {
-                            WText(temp(day.minTemperature), 16f, GlanceModifier.width(32.dp), color = theme.colors.secondary, align = TextAlign.End)
-                            HSpace(8.dp)
+                            WText(temp(day.minTemperature), 16f, GlanceModifier.width(32.sd), color = theme.colors.secondary, align = TextAlign.End)
+                            HSpace(8.sd)
                             val start = ((day.minTemperature - weekMin) / span).toFloat()
                             val end = ((day.maxTemperature - weekMin) / span).toFloat()
                             Image(
@@ -282,15 +280,15 @@ private fun WeeklyRows(data: WidgetPlaceData, bars: Boolean) {
                                     WidgetBitmaps.rangeBar(start, end, max(40f, barWidth), 6f, density, theme.colors.text.copy(alpha = 0.14f), theme.colors.cool, theme.colors.warm),
                                 ),
                                 contentDescription = null,
-                                modifier = GlanceModifier.defaultWeight().height(6.dp),
+                                modifier = GlanceModifier.defaultWeight().height(6.sd),
                                 contentScale = ContentScale.FillBounds,
                             )
-                            HSpace(8.dp)
-                            WText(temp(day.maxTemperature), 16f, GlanceModifier.width(32.dp), weight = WWeight.Medium, align = TextAlign.End)
+                            HSpace(8.sd)
+                            WText(temp(day.maxTemperature), 16f, GlanceModifier.width(32.sd), weight = WWeight.Medium, align = TextAlign.End)
                         } else {
                             Spacer(GlanceModifier.defaultWeight())
-                            WText(temp(day.minTemperature), 14f, GlanceModifier.width(40.dp), color = theme.colors.secondary, align = TextAlign.End)
-                            WText(temp(day.maxTemperature), 14f, GlanceModifier.width(40.dp), weight = WWeight.Medium, align = TextAlign.End)
+                            WText(temp(day.minTemperature), 14f, GlanceModifier.width(40.sd), color = theme.colors.secondary, align = TextAlign.End)
+                            WText(temp(day.maxTemperature), 14f, GlanceModifier.width(40.sd), weight = WWeight.Medium, align = TextAlign.End)
                         }
                     }
                 }
@@ -317,11 +315,11 @@ private fun WeeklyColumns(data: WidgetPlaceData) {
     val columnWidth = (size.width.value - 32f) / count.coerceAtLeast(1)
     // Yüksek widget'ta (4×2) ikon ve yazılar bir kademe büyür; alan boş kalmaz.
     val tall = size.height.value >= 140f && columnWidth >= 40f
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 12.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = if (size.height < 100.dp) 4.sd else 12.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             if (size.height >= 150.dp && theme.shows(WidgetContent.Current)) {
                 PlaceLabel(data, 14f)
-                VSpace(8.dp)
+                VSpace(8.sd)
             }
             Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
                 days.forEach { day ->
@@ -330,12 +328,12 @@ private fun WeeklyColumns(data: WidgetPlaceData) {
                         val today = dayName(context, day.date, now.toLocalDate())
                         val name = if (estimateWidthDp(today, 12f, theme) + 6f <= columnWidth) today else dayName(context, day.date, day.date.minusDays(1))
                         WText(name, if (tall) 13f else 12f, weight = WWeight.Medium, align = TextAlign.Center, color = if (isToday) theme.colors.accent else null)
-                        VSpace(if (roomy) 4.dp else 1.dp)
-                        WeatherGlyph(day.condition, isNight = false, size = if (tall) 26.dp else if (roomy) 22.dp else 18.dp)
+                        VSpace(if (roomy) 4.sd else 1.sd)
+                        WeatherGlyph(day.condition, isNight = false, size = if (tall) 26.sd else if (roomy) 22.sd else 18.sd)
                         if (theme.shows(WidgetContent.Precipitation) && day.precipitationProbability >= 30 && size.height >= 120.dp) {
                             WText(context.getString(R.string.precipitation_value, day.precipitationProbability), 10f, color = theme.colors.rain, align = TextAlign.Center)
                         } else {
-                            VSpace(if (roomy) 4.dp else 1.dp)
+                            VSpace(if (roomy) 4.sd else 1.sd)
                         }
                         WText(temp(day.maxTemperature), if (tall) 15f else 13f, weight = WWeight.Medium, align = TextAlign.Center)
                         WText(temp(day.minTemperature), if (tall) 13f else 12f, color = theme.colors.secondary, align = TextAlign.Center)

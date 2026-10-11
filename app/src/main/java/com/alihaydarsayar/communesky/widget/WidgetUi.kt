@@ -11,6 +11,7 @@ import android.view.Gravity
 import android.widget.RemoteViews
 import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -62,8 +63,18 @@ data class WidgetTheme(
     val colors: WidgetColors,
     /** Sistem yazı boyutu çok büyükse widget düzeni bozulmasın diye ölçek en fazla 1,15 sayılır. */
     val fontScaleFix: Float,
+    /**
+     * Ölçek: widget, stilin tasarım boyutundan büyükse 1'den büyük, stilin sığdığı en küçük boyuttan
+     * küçükse 1'den küçük (bkz. [WidgetScale]). Stil kendini "tasarım dp"siyle çizer ([sd]); yazı, ikon,
+     * boşluk ve kenar boşluğu bu oranla birlikte büyür ya da küçülür: büyük widget'ta içerik alanı
+     * doldurur, biraz küçük widget'ta stil başka düzene geçmeden küçülür.
+     */
+    val grow: Float = 1f,
+    /** Saat widget'ı stilin sığmayacağı kadar küçük: ortak yedek düzen çizilir (bkz. [WidgetScale.compact]). */
+    val compact: Boolean = false,
 ) {
-    fun sp(base: Float): TextUnit = (base * style.textSize.scale * fontScaleFix).sp
+    /** Yazının ekrandaki boyutu (sp): kullanıcının yazı boyutu seçimi, sistem ölçeği sınırı ve büyüme. */
+    fun sp(base: Float): TextUnit = (base * style.textSize.scale * fontScaleFix * grow).sp
 
     /** Saat rakamlarının yazı tipi: kullanıcı seçmediyse stilin kendi yazı tipi. */
     val clockFont: ClockFont get() = style.clockFont ?: styleId.clockFont
@@ -95,7 +106,27 @@ enum class WWeight { Light, Regular, Medium, Bold }
 object WidgetPad {
     val Normal = 16.dp
     val Small = 12.dp
+
+    /** Büyük widget'ta kenar boşluğu orantılı büyür, ama bundan fazla olmaz. */
+    val Max = 24.dp
 }
+
+/**
+ * "Tasarım dp"si: stiller ölçülerini tasarım boyutlarına göre yazar; widget daha büyükse hepsi
+ * [WidgetTheme.grow] oranında büyür. [LocalSize] stillere tasarım dp'si cinsinden verilir
+ * (bkz. WidgetRoot), bu yüzden eşik karşılaştırmaları düz dp ile yapılır.
+ */
+val Int.sd: Dp
+    @Composable @ReadOnlyComposable get() = (this * LocalWidgetTheme.current.grow).dp
+val Float.sd: Dp
+    @Composable @ReadOnlyComposable get() = (this * LocalWidgetTheme.current.grow).dp
+val Double.sd: Dp
+    @Composable @ReadOnlyComposable get() = (this.toFloat() * LocalWidgetTheme.current.grow).dp
+
+/** Resimlerin piksel yoğunluğu: tasarım ölçüsüyle çizilip büyütülen resim bulanmasın diye büyüme dahil. */
+@Composable
+@ReadOnlyComposable
+fun bitmapDensity(): Float = LocalContext.current.resources.displayMetrics.density * LocalWidgetTheme.current.grow
 
 /** Yazının rolü: düz yazı, dar kalın rakam ya da dar ince rakam. */
 enum class WFont { Text, Digits, Outline }
@@ -255,8 +286,8 @@ private fun strokeRes(radius: Dp): Int = when {
 @Composable
 fun WidgetSurface(
     modifier: GlanceModifier = GlanceModifier,
-    horizontal: Dp = WidgetPad.Normal,
-    vertical: Dp = WidgetPad.Normal,
+    horizontal: Dp = WidgetPad.Normal.value.sd,
+    vertical: Dp = WidgetPad.Normal.value.sd,
     onClick: Action? = null,
     gradient: List<Color>? = null,
     contentAlignment: Alignment = Alignment.TopStart,
@@ -301,13 +332,21 @@ fun WidgetSurface(
             val size = LocalSize.current
             val density = LocalContext.current.resources.displayMetrics.density
             Image(
-                ImageProvider(WidgetBitmaps.scrim(size.width.value, size.height.value, density, WidgetColors.scrimColor(theme.colors.darkText))),
+                ImageProvider(WidgetBitmaps.scrim(size.width.value, size.height.value, density * theme.grow, WidgetColors.scrimColor(theme.colors.darkText))),
                 contentDescription = null,
                 modifier = GlanceModifier.fillMaxSize(),
                 contentScale = androidx.glance.layout.ContentScale.FillBounds,
             )
         }
-        Box(inner.padding(horizontal = horizontal, vertical = vertical), contentAlignment = contentAlignment) { content() }
+        // Kenar boşluğu büyük widget'ta orantılı büyür, en fazla 24 dp.
+        val capped = theme.grow > 1f
+        Box(
+            inner.padding(
+                horizontal = if (capped) minOf(horizontal, WidgetPad.Max) else horizontal,
+                vertical = if (capped) minOf(vertical, WidgetPad.Max) else vertical,
+            ),
+            contentAlignment = contentAlignment,
+        ) { content() }
     }
 }
 
@@ -325,7 +364,7 @@ fun gradientBitmap(
     val context = LocalContext.current
     val corner = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0f else radius.value
     return WidgetBitmaps.gradient(
-        colors, widthDp, heightDp, context.resources.displayMetrics.density, corner,
+        colors, widthDp, heightDp, bitmapDensity(), corner,
         roundLeft = roundLeft, roundRight = roundRight, roundBottom = roundBottom,
     )
 }
@@ -346,7 +385,7 @@ fun Pill(modifier: GlanceModifier = GlanceModifier, color: Color? = null, conten
     Row(
         modifier = modifier
             .rounded(color ?: LocalWidgetTheme.current.colors.pill, 999.dp)
-            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+            .padding(start = 12.sd, end = 12.sd, top = 6.sd, bottom = 6.sd),
         verticalAlignment = Alignment.CenterVertically,
     ) { content() }
 }
@@ -365,18 +404,18 @@ fun PlaceLabel(
 ) {
     val context = LocalContext.current
     val icon = placeIcon(data)
-    val iconSize = (size * 0.95f).dp
+    val iconSize = (size * 0.95f).sd
     var name = data.snapshot.displayName(context)
     if (uppercase) name = name.uppercase(context.resources.configuration.locales[0])
     if (suffix != null) name += suffix
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         if (icon != null && !iconAfter) {
             WIcon(icon, iconSize, color, description = context.getString(if (data.isHome) R.string.home_place else R.string.current_location))
-            Spacer(GlanceModifier.width(4.dp))
+            Spacer(GlanceModifier.width(4.sd))
         }
         WText(name, size, weight = weight, color = color)
         if (icon != null && iconAfter) {
-            Spacer(GlanceModifier.width(4.dp))
+            Spacer(GlanceModifier.width(4.sd))
             WIcon(icon, iconSize, color)
         }
     }
@@ -592,6 +631,12 @@ fun HSpace(width: Dp) = Spacer(GlanceModifier.width(width))
 /** Bu boyuttan büyük yazılar yazı dolgusu olmadan (sıkı satır yüksekliğiyle) çizilir. */
 const val TIGHT_TEXT_SP = 26f
 
+/**
+ * Büyük yazıyı (saat, sıcaklık) genişliğe sığdırırken bırakılan pay: yazı, hesaplanan genişliğin en çok
+ * bu kadarını kullanır. Launcher'ın yazı tipi ve bildirdiği ölçü tahminden farklı olabildiği için %10 boşluk.
+ */
+const val FIT_MARGIN = 0.9f
+
 /** Sistem yazı tipinin satır yüksekliği (em). */
 private const val LINE_EM = 1.2f
 
@@ -620,7 +665,8 @@ fun measureWidthDp(context: Context, text: String, sizeSp: Float, theme: WidgetT
     val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         typeface = android.graphics.Typeface.create(family, if (bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
         // dp cinsinden: sp × sistemin yazı ölçeği.
-        textSize = theme.sp(sizeSp).value * context.resources.configuration.fontScale
+        // Tasarım dp'si cinsinden (büyüme hariç): sığma hesapları tasarım ölçüsünde yapılır.
+        textSize = theme.sp(sizeSp).value / theme.grow * context.resources.configuration.fontScale
     }
     return paint.measureText(text) + 4f
 }
@@ -632,7 +678,7 @@ fun todayText(context: Context, dateSkeleton: String): String =
 /** [text] [availableDp] genişliğe sığacak en büyük boyut, [max]'ı geçmeden. */
 fun fitWidth(text: String, max: Float, availableDp: Float, theme: WidgetTheme): Float {
     val atOne = estimateWidthDp(text, 1f, theme)
-    return if (atOne <= 0f) max else min(max, availableDp / atOne)
+    return if (atOne <= 0f) max else min(max, availableDp * FIT_MARGIN / atOne)
 }
 
 /** Sıkı (yazı dolgusuz) bir satırın yüksekliği (dp). */
@@ -665,13 +711,13 @@ fun TinyRow(data: WidgetPlaceData, extra: String? = null, extraColor: Color? = n
     val withName = showName && nameWidth <= left
     if (withName) left -= nameWidth
     val withExtra = extra != null && estimateWidthDp("  ·  $extra", 13f, theme) <= left
-    WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = 4.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 12.sd, vertical = 4.sd, contentAlignment = Alignment.CenterStart) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            CurrentGlyph(data.snapshot, icon.dp)
-            HSpace(8.dp)
+            CurrentGlyph(data.snapshot, icon.sd)
+            HSpace(8.sd)
             WText(temperature, tempSize, weight = WWeight.Light)
             if (withName) {
-                HSpace(8.dp)
+                HSpace(8.sd)
                 PlaceLabel(data, 13f, weight = WWeight.Regular, color = theme.colors.secondary)
             }
             if (withExtra) WText("  ·  $extra", 13f, color = extraColor ?: theme.colors.secondary)

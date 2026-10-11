@@ -10,7 +10,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.glance.LocalSize
 import androidx.glance.GlanceId
 import androidx.glance.LocalContext
 import androidx.glance.action.Action
@@ -57,10 +59,10 @@ abstract class CommuneSkyWidget(
 ) : GlanceAppWidget() {
 
     /**
-     * Saat widget'ı gerçek boyutuyla çizilir (ışınsal çizgiler ve saniye şeritleri widget'ın tam
-     * ölçüsüne göre hesaplanır). Diğerleri boyut basamaklarıyla: küçültülünce daha az bilgi.
+     * Bütün widget'lar launcher'ın bildirdiği gerçek boyutla çizilir: içerik o boyuta göre yerleşir ve
+     * büyür (bkz. [WidgetScale]). Boyut basamaklarıyla çizmek, basamaktan büyük alanda içeriği küçük bırakıyordu.
      */
-    override val sizeMode: SizeMode = if (kind == WidgetKind.Clock) SizeMode.Exact else SizeMode.Responsive(kind.sizes)
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     override val previewSizeMode = SizeMode.Responsive(kind.sizes)
 
@@ -79,6 +81,7 @@ abstract class CommuneSkyWidget(
         val initialInput = inputFlow.first()
         val loaded = SystemClock.elapsedRealtimeNanos()
         val debug = WidgetTiming.enabled(context)
+        if (debug) WidgetSizeLog.options(context, kind, id)
         provideContent {
             val config by configFlow.collectAsState(initialConfig)
             val input by inputFlow.collectAsState(initialInput)
@@ -88,6 +91,7 @@ abstract class CommuneSkyWidget(
             if (debug) {
                 // Debug sürümünde çizim süresi ayrıca loglanır: veri yüklendikten sonra 50 ms'yi geçmemeli.
                 val composeStart = SystemClock.elapsedRealtimeNanos()
+                if (debug) WidgetSizeLog.drawn(kind, config, LocalSize.current)
                 WidgetRoot(kind, config, input, previewWallpaperDarkText)
                 WidgetTiming.log(kind, config, loadNanos = loaded - started, drawNanos = SystemClock.elapsedRealtimeNanos() - composeStart)
             } else {
@@ -151,6 +155,58 @@ fun openAppAction(openHomeSettings: Boolean = false): Action {
     }
 }
 
+/**
+ * Debug sürümünde launcher'ın bildirdiği bütün widget ölçülerini ve her çizimin hangi ölçüyle, hangi
+ * düzenle yapıldığını loglar ("adb logcat -s WidgetSize"). Üretici launcher'ları ölçüyü Pixel'den farklı
+ * (çoğu zaman olduğundan küçük) bildirir; widget yanlış düzenle ya da küçük çizilirse buradan görülür.
+ * Yalnızca sayılar loglanır; yer adı ya da hava verisi yazılmaz.
+ */
+object WidgetSizeLog {
+    private const val TAG = "WidgetSize"
+
+    fun options(context: Context, kind: WidgetKind, id: GlanceId) {
+        runCatching {
+            val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
+            val manager = android.appwidget.AppWidgetManager.getInstance(context)
+            val options = manager.getAppWidgetOptions(appWidgetId)
+            fun int(key: String) = if (options.containsKey(key)) options.getInt(key).toString() else "-"
+            val sizes = if (android.os.Build.VERSION.SDK_INT >= 31) {
+                @Suppress("DEPRECATION")
+                options.getParcelableArrayList<android.util.SizeF>(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_SIZES)
+                    ?.joinToString(" ") { "%.0fx%.0f".format(java.util.Locale.ROOT, it.width, it.height) } ?: "-"
+            } else {
+                "-"
+            }
+            val info = manager.getAppWidgetInfo(appWidgetId)
+            val density = context.resources.displayMetrics.density
+            Log.d(
+                TAG,
+                "${kind.name} #$appWidgetId launcher=${info?.let { launcherOf(context) } ?: "-"} sdk=${android.os.Build.VERSION.SDK_INT} " +
+                    "minW=${int(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)} maxW=${int(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)} " +
+                    "minH=${int(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)} maxH=${int(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)} " +
+                    "sizes=[$sizes] provider=${info?.let { "%.0fx%.0f".format(java.util.Locale.ROOT, it.minWidth / density, it.minHeight / density) } ?: "-"} " +
+                    "screen=${context.resources.configuration.screenWidthDp}x${context.resources.configuration.screenHeightDp}dp",
+            )
+        }
+    }
+
+    /** Hangi ana ekran uygulaması? (Ölçüleri bildiren o.) */
+    private fun launcherOf(context: Context): String = runCatching {
+        val home = android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_HOME)
+        // Varsayılan ana ekran sorulamadığı için kurulu ana ekran uygulamaları listelenir (ayarların yedek ekranı hariç).
+        context.packageManager.queryIntentActivities(home, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+            .map { it.activityInfo.packageName }.filter { it != "com.android.settings" }.distinct().joinToString("+")
+    }.getOrNull()?.ifEmpty { null } ?: "?"
+
+    fun drawn(kind: WidgetKind, config: WidgetConfig, size: DpSize) {
+        val style = config.style.styleId(kind)
+        val real = WidgetScale.real(style, size)
+        val grow = WidgetScale.grow(style, real)
+        val layout = if (WidgetScale.compact(style, real)) "yedek(kucuk)" else "stil"
+        Log.d(TAG, "${kind.name}/${style.name} cizim=%.0fx%.0fdp buyume=%.2f duzen=%s".format(java.util.Locale.ROOT, size.width.value, size.height.value, grow, layout))
+    }
+}
+
 /** Debug sürümünde her widget çiziminin süresini loglar ("adb logcat -s WidgetTiming"). */
 object WidgetTiming {
     private const val TAG = "WidgetTiming"
@@ -163,6 +219,97 @@ object WidgetTiming {
     fun log(kind: WidgetKind, config: WidgetConfig, loadNanos: Long, drawNanos: Long) {
         Log.d(TAG, "${kind.name}/${config.style.styleId(kind).name} load=${loadNanos / 1_000_000.0}ms draw=${drawNanos / 1_000_000.0}ms")
     }
+}
+
+/**
+ * Stil, widget'ın boyutuna nasıl uyar? Her stilin bir tasarım boyutu ([WidgetStyleId.previewSize]) ve
+ * düzeninin hâlâ temiz sığdığı en küçük boyutu ([fits]) vardır.
+ *
+ * - Tasarım boyutundan büyük widget'ta her şey (yazı, ikon, boşluk) aynı oranda büyür: içerik alanı doldurur.
+ * - Tasarım ile en küçük boyut arasında oran 1'dir; stil kendi kurallarıyla yerleşir.
+ * - En küçük boyuttan biraz küçükse stil başka düzene geçmez, olduğu gibi küçülür ([FLOOR]'a kadar).
+ * - Daha da küçükse saatler ortak yedek düzene geçer; diğer türler kendi küçük düzenlerini seçer.
+ *
+ * Launcher'lar ölçüyü olduğundan küçük bildirebildiği için (ör. 4×2 hücre için 250×110 dp) bu aralık
+ * geniştir. Saf mantık; test edilir.
+ */
+object WidgetScale {
+    const val MAX_GROW = 3.2f
+
+    /** Saatler bundan fazla küçültülmez; altında ortak yedek düzen çizilir. */
+    const val FLOOR = 0.7f
+
+    /**
+     * Diğer türlerde sınır biraz daha düşük: 3×3 hücreyi 180×180 dp bildiren launcher'larda geniş
+     * stiller (260–270 dp) kesilmek yerine küçülerek sığar.
+     */
+    const val FLOOR_OTHER = 0.66f
+
+    private fun floor(style: WidgetStyleId) = if (style.kind == WidgetKind.Clock) FLOOR else FLOOR_OTHER
+
+    /** Stilin düzeninin kesilmeden sığdığı en küçük boyut (dp). */
+    fun fits(style: WidgetStyleId): DpSize = when (style) {
+        WidgetStyleId.ClockWeather -> DpSize(280.dp, 120.dp)
+        WidgetStyleId.ClockBig -> DpSize(280.dp, 150.dp)
+        WidgetStyleId.ClockSide -> DpSize(300.dp, 150.dp)
+        WidgetStyleId.ClockHome -> DpSize(300.dp, 150.dp)
+        WidgetStyleId.ClockSun -> DpSize(280.dp, 150.dp)
+        WidgetStyleId.ClockLine -> DpSize(240.dp, 90.dp)
+        WidgetStyleId.ClockGlance -> DpSize(240.dp, 84.dp)
+        WidgetStyleId.ClockBold -> DpSize(140.dp, 150.dp)
+        WidgetStyleId.ClockCard -> DpSize(150.dp, 150.dp)
+        // Kadranlar ve ışınsal saat kendi kendine ölçeklenir; bu boyutun altında okunmazlar.
+        WidgetStyleId.ClockRadial -> DpSize(200.dp, 84.dp)
+        WidgetStyleId.ClockAnalog, WidgetStyleId.ClockField, WidgetStyleId.ClockRing, WidgetStyleId.ClockSS -> DpSize(84.dp, 84.dp)
+        // Diğer türler: stilin kendi düzeniyle çizildiği en küçük boyut. Daha küçükte (oran [FLOOR]'un
+        // altına inince) tür, o boyut için hazırlanmış daha sade düzenini seçer.
+        WidgetStyleId.HomeSmart -> DpSize(260.dp, 150.dp)
+        WidgetStyleId.HomeRow -> DpSize(250.dp, 86.dp)
+        WidgetStyleId.HomeList -> DpSize(270.dp, 130.dp)
+        WidgetStyleId.HourlyCurve -> DpSize(260.dp, 150.dp)
+        WidgetStyleId.HourlyIcons -> DpSize(260.dp, 135.dp)
+        WidgetStyleId.HourlyRow -> DpSize(250.dp, 86.dp)
+        WidgetStyleId.WeeklyBars, WidgetStyleId.WeeklyList -> DpSize(260.dp, 170.dp)
+        WidgetStyleId.WeeklyColumns -> DpSize(250.dp, 100.dp)
+        WidgetStyleId.SmallClassic -> DpSize(140.dp, 150.dp)
+        WidgetStyleId.SmallCentered -> DpSize(110.dp, 110.dp)
+        WidgetStyleId.SmallMinimal -> DpSize(130.dp, 145.dp)
+        WidgetStyleId.TextStack -> DpSize(180.dp, 64.dp)
+        WidgetStyleId.TextLine -> DpSize(220.dp, 40.dp)
+        WidgetStyleId.TextTemperature -> DpSize(100.dp, 40.dp)
+        WidgetStyleId.PlacesColumns -> DpSize(260.dp, 64.dp)
+        WidgetStyleId.PlacesList -> DpSize(270.dp, 130.dp)
+        WidgetStyleId.PrecipitationBars -> DpSize(270.dp, 90.dp)
+        WidgetStyleId.PrecipitationSentence -> DpSize(220.dp, 80.dp)
+        WidgetStyleId.DetailsTiles -> DpSize(270.dp, 120.dp)
+        WidgetStyleId.DetailsSun -> DpSize(140.dp, 140.dp)
+        WidgetStyleId.DetailsList -> DpSize(240.dp, 120.dp)
+    }
+
+    /** Sınırlanmamış oran: 1'den küçükse widget, stilin en küçük boyutundan küçüktür. */
+    private fun raw(style: WidgetStyleId, real: DpSize): Float {
+        val design = style.previewSize
+        val up = minOf(real.width.value / design.width.value, real.height.value / design.height.value)
+        if (up >= 1f) return up
+        val min = fits(style)
+        return minOf(real.width.value / min.width.value, real.height.value / min.height.value).coerceAtMost(1f)
+    }
+
+    /** Saat stili bu boyutta kendi düzeniyle değil, ortak yedek düzenle mi çizilir? */
+    fun compact(style: WidgetStyleId, real: DpSize): Boolean =
+        style.kind == WidgetKind.Clock && raw(style, real) < (if (style.scalesItself) 1f else FLOOR)
+
+    /** İçeriğin büyüme (1'den büyük) ya da küçülme (1'den küçük) oranı. */
+    fun grow(style: WidgetStyleId, real: DpSize): Float {
+        if (style.scalesItself) return 1f
+        val raw = raw(style, real)
+        // Stilin sığmayacağı kadar küçük: küçültmek yerine o boyutun düzeni (saatte yedek düzen) çizilir.
+        return if (raw < floor(style)) 1f else raw.coerceAtMost(MAX_GROW)
+    }
+
+    /** Launcher ölçü bildirmediyse (sıfır ya da anlamsız küçük) stilin tasarım boyutu kullanılır. */
+    fun real(style: WidgetStyleId, reported: DpSize): DpSize =
+        if (reported.width.value < 40f || reported.height.value < 24f) style.previewSize else reported
 }
 
 /** Hava sahnesinin teması (gökyüzü renkleri için); veri yoksa açık gece. */
@@ -187,14 +334,20 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput, wallp
         WidgetKind.Places -> input.savedPlaces(includeLocation = false).firstOrNull()?.snapshot
         else -> if (styleId == WidgetStyleId.ClockHome) input.device ?: input.home?.snapshot else input.place(config.place)?.snapshot
     }
+    // Stil, tasarım boyutundan büyük widget'ta oranlı büyür; yerleşimini "tasarım dp"siyle yapar.
+    val real = WidgetScale.real(styleId, LocalSize.current)
+    val grow = WidgetScale.grow(styleId, real)
     val theme = WidgetTheme(
         kind = kind,
         styleId = styleId,
         style = config.style,
         colors = WidgetColors.resolve(context, config.style, primary.skyTheme(), wallpaperDarkText ?: WallpaperTone.prefersDarkText(context)),
         fontScaleFix = WidgetTheme.fontScaleFix(context),
+        grow = grow,
+        compact = WidgetScale.compact(styleId, real),
     )
     CompositionLocalProvider(
+        LocalSize provides DpSize(real.width / grow, real.height / grow),
         LocalAppSettings provides input.settings,
         LocalWidgetTheme provides theme,
         LocalWidgetPlaceId provides primary?.placeId,

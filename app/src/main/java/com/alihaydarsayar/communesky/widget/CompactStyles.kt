@@ -39,7 +39,7 @@ private fun SmallClassic(data: WidgetPlaceData) {
     val size = LocalSize.current
     val current = data.snapshot.forecast.current
     val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 16.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 16.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 if (theme.shows(WidgetContent.PlaceName)) {
@@ -47,7 +47,7 @@ private fun SmallClassic(data: WidgetPlaceData) {
                 } else {
                     Spacer(GlanceModifier.defaultWeight())
                 }
-                CurrentGlyph(data.snapshot, 30.dp)
+                CurrentGlyph(data.snapshot, 30.sd)
             }
             Spacer(GlanceModifier.defaultWeight())
             val temperature = temp(current.temperature)
@@ -90,9 +90,9 @@ private fun SmallCentered(data: WidgetPlaceData) {
     }.joinToString(" · ")
     val showDetail = detail.isNotEmpty() && left >= lineHeightDp(12f, theme) &&
         estimateWidthDp(detail, 12f, theme) <= size.width.value - 24f
-    WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = 12.dp, contentAlignment = Alignment.Center) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 12.sd, vertical = 12.sd, contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalAlignment = Alignment.CenterVertically) {
-            CurrentGlyph(data.snapshot, icon.dp)
+            CurrentGlyph(data.snapshot, icon.sd)
             WText(temperature, tempSize, weight = WWeight.Light, align = TextAlign.Center)
             if (showPlace) PlaceLabel(data, 13f)
             if (showDetail) WText(detail, 12f, color = theme.colors.secondary, align = TextAlign.Center)
@@ -108,7 +108,7 @@ private fun SmallMinimal(data: WidgetPlaceData) {
     val size = LocalSize.current
     val current = data.snapshot.forecast.current
     val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 16.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 16.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (theme.shows(WidgetContent.PlaceName)) {
@@ -116,7 +116,7 @@ private fun SmallMinimal(data: WidgetPlaceData) {
                 } else {
                     Spacer(GlanceModifier.defaultWeight())
                 }
-                CurrentGlyph(data.snapshot, 24.dp)
+                CurrentGlyph(data.snapshot, 24.sd)
             }
             Spacer(GlanceModifier.defaultWeight())
             WText(temp(current.temperature), min(64f, size.height.value * 0.4f), weight = WWeight.Medium)
@@ -133,14 +133,14 @@ private fun SmallMinimal(data: WidgetPlaceData) {
 @Composable
 private fun SmallRow(data: WidgetPlaceData) {
     val theme = LocalWidgetTheme.current
-    WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = 8.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 12.sd, vertical = 8.sd, contentAlignment = Alignment.CenterStart) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-            CurrentGlyph(data.snapshot, 26.dp)
-            HSpace(8.dp)
+            CurrentGlyph(data.snapshot, 26.sd)
+            HSpace(8.sd)
             val temperature = temp(data.snapshot.forecast.current.temperature)
             WText(temperature, fitTemperature(temperature, 26f, LocalSize.current.width.value - 24f - 34f, LocalSize.current.height.value - 16f, theme), weight = WWeight.Light)
             if (theme.shows(WidgetContent.PlaceName) && LocalSize.current.width >= 150.dp) {
-                HSpace(8.dp)
+                HSpace(8.sd)
                 PlaceLabel(data, 12f, GlanceModifier.defaultWeight(), weight = WWeight.Regular, color = theme.colors.secondary)
             }
         }
@@ -179,21 +179,21 @@ private fun TextStack(data: WidgetPlaceData) {
         height >= lineHeightDp(13f, theme)
     if (showCondition) height -= lineHeightDp(13f, theme)
     val showRain = rain != null && estimateWidthDp(rain, 13f, theme) + 17f <= column && height >= lineHeightDp(13f, theme)
-    WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = 4.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 12.sd, vertical = 4.sd, contentAlignment = Alignment.CenterStart) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             WText(temperature, tempSize, weight = WWeight.Light)
-            HSpace(8.dp)
+            HSpace(8.sd)
             Column {
                 if (theme.shows(WidgetContent.PlaceName) && estimateWidthDp(name, 15f, theme) + 20f <= column) {
                     PlaceLabel(data, 15f)
                 } else {
-                    CurrentGlyph(data.snapshot, 20.dp)
+                    CurrentGlyph(data.snapshot, 20.sd)
                 }
                 if (showCondition) WText(condition, 13f, color = theme.colors.secondary)
                 if (showRain) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        WIcon(com.alihaydarsayar.communesky.R.drawable.ic_wl_drop, 13.dp, theme.colors.rain)
-                        HSpace(4.dp)
+                        WIcon(com.alihaydarsayar.communesky.R.drawable.ic_wl_drop, 13.sd, theme.colors.rain)
+                        HSpace(4.sd)
                         WText(rain!!, 13f, color = theme.colors.rain)
                     }
                 }
@@ -220,10 +220,10 @@ private fun TextLine(data: WidgetPlaceData) {
     // Önce durum düşer (yağmur uyarısı daha önemli), sonra en sondaki.
     if (width() > available) parts.removeAll { !it.second && parts.indexOf(it) > 0 }
     while (parts.isNotEmpty() && width() > available) parts.removeAt(parts.lastIndex)
-    WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = 4.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 12.sd, vertical = 4.sd, contentAlignment = Alignment.CenterStart) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            CurrentGlyph(data.snapshot, 22.dp)
-            HSpace(8.dp)
+            CurrentGlyph(data.snapshot, 22.sd)
+            HSpace(8.sd)
             WText(temperature, 22f, weight = WWeight.Medium)
             parts.forEach { (text, rain) ->
                 WText("  ·  $text", 15f, color = if (rain) theme.colors.rain else null)
@@ -244,12 +244,12 @@ private fun TextTemperature(data: WidgetPlaceData) {
     val withName = theme.shows(WidgetContent.PlaceName) && size.height.value >= 70f
     val nameHeight = if (withName) lineHeightDp(14f, theme) else 0f
     val tempSize = fitTemperature(temperature, 60f, size.width.value - 24f - icon - 8f, size.height.value - 8f - nameHeight, theme)
-    WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = 4.dp, contentAlignment = Alignment.CenterStart) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 12.sd, vertical = 4.sd, contentAlignment = Alignment.CenterStart) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 WText(temperature, tempSize, weight = WWeight.Light)
-                HSpace(8.dp)
-                CurrentGlyph(data.snapshot, icon.dp)
+                HSpace(8.sd)
+                CurrentGlyph(data.snapshot, icon.sd)
             }
             if (withName && estimateWidthDp(name, 14f, theme) <= size.width.value - 24f) {
                 WText(name, 14f, weight = WWeight.Medium)
@@ -284,10 +284,10 @@ private fun PlacesColumns(places: List<WidgetPlaceData>) {
     val tiny = size.height.value < TINY_HEIGHT
     val columnWidth = (size.width.value - 24f) / shown.size - 8f
     val context = LocalContext.current
-    WidgetSurface(onClick = openAppAction(), horizontal = 12.dp, vertical = if (compact) 4.dp else 12.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 12.sd, vertical = if (compact) 4.sd else 12.sd) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             shown.forEachIndexed { index, data ->
-                if (index > 0) VDivider(GlanceModifier.fillMaxHeight().padding(vertical = 8.dp))
+                if (index > 0) VDivider(GlanceModifier.fillMaxHeight().padding(vertical = 8.sd))
                 val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
                 Column(
                     GlanceModifier.defaultWeight().fillMaxHeight(),
@@ -301,16 +301,18 @@ private fun PlacesColumns(places: List<WidgetPlaceData>) {
                             WText(temperature, 18f, weight = WWeight.Medium)
                             val name = data.snapshot.displayName(context)
                             if (estimateWidthDp(temperature, 18f, theme) + estimateWidthDp(name, 12f, theme) + 8f <= columnWidth) {
-                                HSpace(8.dp)
+                                HSpace(8.sd)
                                 WText(name, 12f, color = theme.colors.secondary)
                             }
                         }
                     } else {
                         if (estimateWidthDp(data.snapshot.displayName(context), 13f, theme) + 18f <= columnWidth) PlaceLabel(data, 13f) else WText(data.snapshot.displayName(context), 12f, weight = WWeight.Medium)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            CurrentGlyph(data.snapshot, if (compact) 20.dp else 24.dp)
-                            HSpace(8.dp)
-                            WText(temperature, if (compact) 24f else 28f, weight = WWeight.Light)
+                            CurrentGlyph(data.snapshot, if (compact) 20.sd else 24.sd)
+                            HSpace(8.sd)
+                            // Sıcaklık sütuna sığacak boyutta; asla kısaltılmaz.
+                            val iconWidth = (if (compact) 20f else 24f) + 8f
+                            WText(temperature, fitWidth(temperature, if (compact) 24f else 28f, columnWidth - iconWidth, theme), weight = WWeight.Light)
                         }
                     }
                     if (theme.shows(WidgetContent.HighLow) && today != null && !compact) {
@@ -332,7 +334,7 @@ private fun PlacesList(places: List<WidgetPlaceData>) {
     val size = LocalSize.current
     // En çok 5 yer: Glance bir sütunda en çok 10 öğe çizer (yerler + aralarındaki çizgiler).
     val rows = ((size.height.value - 24f) / (40f * theme.style.textSize.scale)).toInt().coerceIn(1, min(5, places.size))
-    WidgetSurface(onClick = openAppAction(), horizontal = 16.dp, vertical = 12.dp) {
+    WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 12.sd) {
         Column(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             places.take(rows).forEachIndexed { index, data ->
                 if (index > 0) HDivider()
@@ -345,10 +347,10 @@ private fun PlacesList(places: List<WidgetPlaceData>) {
                     }
                     if (theme.shows(WidgetContent.HighLow) && today != null) {
                         WText(highLow(today.maxTemperature, today.minTemperature), 12f, color = theme.colors.tertiary)
-                        HSpace(8.dp)
+                        HSpace(8.sd)
                     }
-                    CurrentGlyph(data.snapshot, 24.dp)
-                    HSpace(8.dp)
+                    CurrentGlyph(data.snapshot, 24.sd)
+                    HSpace(8.sd)
                     WText(temp(current.temperature), 24f, weight = WWeight.Light, align = TextAlign.End)
                 }
             }

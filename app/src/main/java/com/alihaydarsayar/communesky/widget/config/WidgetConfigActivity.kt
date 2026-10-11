@@ -223,12 +223,18 @@ private fun WidgetConfigScreen(
         recent = (listOf(color) + recent.filter { it != color }).take(WidgetConfigStore.RECENT_COLORS)
         scope.launch { store.setRecentColors(recent) }
     }
+    val styles = kind.styles
+    val pager = rememberPagerState(initialPage = styles.indexOf(styleId).coerceAtLeast(0)) { styles.size }
     fun save() {
         if (saving) return
         saving = true
+        // Ekranda görünen stil kaydedilir: kaydırma bitmeden (sayfa yerine oturmadan) "Kaydet"e
+        // basılırsa ayardaki stil henüz eski olabilir.
+        val shown = styles.getOrNull(pager.currentPage)
+        val toSave = if (shown != null && current.style.styleId(kind) != shown) current.copy(style = current.style.withStyle(shown)) else current
         scope.launch {
             // Önce yazma biter (ayar diske ulaşır), sonra yalnızca bu widget yeniden çizilir, en son ekran kapanır.
-            store.set(appWidgetId, current, kind)
+            store.set(appWidgetId, toSave, kind)
             WeatherWidgetUpdater.update(context, kind, appWidgetId)
             onDone()
         }
@@ -248,8 +254,6 @@ private fun WidgetConfigScreen(
         }
     }
 
-    val styles = kind.styles
-    val pager = rememberPagerState(initialPage = styles.indexOf(styleId).coerceAtLeast(0)) { styles.size }
     // Önizleme kaydırılıp yeni sayfada durunca stil değişir; kullanıcının seçtiği her şey korunur.
     LaunchedEffect(pager) {
         snapshotFlow { pager.settledPage }.collect { index ->

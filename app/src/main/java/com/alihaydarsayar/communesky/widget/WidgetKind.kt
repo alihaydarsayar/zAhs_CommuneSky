@@ -222,6 +222,12 @@ enum class WidgetStyleId(
     /** Analog kadranlı stiller: kare çizilir, arka plan ayarı kadranın çevresini etkiler. */
     val isAnalog: Boolean get() = this == ClockAnalog || this == ClockField || this == ClockRing || this == ClockSS
 
+    /**
+     * Kadranlar ve ışınsal saat her ölçüsünü widget'ın boyutundan hesaplar; diğer stiller tasarım
+     * boyutuna ([previewSize]) göre yazılmıştır ve daha büyük widget'ta oranlı büyütülür.
+     */
+    val scalesItself: Boolean get() = isAnalog || this == ClockRadial
+
     /** Bu stilde ekleme ekranında açılıp kapanabilen içerikler. */
     val contents: List<WidgetContent>
         get() = when (this) {
