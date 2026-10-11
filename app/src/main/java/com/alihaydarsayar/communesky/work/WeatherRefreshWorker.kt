@@ -24,6 +24,8 @@ class WeatherRefreshWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result = try {
         updater.refreshInBackground()
+        // Bir sonraki çalışma saat başına hizalanır (widget'larda "Şimdi" doğru saati göstersin).
+        RefreshScheduler.align(applicationContext)
         Result.success()
     } catch (e: IOException) {
         // Geçici ağ sorunu: WorkManager biraz bekleyip tekrar dener.
