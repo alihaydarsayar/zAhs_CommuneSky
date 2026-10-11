@@ -268,7 +268,16 @@ data class WidgetColors(
             val strong = style.legibility == Legibility.Strong
             val scrim = onWallpaper && style.legibility == Legibility.Scrim
             val paletteAccent = palette.accent ?: WidgetInk.Accent
-            val accent = style.accent?.let { Color(it) } ?: paletteAccent
+            // Vurgu rengi ("Bugün", "şimdi" noktası) zeminde okunmalı: kontrast 3:1'in altındaysa tonu korunarak
+            // açılır ya da koyulaşır (ör. mavi gökyüzünde kırmızı "Bugün"). Duvar kâğıdının üstünde zemin
+            // bilinmez; yazının rengine göre açık ya da koyu bir zemin varsayılır.
+            val grounds = when {
+                onWallpaper -> listOf(if (dark) Color(0xFFE9EEF3) else Color(0xFF15171A))
+                style.background == BackgroundKind.Sky -> palette.gradient
+                style.background == BackgroundKind.Solid -> listOf(palette.solid)
+                else -> listOf(Color(0xFF15171A))
+            }
+            val accent = Color(Contrast.ensure((style.accent?.let { Color(it) } ?: paletteAccent).toArgb(), grounds.map { it.toArgb() }))
             val ink = when {
                 customText != null && style.textColor == TextColorMode.Auto -> customText
                 dark -> WidgetInk.Dark

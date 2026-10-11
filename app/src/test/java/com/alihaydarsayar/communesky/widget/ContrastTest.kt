@@ -73,4 +73,21 @@ class ContrastTest {
         assertEquals(12, WidgetInk.Presets.size)
         assertEquals(12, WidgetInk.Presets.toSet().size)
     }
+
+    @Test
+    fun `an accent that is hard to read on its ground is lightened or darkened until it reaches 3 to 1`() {
+        val red = 0xFFE5484D.toInt()
+        // Mavi gökyüzü gradyanında kırmızı "Bugün": 3:1'in altında.
+        val sky = listOf(0xFF2F6BD8.toInt(), 0xFF4A8AE8.toInt(), 0xFF7FB2F2.toInt())
+        assertTrue(sky.minOf { Contrast.ratio(red, it) } < Contrast.MIN_LARGE)
+        val fixed = Contrast.ensure(red, sky)
+        assertTrue(sky.all { Contrast.ratio(fixed, it) >= Contrast.MIN_LARGE })
+        // Koyu zeminde kırmızı zaten okunur: renk değişmez.
+        assertEquals(red, Contrast.ensure(red, listOf(0xFF121316.toInt())))
+        // Açık zeminde açık sarı koyulaşır.
+        val yellow = 0xFFFDE68A.toInt()
+        val onPaper = Contrast.ensure(yellow, listOf(0xFFF4F2EC.toInt()))
+        assertTrue(Contrast.ratio(onPaper, 0xFFF4F2EC.toInt()) >= Contrast.MIN_LARGE)
+        assertTrue(Contrast.luminance(onPaper) < Contrast.luminance(yellow))
+    }
 }

@@ -39,6 +39,34 @@ object Contrast {
 
     fun isReadable(foreground: Int, background: Int): Boolean = ratio(foreground, background) >= MIN
 
+    /** Vurgu rengi gibi kalın ve büyük öğeler için en az kontrast (3:1). */
+    const val MIN_LARGE = 3.0
+
+    /**
+     * [foreground] rengini, [backgrounds] zeminlerinin hepsinde en az [min] kontrast verecek kadar açar ya da
+     * koyulaştırır. Rengin tonu korunur: beyaza ya da siyaha doğru, yeten en küçük karışım seçilir.
+     * Zaten okunuyorsa renk aynen döner.
+     */
+    fun ensure(foreground: Int, backgrounds: List<Int>, min: Double = MIN_LARGE): Int {
+        if (backgrounds.isEmpty()) return foreground
+        fun worst(color: Int) = backgrounds.minOf { ratio(color, it) }
+        if (worst(foreground) >= min) return foreground
+        val white = 0xFFFFFFFF.toInt()
+        val black = 0xFF000000.toInt()
+        fun toward(target: Int, t: Double): Int {
+            fun mix(shift: Int) = ((foreground shr shift and 0xFF) * (1 - t) + (target shr shift and 0xFF) * t).roundToInt().coerceIn(0, 255)
+            return (0xFF shl 24) or (mix(16) shl 16) or (mix(8) shl 8) or mix(0)
+        }
+        for (step in 1..20) {
+            val lighter = toward(white, step / 20.0)
+            val darker = toward(black, step / 20.0)
+            val light = worst(lighter)
+            val dark = worst(darker)
+            if (light >= min || dark >= min) return if (light >= dark) lighter else darker
+        }
+        return if (worst(white) >= worst(black)) white else black
+    }
+
     /** "#1A2B3C", "1a2b3c" ya da "#F1A2B3C4" → ARGB; geçersizse null. */
     fun parseHex(text: String): Int? {
         val hex = text.trim().removePrefix("#")
