@@ -861,4 +861,30 @@
     <string name="settings_air_notifications">Kötü hava kalitesi</string>
     <string name="settings_air_notifications_hint">Yerlerinden birinde hava kalitesi kötü ya da daha kötü olunca bir bildirim. Her yer için günde en çok bir kez.</string>
     <string name="what_air_quality">Avrupa Hava Kalitesi İndeksi, havanın ne kadar temiz olduğunu o an en kötü durumdaki kirleticiye göre özetler: ince partiküller, ozon, azot dioksit ya da kükürt dioksit. İnce partiküller (PM2.5) akciğerin derinlerine ulaştığı için sağlık açısından en önemlisidir. Değerler, Copernicus Atmosfer İzleme Servisi\'nin yaklaşık on kilometrelik bir alan için model tahminidir; işlek bir caddede hava gösterilenden kötü olabilir. Hava çoğu zaman rüzgârsız, soğuk sabahlarda ve trafiğin yoğun olduğu saatlerde en kirlidir.</string>
+    <plurals name="in_days">
+        <item quantity="one">%1$d gün sonra</item>
+        <item quantity="other">%1$d gün sonra</item>
+    </plurals>
+    <string name="moon">Ay</string>
+    <string name="moon_new">Yeni ay</string>
+    <string name="moon_waxing_crescent">Hilal (büyüyen)</string>
+    <string name="moon_first_quarter">İlk dördün</string>
+    <string name="moon_waxing_gibbous">Şişkin ay (büyüyen)</string>
+    <string name="moon_full">Dolunay</string>
+    <string name="moon_waning_gibbous">Şişkin ay (küçülen)</string>
+    <string name="moon_last_quarter">Son dördün</string>
+    <string name="moon_waning_crescent">Hilal (küçülen)</string>
+    <string name="moon_illuminated">%%%1$d aydınlık</string>
+    <string name="moon_growing">Dolunaya doğru büyüyor</string>
+    <string name="moon_shrinking">Yeni aya doğru küçülüyor</string>
+    <string name="moon_rise">Ay doğuşu</string>
+    <string name="moon_set">Ay batışı</string>
+    <string name="moon_rise_short">Doğuş %1$s</string>
+    <string name="moon_set_short">Batış %1$s</string>
+    <string name="moon_no_rise">Bugün doğmuyor</string>
+    <string name="moon_no_set">Bugün batmıyor</string>
+    <string name="moon_next">Sıradaki</string>
+    <string name="moon_when">%1$s, %2$s · %3$s</string>
+    <string name="moon_thirty_days">30 gün</string>
+    <string name="what_moon">Ay kendi başına parlamaz; güneşin aydınlattığı yarısını görürüz. Dünya\'nın çevresinde yaklaşık 29 buçuk günde dönerken o aydınlık yarının önce daha çoğunu, sonra daha azını görürüz: görünmeyen yeni aydan ilk dördüne, dolunaya ve yeniden başa. Ay her gün yaklaşık 50 dakika daha geç doğar. Dolunay sıralarında bütün gece gökyüzündedir ve ışığı sönük yıldızları gizler; yeni ay sıralarında gökyüzü en karanlık hâlindedir. Bu sayfadaki her şey telefonunda hesaplanır.</string>
 </resources>

@@ -203,6 +203,7 @@ fun DetailScreen(weather: WeatherSnapshot?, initial: DetailTab, title: String?, 
                 when {
                     metric != null -> MetricPage(metric, weather)
                     tab == DetailTab.AirQuality -> AirQualityPage(weather)
+                    tab == DetailTab.Moon -> MoonPage(weather)
                 }
             }
         }
@@ -223,11 +224,13 @@ enum class DetailTab(val metric: Metric?) {
 
     /** Kendi düzeni olan sayfalar. */
     AirQuality(null),
+    Moon(null),
     ;
 
     val label: Int
         get() = when (this) {
             AirQuality -> R.string.air_quality
+            Moon -> R.string.moon
             else -> MetricText.tab(metric!!)
         }
 

@@ -34,6 +34,7 @@ What's new in each version of Commune Sky.
 - Optional morning summary notification with the day's temperatures, when rain starts and what to wear. Off by default; you choose the time in Settings.
 - Tap any detail tile to open a full page: today's chart hour by hour, a comparison with yesterday, the week ahead and a plain explanation. Pages for feels like, wind, humidity, UV, visibility, pressure, cloud, precipitation and the sun.
 - Air quality from the Copernicus service (CAMS): a card on the home screen and a page with the European index, pollutants, the next 48 hours, three days ahead and health advice. An optional notification warns when the air turns poor, and the run tip takes it into account.
+- A moon page worked out entirely on your phone: phase and how much is lit, moonrise and moonset, the next full and new moon and the 30 days ahead.
 
 ## 1.4 — October 11, 2026
 

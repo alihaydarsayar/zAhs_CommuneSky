@@ -504,6 +504,11 @@ private fun ForecastList(
             }
         }
         item(key = "details") { DetailTiles(forecast.current, today, now, onOpen = LocalHomeActions.current.onOpenDetail) }
+        // Ay: evre, aydınlanma, doğuş ve batış (telefonda hesaplanır).
+        item(key = "moon") {
+            val actions = LocalHomeActions.current
+            com.alihaydarsayar.communesky.ui.detail.MoonTile(weather, onOpen = { actions.onOpenTab(com.alihaydarsayar.communesky.ui.detail.DetailTab.Moon) })
+        }
         item(key = "attribution") { Attribution() }
     }
 }

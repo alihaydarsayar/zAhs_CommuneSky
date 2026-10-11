@@ -867,4 +867,30 @@
     <string name="settings_air_notifications">Poor air quality</string>
     <string name="settings_air_notifications_hint">A notification when the air at one of your places turns poor or worse. At most once a day for each place.</string>
     <string name="what_air_quality">The European Air Quality Index sums up how clean the air is, from the pollutant that is worst at that moment: fine particles, ozone, nitrogen dioxide or sulphur dioxide. Fine particles (PM2.5) matter most for health because they reach deep into the lungs. The values are a model forecast from the Copernicus Atmosphere Monitoring Service for an area of about ten kilometres, so a busy street can be worse than the number shown. Air is often worst on calm, cold mornings and during rush hours.</string>
+    <plurals name="in_days">
+        <item quantity="one">in %1$d day</item>
+        <item quantity="other">in %1$d days</item>
+    </plurals>
+    <string name="moon">Moon</string>
+    <string name="moon_new">New moon</string>
+    <string name="moon_waxing_crescent">Waxing crescent</string>
+    <string name="moon_first_quarter">First quarter</string>
+    <string name="moon_waxing_gibbous">Waxing gibbous</string>
+    <string name="moon_full">Full moon</string>
+    <string name="moon_waning_gibbous">Waning gibbous</string>
+    <string name="moon_last_quarter">Last quarter</string>
+    <string name="moon_waning_crescent">Waning crescent</string>
+    <string name="moon_illuminated">%1$d%% lit</string>
+    <string name="moon_growing">Growing towards the full moon</string>
+    <string name="moon_shrinking">Shrinking towards the new moon</string>
+    <string name="moon_rise">Moonrise</string>
+    <string name="moon_set">Moonset</string>
+    <string name="moon_rise_short">Rises %1$s</string>
+    <string name="moon_set_short">Sets %1$s</string>
+    <string name="moon_no_rise">Does not rise today</string>
+    <string name="moon_no_set">Does not set today</string>
+    <string name="moon_next">Coming up</string>
+    <string name="moon_when">%1$s, %2$s · %3$s</string>
+    <string name="moon_thirty_days">30 days</string>
+    <string name="what_moon">The moon does not shine by itself; we see the half that the sun lights up. As it circles the Earth in about 29 and a half days, we see more and then less of that lit half: from the new moon, which is invisible, through the first quarter to the full moon and back. The moon rises about 50 minutes later each day. Around the full moon it is up all night and its light hides faint stars; around the new moon the sky is at its darkest. Everything on this page is calculated on your phone.</string>
 </resources>
