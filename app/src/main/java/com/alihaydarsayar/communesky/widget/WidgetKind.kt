@@ -222,6 +222,13 @@ enum class WidgetStyleId(
     /** Analog kadranlı stiller: kare çizilir, arka plan ayarı kadranın çevresini etkiler. */
     val isAnalog: Boolean get() = this == ClockAnalog || this == ClockField || this == ClockRing || this == ClockSS
 
+    /** Saat ve dakika rakamları olan (ayrı renklendirilebilen) stiller. "Bir bakışta" yalnız tarihi gösterir. */
+    val hasClockDigits: Boolean get() = kind == WidgetKind.Clock && !isAnalog && this != ClockGlance
+
+    /** Vurgu rengini gerçekten kullanan stiller (bugünün adı, "şimdi" noktası, ışınsal saatte gün, kadranlarda saniye kolu). */
+    val usesAccent: Boolean
+        get() = isAnalog || this == ClockRadial || this == HourlyCurve || this == WeeklyBars || this == WeeklyColumns || this == WeeklyList
+
     /**
      * Kadranlar ve ışınsal saat her ölçüsünü widget'ın boyutundan hesaplar; diğer stiller tasarım
      * boyutuna ([previewSize]) göre yazılmıştır ve daha büyük widget'ta oranlı büyütülür.

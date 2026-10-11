@@ -551,4 +551,6 @@
     <string name="widget_ss_hands_slim">İnce katedral</string>
     <string name="widget_ss_hands_breguet">Breguet</string>
     <string name="widget_ss_hands_hint">Yalnızca akrep ve yelkovan değişir. Kadran, renkler ve saniye kolu aynı kalır.</string>
+    <string name="widget_config_theme_solid_note">Arka plan “Düz” yapıldı: temanın zemini saydam ya da cam arka planda görünmez.</string>
+    <string name="widget_config_theme_cleared_note">Tema görünsün diye tek tek seçtiğin renkler temizlendi.</string>
 </resources>

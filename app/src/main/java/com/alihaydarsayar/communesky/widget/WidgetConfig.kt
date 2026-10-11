@@ -313,6 +313,36 @@ data class WidgetStyle(
 
     fun withColorTheme(theme: ColorTheme): WidgetStyle = copy(colorTheme = theme, touched = touched + StyleField.ColorTheme)
 
+    /** Tek tek seçilmiş renk var mı? (Hazır tema seçilince bunlar temizlenir.) */
+    val hasOwnColors: Boolean
+        get() = hourColor != null || minuteColor != null || accent != null || lineColor != null || pillColor != null ||
+            customBackground != null || customText != null || customSecondary != null || textColor != TextColorMode.Auto
+
+    /** Hazır temanın zemini bu arka planda görünür mü? Saydam ve cam arka planda yazı duvar kâğıdının üstündedir. */
+    val showsThemeGround: Boolean get() = !WidgetColors.isOnWallpaper(this)
+
+    /**
+     * Ayar ekranında hazır bir tema seçmek: tema bütünüyle uygulanır.
+     *
+     * - Daha önce tek tek seçilmiş renkler (saat, dakika, yazı, vurgu, çizgi, hap) temizlenir; yoksa
+     *   temayı ezerler ve tema seçilmiş göründüğü hâlde widget değişmez.
+     * - Temanın zemini saydam ya da cam arka planda görünmez; o durumda arka plan "Düz" ve tam dolu yapılır.
+     */
+    fun withThemePreset(theme: ColorTheme): WidgetStyle {
+        val grounded = if (showsThemeGround) this else withBackground(BackgroundKind.Solid).copy(transparency = 0)
+        return grounded.withColorTheme(theme).copy(
+            hourColor = null,
+            minuteColor = null,
+            accent = null,
+            lineColor = null,
+            pillColor = null,
+            customBackground = null,
+            customText = null,
+            customSecondary = null,
+            textColor = TextColorMode.Auto,
+        )
+    }
+
     /**
      * 1.3'ten kalan kayıtlarda [touched] yoktur: o sürümde stilin önerdiği görünümden farklı olan
      * alanlar kullanıcının seçimi sayılır.

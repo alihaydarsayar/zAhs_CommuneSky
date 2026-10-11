@@ -1,6 +1,7 @@
 package com.alihaydarsayar.communesky.widget.config
 
 import androidx.compose.foundation.layout.aspectRatio
+import com.alihaydarsayar.communesky.widget.ClockDigitColors
 import com.alihaydarsayar.communesky.widget.SsHands
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
@@ -279,14 +280,16 @@ fun colorRoles(kind: WidgetKind, style: WidgetStyle, colors: WidgetColors): List
                 if (style.background == BackgroundKind.Solid) {
                     add(ColorRole("ground", R.string.widget_color_background, style.customBackground.takeIf { isCustom }, ground, colors.text) { s, c -> custom(s).copy(customBackground = c ?: ground.toArgb()) })
                 }
-                val against = ground.takeIf { !colors.onWallpaper }
-                if (kind == WidgetKind.Clock) {
-                    val hour = style.hourColor?.let { Color(it) } ?: palette.hour ?: colors.text
-                    add(ColorRole("hours", R.string.widget_color_hours_short, style.hourColor, palette.hour ?: colors.text, against) { s, c -> s.copy(hourColor = c) })
-                    add(ColorRole("minutes", R.string.widget_color_minutes_short, style.minuteColor, palette.minute ?: hour, against) { s, c -> s.copy(minuteColor = c) })
+                // "Kalın" stilinde rakamlar temanın açık kutusunun üstündedir.
+                val against = if (styleId == WidgetStyleId.ClockBold && ClockDigitColors.boldFilled(style)) palette.container else ground.takeIf { !colors.onWallpaper }
+                if (styleId.hasClockDigits) {
+                    // Varsayılan renkler, widget'ı çizen kuralla aynı yerden gelir: listede görünen, widget'taki renktir.
+                    add(ColorRole("hours", R.string.widget_color_hours_short, style.hourColor, ClockDigitColors.hour(styleId, style.copy(hourColor = null), colors), against) { s, c -> s.copy(hourColor = c) })
+                    add(ColorRole("minutes", R.string.widget_color_minutes_short, style.minuteColor, ClockDigitColors.minute(styleId, style.copy(minuteColor = null), colors), against) { s, c -> s.copy(minuteColor = c) })
                 }
                 add(ColorRole("text", R.string.widget_color_text, style.customText.takeIf { isCustom }, colors.text, against) { s, c -> custom(s).copy(customText = c) })
-                add(ColorRole("accent", R.string.widget_color_accent, style.accent, colors.paletteAccent, against) { s, c -> s.copy(accent = c) })
+                // Vurgu yalnızca onu gerçekten kullanan stillerde listelenir.
+                if (styleId.usesAccent) add(ColorRole("accent", R.string.widget_color_accent, style.accent, colors.paletteAccent, against) { s, c -> s.copy(accent = c) })
                 if (styleId == WidgetStyleId.ClockRadial) {
                     add(ColorRole("lines", R.string.widget_color_lines, style.lineColor, colors.text, against) { s, c -> s.copy(lineColor = c) })
                     add(ColorRole("pill", R.string.widget_color_pill, style.pillColor, colors.text, null) { s, c -> s.copy(pillColor = c) })
@@ -308,8 +311,12 @@ fun ColorsPage(
     val context = LocalContext.current
     val styleId = style.styleId(kind)
     val colors = remember(style, sky) { WidgetColors.resolve(context, style, sky) }
-    // Hazır renk temaları: her biri o temanın renkleriyle küçük bir "17:22" örneği.
-    LazyRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    // Hazır tema seçilince temizlenen renkler ve değişen arka plan "Geri al" ile geri gelir.
+    var beforeTheme by remember { mutableStateOf<WidgetStyle?>(null) }
+    var themeNote by remember { mutableStateOf<Int?>(null) }
+    // Hazır renk temaları: her biri o temanın renkleriyle küçük bir "17:22" örneği. Kadranların (SS dışında)
+    // renkleri temadan gelmez; orada tema kartları gösterilmez.
+    if (styleId == WidgetStyleId.ClockSS || !styleId.isAnalog) LazyRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (styleId == WidgetStyleId.ClockSS) {
             items(SsClock.Preset.entries, key = { it.name }) { preset ->
                 val look = preset.look
@@ -324,8 +331,30 @@ fun ColorsPage(
                 val palette = remember(theme, sky, style.customBackground) { WidgetPalettes.of(context, theme, sky, style.customBackground) }
                 val text = if (palette.solidDarkText) WidgetInk.Dark else WidgetInk.Light
                 ThemeCard(stringResource(theme.labelRes), style.colorTheme == theme, palette.solid, palette.hour ?: text, palette.minute ?: palette.hour ?: text) {
-                    restyle { it.withColorTheme(theme) }
+                    val applied = style.withThemePreset(theme)
+                    if (applied != style) {
+                        // Arka plan değiştiyse ya da tek tek seçilmiş renkler temizlendiyse kısa bir notla söylenir.
+                        themeNote = when {
+                            !style.showsThemeGround -> R.string.widget_config_theme_solid_note
+                            style.hasOwnColors -> R.string.widget_config_theme_cleared_note
+                            else -> null
+                        }
+                        beforeTheme = if (themeNote != null) style else null
+                        restyle { it.withThemePreset(theme) }
+                    }
                 }
+            }
+        }
+    }
+    themeNote?.let { note ->
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(note), color = C.secondary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+            beforeTheme?.let { previous ->
+                CfgButton(stringResource(R.string.undo), onClick = {
+                    restyle { previous }
+                    beforeTheme = null
+                    themeNote = null
+                }, filled = false)
             }
         }
     }

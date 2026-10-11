@@ -92,6 +92,7 @@ import com.alihaydarsayar.communesky.widget.WidgetInput
 import com.alihaydarsayar.communesky.widget.WidgetKind
 import com.alihaydarsayar.communesky.widget.WidgetPlace
 import com.alihaydarsayar.communesky.widget.WidgetSamples
+import com.alihaydarsayar.communesky.widget.WidgetSizeLog
 import com.alihaydarsayar.communesky.widget.WidgetStyle
 import com.alihaydarsayar.communesky.widget.WidgetStyleId
 import dagger.hilt.android.AndroidEntryPoint
@@ -235,6 +236,8 @@ private fun WidgetConfigScreen(
         scope.launch {
             // Önce yazma biter (ayar diske ulaşır), sonra yalnızca bu widget yeniden çizilir, en son ekran kapanır.
             store.set(appWidgetId, toSave, kind)
+            // Kaydedilen ayarın özeti; ana ekrandaki çizimin logladığı özetle ("WidgetSize ... ayar=") aynı olmalı.
+            WidgetSizeLog.saved(context, kind, appWidgetId, toSave)
             WeatherWidgetUpdater.update(context, kind, appWidgetId)
             onDone()
         }

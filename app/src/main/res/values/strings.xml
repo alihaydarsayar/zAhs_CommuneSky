@@ -557,4 +557,6 @@
     <string name="widget_ss_hands_slim">Slim cathedral</string>
     <string name="widget_ss_hands_breguet">Breguet</string>
     <string name="widget_ss_hands_hint">Only the hour and minute hands change. The dial, the colors and the second hand stay the same.</string>
+    <string name="widget_config_theme_solid_note">Background set to Solid: a theme\'s ground doesn\'t show on a clear or glass background.</string>
+    <string name="widget_config_theme_cleared_note">The colors you had picked one by one were cleared so the theme shows.</string>
 </resources>
