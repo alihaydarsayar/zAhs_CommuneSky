@@ -617,4 +617,7 @@
     <string name="settings_alert_notifications">Weather warnings</string>
     <string name="settings_alert_notifications_hint">A notification when an orange or red warning is issued for one of your places. Once per warning.</string>
     <string name="settings_notifications_blocked">Notifications are turned off for Commune Sky in your phone’s settings.</string>
+    <string name="normal_above">%1$d° above the seasonal normal</string>
+    <string name="normal_below">%1$d° below the seasonal normal</string>
+    <string name="normal_same">Around the seasonal normal</string>
 </resources>

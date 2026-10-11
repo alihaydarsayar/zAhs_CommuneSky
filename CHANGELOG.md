@@ -23,6 +23,7 @@ What's new in each version of Commune Sky.
 - **In Türkiye, forecasts now come from the Turkish State Meteorological Service (MGM).** Hourly and daily temperatures and the weather icon come from MGM; rain chance, UV and pressure still come from Open-Meteo. If MGM cannot be reached, the app quietly uses the ECMWF model and returns to MGM as soon as it answers.
 - A small line under the forecast shows where it comes from (for example "Forecast: MGM · Rain: Open-Meteo"); tap it for details. Settings › About lists all sources.
 - **Weather warnings from MGM.** A yellow, orange or red banner on the home screen when a warning covers your place; tap it to read the full text. Widgets show a small dot in the warning's color. Optional notification for orange and red warnings (Settings › Notifications).
+- How today compares with the seasonal normal in Türkiye (for example "4° above the seasonal normal").
 
 ## 1.4 — October 11, 2026
 

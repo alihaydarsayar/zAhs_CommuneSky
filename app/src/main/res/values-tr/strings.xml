@@ -611,4 +611,7 @@
     <string name="settings_alert_notifications">Meteorolojik uyarılar</string>
     <string name="settings_alert_notifications_hint">Yerlerinden biri için turuncu ya da kırmızı uyarı çıkınca bir bildirim. Her uyarı için bir kez.</string>
     <string name="settings_notifications_blocked">Telefon ayarlarında Commune Sky bildirimleri kapalı.</string>
+    <string name="normal_above">Mevsim normalinin %1$d° üstünde</string>
+    <string name="normal_below">Mevsim normalinin %1$d° altında</string>
+    <string name="normal_same">Mevsim normallerinde</string>
 </resources>

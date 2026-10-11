@@ -446,6 +446,9 @@ private fun ForecastList(
                 },
             )
         }
+        // Bugünün en yükseği mevsim normaline göre nerede (ulusal servisin uzun yıllar ortalaması).
+        val normal = weather.normal
+        if (normal != null && today != null) item(key = "normal") { SeasonalNormalLine(normal.difference(today.maxTemperature)) }
         // Meteorolojik uyarı varsa renkli şerit.
         if (weather.alerts.isNotEmpty()) item(key = "alerts") { AlertBanner(weather.alerts, now.toLocalDate()) }
         // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.

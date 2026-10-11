@@ -109,6 +109,17 @@ private fun sourceInfoLines(weather: WeatherSnapshot, sources: ForecastSources):
     if (weather.observation != null) add(stringResource(R.string.source_info_observation))
 }
 
+/** "Mevsim normalinin 4° üstünde"; fark 2°'den küçükse (0) "Mevsim normallerinde". */
+@Composable
+fun SeasonalNormalLine(difference: Int, modifier: Modifier = Modifier) {
+    val text = when {
+        difference > 0 -> stringResource(R.string.normal_above, difference)
+        difference < 0 -> stringResource(R.string.normal_below, -difference)
+        else -> stringResource(R.string.normal_same)
+    }
+    Text(text, color = TextSecondary, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, modifier = modifier.fillMaxWidth())
+}
+
 /** İkon ile yağış ihtimali çeliştiğinde gösterilen tek satır. */
 @Composable
 fun RainNoteLine(note: RainNote, modifier: Modifier = Modifier) {
