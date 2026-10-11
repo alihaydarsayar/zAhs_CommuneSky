@@ -1,5 +1,12 @@
 package com.alihaydarsayar.communesky.widget
 
+import org.junit.Assume.assumeTrue
+import java.time.ZoneId
+import java.time.LocalTime
+import java.time.LocalDate
+import java.time.Clock
+import android.widget.AnalogClock
+import android.view.ViewGroup
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -185,6 +192,24 @@ class WidgetRenderTest {
         }
     }
 
+    /**
+     * SS saatinin yerleşimi: kollar farklı konumlardayken mühür, tarih penceresi ve hava (üç tema).
+     * Dosyalar: widget_ss_yerlesim_<saat>_<tema>.png
+     */
+    @Test
+    fun renderSsLayout() = runBlocking {
+        eachLanguage {
+            val sample = WidgetSamples.input(context, scenario = WidgetSamples.Scenario.AtHome)
+            for (time in listOf(LocalTime.of(10, 9, 40), LocalTime.of(2, 47, 12), LocalTime.of(4, 50, 30))) {
+                for (preset in SsClock.Preset.entries) {
+                    val style = SsClock.apply(WidgetStyleId.ClockSS.defaultStyle(), preset)
+                    val name = "ss_yerlesim_%02d%02d%02d_%s".format(Locale.ROOT, time.hour, time.minute, time.second, preset.name.lowercase(Locale.ROOT))
+                    render(WidgetKind.Clock, WidgetConfig(WidgetPlace.Smart, style), DpSize(250.dp, 250.dp), name, lightWallpaper = false, input = sample, time = time)
+                }
+            }
+        }
+    }
+
     @Test
     fun renderHomeScenarios() = runBlocking {
         eachLanguage {
@@ -258,6 +283,7 @@ class WidgetRenderTest {
         input: WidgetInput = this.input,
         context: Context = this.context,
         wallpaperPrefersDarkText: Boolean? = null,
+        time: LocalTime? = null,
     ) {
         val density = context.resources.displayMetrics.density
         // Ana ekrandaki gibi: içerik boyut basamağına göre çizilir, widget gerçek boyutunda durur.
@@ -271,6 +297,7 @@ class WidgetRenderTest {
             val remoteViews = kind.widget(config, input).compose(context, size = draw)
             withContext(Dispatchers.Main) {
                 val view = remoteViews.apply(context, FrameLayout(context))
+                if (time != null) freeze(view, time)
                 draw(view, size, density, lightWallpaper, wallpaper)
             }
         } finally {
@@ -281,6 +308,24 @@ class WidgetRenderTest {
         val file = File(folder, "widget_$name.png")
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         assertTrue(file.length() > 0)
+    }
+
+    /**
+     * Analog saatleri verilen saatte dondurur: kolların belirli konumlardaki hâli (ör. 10:09:40) böyle
+     * çekilir. AnalogClock'un saat kaynağı gizli bir alandır; test öncesinde bir kez
+     * `adb shell settings put global hidden_api_policy 1` gerekir (yoksa test atlanır).
+     * Android 12 öncesinde AnalogClock'ta bu alan yoktur; orada da atlanır.
+     */
+    private fun freeze(view: View, time: LocalTime) {
+        if (view is ViewGroup) for (i in 0 until view.childCount) freeze(view.getChildAt(i), time)
+        if (view !is AnalogClock) return
+        val zone = ZoneId.systemDefault()
+        val result = runCatching {
+            val clock = Clock.fixed(LocalDate.now(zone).atTime(time).atZone(zone).toInstant(), zone)
+            AnalogClock::class.java.getDeclaredField("mClock").apply { isAccessible = true }.set(view, clock)
+            AnalogClock::class.java.getDeclaredMethod("onTimeChanged").apply { isAccessible = true }.invoke(view)
+        }
+        assumeTrue("AnalogClock belirli bir saate alınamadı: ${result.exceptionOrNull()}", result.isSuccess)
     }
 
     private fun draw(view: View, size: DpSize, density: Float, lightWallpaper: Boolean, wallpaper: Boolean): Bitmap {

@@ -76,7 +76,8 @@ object SsClock {
 
 /**
  * Tasarım "SS" (2×2, 3×3'e kadar): açık kadran, tırnaklı 3-6-9-12, çift halkalı SS mührü, katedral
- * tipi kollar, 3'ün solunda tarih penceresi, altta hava durumu.
+ * tipi kollar, 3'ün solunda tarih penceresi, altta hava durumu. Mühür, tarih ve hava merkezden
+ * uzakta durur; kollar üstlerinden olabildiğince az geçer.
  *
  * Tamamen resimsiz (bitmap'siz): kadran, üst üste boyanan vektör katmanlarıdır; renk değişince
  * yalnızca boya değişir. Kolları ve tarihi Android'in AnalogClock ve TextClock bileşenleri çizer;
@@ -147,7 +148,7 @@ private fun Layer(@DrawableRes drawable: Int, color: Color) {
 }
 
 /**
- * Tarih penceresi (x 234–306, y 185–215): ay kısaltması vurgu renginde, gün numarası mürekkep
+ * Tarih penceresi (x 270–342, y 185–215; 3'ün hemen solunda, kolların yolundan uzakta): ay kısaltması vurgu renginde, gün numarası mürekkep
  * renginde. İkisi de TextClock: gece yarısı sistem kendisi değiştirir.
  */
 @Composable
@@ -157,7 +158,7 @@ private fun SsDate(u: Float, accent: Color, window: Color, ink: Color) {
     // Gün numarası pencerenin üstünde okunmalı: mürekkep rengi pencereyle aynı tondaysa karşıtı.
     val dayColor = if (Contrast.ratio(ink.toArgb(), window.toArgb()) >= 3.0) ink else if (window.luminance() > 0.45f) WidgetInk.Dark else Color.White
     val text = dpToBase(13.5f * u, theme, context)
-    Box(GlanceModifier.fillMaxSize().padding(start = (234f * u).dp, top = (185f * u).dp)) {
+    Box(GlanceModifier.fillMaxSize().padding(start = (270f * u).dp, top = (185f * u).dp)) {
         Box(GlanceModifier.width((72f * u).dp).height((30f * u).dp), contentAlignment = Alignment.Center) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 WClock(ClockPart.Date, text, weight = WWeight.Bold, color = accent, dateSkeleton = "MMM", uppercase = true, font = WFont.Text)
@@ -168,7 +169,7 @@ private fun SsDate(u: Float, accent: Color, window: Color, ink: Color) {
 }
 
 /**
- * Hava durumu, 6'nın üstünde üç satır (taban çizgileri y 271, 293, 312; yazı 21, 14,5 ve 13,5 birim):
+ * Hava durumu, 6'nın üstünde üç satır (taban çizgileri y 290, 311, 330; yazı 21, 14,5 ve 13,5 birim):
  * ikon, sıcaklık ve durum; "Y 19° · D 12° · Beşiktaş"; yağmur bekleniyorsa damla ve saat.
  * Her parça ayrı açılıp kapanır; hepsi kapalıysa alan tamamen kalkar. Sığmayan parça düşer.
  */
@@ -205,7 +206,7 @@ private fun SsWeather(data: WidgetPlaceData, u: Float) {
         place,
     ).firstOrNull { estimateWidthDp(it, second, theme) <= 200f * u }
     Column(
-        GlanceModifier.fillMaxSize().padding(top = (247f * u).dp).clickableApp(),
+        GlanceModifier.fillMaxSize().padding(top = (266f * u).dp).clickableApp(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (showIcon || temperature != null || conditionFits) {
@@ -219,7 +220,8 @@ private fun SsWeather(data: WidgetPlaceData, u: Float) {
             }
         }
         if (detail != null) WText(detail, second, color = theme.colors.secondary, align = TextAlign.Center, font = WFont.Text)
-        if (rain != null && estimateWidthDp(rain, third, theme) + 16f * u <= 190f * u) {
+        // En alt satırda kadran daralır (6 rakamının hemen üstü): sığma sınırı 170 birim.
+        if (rain != null && estimateWidthDp(rain, third, theme) + 16f * u <= 170f * u) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 WIcon(R.drawable.ic_wl_drop, (14f * u).dp, theme.colors.rain)
                 HSpace((3f * u).dp)
