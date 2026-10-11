@@ -123,6 +123,7 @@ fun HomeScreen(
     onOpenPlaces: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenToday: () -> Unit = {},
+    onOpenDetail: (com.alihaydarsayar.communesky.model.detail.Metric) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -167,7 +168,9 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
-    val actions = remember(viewModel, onOpenToday) { HomeActions(onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday) }
+    val actions = remember(viewModel, onOpenToday, onOpenDetail) {
+        HomeActions(onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday, onOpenDetail = onOpenDetail)
+    }
     androidx.compose.runtime.CompositionLocalProvider(LocalHomeActions provides actions) {
     HomeContent(
         uiState = uiState,
@@ -197,6 +200,8 @@ class HomeActions(
     val onWearFeedback: (Boolean) -> Unit = {},
     /** "Tümünü gör": "Bugün için" sayfası. */
     val onOpenToday: () -> Unit = {},
+    /** Bir ayrıntı kutucuğuna dokunuldu: o bilginin sayfası. */
+    val onOpenDetail: (com.alihaydarsayar.communesky.model.detail.Metric) -> Unit = {},
 )
 
 val LocalHomeActions = androidx.compose.runtime.staticCompositionLocalOf { HomeActions() }
@@ -488,7 +493,7 @@ private fun ForecastList(
         item(key = "hourly") { HourlyCard(forecast.current, hours) }
         item(key = "daily") { DailyCard(days, forecast.current.temperature) }
         if (weather.sources != null) item(key = "sources") { SourceLine(weather) }
-        item(key = "details") { DetailTiles(forecast.current, today, now) }
+        item(key = "details") { DetailTiles(forecast.current, today, now, onOpen = LocalHomeActions.current.onOpenDetail) }
         item(key = "attribution") { Attribution() }
     }
 }

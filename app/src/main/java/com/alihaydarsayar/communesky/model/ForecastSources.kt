@@ -190,10 +190,15 @@ object ForecastMerge {
             val own = dailySeries?.days?.firstOrNull { it.day == day.date }
             val backup = later?.days?.firstOrNull { it.day == day.date }.takeIf { own == null }
             val from = own ?: backup ?: return@map day
+            val max = from.maxTemperature ?: day.maxTemperature
+            val min = from.minTemperature ?: day.minTemperature
             day.copy(
-                maxTemperature = from.maxTemperature ?: day.maxTemperature,
-                minTemperature = from.minTemperature ?: day.minTemperature,
+                maxTemperature = max,
+                minTemperature = min,
                 weatherCode = from.weatherCode ?: day.weatherCode,
+                // Hissedilen, sıcaklıkla aynı kadar kayar: ikisi tutarlı kalır.
+                apparentMax = day.apparentMax?.plus(max - day.maxTemperature),
+                apparentMin = day.apparentMin?.plus(min - day.minTemperature),
             )
         }
         // Öğrenen düzeltme: gündüz ve gece saatlerine ayrı; günün en yükseği gündüz, en düşüğü gece düzeltmesini alır.

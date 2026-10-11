@@ -23,6 +23,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import androidx.navigation.compose.rememberNavController
 import com.alihaydarsayar.communesky.model.AppSettings
 import com.alihaydarsayar.communesky.model.ThemeMode
@@ -48,6 +49,9 @@ import kotlinx.serialization.Serializable
 @Serializable private object HomeLocationRoute
 @Serializable private object MyWidgetsRoute
 @Serializable private object TodayRoute
+
+/** Ayrıntı sayfaları; [tab]: açılışta seçili sekme (DetailTab adı). */
+@Serializable private data class DetailRoute(val tab: String)
 
 // AppCompatActivity: uygulama içinden dil değiştirmenin Android 12 ve altında da çalışması için.
 @AndroidEntryPoint
@@ -175,6 +179,20 @@ private fun CommuneSkyApp(
                         onOpenPlaces = { navController.navigate(PlacesRoute) },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenToday = { navController.navigate(TodayRoute) { launchSingleTop = true } },
+                        onOpenDetail = { metric ->
+                            navController.navigate(DetailRoute(com.alihaydarsayar.communesky.ui.detail.DetailTab.of(metric).name)) { launchSingleTop = true }
+                        },
+                    )
+                }
+                composable<DetailRoute> { entry ->
+                    val route = entry.toRoute<DetailRoute>()
+                    val page = uiState.selectedPage
+                    com.alihaydarsayar.communesky.ui.detail.DetailScreen(
+                        weather = page?.weather,
+                        initial = com.alihaydarsayar.communesky.ui.detail.DetailTab.entries.firstOrNull { it.name == route.tab }
+                            ?: com.alihaydarsayar.communesky.ui.detail.DetailTab.FeelsLike,
+                        title = page?.name ?: page?.weather?.city?.name,
+                        onBack = { navController.popBackStack() },
                     )
                 }
                 composable<TodayRoute> {

@@ -155,6 +155,17 @@ data class DailyForecast(
     /** Günün en yüksek rüzgâr hızı ve hamlesi (km/sa). */
     val windSpeedMax: Double? = null,
     val windGustMax: Double? = null,
+    // Günlük ortalamalar (1.5): ayrıntı sayfalarındaki 7 günlük özetler için; eski önbellekte null.
+    val apparentMax: Double? = null,
+    val apparentMin: Double? = null,
+    val humidityMean: Double? = null,
+    /** hPa. */
+    val pressureMean: Double? = null,
+    val cloudMean: Double? = null,
+    /** Metre. */
+    val visibilityMean: Double? = null,
+    /** Günün hâkim rüzgâr yönü (derece). */
+    val windDirection: Int? = null,
 ) {
     val condition: WeatherCondition get() = WeatherCondition.fromCode(weatherCode)
 }

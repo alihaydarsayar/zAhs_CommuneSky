@@ -1,5 +1,11 @@
 package com.alihaydarsayar.communesky.ui.home
 
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import com.alihaydarsayar.communesky.model.detail.Metric
+import com.alihaydarsayar.communesky.ui.common.GlassShape
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,28 +72,32 @@ fun DetailTiles(
     today: DailyForecast?,
     now: LocalDateTime,
     modifier: Modifier = Modifier,
+    /** Kutucuğa dokununca o bilginin ayrıntı sayfası açılır. */
+    onOpen: (Metric) -> Unit = {},
 ) {
+    val openLabel = stringResource(R.string.detail_open)
+    fun Modifier.opens(metric: Metric) = clip(GlassShape).clickable(role = Role.Button, onClickLabel = openLabel) { onOpen(metric) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(TileSpacing)) {
         TileRow(
-            { PrecipitationTile(today, it) },
-            { FeelsLikeTile(current, it) },
+            { PrecipitationTile(today, it.opens(Metric.Precipitation)) },
+            { FeelsLikeTile(current, it.opens(Metric.FeelsLike)) },
         )
         TileRow(
-            { WindTile(current, it) },
-            { HumidityTile(current, it) },
+            { WindTile(current, it.opens(Metric.Wind)) },
+            { HumidityTile(current, it.opens(Metric.Humidity)) },
         )
         val sunrise = today?.sunrise
         val sunset = today?.sunset
         if (sunrise != null && sunset != null) {
-            SunTile(sunrise, sunset, now, Modifier.fillMaxWidth())
+            SunTile(sunrise, sunset, now, Modifier.fillMaxWidth().opens(Metric.Sun))
         }
         TileRow(
-            { UvTile(current, today, it) },
-            { CloudTile(current, it) },
+            { UvTile(current, today, it.opens(Metric.Uv)) },
+            { CloudTile(current, it.opens(Metric.Cloud)) },
         )
         TileRow(
-            { VisibilityTile(current, it) },
-            { PressureTile(current, it) },
+            { VisibilityTile(current, it.opens(Metric.Visibility)) },
+            { PressureTile(current, it.opens(Metric.Pressure)) },
         )
     }
 }
@@ -370,7 +380,7 @@ private fun ScaleBar(fraction: Float, colors: List<Color>) {
 
 /** Güneşin gün içindeki yolu: ufuk çizgisi, yay ve güneşin şu anki yeri. */
 @Composable
-private fun SunTile(sunrise: LocalDateTime, sunset: LocalDateTime, now: LocalDateTime, modifier: Modifier) {
+fun SunTile(sunrise: LocalDateTime, sunset: LocalDateTime, now: LocalDateTime, modifier: Modifier) {
     val formatter = rememberTimeFormatter()
     val dayLength = Duration.between(sunrise, sunset).toMinutes().coerceAtLeast(1)
     val progress = Duration.between(sunrise, now).toMinutes().toFloat() / dayLength

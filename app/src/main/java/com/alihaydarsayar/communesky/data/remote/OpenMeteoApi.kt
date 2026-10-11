@@ -72,6 +72,9 @@ interface OpenMeteoApi {
         private const val DAILY_FIELDS =
             "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max," +
                 "sunrise,sunset,uv_index_max,sunshine_duration,daylight_duration,precipitation_sum," +
-                "wind_speed_10m_max,wind_gusts_10m_max"
+                "wind_speed_10m_max,wind_gusts_10m_max," +
+                // Ayrıntı sayfalarındaki 7 günlük özetler için günlük ortalamalar.
+                "apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_mean,pressure_msl_mean," +
+                "cloud_cover_mean,visibility_mean,wind_direction_10m_dominant"
     }
 }

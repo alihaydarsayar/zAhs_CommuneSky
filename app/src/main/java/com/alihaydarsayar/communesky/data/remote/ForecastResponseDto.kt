@@ -99,4 +99,11 @@ data class DailyDto(
     @SerialName("precipitation_sum") val precipitationSum: List<Double?> = emptyList(),
     @SerialName("wind_speed_10m_max") val windSpeedMax: List<Double?> = emptyList(),
     @SerialName("wind_gusts_10m_max") val windGustMax: List<Double?> = emptyList(),
+    @SerialName("apparent_temperature_max") val apparentMax: List<Double?> = emptyList(),
+    @SerialName("apparent_temperature_min") val apparentMin: List<Double?> = emptyList(),
+    @SerialName("relative_humidity_2m_mean") val humidityMean: List<Double?> = emptyList(),
+    @SerialName("pressure_msl_mean") val pressureMean: List<Double?> = emptyList(),
+    @SerialName("cloud_cover_mean") val cloudMean: List<Double?> = emptyList(),
+    @SerialName("visibility_mean") val visibilityMean: List<Double?> = emptyList(),
+    @SerialName("wind_direction_10m_dominant") val windDirection: List<Double?> = emptyList(),
 )

@@ -21,6 +21,12 @@ data class YesterdayComparison(
     val wind: Compared?,
     val humidity: Compared?,
     val precipitation: Compared?,
+    /** En yüksek UV, ortalama görüş (m), ortalama basınç (hPa), ortalama bulut (%), gün uzunluğu (dakika). */
+    val uv: Compared? = null,
+    val visibility: Compared? = null,
+    val pressure: Compared? = null,
+    val cloud: Compared? = null,
+    val dayLength: Compared? = null,
 ) {
     /** Ana ekrandaki satır için: bugünün en yükseği dünden kaç derece farklı (°C). */
     val temperatureDifference: Double? get() = temperature?.difference
@@ -51,10 +57,19 @@ data class YesterdayComparison(
 
             val comparison = YesterdayComparison(
                 temperature = daily { it.maxTemperature } ?: hourly({ it.max() }) { it.temperature },
-                feelsLike = hourly({ it.max() }) { it.apparentTemperature },
+                feelsLike = daily { it.apparentMax } ?: hourly({ it.max() }) { it.apparentTemperature },
                 wind = daily { it.windSpeedMax } ?: hourly({ it.max() }) { it.windSpeed },
-                humidity = hourly({ it.average() }) { it.humidity?.toDouble() },
+                humidity = daily { it.humidityMean } ?: hourly({ it.average() }) { it.humidity?.toDouble() },
                 precipitation = daily { it.precipitationSum } ?: hourly({ it.sum() }) { it.precipitation },
+                uv = daily { it.uvIndexMax } ?: hourly({ it.max() }) { it.uvIndex },
+                visibility = daily { it.visibilityMean } ?: hourly({ it.average() }) { it.visibility },
+                pressure = daily { it.pressureMean } ?: hourly({ it.average() }) { it.pressure },
+                cloud = daily { it.cloudMean } ?: hourly({ it.average() }) { it.cloudCover?.toDouble() },
+                dayLength = daily { day ->
+                    val rise = day.sunrise
+                    val set = day.sunset
+                    if (rise != null && set != null) java.time.Duration.between(rise, set).toMinutes().toDouble() else null
+                },
             )
             return comparison.takeIf { listOfNotNull(it.temperature, it.feelsLike, it.wind, it.humidity, it.precipitation).isNotEmpty() }
         }

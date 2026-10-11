@@ -310,6 +310,13 @@ private fun DailyDto.toModel(): List<DailyForecast> = time.indices.mapNotNull { 
         precipitationSum = precipitationSum.getOrNull(i),
         windSpeedMax = windSpeedMax.getOrNull(i),
         windGustMax = windGustMax.getOrNull(i),
+        apparentMax = apparentMax.getOrNull(i),
+        apparentMin = apparentMin.getOrNull(i),
+        humidityMean = humidityMean.getOrNull(i),
+        pressureMean = pressureMean.getOrNull(i),
+        cloudMean = cloudMean.getOrNull(i),
+        visibilityMean = visibilityMean.getOrNull(i),
+        windDirection = windDirection.getOrNull(i)?.roundToInt(),
     )
 }
 
