@@ -28,6 +28,11 @@ What's new in each version of Commune Sky.
 - Fixed: picking a color theme did not always change the widget. A theme now replaces the colors you chose one by one (you can undo it), and the color list shows only the colors that widget really uses.
 - Fixed: widgets used the phone's language instead of the language you chose in the app.
 - Fixed: temperatures could be shortened to "…" in a narrow widget. Numbers are never cut; the text gets smaller instead.
+- Fixed: hour labels could be cut in the hourly widgets when your phone uses the 12-hour clock.
+- Fixed: the Home & location widget had an empty middle when no home was set.
+- Fixed: when you are away, tapping the home side of the widget now opens home and tapping the other side opens where you are. In My places and in the clock with your places, each place opens its own page.
+- Fixed: tapping the place name on a clock widget did nothing; it now opens Commune Sky.
+- The widget setup screen uses less memory while you swipe through styles.
 
 ## 1.3 — in testing
 

@@ -141,6 +141,12 @@ fun WidgetRender(
                         }
                 }
             },
+            // Sayfa ekrandan çıkıp yeniden kullanılırken görünüm sıfırlanır: eski çizim silinir ve bir sonraki
+            // güncelleme yeni sayfanın çizimini kurar.
+            onReset = { frame ->
+                frame.removeAllViews()
+                frame.tag = null
+            },
             modifier = Modifier
                 .requiredSize(size.frame)
                 .graphicsLayer {
