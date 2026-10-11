@@ -725,4 +725,20 @@
     <string name="today_card_title">For today</string>
     <string name="today_see_all">See all</string>
     <string name="today_tips_title">Everyday tips</string>
+    <string name="widget_kind_today">For today</string>
+    <string name="widget_today_description">What to wear today, with morning, midday and evening, an umbrella and a sunscreen hint.</string>
+    <string name="widget_style_wear">What to wear</string>
+    <string name="widget_style_today_card">Card</string>
+    <string name="wear_tiny_light">Light clothes</string>
+    <string name="wear_tiny_tshirt">T-shirt</string>
+    <string name="wear_tiny_long_sleeve">Long sleeves</string>
+    <string name="wear_tiny_sweater">Sweater</string>
+    <string name="wear_tiny_coat">Coat</string>
+    <string name="wear_tiny_heavy_coat">Heavy coat</string>
+    <string name="wear_tiny_full_winter">Winter gear</string>
+    <string name="tip_short_not_needed">Not needed</string>
+    <string name="tip_short_umbrella_take">Take one</string>
+    <string name="tip_short_umbrella_must">Must take</string>
+    <string name="tip_short_sunscreen_good">Good idea</string>
+    <string name="tip_short_sunscreen_must">Needed</string>
 </resources>

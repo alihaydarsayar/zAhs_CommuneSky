@@ -92,9 +92,9 @@ class WidgetConfigFlowTest {
     }
 
     @Test
-    fun `there are 9 widgets with 36 styles`() {
-        assertEquals(9, WidgetKind.entries.size)
-        assertEquals(36, WidgetStyleId.entries.size)
+    fun `there are 10 widgets with 39 styles`() {
+        assertEquals(10, WidgetKind.entries.size)
+        assertEquals(39, WidgetStyleId.entries.size)
         WidgetKind.entries.forEach { assertTrue("${it.name} stilsiz", it.styles.isNotEmpty()) }
     }
 

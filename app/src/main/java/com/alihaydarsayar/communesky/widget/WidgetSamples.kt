@@ -73,15 +73,32 @@ object WidgetSamples {
         val hour = now.withMinute(0).withSecond(0).withNano(0)
         val isDay = now.hour in 7..18
         val today = now.toLocalDate()
-        val hourly = (0 until 24).map { i ->
+        // Bugünün başından yarının sonuna kadar: "Ne giysem" bütün gün dilimlerini (sabah, öğle, akşam) ister.
+        val first = -now.hour
+        val last = 48 - now.hour
+        val hourly = (first until last).map { i ->
             val time = hour.plusHours(i.toLong())
             val wet = rainSoon && i in 2..4
+            val step = Math.floorMod(i, 8)
+            // Günün saatine göre eğri: sabah serin, öğleden sonra ılık ("Ne giysem" dilimleri için).
+            val byHour = temperature - 5 + listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 2.0, 3.0, 4.0, 4.5, 5.0, 5.0, 5.0, 4.5, 4.0, 3.0, 2.0, 1.5, 1.0, 0.5, 0.0, 0.0)[time.hour]
+            // Önümüzdeki 24 saatin sıcaklığı eski örnekle aynı (saatlik widget'ların önizlemesi değişmesin).
+            val value = if (i in 0 until 24) temperature - listOf(0.0, 0.2, 1.1, 2.0, 2.1, 3.0, 3.1, 4.0)[step] - i / 8 else byHour
             HourlyForecast(
                 time = time,
-                temperature = temperature - listOf(0.0, 0.2, 1.1, 2.0, 2.1, 3.0, 3.1, 4.0)[i % 8] - i / 8,
-                weatherCode = if (wet) 61 else if (i == 0) code else if (i % 3 == 0) 2 else 0,
-                precipitationProbability = if (rainSoon) listOf(0, 10, 45, 70, 55, 30, 10, 0)[i % 8] else listOf(0, 0, 10, 20, 10, 0, 0, 0)[i % 8],
+                temperature = value,
+                weatherCode = if (wet) 61 else if (i == 0) code else if (step % 3 == 0) 2 else 0,
+                precipitationProbability = if (rainSoon) listOf(0, 10, 45, 70, 55, 30, 10, 0)[step] else listOf(0, 0, 10, 20, 10, 0, 0, 0)[step],
                 isDay = time.hour in 7..18,
+                apparentTemperature = byHour - 1,
+                humidity = 64,
+                windSpeed = 14.0,
+                windGust = 24.0,
+                uvIndex = if (time.hour in 10..15) 4.0 else 1.0,
+                visibility = 20_000.0,
+                cloudCover = if (code == 0) 15 else 70,
+                // Yağmurlu örnek yerde (Liverpool) gün içinde hafif yağış: şemsiye önerisi görünsün.
+                precipitation = if (wet) 0.8 else if (code == 61 && time.hour in 9..13) 0.5 else 0.0,
             )
         }
         val daily = (0 until 7).map { i ->

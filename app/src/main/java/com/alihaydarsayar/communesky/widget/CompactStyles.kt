@@ -24,6 +24,7 @@ import kotlin.math.min
 fun SmallContent(style: WidgetStyleId, data: WidgetPlaceData) {
     val size = LocalSize.current
     when {
+        style == WidgetStyleId.SmallWear -> SmallWear(data)
         size.height.value < TINY_HEIGHT -> TinyRow(data, showName = LocalWidgetTheme.current.shows(WidgetContent.PlaceName))
         size.height < 100.dp -> SmallRow(data)
         style == WidgetStyleId.SmallCentered -> SmallCentered(data)
@@ -154,6 +155,7 @@ private fun SmallRow(data: WidgetPlaceData) {
 fun TextContent(style: WidgetStyleId, data: WidgetPlaceData) {
     val size = LocalSize.current
     when {
+        style == WidgetStyleId.TextWear -> TextWear(data)
         style == WidgetStyleId.TextLine -> TextLine(data)
         style == WidgetStyleId.TextTemperature -> TextTemperature(data)
         size.width < 180.dp -> TextTemperature(data)

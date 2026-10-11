@@ -147,6 +147,7 @@ class TextWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : Co
 class PlacesWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : CommuneSkyWidget(WidgetKind.Places, preview, input)
 class PrecipitationWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : CommuneSkyWidget(WidgetKind.Precipitation, preview, input)
 class DetailsWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : CommuneSkyWidget(WidgetKind.Details, preview, input)
+class TodayWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : CommuneSkyWidget(WidgetKind.Today, preview, input)
 
 /** Widget'ın gösterdiği ana yerin kimliği: havaya dokununca uygulama o yerle açılır. */
 val LocalWidgetPlaceId = staticCompositionLocalOf<Long?> { null }
@@ -306,6 +307,9 @@ object WidgetScale {
         WidgetStyleId.DetailsTiles -> DpSize(270.dp, 120.dp)
         WidgetStyleId.DetailsSun -> DpSize(140.dp, 140.dp)
         WidgetStyleId.DetailsList -> DpSize(240.dp, 120.dp)
+        WidgetStyleId.SmallWear -> DpSize(110.dp, 110.dp)
+        WidgetStyleId.TextWear -> DpSize(180.dp, 64.dp)
+        WidgetStyleId.TodayCard -> DpSize(250.dp, 130.dp)
     }
 
     /** Sınırlanmamış oran: 1'den küçükse widget, stilin en küçük boyutundan küçüktür. */
@@ -399,6 +403,7 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput, wallp
                     WidgetKind.Text -> TextContent(styleId, place!!)
                     WidgetKind.Precipitation -> PrecipitationContent(styleId, place!!)
                     WidgetKind.Details -> DetailsContent(styleId, place!!)
+                    WidgetKind.Today -> TodayContent(styleId, place!!)
                     else -> Unit
                 }
             }
@@ -437,6 +442,7 @@ class TextWidgetReceiver : CommuneSkyWidgetReceiver(WidgetKind.Text)
 class PlacesWidgetReceiver : CommuneSkyWidgetReceiver(WidgetKind.Places)
 class PrecipitationWidgetReceiver : CommuneSkyWidgetReceiver(WidgetKind.Precipitation)
 class DetailsWidgetReceiver : CommuneSkyWidgetReceiver(WidgetKind.Details)
+class TodayWidgetReceiver : CommuneSkyWidgetReceiver(WidgetKind.Today)
 
 object WeatherWidgetUpdater {
     private const val TAG = "WidgetUpdater"

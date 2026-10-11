@@ -719,4 +719,20 @@
     <string name="today_card_title">Bugün için</string>
     <string name="today_see_all">Tümünü gör</string>
     <string name="today_tips_title">Günlük öneriler</string>
+    <string name="widget_kind_today">Bugün için</string>
+    <string name="widget_today_description">Bugün ne giysem: sabah, öğle ve akşam; şemsiye ve güneş kremi gerekir mi.</string>
+    <string name="widget_style_wear">Ne giysem</string>
+    <string name="widget_style_today_card">Kart</string>
+    <string name="wear_tiny_light">İnce giy</string>
+    <string name="wear_tiny_tshirt">Tişört</string>
+    <string name="wear_tiny_long_sleeve">Uzun kollu</string>
+    <string name="wear_tiny_sweater">Kazak</string>
+    <string name="wear_tiny_coat">Mont</string>
+    <string name="wear_tiny_heavy_coat">Kalın mont</string>
+    <string name="wear_tiny_full_winter">Kışlık giy</string>
+    <string name="tip_short_not_needed">Gerek yok</string>
+    <string name="tip_short_umbrella_take">Yanına al</string>
+    <string name="tip_short_umbrella_must">Mutlaka al</string>
+    <string name="tip_short_sunscreen_good">İyi olur</string>
+    <string name="tip_short_sunscreen_must">Gerekli</string>
 </resources>

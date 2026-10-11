@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Bugün için (4x2): ne giysem (ikonlar ve cümle), sabah / öğle / akşam, şemsiye ve güneş kremi.
+    Ekleme sırasında ayar ekranı açılır; sonradan uzun basıp düzenlenebilir.
+    Güncelleme WorkManager ile yapılır (tüm yerler tek istekte); updatePeriodMillis kapalı (0).
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.alihaydarsayar.communesky.widget.config.WidgetConfigActivity"
+    android:description="@string/widget_today_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="40dp"
+    android:maxResizeWidth="530dp"
+    android:maxResizeHeight="530dp"
+    android:previewImage="@drawable/widget_preview_image_today"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />

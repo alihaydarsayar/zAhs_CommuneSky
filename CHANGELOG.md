@@ -30,6 +30,7 @@ What's new in each version of Commune Sky.
 - Everyday tips worked out on your phone from the forecast: umbrella, sunscreen, drying laundry, the best two hours for a run or walk, car wash, stargazing and the risk of catching a cold.
 - The home screen says how today compares with yesterday, for example "4° colder than yesterday".
 - A "For today" card on the home screen brings together what to wear and the two tips that matter most; "See all" opens the full list.
+- New "For today" widget (4×2) with what to wear, morning, midday and evening, and umbrella and sunscreen hints; the Small and Text widgets gain a "What to wear" style. Tapping them opens the For today page.
 
 ## 1.4 — October 11, 2026
 

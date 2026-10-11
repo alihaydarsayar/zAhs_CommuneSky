@@ -157,6 +157,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info_details" />
         </receiver>
+        <receiver
+            android:name=".widget.TodayWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_kind_today">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_today" />
+        </receiver>
 
         <!-- Widget ayar ekranı: widget eklenirken ve "Widget'ı düzenle" ile açılır. -->
         <activity

@@ -8,8 +8,8 @@ import com.alihaydarsayar.communesky.R
 import kotlinx.serialization.Serializable
 
 /**
- * Widget seçicide görünen 9 ana widget. Her birinin içinde birden fazla stil ([WidgetStyleId])
- * var: liste sade kalır, toplam 36 tasarım. Stil, ekleme ekranında seçilir ve sonradan
+ * Widget seçicide görünen 10 ana widget. Her birinin içinde bir ya da birden fazla stil ([WidgetStyleId])
+ * var: liste sade kalır, toplam 39 tasarım. Stil, ekleme ekranında seçilir ve sonradan
  * değiştirilebilir.
  *
  * [sizes]: Glance'in boyuta duyarlı (SizeMode.Responsive) düzeni için kırılma noktaları. Widget
@@ -92,6 +92,15 @@ enum class WidgetKind(
         choosesPlace = true,
         contents = listOf(WidgetContent.TileNotes),
         defaultContents = setOf(WidgetContent.TileNotes),
+    ),
+
+    /** "Bugün için" (1.5): ne giysem, sabah / öğle / akşam, şemsiye ve güneş kremi. */
+    Today(
+        R.string.widget_kind_today,
+        setOf(size(180, 40), size(250, 40), size(180, 100), size(250, 100), size(250, 150), size(300, 190)),
+        choosesPlace = true,
+        contents = listOf(WidgetContent.PlaceName),
+        defaultContents = setOf(WidgetContent.PlaceName),
     );
 
     val styles: List<WidgetStyleId> get() = WidgetStyleId.entries.filter { it.kind == this }
@@ -110,6 +119,7 @@ enum class WidgetKind(
             Places -> PlacesWidgetReceiver::class.java
             Precipitation -> PrecipitationWidgetReceiver::class.java
             Details -> DetailsWidgetReceiver::class.java
+            Today -> TodayWidgetReceiver::class.java
         }
 
     /** Bu türün widget'ı; [preview] verilirse kayıtlı ayar yerine o kullanılır (ekleme ekranı, testler). */
@@ -123,6 +133,7 @@ enum class WidgetKind(
         Places -> PlacesWidget(preview, input)
         Precipitation -> PrecipitationWidget(preview, input)
         Details -> DetailsWidget(preview, input)
+        Today -> TodayWidget(preview, input)
     }
 
     companion object {
@@ -195,10 +206,12 @@ enum class WidgetStyleId(
     SmallClassic(WidgetKind.Small, R.string.widget_style_small_classic, size(160, 160), BackgroundKind.Glass),
     SmallCentered(WidgetKind.Small, R.string.widget_style_small_centered, size(160, 160)),
     SmallMinimal(WidgetKind.Small, R.string.widget_style_small_minimal, size(160, 160)),
+    SmallWear(WidgetKind.Small, R.string.widget_style_wear, size(160, 160)),
 
     TextStack(WidgetKind.Text, R.string.widget_style_text_stack, size(220, 100), BackgroundKind.Transparent),
     TextLine(WidgetKind.Text, R.string.widget_style_text_line, size(320, 60), BackgroundKind.Transparent),
     TextTemperature(WidgetKind.Text, R.string.widget_style_text_temperature, size(160, 100), BackgroundKind.Transparent),
+    TextWear(WidgetKind.Text, R.string.widget_style_wear, size(260, 100), BackgroundKind.Transparent),
 
     PlacesColumns(WidgetKind.Places, R.string.widget_style_places_columns, size(340, 100)),
     PlacesList(WidgetKind.Places, R.string.widget_style_places_list, size(320, 190)),
@@ -209,6 +222,8 @@ enum class WidgetStyleId(
     DetailsTiles(WidgetKind.Details, R.string.widget_style_details_tiles, size(340, 190)),
     DetailsSun(WidgetKind.Details, R.string.widget_style_details_sun, size(170, 170)),
     DetailsList(WidgetKind.Details, R.string.widget_style_details_list, size(320, 170)),
+
+    TodayCard(WidgetKind.Today, R.string.widget_style_today_card, size(320, 170)),
     ;
 
     /** Bu stil seçilince gelen görünüm; kullanıcı sonra değiştirebilir. */
@@ -243,6 +258,8 @@ enum class WidgetStyleId(
                 WidgetContent.WeatherIcon, WidgetContent.Temperature, WidgetContent.Condition,
                 WidgetContent.HighLow, WidgetContent.PlaceName, WidgetContent.RainAlert,
             )
+            // "Ne giysem" stilleri havayı değil giyim önerisini gösterir: yalnız yer adı açılıp kapanır.
+            SmallWear, TextWear -> listOf(WidgetContent.PlaceName)
             else -> kind.contents - setOf(WidgetContent.WeatherIcon, WidgetContent.Temperature)
         }
 
