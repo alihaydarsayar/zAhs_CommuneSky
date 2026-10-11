@@ -359,6 +359,15 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput, wallp
     // Stil, tasarım boyutundan büyük widget'ta oranlı büyür; yerleşimini "tasarım dp"siyle yapar.
     val real = WidgetScale.real(styleId, LocalSize.current)
     val grow = WidgetScale.grow(styleId, real)
+    // Işınsal saatin resimleri launcher'ın sınırını aşacak kadar büyükse (çok büyük widget) widget boş kalmasın:
+    // sade yedek düzen çizilir.
+    val tooHeavy = styleId == WidgetStyleId.ClockRadial && run {
+        val style = config.style
+        val gradientGround = style.background == BackgroundKind.Sky
+        val corner = style.corners.radius(context).value
+        WidgetBitmaps.radialBytes(radialSeconds(style), gradientGround, 3, real.width.value, real.height.value, context.resources.displayMetrics.density, corner) >
+            WidgetBitmaps.budgetBytes(context)
+    }
     val theme = WidgetTheme(
         kind = kind,
         styleId = styleId,
@@ -367,7 +376,7 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput, wallp
         fontScaleFix = WidgetTheme.fontScaleFix(context),
         staticDate = WidgetLanguage.differsFromSystem(context),
         grow = grow,
-        compact = WidgetScale.compact(styleId, real),
+        compact = WidgetScale.compact(styleId, real) || tooHeavy,
     )
     CompositionLocalProvider(
         LocalSize provides DpSize(real.width / grow, real.height / grow),

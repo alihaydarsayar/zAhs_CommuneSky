@@ -36,6 +36,7 @@ What's new in each version of Commune Sky.
 - **Sharper widgets.** Analog dials, clock hands and the soft veil behind text are now drawn as shapes that stay crisp at any size. The temperature curve, the radial clock lines and the sun path are drawn at your screen's full resolution.
 - The accent color ("Today", the "now" dot) is lightened or darkened automatically when it would be hard to read on the widget's background, for example red on a blue sky.
 - Widgets now refresh on the hour, so "Now" and the hourly strip show the right hour. No extra wake-ups: the hourly update is simply timed to the full hour.
+- The radial clock with a sky background and the seconds effect sends a much smaller picture to your home screen and looks the same. If a widget's pictures would ever be too large for the home screen, it shows a simple layout instead of staying empty.
 
 ## 1.3 — in testing
 

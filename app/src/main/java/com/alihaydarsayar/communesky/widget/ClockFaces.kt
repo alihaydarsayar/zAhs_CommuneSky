@@ -32,6 +32,9 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.fillMaxHeight
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
@@ -103,13 +106,20 @@ fun ClockRadial(data: WidgetPlaceData) {
                     GlanceModifier.fillMaxSize(),
                 )
                 // Tek renkli zeminde şablon tek kanallı maskedir (dörtte bir bellek), zemin rengine boyanır.
-                Image(
-                    ImageProvider(if (ground.size == 1) WidgetBitmaps.radialStencilMask(w, h, density, corner) else WidgetBitmaps.radialStencil(w, h, density, corner, ground)),
-                    contentDescription = null,
-                    modifier = GlanceModifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds,
-                    colorFilter = if (ground.size == 1) ColorFilter.tint(ColorProvider(ground[0])) else null,
-                )
+                // Gradyan zeminde şablon parçalara bölünür: ortası küçük çizilmiş gradyan, kenar şeritleri durak
+                // renklerine boyanan tek kanallı maskeler (bkz. RadialCover). Görüntü tek resimle aynıdır.
+                val cover = if (ground.size == 1) null else WidgetBitmaps.radialCover(w, h, density, corner, ground)
+                if (cover != null) {
+                    RadialCoverLayers(cover, density)
+                } else {
+                    Image(
+                        ImageProvider(if (ground.size == 1) WidgetBitmaps.radialStencilMask(w, h, density, corner) else WidgetBitmaps.radialStencil(w, h, density, corner, ground)),
+                        contentDescription = null,
+                        modifier = GlanceModifier.fillMaxSize(),
+                        contentScale = ContentScale.FillBounds,
+                        colorFilter = if (ground.size == 1) ColorFilter.tint(ColorProvider(ground[0])) else null,
+                    )
+                }
             } else {
                 Image(
                     ImageProvider(WidgetBitmaps.radialTicks(w, h, density, corner, dim.alpha)),
@@ -132,6 +142,28 @@ fun ClockRadial(data: WidgetPlaceData) {
  * widget'ın merkezine denk gelen bir AnalogClock. İnce saniye çubuğunun yalnızca şeride düşen
  * parçası görünür. Ölçüler dp; widget'ın gerçek boyutu gerekir (Saat widget'ı SizeMode.Exact).
  */
+/**
+ * Parçalı şablon: üstte ve altta tam genişlikte şeritler, arada sol şerit, orta ve sağ şerit. Şeritlerin
+ * kalınlığı tam piksele denk gelir; maskeler yeniden örneklenmez.
+ */
+@Composable
+private fun RadialCoverLayers(cover: RadialCover, density: Float) {
+    val band = (cover.bandPx / density).dp
+    @Composable
+    fun strip(layers: List<RadialCover.Layer>, modifier: GlanceModifier) {
+        Box(modifier) { layers.forEach { TintedLayer(ImageProvider(it.mask), it.color) } }
+    }
+    Column(GlanceModifier.fillMaxSize()) {
+        strip(cover.top, GlanceModifier.fillMaxWidth().height(band))
+        Row(GlanceModifier.fillMaxWidth().defaultWeight()) {
+            strip(cover.left, GlanceModifier.width(band).fillMaxHeight())
+            Image(ImageProvider(cover.center), contentDescription = null, modifier = GlanceModifier.defaultWeight().fillMaxHeight(), contentScale = ContentScale.FillBounds)
+            strip(cover.right, GlanceModifier.width(band).fillMaxHeight())
+        }
+        strip(cover.bottom, GlanceModifier.fillMaxWidth().height(band))
+    }
+}
+
 private fun radialStrips(context: Context, w: Float, h: Float, color: Color): RemoteViews =
     RemoteViews(context.packageName, R.layout.widget_radial_strips).apply {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return@apply

@@ -311,7 +311,44 @@ object WidgetBitmaps {
 
     const val RADIAL_INSET = 6f
     const val RADIAL_LENGTH = 14f
-    private const val RADIAL_STROKE = 1.5f
+    const val RADIAL_STROKE = 1.5f
+
+    private var lastCover: Pair<String, RadialCover?>? = null
+
+    /**
+     * Gradyan zeminli şablon, küçük parçalar hâlinde (bkz. [RadialCover]); widget parçalanamayacak kadar
+     * küçükse null (o zaman [radialStencil] çizilir). Son çizilen saklanır.
+     */
+    @Synchronized
+    fun radialCover(widthDp: Float, heightDp: Float, density: Float, corner: Float, ground: List<Color>): RadialCover? {
+        val (w, h, _) = pixels(widthDp, heightDp, density)
+        val key = "$w:$h:$corner:${ground.joinToString { it.toArgb().toString() }}"
+        val cover = lastCover?.takeIf { it.first == key }?.second
+            ?: RadialCover.build(radialStencilMask(widthDp, heightDp, density, corner), RadialCover.bandDp(widthDp, heightDp, corner), density, ground)
+                .also { lastCover = key to it }
+        cover?.bitmaps?.let { handedOut?.addAll(it) }
+        return cover
+    }
+
+    /**
+     * Launcher, bir widget güncellemesindeki resimlerin toplamını ekranın 1,5 katıyla (piksel başına 4 bayt)
+     * sınırlar; aşılırsa güncelleme reddedilir ve widget boş kalır. Widget iki boyut için (dikey, yatay)
+     * çizildiğinden bir boyutun payı bunun %40'ıdır.
+     */
+    fun budgetBytes(context: android.content.Context): Long {
+        val metrics = context.resources.displayMetrics
+        return (6L * metrics.widthPixels * metrics.heightPixels * 0.4).toLong()
+    }
+
+    /** Işınsal saatin bu boyutta widget'a vereceği resimlerin boyutu (bayt), çizmeden. Saf hesap; test edilir. */
+    fun radialBytes(seconds: RadialSeconds, gradientGround: Boolean, stops: Int, widthDp: Float, heightDp: Float, density: Float, corner: Float): Long {
+        val (w, h, _) = pixels(widthDp, heightDp, density)
+        val mask = w.toLong() * h
+        if ((seconds != RadialSeconds.StencilTail && seconds != RadialSeconds.StencilLine) || !gradientGround) return mask
+        val band = kotlin.math.ceil(RadialCover.bandDp(widthDp, heightDp, corner) * density).toInt()
+        // Parçalanamayacak kadar küçükse tek, dört kanallı resim.
+        return if (w <= 2 * band + 8 || h <= 2 * band + 8) mask * 4 else RadialCover.estimateBytes(w, h, band, stops)
+    }
 
     /**
      * Çizgiler, saydam zeminde (saniye efekti yokken ya da cam ve saydam arka planlarda). Tek kanallı
