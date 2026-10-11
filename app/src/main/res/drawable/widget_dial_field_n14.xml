@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Analog saha: 14 rakami (DialGlyphExportTest uretir). Rengi boya ile verilir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M138.95,74.38L137.62,74.38L137.62,73.49Q138.16,73.49 138.49,73.40Q138.82,73.30 139.01,73.09Q139.21,72.88 139.36,72.48L140.21,72.48L140.21,80.53L138.95,80.53L138.95,74.38ZM143.29,79.07L140.87,79.07L140.87,77.91L143.18,72.48L144.56,72.48L144.56,77.91L145.15,77.91L145.15,79.07L144.56,79.07L144.56,80.53L143.29,80.53L143.29,79.07ZM143.29,77.91L143.29,74.78L143.27,74.78L142.03,77.91L143.29,77.91Z" />
+</vector>

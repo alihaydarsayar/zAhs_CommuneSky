@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Analog hava halkasi: diger saat cizgileri (%50 opak). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path android:pathData="M138,34.182L140,30.718M165.818,62L169.282,60M165.818,138L169.282,140M138,165.818L140,169.282M62,165.818L60,169.282M34.182,138L30.718,140M34.182,62L30.718,60M62,34.182L60,30.718" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.4" android:strokeLineCap="round" android:strokeAlpha="0.5" />
+</vector>

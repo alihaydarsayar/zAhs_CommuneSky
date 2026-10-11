@@ -9,10 +9,8 @@ import android.graphics.Path
 import android.graphics.PathMeasure
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
-import android.graphics.Typeface
 import android.util.LruCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -24,8 +22,11 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Widget'ta Glance'in çizemediği şekiller (gradyan, sıcaklık eğrisi, güneş yayı, sıcaklık aralığı)
- * küçük resimler olarak çizilir. Yazı hiçbir zaman resme çevrilmez: rakamlar ve etiketler sistem
+ * Widget'ta Glance'in ve sabit vektörlerin çizemediği, veriye ya da widget'ın tam boyutuna bağlı şekiller
+ * (sıcaklık eğrisi, güneş yayı, ışınsal çizgiler, gökyüzü gradyanı, sıcaklık aralığının renk şeridi) resim
+ * olarak çizilir. Resimler ekranın tam çözünürlüğündedir; küçük kalsınlar diye tek renkli şekiller tek
+ * kanallı maske (piksel başına 1 bayt) olarak çizilir ve widget'ta boyanır. Kadranlar, kollar ve yumuşak
+ * perde vektördür (res/drawable/widget_dial_*, widget_hand_*, widget_scrim). Yazı hiçbir zaman resme çevrilmez: rakamlar ve etiketler sistem
  * yazı tipiyle, Glance'in yazısıyla çizilir.
  *
  * Resimler girdilerine göre önbelleğe alınır: aynı veriyle ikinci kez çizilmez, sadece veri
@@ -33,8 +34,11 @@ import kotlin.math.sin
  */
 object WidgetBitmaps {
 
-    /** Widget'a giden resimlerin toplam boyutu sınırlı; büyük widget'larda çözünürlük düşürülür. */
-    private const val MAX_SIDE_PX = 720
+    /**
+     * Köşesiz gökyüzü gradyanı bu oranda küçük çizilip widget'a yayılır. Düz bir renk geçişinde ayrıntı
+     * yoktur: yayılmış hâli tam çözünürlükte çizilenle aynıdır (bkz. WidgetBitmapTest), resim 64'te bire iner.
+     */
+    private const val GRADIENT_DOWNSCALE = 8f
 
     private val cache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) {
         override fun sizeOf(key: String, value: Bitmap) = value.byteCount
@@ -43,16 +47,24 @@ object WidgetBitmaps {
     /** Sistem bellek istediğinde (onTrimMemory) önbellek boşaltılır; resimler gerektiğinde yeniden çizilir. */
     fun clearCache() = cache.evictAll()
 
+    /**
+     * Ölçüm için (testler): açıkken bir çizimde widget'a verilen bütün resimler burada toplanır.
+     * Normal çalışmada null'dır ve hiçbir şey tutulmaz.
+     */
+    @Volatile
+    var handedOut: MutableSet<Bitmap>? = null
+
     private inline fun cached(key: String, create: () -> Bitmap): Bitmap =
-        cache.get(key) ?: create().also { cache.put(key, it) }
+        (cache.get(key) ?: create().also { cache.put(key, it) }).also { handedOut?.add(it) }
 
     /** dp ölçüsünü, sınırı aşmayacak bir piksel boyuta çevirir. */
-    fun pixels(widthDp: Float, heightDp: Float, density: Float): Triple<Int, Int, Float> {
-        var scale = density
-        val longest = max(widthDp, heightDp) * scale
-        if (longest > MAX_SIDE_PX) scale *= MAX_SIDE_PX / longest
-        return Triple(max(1, (widthDp * scale).roundToInt()), max(1, (heightDp * scale).roundToInt()), scale)
-    }
+    fun pixels(widthDp: Float, heightDp: Float, density: Float): Triple<Int, Int, Float> =
+        Triple(max(1, (widthDp * density).roundToInt()), max(1, (heightDp * density).roundToInt()), density)
+
+    /** Bir rengin saydamlığı, maskeye işlenecek düzey olarak (0–255). Maske widget'ta opak renkle boyanır. */
+    fun level(color: Color): Int = (color.alpha.coerceIn(0f, 1f) * 255).roundToInt()
+
+    private fun ink(level: Int) = android.graphics.Color.argb(level.coerceIn(0, 255), 0, 0, 0)
 
     /**
      * Arka plan gradyanı (tasarımdaki 165°: sol üstten sağ alta). [radiusDp] > 0 ise köşeler
@@ -69,7 +81,8 @@ object WidgetBitmaps {
         roundRight: Boolean = true,
         roundBottom: Boolean = true,
     ): Bitmap {
-        val (w, h, scale) = pixels(widthDp, heightDp, density)
+        // Köşe yuvarlanmayacaksa (Android 12+) gradyan küçük çizilir; yuvarlak köşe keskin kalsın diye tam boyut.
+        val (w, h, scale) = pixels(widthDp, heightDp, if (radiusDp <= 0f) density / GRADIENT_DOWNSCALE else density)
         val key = "g:${colors.joinToString { it.toArgb().toString() }}:$w:$h:$radiusDp:$roundLeft$roundRight$roundBottom"
         return cached(key) {
             Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { bitmap ->
@@ -106,39 +119,19 @@ object WidgetBitmaps {
     }
 
     /**
-     * Saatlik sıcaklık eğrisi ve yağış ihtimali çubukları. Noktaların yeri [pointsYDp] ile verilir;
-     * üstlerindeki sıcaklık yazıları Glance'te aynı sütunlara konur, böylece hizalı kalır.
+     * Saatlik sıcaklık eğrisi: çizgi ve saat noktaları, tek kanallı maske. Noktaların yeri [pointsYDp] ile
+     * verilir; üstlerindeki sıcaklık yazıları Glance'te aynı sütunlara konur, böylece hizalı kalır.
+     * İlk ("şimdi") nokta burada yoktur: vurgu renginde ayrı bir vektördür.
      */
-    fun hourlyCurve(
-        pointsYDp: List<Float>,
-        barHeightsDp: List<Float>,
-        widthDp: Float,
-        heightDp: Float,
-        barBottomDp: Float,
-        density: Float,
-        line: Color,
-        bar: Color,
-        now: Color = line,
-    ): Bitmap {
+    fun curveLine(pointsYDp: List<Float>, widthDp: Float, heightDp: Float, density: Float, level: Int): Bitmap {
         val (w, h, scale) = pixels(widthDp, heightDp, density)
-        val key = "c:${pointsYDp.joinToString()}:${barHeightsDp.joinToString()}:$w:$h:$barBottomDp:${line.toArgb()}:${bar.toArgb()}:${now.toArgb()}"
-        return cached(key) {
-            Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { bitmap ->
+        return cached("cl:${pointsYDp.joinToString()}:$w:$h:$level") {
+            Bitmap.createBitmap(w, h, Bitmap.Config.ALPHA_8).also { bitmap ->
                 val canvas = Canvas(bitmap)
                 val n = pointsYDp.size
                 fun x(i: Int) = (i + 0.5f) / n * w
-                val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = bar.toArgb() }
-                val barWidth = min(12f * scale, w / n * 0.4f)
-                barHeightsDp.forEachIndexed { i, height ->
-                    if (height <= 0f) return@forEachIndexed
-                    val bottom = barBottomDp * scale
-                    canvas.drawRoundRect(
-                        RectF(x(i) - barWidth / 2, bottom - height * scale, x(i) + barWidth / 2, bottom),
-                        2f * scale, 2f * scale, barPaint,
-                    )
-                }
                 val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = line.toArgb()
+                    color = ink(level)
                     style = Paint.Style.STROKE
                     strokeWidth = 2f * scale
                     strokeJoin = Paint.Join.ROUND
@@ -147,9 +140,29 @@ object WidgetBitmaps {
                 val path = Path()
                 pointsYDp.forEachIndexed { i, y -> if (i == 0) path.moveTo(x(i), y * scale) else path.lineTo(x(i), y * scale) }
                 canvas.drawPath(path, linePaint)
-                val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = line.toArgb() }
-                val nowDot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = now.toArgb() }
-                pointsYDp.forEachIndexed { i, y -> canvas.drawCircle(x(i), y * scale, (if (i == 0) 4f else 2.5f) * scale, if (i == 0) nowDot else dot) }
+                val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ink(level) }
+                pointsYDp.forEachIndexed { i, y -> if (i > 0) canvas.drawCircle(x(i), y * scale, 2.5f * scale, dot) }
+            }
+        }
+    }
+
+    /**
+     * Saatlik eğrinin altındaki yağış ihtimali çubukları, tek kanallı maske. Resim yalnızca çubukların
+     * kapladığı şerit kadardır ([heightDp]: en yüksek çubuk); çubuklar alta yaslıdır.
+     */
+    fun curveBars(barHeightsDp: List<Float>, widthDp: Float, heightDp: Float, density: Float, level: Int): Bitmap {
+        val (w, h, scale) = pixels(widthDp, heightDp, density)
+        return cached("cb:${barHeightsDp.joinToString()}:$w:$h:$level") {
+            Bitmap.createBitmap(w, h, Bitmap.Config.ALPHA_8).also { bitmap ->
+                val canvas = Canvas(bitmap)
+                val n = barHeightsDp.size
+                fun x(i: Int) = (i + 0.5f) / n * w
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ink(level) }
+                val barWidth = min(12f * scale, w / n * 0.4f)
+                barHeightsDp.forEachIndexed { i, height ->
+                    if (height <= 0f) return@forEachIndexed
+                    canvas.drawRoundRect(RectF(x(i) - barWidth / 2, h - height * scale, x(i) + barWidth / 2, h.toFloat()), 2f * scale, 2f * scale, paint)
+                }
             }
         }
     }
@@ -184,66 +197,75 @@ object WidgetBitmaps {
         }
     }
 
-    /** Güneş yayı: kesikli yay, geçen kısım dolu, şu anki konumda bir nokta. */
-    fun sunArc(progress: Float, widthDp: Float, heightDp: Float, density: Float, accent: Color, faint: Color, horizon: Color): Bitmap {
+    /**
+     * Sıcaklık aralığı çubuğunun renk şeridi: [from] renginden [to] rengine, 32×1 piksel. Widget'ta
+     * çubuğun boyuna yayılır; uçlarını widget yuvarlar (Android 12+).
+     */
+    fun rangeStrip(from: Color, to: Color): Bitmap = cached("rs1:${from.toArgb()}:${to.toArgb()}") {
+        Bitmap.createBitmap(RANGE_STRIP_PX, 1, Bitmap.Config.ARGB_8888).also { bitmap ->
+            for (i in 0 until RANGE_STRIP_PX) bitmap.setPixel(i, 0, mix(from, to, (i + 0.5f) / RANGE_STRIP_PX).toArgb())
+        }
+    }
+
+    private const val RANGE_STRIP_PX = 32
+
+    /** İki rengin düz (sRGB) karışımı: gradyanın o noktadaki rengi. */
+    fun mix(from: Color, to: Color, t: Float): Color {
+        val f = t.coerceIn(0f, 1f)
+        return Color(
+            red = from.red + (to.red - from.red) * f,
+            green = from.green + (to.green - from.green) * f,
+            blue = from.blue + (to.blue - from.blue) * f,
+            alpha = from.alpha + (to.alpha - from.alpha) * f,
+        )
+    }
+
+    /** Güneş yayının yolu ve ufuk çizgisinin yüksekliği (piksel). */
+    private fun sunPath(w: Int, h: Int, scale: Float): Path {
+        val pad = 8f * scale
+        val baseY = h - 4f * scale
+        return Path().apply {
+            moveTo(pad, baseY)
+            quadTo(w / 2f, -baseY * 0.85f, w - pad, baseY)
+        }
+    }
+
+    /** Güneş yayı: bütün yol, kesikli. Tek kanallı maske; ufuk çizgisini widget çizer. */
+    fun sunArcDashed(widthDp: Float, heightDp: Float, density: Float, level: Int): Bitmap {
         val (w, h, scale) = pixels(widthDp, heightDp, density)
-        val p = (progress.coerceIn(0f, 1f) * 200).roundToInt()
-        return cached("s:$p:$w:$h:${accent.toArgb()}:${faint.toArgb()}:${horizon.toArgb()}") {
-            Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { bitmap ->
-                val canvas = Canvas(bitmap)
-                val pad = 8f * scale
-                val baseY = h - 4f * scale
-                val arc = Path().apply {
-                    moveTo(pad, baseY)
-                    quadTo(w / 2f, -baseY * 0.85f, w - pad, baseY)
-                }
-                canvas.drawLine(0f, baseY, w.toFloat(), baseY, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = horizon.toArgb()
-                    strokeWidth = 1f * scale
-                })
-                canvas.drawPath(arc, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = faint.toArgb()
+        return cached("sd:$w:$h:$level") {
+            Bitmap.createBitmap(w, h, Bitmap.Config.ALPHA_8).also { bitmap ->
+                Canvas(bitmap).drawPath(sunPath(w, h, scale), Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = ink(level)
                     style = Paint.Style.STROKE
                     strokeWidth = 2f * scale
                     strokeCap = Paint.Cap.ROUND
                     pathEffect = DashPathEffect(floatArrayOf(3f * scale, 6f * scale), 0f)
                 })
-                val measure = PathMeasure(arc, false)
+            }
+        }
+    }
+
+    /** Güneş yayı: geçen kısım dolu çizgi ve şu anki konumda nokta. Tek kanallı maske. */
+    fun sunArcDone(progress: Float, widthDp: Float, heightDp: Float, density: Float, level: Int): Bitmap {
+        val (w, h, scale) = pixels(widthDp, heightDp, density)
+        val p = (progress.coerceIn(0f, 1f) * 200).roundToInt()
+        return cached("sp:$p:$w:$h:$level") {
+            Bitmap.createBitmap(w, h, Bitmap.Config.ALPHA_8).also { bitmap ->
+                val canvas = Canvas(bitmap)
+                val measure = PathMeasure(sunPath(w, h, scale), false)
                 val done = Path()
                 val length = measure.length * p / 200f
                 measure.getSegment(0f, length, done, true)
                 canvas.drawPath(done, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = accent.toArgb()
+                    color = ink(level)
                     style = Paint.Style.STROKE
                     strokeWidth = 2.5f * scale
                     strokeCap = Paint.Cap.ROUND
                 })
                 val position = FloatArray(2)
                 measure.getPosTan(length, position, null)
-                canvas.drawCircle(position[0], position[1], 6f * scale, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = accent.toArgb() })
-            }
-        }
-    }
-
-    /**
-     * Hafif perde: yazının arkasında kenarları yumuşak, yarı saydam katman. Küçük çizilir ve
-     * widget'a yayılır (yumuşak bir geçişte çözünürlük fark edilmez).
-     */
-    fun scrim(widthDp: Float, heightDp: Float, density: Float, color: Color): Bitmap {
-        val w = 96
-        val h = max(24, (96 * heightDp / max(1f, widthDp)).roundToInt()).coerceAtMost(192)
-        return cached("m:$w:$h:${color.toArgb()}") {
-            Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { bitmap ->
-                val canvas = Canvas(bitmap)
-                val solid = color.toArgb()
-                val clear = color.copy(alpha = 0f).toArgb()
-                val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-                // Elips biçiminde: ortası dolu, kenarlara doğru söner.
-                canvas.save()
-                canvas.scale(1f, h / w.toFloat())
-                paint.shader = RadialGradient(w / 2f, w / 2f, w * 0.62f, intArrayOf(solid, solid, clear), floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP)
-                canvas.drawRect(0f, 0f, w.toFloat(), w.toFloat(), paint)
-                canvas.restore()
+                canvas.drawCircle(position[0], position[1], 6f * scale, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ink(level) })
             }
         }
     }
@@ -347,163 +369,7 @@ object WidgetBitmaps {
         }
     }
 
-    // --- Analog kadranlar -----------------------------------------------------------------------------
+    // --- Analog kadranlar: kadran ve kollar vektördür; burada yalnızca kadran türü kalır ---------------
 
     enum class Dial { Plain, Field, Ring }
-
-    enum class Hand { Hour, Minute, Second }
-
-    /**
-     * Analog saatin bir kolu: dar ve kadran boyunda bir resim; ortası kadranın merkezine gelir ve
-     * yukarıyı (saat 12) gösterir. AnalogClock bu resmi merkez etrafında döndürür. Ölçüler 200
-     * birimlik kadrana göredir. Yalnızca boyut, stil ya da renk değişince yeniden çizilir.
-     */
-    fun hand(kind: Dial, hand: Hand, dialDp: Float, density: Float, color: Color, symbol: SecondSymbol = SecondSymbol.None): Bitmap {
-        val height = max(1, (dialDp * density).roundToInt())
-        val u = height / 200f
-        val width = max(1, ((if (hand == Hand.Second) 24f else 16f) * u).roundToInt())
-        return cached("h:$kind:$hand:$height:${color.toArgb()}:$symbol") {
-            Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
-                val canvas = Canvas(bitmap)
-                val cx = width / 2f
-                val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color.toArgb() }
-                fun y(unit: Float) = unit * u
-                fun polygon(vararg points: Float) {
-                    val path = Path()
-                    for (i in points.indices step 2) {
-                        val px = cx + (points[i] - 100f) * u
-                        if (i == 0) path.moveTo(px, y(points[i + 1])) else path.lineTo(px, y(points[i + 1]))
-                    }
-                    path.close()
-                    canvas.drawPath(path, fill)
-                }
-                when (hand) {
-                    Hand.Second -> {
-                        // İnce çizgi, kısa kuyruk, ortada küçük göbek; kuyrukta isteğe bağlı simge.
-                        canvas.drawRect(cx - 0.8f * u, y(18f), cx + 0.8f * u, y(132f), fill)
-                        canvas.drawCircle(cx, y(100f), 4.5f * u, fill)
-                        when (symbol) {
-                            SecondSymbol.Star -> polygon(
-                                100f, 113f, 102.7f, 120.3f, 110.5f, 120.6f, 104.4f, 125.4f, 106.5f, 133f,
-                                100f, 128.7f, 93.5f, 133f, 95.6f, 125.4f, 89.5f, 120.6f, 97.3f, 120.3f,
-                            )
-                            SecondSymbol.Circle -> canvas.drawCircle(cx, y(126f), 6.5f * u, fill)
-                            SecondSymbol.None -> Unit
-                        }
-                    }
-                    else -> {
-                        val hour = hand == Hand.Hour
-                        when (kind) {
-                            Dial.Plain -> if (hour) {
-                                canvas.drawRect(cx - 3.8f * u, y(50f), cx + 3.8f * u, y(106f), fill)
-                            } else {
-                                canvas.drawRect(cx - 2.6f * u, y(22f), cx + 2.6f * u, y(106f), fill)
-                            }
-                            Dial.Field -> if (hour) {
-                                polygon(100f, 46f, 105.5f, 62f, 103.5f, 105f, 96.5f, 105f, 94.5f, 62f)
-                            } else {
-                                polygon(100f, 18f, 104.5f, 36f, 102.8f, 105f, 97.2f, 105f, 95.5f, 36f)
-                            }
-                            Dial.Ring -> {
-                                val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                                    this.color = color.toArgb()
-                                    style = Paint.Style.STROKE
-                                    strokeCap = Paint.Cap.ROUND
-                                    strokeWidth = (if (hour) 6.5f else 4.5f) * u
-                                }
-                                canvas.drawLine(cx, y(100f), cx, y(if (hour) 56f else 30f), stroke)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Analog saatin kadranı. Kadran sabittir: yalnızca ayar (renkler, vurgulu rakamlar) ya da hava
-     * halkasının verisi değişince yeniden çizilir; kolları Android'in AnalogClock'u çizer.
-     *
-     * [marks]: çizgi ve rakam rengi; [highlighted]: vurgu renginde gösterilecek rakamlar (Saha);
-     * [arcs]: önümüzdeki 12 saatin renkleri, [arcStartHour] saatinden başlayarak (Hava halkası).
-     */
-    fun dial(
-        kind: Dial,
-        sizeDp: Float,
-        density: Float,
-        ground: Color,
-        marks: Color,
-        accent: Color,
-        typeface: Typeface? = null,
-        highlighted: Set<Int> = emptySet(),
-        arcs: List<Color> = emptyList(),
-        arcStartHour: Int = 0,
-    ): Bitmap {
-        val (px, _, scale) = pixels(sizeDp, sizeDp, density)
-        val key = "d:$kind:$px:${ground.toArgb()}:${marks.toArgb()}:${accent.toArgb()}:${highlighted.sorted()}:${arcs.joinToString { it.toArgb().toString() }}:$arcStartHour"
-        return cached(key) {
-            Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also { bitmap ->
-                val canvas = Canvas(bitmap)
-                val c = px / 2f
-                val r = c - 2f * scale
-                canvas.drawCircle(c, c, r, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ground.toArgb() })
-                val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    style = Paint.Style.STROKE
-                    strokeCap = Paint.Cap.BUTT
-                }
-                fun tick(index: Int, of: Int, from: Float, to: Float, width: Float, color: Color) {
-                    val a = Math.toRadians(index * 360.0 / of)
-                    val dx = sin(a).toFloat()
-                    val dy = -cos(a).toFloat()
-                    line.color = color.toArgb()
-                    line.strokeWidth = width
-                    canvas.drawLine(c + dx * r * from, c + dy * r * from, c + dx * r * to, c + dy * r * to, line)
-                }
-                when (kind) {
-                    Dial.Plain -> {
-                        for (i in 0 until 60) if (i % 5 != 0) tick(i, 60, 0.9f, 0.955f, r * 0.012f, marks)
-                        for (i in 0 until 12) tick(i, 12, 0.78f, 0.955f, r * 0.045f, marks)
-                    }
-                    Dial.Field -> {
-                        for (i in 0 until 60) tick(i, 60, 0.925f, 0.975f, r * (if (i % 5 == 0) 0.016f else 0.009f), marks.copy(alpha = 0.7f))
-                        val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                            this.typeface = typeface ?: Typeface.DEFAULT_BOLD
-                            textAlign = Paint.Align.CENTER
-                        }
-                        fun numeral(value: Int, radius: Float, size: Float, color: Color) {
-                            val a = Math.toRadians(value % 12 * 30.0)
-                            text.textSize = size
-                            text.color = (if (value in highlighted) accent else color).toArgb()
-                            val x = c + sin(a).toFloat() * r * radius
-                            val y = c - cos(a).toFloat() * r * radius
-                            // Rakamın görsel ortası: büyük harf yüksekliğinin yarısı.
-                            canvas.drawText(value.toString(), x, y + size * 0.35f, text)
-                        }
-                        for (n in 1..12) numeral(n, 0.74f, r * 0.27f, marks)
-                        for (n in 13..24) numeral(n, 0.47f, r * 0.115f, marks.copy(alpha = 0.6f))
-                    }
-                    Dial.Ring -> {
-                        val stroke = r * 0.075f
-                        val arc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                            style = Paint.Style.STROKE
-                            strokeWidth = stroke
-                            strokeCap = Paint.Cap.ROUND
-                        }
-                        val box = RectF(c - r + stroke, c - r + stroke, c + r - stroke, c + r - stroke)
-                        arcs.take(12).forEachIndexed { i, color ->
-                            arc.color = color.toArgb()
-                            // Yay, saatin kadrandaki yerinden bir sonraki saate kadar; uçlar arasında boşluk.
-                            val start = (arcStartHour + i) % 12 * 30f - 90f + 5f
-                            canvas.drawArc(box, start, 20f, false, arc)
-                        }
-                        line.strokeCap = Paint.Cap.ROUND
-                        for (i in 0 until 12) {
-                            val major = i % 3 == 0
-                            tick(i, 12, if (major) 0.7f else 0.76f, 0.8f, r * (if (major) 0.03f else 0.014f), marks.copy(alpha = if (major) 1f else 0.5f))
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

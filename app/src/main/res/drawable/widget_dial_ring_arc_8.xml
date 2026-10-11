@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Analog hava halkasi: saat 8 ile bir sonraki saat arasindaki yay; rengi (o saatin sicakligi) boya ile verilir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path android:pathData="M16.167,139.092A92.5,92.5 0 0 1 7.852,108.062" android:strokeColor="#FFFFFFFF" android:strokeWidth="7.5" android:strokeLineCap="round" />
+</vector>

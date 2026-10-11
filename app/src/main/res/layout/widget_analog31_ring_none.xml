@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 oncesinde kullanilmaz (orada widget_analog_plain/field/ring); kaynak her surumde bulunsun diye. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clock"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" />

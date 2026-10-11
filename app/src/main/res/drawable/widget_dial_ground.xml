@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Analog kadranin zemini: dolu daire; rengi boya ile verilir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M100,0A100,100 0 1 1 100,200A100,100 0 1 1 100,0Z" />
+</vector>

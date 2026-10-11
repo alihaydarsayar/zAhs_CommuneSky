@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Kadranli saatin kollari (plain, saniye kolu: circle), Android 12+. Kollar vektordur ve kodda boyanir;
+    kadran bos ve 400 dp oldugu icin saat bileseni kollari kadranin gercek boyutuna gore olcekler.
+    AnalogClock Android'in kendi bilesenidir: sistem dondurur, uygulama uyanmaz.
+-->
+<AnalogClock xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clock"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:dial="@drawable/widget_dial_empty_xl"
+    android:hand_hour="@drawable/widget_hand_plain_hour_xl"
+    android:hand_minute="@drawable/widget_hand_plain_minute_xl"
+    android:hand_second="@drawable/widget_hand_second_circle_xl" />

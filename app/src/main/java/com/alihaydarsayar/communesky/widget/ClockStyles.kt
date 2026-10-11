@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceModifier
+import androidx.glance.background
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
@@ -420,11 +421,15 @@ fun SunArc(phase: SunPhase, heightDp: Float, compactLabels: Boolean = false) {
     val size = LocalSize.current
     val formatter = timeFormatter(context)
     val width = size.width.value - 32f
-    val bitmap = WidgetBitmaps.sunArc(
-        phase.progress, width, heightDp, bitmapDensity(),
-        accent = theme.colors.sun, faint = theme.colors.text.copy(alpha = 0.22f), horizon = theme.colors.text.copy(alpha = 0.15f),
-    )
-    Image(ImageProvider(bitmap), contentDescription = null, modifier = GlanceModifier.fillMaxWidth().height(heightDp.sd), contentScale = ContentScale.FillBounds)
+    Box(GlanceModifier.fillMaxWidth().height(heightDp.sd)) {
+        // Ufuk çizgisi: alttan 4 dp yukarıda, 1 dp.
+        Box(GlanceModifier.fillMaxSize().padding(bottom = 3.5.sd), contentAlignment = Alignment.BottomStart) {
+            Box(GlanceModifier.fillMaxWidth().height(1.sd).background(theme.colors.text.copy(alpha = 0.15f))) {}
+        }
+        // Yay tek kanallı iki maskedir (tam çözünürlük): kesikli yol ve geçen kısım; renkleri burada verilir.
+        TintedLayer(ImageProvider(WidgetBitmaps.sunArcDashed(width, heightDp, bitmapDensity(), 255)), theme.colors.text.copy(alpha = 0.22f))
+        TintedLayer(ImageProvider(WidgetBitmaps.sunArcDone(phase.progress, width, heightDp, bitmapDensity(), 255)), theme.colors.sun)
+    }
     VSpace(2.sd)
     val remaining = durationText(context, phase.remaining.toMinutes())
     val center = context.getString(if (phase.isDay) R.string.widget_day_left else R.string.widget_night_left, remaining)

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Analog saat kolu (field hour), Android 12+: kadranla birlikte buyur; rengi boya ile verilir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="400dp"
+    android:viewportWidth="16"
+    android:viewportHeight="200">
+    <group android:translateX="-92">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M100,46L105.5,62L103.5,105L96.5,105L94.5,62Z" />
+    </group>
+</vector>

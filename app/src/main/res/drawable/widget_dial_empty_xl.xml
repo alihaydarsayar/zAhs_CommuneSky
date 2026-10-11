@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bos kadran, 400 dp (Android 12+): kollar bu boyuta gore tanimli; saat bileseni hepsini kadranin gercek boyutuna sigdirir. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <size android:width="400dp" android:height="400dp" />
+    <solid android:color="#00000000" />
+</shape>

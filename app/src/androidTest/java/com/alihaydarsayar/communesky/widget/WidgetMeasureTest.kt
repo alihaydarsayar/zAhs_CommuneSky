@@ -69,15 +69,26 @@ class WidgetMeasureTest {
 
     @Test
     fun drawTimesAndSizes() = runBlocking {
-        val lines = mutableListOf("style,size_dp,bitmap_bytes,views")
+        val lines = mutableListOf("style,size_dp,bitmap_bytes,views,parcel_bytes,all_bitmap_bytes,package_bytes")
         // Isınma: ilk çizim sınıfları ve yazı tiplerini yükler.
         repeat(3) { compose(WidgetStyleId.SmallClassic, WidgetConfig.default(WidgetKind.Small)) }
-        for (style in WidgetStyleId.entries) {
-            val config = WidgetConfig(WidgetPlace.Smart, style.defaultStyle())
+        // Her stil iki kez: varsayılan ayarıyla ve "Gökyüzü" arka planıyla (gradyan resmi ya da vektörü).
+        for ((style, sky) in WidgetStyleId.entries.flatMap { listOf(it to false, it to true) }) {
+            if (sky && (style.isAnalog || style.defaultStyle().background == BackgroundKind.Sky)) continue
+            val config = WidgetConfig(WidgetPlace.Smart, style.defaultStyle().let { if (sky) it.withBackground(BackgroundKind.Sky) else it })
             // Çizim süresini uygulamanın kendi ölçümü loglar ("adb logcat -s WidgetTiming"); burada her
             // stil yedi kez çizilir, süreler logdan okunur.
             repeat(6) { compose(style, config) }
+            // Bu çizimde widget'a verilen bütün resimler (kollar dahil) ve RemoteViews paketinin kendisi.
+            val handed = java.util.Collections.synchronizedSet(java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Bitmap, Boolean>()))
+            WidgetBitmaps.handedOut = handed
             val views = compose(style, config)
+            WidgetBitmaps.handedOut = null
+            val allBitmaps = handed.sumOf { it.allocationByteCount }
+            val parcel = android.os.Parcel.obtain()
+            views.writeToParcel(parcel, 0)
+            val parcelBytes = parcel.dataSize()
+            parcel.recycle()
             val (bytes, count) = withContext(Dispatchers.Main) {
                 val root = views.apply(context, FrameLayout(context))
                 val bitmaps = java.util.IdentityHashMap<Bitmap, Boolean>()
@@ -85,7 +96,7 @@ class WidgetMeasureTest {
                 bitmaps.keys.sumOf { it.allocationByteCount } to countViews(root)
             }
             val size = WidgetSizes.of(style.kind, style.previewSize).draw
-            lines += "%s,%dx%d,%d,%d".format(Locale.US, style.name, size.width.value.toInt(), size.height.value.toInt(), bytes, count)
+            lines += "%s,%dx%d,%d,%d,%d,%d,%d".format(Locale.US, style.name + (if (sky) "+Sky" else ""), size.width.value.toInt(), size.height.value.toInt(), bytes, count, parcelBytes, allBitmaps, parcelBytes + allBitmaps)
         }
         File(out, "widgets.csv").writeText(lines.joinToString("\n"))
     }

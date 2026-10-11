@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceModifier
+import androidx.glance.background
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
@@ -352,12 +353,16 @@ private fun SunDetails(data: WidgetPlaceData) {
             WText(title, fitWidth(title, 12f, size.width.value - 32f - 8f, theme).coerceAtLeast(9f), color = theme.colors.secondary)
             WText(phase.end.format(formatter), timeSize)
             Spacer(GlanceModifier.defaultWeight())
-            val bitmap = WidgetBitmaps.sunArc(
-                if (phase.isDay) phase.progress else 0f,
-                size.width.value - 32f, arcHeight, bitmapDensity(),
-                accent = theme.colors.sun, faint = theme.colors.sun.copy(alpha = 0.35f), horizon = theme.colors.text.copy(alpha = 0.2f),
-            )
-            Image(ImageProvider(bitmap), null, GlanceModifier.fillMaxWidth().height(arcHeight.sd), contentScale = ContentScale.FillBounds)
+            val arcWidth = size.width.value - 32f
+            Box(GlanceModifier.fillMaxWidth().height(arcHeight.sd)) {
+                // Ufuk çizgisi: alttan 4 dp yukarıda, 1 dp.
+                Box(GlanceModifier.fillMaxSize().padding(bottom = 3.5.sd), contentAlignment = Alignment.BottomStart) {
+                    Box(GlanceModifier.fillMaxWidth().height(1.sd).background(theme.colors.text.copy(alpha = 0.2f))) {}
+                }
+                // Yay tek kanallı iki maskedir (tam çözünürlük): kesikli yol ve geçen kısım; renkleri burada verilir.
+                TintedLayer(ImageProvider(WidgetBitmaps.sunArcDashed(arcWidth, arcHeight, bitmapDensity(), 255)), theme.colors.sun.copy(alpha = 0.35f))
+                TintedLayer(ImageProvider(WidgetBitmaps.sunArcDone(if (phase.isDay) phase.progress else 0f, arcWidth, arcHeight, bitmapDensity(), 255)), theme.colors.sun)
+            }
             Spacer(GlanceModifier.defaultWeight())
             val other = if (nextIsSunrise) {
                 context.getString(R.string.widget_sunset_short, phase.sunset.format(formatter))

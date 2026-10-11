@@ -18,6 +18,10 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.width
+import androidx.glance.appwidget.cornerRadius
+import androidx.glance.layout.padding
+import androidx.glance.layout.size
+import kotlin.math.roundToInt
 import androidx.glance.text.TextAlign
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
@@ -102,25 +106,30 @@ private fun HourlyCurve(data: WidgetPlaceData) {
     val pointsY = labelTops.map { it + labelHeight + 4f }
     val probabilities = hours.map { it.precipitationProbability }
     val bars = if (showRain) probabilities.map { if (it >= 10) max(3f, barMax * it / 100f) else 0f } else emptyList()
-    val bitmap = WidgetBitmaps.hourlyCurve(
-        pointsYDp = pointsY,
-        barHeightsDp = bars,
-        widthDp = size.width.value - 32f,
-        heightDp = areaHeight,
-        barBottomDp = barBottom,
-        density = bitmapDensity(),
-        line = theme.colors.text,
-        bar = theme.colors.rain.copy(alpha = 0.9f),
-        // "Şimdi" noktası vurgu renginde.
-        now = theme.colors.accent,
-    )
+    // Eğri ve çubuklar tek kanallı maskedir (tam çözünürlük, piksel başına 1 bayt); renkleri burada verilir.
+    val curveWidth = size.width.value - 32f
+    val density = bitmapDensity()
+    val tallestBar = bars.maxOrNull() ?: 0f
 
     WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 16.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             HourlyHeader(data, tempSize = headerTemp)
             VSpace(4.sd)
             Box(GlanceModifier.fillMaxWidth().height(areaHeight.sd)) {
-                Image(ImageProvider(bitmap), contentDescription = null, modifier = GlanceModifier.fillMaxSize(), contentScale = ContentScale.FillBounds)
+                if (tallestBar > 0f) {
+                    Box(GlanceModifier.fillMaxSize().padding(top = (barBottom - tallestBar).sd)) {
+                        TintedLayer(
+                            ImageProvider(WidgetBitmaps.curveBars(bars, curveWidth, tallestBar, density, 255)),
+                            theme.colors.rain.copy(alpha = 0.9f),
+                            GlanceModifier.fillMaxWidth().height(tallestBar.sd),
+                        )
+                    }
+                }
+                TintedLayer(ImageProvider(WidgetBitmaps.curveLine(pointsY, curveWidth, areaHeight, density, 255)), theme.colors.text)
+                // "Şimdi" noktası vurgu renginde: ilk sütunun ortasında, 4 dp yarıçaplı daire (vektör).
+                Box(GlanceModifier.fillMaxSize().padding(start = (curveWidth / temps.size / 2f - 4f).sd, top = (pointsY[0] - 4f).coerceAtLeast(0f).sd)) {
+                    TintedLayer(ImageProvider(R.drawable.widget_dot), theme.colors.accent, GlanceModifier.size(8.sd))
+                }
                 Row(GlanceModifier.fillMaxSize()) {
                     temps.forEachIndexed { i, t ->
                         Column(GlanceModifier.defaultWeight().fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -200,6 +209,44 @@ private fun HourlyRowStyle(data: WidgetPlaceData) {
 
 // --- Haftalık ---------------------------------------------------------------------------------------
 
+/**
+ * Renkli sıcaklık aralığı çubuğu: soluk bir iz ve üstünde o günün aralığı; rengi haftanın bütün aralığına
+ * göre (serin günler turkuaz, sıcak günler mercan). [start] ve [end] haftanın aralığındaki oranlardır.
+ *
+ * Android 12+: iz bir şekil, renkli parça 32×1 piksellik bir renk şeridinin yayılmış hâlidir; uçlarını
+ * widget yuvarlar. Öncesinde widget içeriği yuvarlak kesemediği için çubuk tam çözünürlükte resim olarak çizilir.
+ */
+@Composable
+private fun RangeBar(start: Float, end: Float, widthDp: Float, modifier: GlanceModifier) {
+    val theme = LocalWidgetTheme.current
+    val track = theme.colors.text.copy(alpha = 0.14f)
+    val cool = theme.colors.cool
+    val warm = theme.colors.warm
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) {
+        Image(
+            ImageProvider(WidgetBitmaps.rangeBar(start, end, widthDp, 6f, bitmapDensity(), track, cool, warm)),
+            contentDescription = null,
+            modifier = modifier,
+            contentScale = ContentScale.FillBounds,
+        )
+        return
+    }
+    // Resimdeki hesapla aynı: parça en az çubuğun yüksekliği kadar (tam daire), izin dışına taşmaz.
+    val height = 6f
+    val left = widthDp * (start.coerceIn(0f, 1f) * 100).roundToInt() / 100f
+    val right = max(left + height, widthDp * (end.coerceIn(0f, 1f) * 100).roundToInt() / 100f).coerceAtMost(widthDp)
+    val from = WidgetBitmaps.mix(cool, warm, left / widthDp)
+    val to = WidgetBitmaps.mix(cool, warm, right / widthDp)
+    Box(modifier.rounded(track, 3.sd), contentAlignment = Alignment.CenterStart) {
+        Row(GlanceModifier.fillMaxSize()) {
+            Spacer(GlanceModifier.width(left.sd))
+            Box(GlanceModifier.width((right - left).sd).fillMaxHeight().cornerRadius(3.sd)) {
+                Image(ImageProvider(WidgetBitmaps.rangeStrip(from, to)), contentDescription = null, modifier = GlanceModifier.fillMaxSize(), contentScale = ContentScale.FillBounds)
+            }
+        }
+    }
+}
+
 @Composable
 fun WeeklyContent(style: WidgetStyleId, data: WidgetPlaceData) {
     val size = LocalSize.current
@@ -234,7 +281,8 @@ private fun WeeklyRows(data: WidgetPlaceData, bars: Boolean) {
     val span = max(1.0, weekMax - weekMin)
     val showPct = theme.shows(WidgetContent.Precipitation) && size.width >= 250.dp
     val density = bitmapDensity()
-    val barWidth = size.width.value - 32f - 56f - 26f - (if (showPct) 40f else 0f) - 32f - 32f - 30f
+    // Çubuğa kalan genişlik: satırdaki sabit genişlikler (gün 56, ikon 22 + 4, yüzde 40, en düşük 32 + 8, 8 + en yüksek 32) çıkınca.
+    val barWidth = (size.width.value - 32f - 56f - 26f - (if (showPct) 40f else 0f) - 40f - 40f).coerceAtLeast(12f)
     WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 16.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             if (header) {
@@ -277,14 +325,7 @@ private fun WeeklyRows(data: WidgetPlaceData, bars: Boolean) {
                             HSpace(8.sd)
                             val start = ((day.minTemperature - weekMin) / span).toFloat()
                             val end = ((day.maxTemperature - weekMin) / span).toFloat()
-                            Image(
-                                ImageProvider(
-                                    WidgetBitmaps.rangeBar(start, end, max(40f, barWidth), 6f, density, theme.colors.text.copy(alpha = 0.14f), theme.colors.cool, theme.colors.warm),
-                                ),
-                                contentDescription = null,
-                                modifier = GlanceModifier.defaultWeight().height(6.sd),
-                                contentScale = ContentScale.FillBounds,
-                            )
+                            RangeBar(start, end, barWidth, GlanceModifier.defaultWeight().height(6.sd))
                             HSpace(8.sd)
                             WText(temp(day.maxTemperature), 16f, GlanceModifier.width(32.sd), weight = WWeight.Medium, align = TextAlign.End)
                         } else {

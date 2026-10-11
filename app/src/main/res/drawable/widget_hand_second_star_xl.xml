@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Saniye kolu, kuyrugunda yildiz; vurgu rengine boyanir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="400dp"
+    android:viewportWidth="24"
+    android:viewportHeight="200">
+    <group android:translateX="-88">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M99.2,18L100.8,18L100.8,132L99.2,132Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M95.5,100A4.5,4.5 0 1 1 104.5,100A4.5,4.5 0 1 1 95.5,100Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M100,113L102.7,120.3L110.5,120.6L104.4,125.4L106.5,133L100,128.7L93.5,133L95.6,125.4L89.5,120.6L97.3,120.3Z" />
+    </group>
+</vector>

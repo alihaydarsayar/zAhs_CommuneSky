@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Saniye kolu (simgesiz), Android 12+; vurgu rengine boyanir. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="400dp"
+    android:viewportWidth="24"
+    android:viewportHeight="200">
+    <group android:translateX="-88">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M99.2,18L100.8,18L100.8,132L99.2,132Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M95.5,100A4.5,4.5 0 1 1 104.5,100A4.5,4.5 0 1 1 95.5,100Z" />
+    </group>
+</vector>

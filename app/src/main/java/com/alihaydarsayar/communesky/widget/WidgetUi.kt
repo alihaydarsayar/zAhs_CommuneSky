@@ -357,16 +357,8 @@ fun WidgetSurface(
     if (edge > 0f) inner = inner.background(imageProvider = ImageProvider(strokeRes(radius)), alpha = edge)
     Box(root.then(modifier)) {
         // Hafif perde: yazının arkasında kenarları yumuşak, yarı saydam bir katman.
-        if (theme.colors.scrim) {
-            val size = LocalSize.current
-            val density = LocalContext.current.resources.displayMetrics.density
-            Image(
-                ImageProvider(WidgetBitmaps.scrim(size.width.value, size.height.value, density * theme.grow, WidgetColors.scrimColor(theme.colors.darkText))),
-                contentDescription = null,
-                modifier = GlanceModifier.fillMaxSize(),
-                contentScale = androidx.glance.layout.ContentScale.FillBounds,
-            )
-        }
+        // Vektör: ortası dolu, kenara doğru sönen daire; widget'a yayılınca elips olur.
+        if (theme.colors.scrim) TintedLayer(ImageProvider(R.drawable.widget_scrim), WidgetColors.scrimColor(theme.colors.darkText))
         // Kenar boşluğu büyük widget'ta orantılı büyür, en fazla 24 dp.
         val capped = theme.grow > 1f
         Box(
@@ -396,6 +388,26 @@ fun gradientBitmap(
         colors, widthDp, heightDp, bitmapDensity(), corner,
         roundLeft = roundLeft, roundRight = roundRight, roundBottom = roundBottom,
     )
+}
+
+/**
+ * Tek renkli bir katman: tek kanallı maske ya da beyaz çizilmiş vektör, [color] ile boyanır. Rengin
+ * saydamlığı ayrıca verilir (boya her Android sürümünde aynı sonucu versin diye opaktır).
+ */
+@Composable
+fun TintedLayer(provider: ImageProvider, color: Color, modifier: GlanceModifier = GlanceModifier.fillMaxSize()) {
+    if (color.alpha >= 1f) {
+        // Opak renk: tek görünüm yeter.
+        Image(provider, contentDescription = null, modifier = modifier, contentScale = androidx.glance.layout.ContentScale.FillBounds, colorFilter = ColorFilter.tint(ColorProvider(color)))
+        return
+    }
+    Box(
+        modifier.background(
+            imageProvider = provider,
+            alpha = color.alpha,
+            colorFilter = ColorFilter.tint(ColorProvider(color.copy(alpha = 1f))),
+        ),
+    ) {}
 }
 
 @Composable

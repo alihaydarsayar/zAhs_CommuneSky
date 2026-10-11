@@ -33,6 +33,9 @@ What's new in each version of Commune Sky.
 - Fixed: when you are away, tapping the home side of the widget now opens home and tapping the other side opens where you are. In My places and in the clock with your places, each place opens its own page.
 - Fixed: tapping the place name on a clock widget did nothing; it now opens Commune Sky.
 - The widget setup screen uses less memory while you swipe through styles.
+- **Sharper widgets.** Analog dials, clock hands and the soft veil behind text are now drawn as shapes that stay crisp at any size. The temperature curve, the radial clock lines and the sun path are drawn at your screen's full resolution.
+- The accent color ("Today", the "now" dot) is lightened or darkened automatically when it would be hard to read on the widget's background, for example red on a blue sky.
+- Widgets now refresh on the hour, so "Now" and the hourly strip show the right hour. No extra wake-ups: the hourly update is simply timed to the full hour.
 
 ## 1.3 — in testing
 
