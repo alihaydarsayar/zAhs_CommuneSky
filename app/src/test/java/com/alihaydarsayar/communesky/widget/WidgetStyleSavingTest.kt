@@ -199,32 +199,60 @@ class WidgetStyleSavingTest {
         val analog = WidgetConfig(WidgetPlace.Smart, WidgetStyleId.ClockSS.defaultStyle())
         val digital = WidgetConfig(WidgetPlace.Smart, WidgetStyleId.ClockRadial.defaultStyle())
         // Birinci saat kaydedilir; ana ekrandaki kimliği (2) launcher'ın ayar ekranına verdiğinden (1) farklıdır.
-        store.set(1, analog, WidgetKind.Clock)
+        store.set(1, analog, WidgetKind.Clock, placedIds = listOf(2))
         assertEquals("yok", store.recordKind(2))
         assertEquals(analog, store.get(2, WidgetKind.Clock))
-        // İlk çizimde görünümü sabitlenir.
-        store.pin(2, WidgetKind.Clock)
+        // İkinci saat (3) kendi kimliğiyle kaydedilir: şablon değişmeden önce birincinin görünümü sabitlenir.
+        store.set(3, digital, WidgetKind.Clock, placedIds = listOf(2, 3))
         assertEquals("sabit", store.recordKind(2))
-        // İkinci saat başka bir stille kaydedilir: birinci saat ona dönüşmez.
-        store.set(3, digital, WidgetKind.Clock)
         assertEquals(analog, store.get(2, WidgetKind.Clock))
         assertEquals(digital, store.get(3, WidgetKind.Clock))
+        assertEquals("kendi", store.recordKind(3))
         // Ayar ekranı, ana ekranda görüneni açar; sabitleme "kayıtlı" sayılmaz ("Widget'ı ekle" yazısı kalır).
         assertEquals(analog, store.initial(2, WidgetKind.Clock))
         assertFalse(store.exists(2))
-        // Kendi kaydı olan widget'a dokunulmaz; sabitleme ikinci kez yazılmaz.
-        store.pin(3, WidgetKind.Clock)
-        assertEquals("kendi", store.recordKind(3))
-        store.pin(2, WidgetKind.Clock)
+        // Üçüncü bir kayıt sabitlemeyi değiştirmez; kendi kaydı olan widget'a da dokunulmaz.
+        store.set(3, analog.copy(place = WidgetPlace.Home), WidgetKind.Clock, placedIds = listOf(2, 3))
         assertEquals(analog, store.get(2, WidgetKind.Clock))
+        assertEquals("kendi", store.recordKind(3))
         // Kullanıcı kaydedince sabitleme silinir; widget kaldırılınca hiçbir şey kalmaz.
-        store.set(2, digital, WidgetKind.Clock)
+        store.set(2, digital, WidgetKind.Clock, placedIds = listOf(2, 3))
         assertEquals("kendi", store.recordKind(2))
         store.remove(intArrayOf(2))
         assertEquals("yok", store.recordKind(2))
-        // Hiç kayıt yokken sabitlenen görünüm varsayılandır.
-        store.pin(8, WidgetKind.Small)
-        assertEquals(WidgetConfig.default(WidgetKind.Small), store.get(8, WidgetKind.Small))
+    }
+
+    @Test
+    fun `with no earlier save the other widget is pinned to the default look`() = runTest {
+        val store = WidgetConfigStore(dataStore())
+        val digital = WidgetConfig(WidgetPlace.Smart, WidgetStyleId.ClockRadial.defaultStyle().withColorTheme(ColorTheme.Ocean))
+        // Ana ekranda kaydı olmayan bir saat (5) varken ilk kez bir saat (6) kaydediliyor.
+        store.set(6, digital, WidgetKind.Clock, placedIds = listOf(5, 6))
+        assertEquals("sabit", store.recordKind(5))
+        assertEquals(WidgetConfig.default(WidgetKind.Clock), store.get(5, WidgetKind.Clock))
+        // Başka türün widget'ları listede olmadığı için etkilenmez.
+        assertEquals("yok", store.recordKind(9))
+    }
+
+    @Test
+    fun `when the saved id is not on the home screen nothing is pinned and the new widget follows the save`() = runTest {
+        val store = WidgetConfigStore(dataStore())
+        val analog = WidgetConfig(WidgetPlace.Smart, WidgetStyleId.ClockSS.defaultStyle())
+        val digital = WidgetConfig(WidgetPlace.Smart, WidgetStyleId.ClockRadial.defaultStyle())
+        // Önce bir analog saat kaydedilmiş (şablon analog); o widget sonra kaldırılmış.
+        store.set(1, analog, WidgetKind.Clock, placedIds = listOf(1))
+        store.remove(intArrayOf(1))
+        // Yeni saat ekleniyor: ana ekrandaki kimliği 7, ama launcher ayar ekranına 8 vermiş (kimlik uyuşmazlığı).
+        // Ayar ekranı açıkken widget bir kez çizilir: henüz kaydı yok, eski şablonu (analog) gösterir.
+        assertEquals(analog, store.get(7, WidgetKind.Clock))
+        store.set(8, digital, WidgetKind.Clock, placedIds = listOf(7))
+        // Hiçbir şey sabitlenmedi: 7 yeni şablonu izler ve kullanıcının seçtiği stille görünür.
+        assertEquals("yok", store.recordKind(7))
+        assertEquals(digital, store.get(7, WidgetKind.Clock))
+        // Kimlik listesi verilmeden yapılan kayıt da (eski çağrılar) hiçbir şeyi sabitlemez.
+        store.set(8, analog, WidgetKind.Clock)
+        assertEquals("yok", store.recordKind(7))
+        assertEquals(analog, store.get(7, WidgetKind.Clock))
     }
 
     @Test

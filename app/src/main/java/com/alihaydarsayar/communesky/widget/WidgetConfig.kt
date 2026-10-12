@@ -412,10 +412,24 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
     /**
      * Ayarı kaydeder; dönünce yazma diske ulaşmıştır. [kind] verilirse aynı ayar o türün şablonu
      * olarak da saklanır.
+     *
+     * [placedIds]: o türün şu an ana ekranda duran widget'larının kimlikleri. Kendi kaydı olmayan bir widget
+     * türün şablonunu izler; şablon değişmeden hemen önce böyle widget'ların o anki görünümü **sabitlenir**
+     * (eski şablon, yoksa varsayılan, kendi kimliklerine yazılır). Böylece ikinci bir saat kaydedilince birincisi
+     * ona dönüşmez. Sabitleme yalnız kaydedilen kimlik gerçekten ana ekrandaysa yapılır: launcher ayar ekranına
+     * başka bir kimlik verdiyse (kimlik uyuşmazlığı) kaydı olmayan widget az önce eklenen widget'ın kendisidir ve
+     * yeni şablonu izlemelidir; eski görünüme kilitlenmez.
      */
-    suspend fun set(appWidgetId: Int, config: WidgetConfig, kind: WidgetKind? = null) {
+    suspend fun set(appWidgetId: Int, config: WidgetConfig, kind: WidgetKind? = null, placedIds: List<Int> = emptyList()) {
         val encoded = encode(config)
         dataStore.edit {
+            if (kind != null && appWidgetId in placedIds) {
+                val before = it[templateKey(kind)] ?: encode(WidgetConfig.default(kind))
+                for (other in placedIds) {
+                    if (other == appWidgetId) continue
+                    if (it[configKey(other)] == null && it[pinKey(other)] == null && it[legacyPlaceKey(other)] == null) it[pinKey(other)] = before
+                }
+            }
             it[configKey(appWidgetId)] = encoded
             it.remove(pinKey(appWidgetId))
             if (kind != null) it[templateKey(kind)] = encoded
@@ -456,22 +470,6 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
         dataStore.edit { it[PREVIEWS_VERSION] = version }
     }
 
-    /**
-     * Kendi kaydı olmayan widget'a (launcher ayar ekranını açmadıysa ya da kaydı başka bir kimlikle yazıldıysa)
-     * o anki görünümünü **sabitler**: aynı türün son ayarı (yoksa varsayılan) bu widget'ın kimliğine yazılır.
-     * Böylece sonradan aynı türden başka bir widget kaydedilince bu widget onun görünümüne dönüşmez.
-     * Kullanıcı widget'ı kaydedince sabitleme silinir.
-     */
-    suspend fun pin(appWidgetId: Int, kind: WidgetKind) {
-        val prefs = dataStore.data.first()
-        if (prefs[configKey(appWidgetId)] != null || prefs[pinKey(appWidgetId)] != null || prefs[legacyPlaceKey(appWidgetId)] != null) return
-        dataStore.edit {
-            if (it[configKey(appWidgetId)] == null && it[pinKey(appWidgetId)] == null) {
-                it[pinKey(appWidgetId)] = it[templateKey(kind)] ?: encode(WidgetConfig.default(kind))
-            }
-        }
-    }
-
     /** Tanılama için: bu widget'ın ayarı nereden geliyor? */
     suspend fun recordKind(appWidgetId: Int): String = dataStore.data.first().let {
         when {
@@ -484,7 +482,7 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
 
     private fun read(prefs: Preferences, id: Int, kind: WidgetKind): WidgetConfig {
         prefs[configKey(id)]?.let { raw -> decode(raw, kind, "widget $id")?.let { return it } }
-        // Sabitlenmiş görünüm (bkz. pin): widget'ın kendi kaydı yokken ilk çizimde yazılır.
+        // Sabitlenmiş görünüm (bkz. set): aynı türden başka bir widget kaydedilirken yazılır.
         prefs[pinKey(id)]?.let { raw -> decode(raw, kind, "pin $id")?.let { return it } }
         // 1.2'den kalan ayar: yer ve üç arka plandan biri. Görünüm korunur, yeni seçenekler varsayılan.
         // Hiç kaydı olmayan widget (launcher ayar ekranını açmadıysa): aynı türün son ayarı, yoksa varsayılan.

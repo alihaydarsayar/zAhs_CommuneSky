@@ -235,7 +235,12 @@ private fun WidgetConfigScreen(
         val toSave = if (shown != null && current.style.styleId(kind) != shown) current.copy(style = current.style.withStyle(shown)) else current
         scope.launch {
             // Önce yazma biter (ayar diske ulaşır), sonra yalnızca bu widget yeniden çizilir, en son ekran kapanır.
-            store.set(appWidgetId, toSave, kind)
+            // Aynı türün ana ekrandaki öteki widget'ları, şablon değişmeden önce o anki görünümlerine sabitlenir.
+            val placed = runCatching {
+                AppWidgetManager.getInstance(context.applicationContext)
+                    .getAppWidgetIds(android.content.ComponentName(context.applicationContext, kind.receiverClass)).toList()
+            }.getOrDefault(emptyList())
+            store.set(appWidgetId, toSave, kind, placed)
             // Kaydedilen ayarın özeti; ana ekrandaki çizimin logladığı özetle ("WidgetSize ... ayar=") aynı olmalı.
             WidgetSizeLog.saved(context, kind, appWidgetId, toSave)
             WeatherWidgetUpdater.update(context, kind, appWidgetId)
