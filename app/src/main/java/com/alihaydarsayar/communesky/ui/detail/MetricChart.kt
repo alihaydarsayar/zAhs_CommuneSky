@@ -172,10 +172,14 @@ fun MetricChart(
         }
         // Saat etiketleri: altı saatte bir.
         val labelY = size.height - 16.dp.toPx()
+        // Öncekinin üstüne binecek etiket atlanır (48 saatlik grafikte "9 PM" ile "3 AM" birbirine yapışıyordu).
+        var drawnUntil = Float.NEGATIVE_INFINITY
         for ((index, text) in hours) {
             val layout = measurer.measure(text, labelStyle)
             val left = (pointX(index.toFloat()) - layout.size.width / 2f).coerceIn(0f, width - layout.size.width)
+            if (left < drawnUntil + 6.dp.toPx()) continue
             drawText(layout, topLeft = Offset(left, labelY))
+            drawnUntil = left + layout.size.width
         }
     }
 }

@@ -13,6 +13,7 @@ What's new in each version of Commune Sky.
 - Fixed: a widget could say "Raining" while the screen showed dry weather measured by a nearby station. It now says when the rain is expected instead.
 - Fixed: the rain tile could show a high chance next to "No rain expected today". It now says that rain is possible when the chance is high but the amount is very small.
 - Fixed: the sunscreen tip could ask for sunscreen in the evening, using the midday UV value.
+- Fixed: with the 12-hour clock, hour labels under the 48-hour air quality chart could run into each other, and the 7-day sunrise and sunset row was too tight.
 
 ## 1.5 — in testing
 
