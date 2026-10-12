@@ -85,10 +85,13 @@ abstract class CommuneSkyWidget(
         // Ana ekrandaki widget uygulamanın seçili diliyle çizilir (süreç telefonun diliyle çalışır).
         // Önizleme ve testlerde verilen bağlam zaten doğru dildedir.
         val drawContext = if (previewConfig == null) WidgetLanguage.context(context) else context
+        val appWidgetId = if (previewConfig == null) runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }.getOrNull() else null
         // Tarih metin olarak yazılıyorsa (diller farklı) gün değişince bir kez yenilenmesi planlanır.
         if (previewConfig == null && WidgetLanguage.differsFromSystem(drawContext)) WidgetDateReceiver.schedule(context)
         provideContent {
-            CompositionLocalProvider(LocalContext provides drawContext) {
+            // Launcher'ın bildirdiği iki ölçü her çizimde yeniden okunur (widget yeniden boyutlandırılmış olabilir).
+            val bounds = appWidgetId?.let { WidgetBounds.of(context, it) } ?: WidgetBounds(null, null)
+            CompositionLocalProvider(LocalContext provides drawContext, LocalWidgetBounds provides bounds, LocalAppWidgetId provides appWidgetId) {
             val config by configFlow.collectAsState(initialConfig)
             val input by inputFlow.collectAsState(initialInput)
             // Çizim, sistem izlerinde (Perfetto, Macrobenchmark) "CommuneSky.widget.<tür>" bölümü olarak görünür;
@@ -151,6 +154,9 @@ class PlacesWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : 
 class PrecipitationWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : CommuneSkyWidget(WidgetKind.Precipitation, preview, input)
 class DetailsWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : CommuneSkyWidget(WidgetKind.Details, preview, input)
 class TodayWidget(preview: WidgetConfig? = null, input: WidgetInput? = null) : CommuneSkyWidget(WidgetKind.Today, preview, input)
+
+/** Çizilen widget'ın kimliği (tanılama kaydı için); önizlemede null. */
+val LocalAppWidgetId = staticCompositionLocalOf<Int?> { null }
 
 /** Widget'ın gösterdiği ana yerin kimliği: havaya dokununca uygulama o yerle açılır. */
 val LocalWidgetPlaceId = staticCompositionLocalOf<Long?> { null }
@@ -364,8 +370,12 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput, wallp
         else -> if (styleId == WidgetStyleId.ClockHome) input.device ?: input.home?.snapshot else input.place(config.place)?.snapshot
     }
     // Stil, tasarım boyutundan büyük widget'ta oranlı büyür; yerleşimini "tasarım dp"siyle yapar.
-    val real = WidgetScale.real(styleId, LocalSize.current)
+    // Telefon dikeyken yatay için hazırlanan çizim de dikey ölçüyle yerleşir (bkz. WidgetVariants): bazı ana
+    // ekranlar dikeyde yanlışlıkla yatay çizimi gösterip içeriği kesiyordu.
+    val variant = LocalSize.current
+    val real = WidgetScale.real(styleId, WidgetVariants.layoutSize(variant, LocalWidgetBounds.current, WidgetVariants.isPortrait(context)))
     val grow = WidgetScale.grow(styleId, real)
+    WidgetDiagnostics.drawn(context, LocalAppWidgetId.current, kind, styleId, variant, real, WidgetScale.compact(styleId, real))
     // Işınsal saatin resimleri launcher'ın sınırını aşacak kadar büyükse (çok büyük widget) widget boş kalmasın:
     // sade yedek düzen çizilir.
     val tooHeavy = styleId == WidgetStyleId.ClockRadial && run {

@@ -88,6 +88,9 @@ internal object WidgetDigest {
             WallpaperTone.colors(context),
             systemColors,
             widgetIds,
+            // Launcher'ın bildirdiği ölçüler ve ekranın yönü: biri değişince widget'lar yeni ölçüyle yeniden çizilir.
+            configuration.orientation,
+            widgetIds.map { id -> WidgetBounds.of(context, id).let { "${it.portrait}/${it.landscape}" } },
         ).joinToString("|")
     }
 
