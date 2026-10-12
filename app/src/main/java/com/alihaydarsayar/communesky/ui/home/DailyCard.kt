@@ -63,7 +63,7 @@ fun DailyCard(
             }
             DayRow(
                 name = if (index == 0) {
-                    stringResource(R.string.today)
+                    stringResource(R.string.today_short)
                 } else {
                     day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)
                         .replaceFirstChar { it.titlecase(locale) }

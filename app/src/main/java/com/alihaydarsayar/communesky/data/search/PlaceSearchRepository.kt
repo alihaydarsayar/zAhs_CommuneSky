@@ -65,7 +65,7 @@ class PlaceSearchRepository @Inject constructor(
             if (clock() < photonPausedUntil) return@async null
             fetch("Photon", onHttpError = ::pausePhotonIfLimited) {
                 SearchResultMapping.fromPhoton(
-                    photonApi.get().search(query, language = if (language == "en") "en" else "default"),
+                    photonApi.get().search(query, language = if (language == "en" || language == "fr") language else "default"),
                     query = query,
                     preferredCountries = countryHints.countries(locale),
                     anchors = anchors,

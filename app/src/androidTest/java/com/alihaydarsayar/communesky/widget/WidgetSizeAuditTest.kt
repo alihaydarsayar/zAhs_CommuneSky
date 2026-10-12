@@ -53,7 +53,7 @@ class WidgetSizeAuditTest {
         val system = Locale.getDefault()
         val shortened = mutableListOf<String>()
         try {
-            for (language in listOf("tr", "en")) {
+            for (language in listOf("tr", "en", "fr")) {
                 Locale.setDefault(Locale.forLanguageTag(language))
                 val context = localized(target, language)
                 val input = WidgetSamples.input(context)

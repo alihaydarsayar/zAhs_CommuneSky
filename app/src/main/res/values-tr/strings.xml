@@ -887,4 +887,5 @@
     <string name="moon_when">%1$s, %2$s · %3$s</string>
     <string name="moon_thirty_days">30 gün</string>
     <string name="what_moon">Ay kendi başına parlamaz; güneşin aydınlattığı yarısını görürüz. Dünya\'nın çevresinde yaklaşık 29 buçuk günde dönerken o aydınlık yarının önce daha çoğunu, sonra daha azını görürüz: görünmeyen yeni aydan ilk dördüne, dolunaya ve yeniden başa. Ay her gün yaklaşık 50 dakika daha geç doğar. Dolunay sıralarında bütün gece gökyüzündedir ve ışığı sönük yıldızları gizler; yeni ay sıralarında gökyüzü en karanlık hâlindedir. Bu sayfadaki her şey telefonunda hesaplanır.</string>
+    <string name="today_short">Bugün</string>
 </resources>

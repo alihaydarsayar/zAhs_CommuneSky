@@ -103,7 +103,8 @@ class SettingsViewModel @Inject constructor(
 enum class AppLanguage(val tag: String) {
     System(""),
     Turkish("tr"),
-    English("en");
+    English("en"),
+    French("fr");
 
     companion object {
         fun current(): AppLanguage {
@@ -247,6 +248,7 @@ fun SettingsScreen(
                             stringResource(R.string.language_system),
                             stringResource(R.string.language_turkish),
                             stringResource(R.string.language_english),
+                            stringResource(R.string.language_french),
                         ),
                         selectedIndex = language.ordinal,
                         onSelect = { index ->

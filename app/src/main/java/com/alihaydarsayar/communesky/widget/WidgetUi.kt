@@ -537,7 +537,7 @@ fun hourLabel(context: Context, time: java.time.temporal.TemporalAccessor, colum
 /** "Cmt", "Paz"; bugün için "Bugün". */
 fun dayName(context: Context, date: LocalDate, today: LocalDate): String =
     if (date == today) {
-        context.getString(R.string.today)
+        context.getString(R.string.today_short)
     } else {
         date.dayOfWeek.getDisplayName(JavaTextStyle.SHORT, locale(context)).replaceFirstChar { it.titlecase(locale(context)) }
     }

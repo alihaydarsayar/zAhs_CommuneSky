@@ -31,5 +31,6 @@ class TestStrings(language: String) : Strings {
     companion object {
         val turkish by lazy { TestStrings("tr") }
         val english by lazy { TestStrings("en") }
+        val french by lazy { TestStrings("fr") }
     }
 }

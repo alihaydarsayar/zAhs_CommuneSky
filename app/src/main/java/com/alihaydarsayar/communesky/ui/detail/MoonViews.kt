@@ -200,7 +200,7 @@ fun MoonPage(weather: WeatherSnapshot) {
             items(days, key = { it.date.toEpochDay() }) { day ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        if (day.date == now.toLocalDate()) stringResource(R.string.today) else day.date.format(month),
+                        if (day.date == now.toLocalDate()) stringResource(R.string.today_short) else day.date.format(month),
                         color = if (day.date == now.toLocalDate()) TextPrimary else TextSecondary,
                         style = MaterialTheme.typography.labelMedium,
                     )

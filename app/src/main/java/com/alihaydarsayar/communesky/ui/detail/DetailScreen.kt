@@ -423,7 +423,7 @@ private fun ComparisonBars(metric: Metric, compared: Compared, formatter: Metric
             )
         }
     }
-    bar(stringResource(R.string.today), compared.today, chartColor(metric))
+    bar(stringResource(R.string.today_short), compared.today, chartColor(metric))
     bar(stringResource(R.string.detail_yesterday), compared.yesterday, Color.White.copy(alpha = 0.35f))
 }
 
@@ -436,7 +436,7 @@ private fun WeekRow(metric: Metric, week: List<DayValue>, today: LocalDate, weat
         for (day in week) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 val name = if (day.date == today) {
-                    stringResource(R.string.today)
+                    stringResource(R.string.today_short)
                 } else {
                     day.date.dayOfWeek.getDisplayName(DateTextStyle.SHORT, locale).replaceFirstChar { it.titlecase(locale) }
                 }

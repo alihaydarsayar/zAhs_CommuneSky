@@ -82,16 +82,20 @@ private fun fitText(
 ): Pair<String, Int>? {
     if (maxLines < 1 || width <= 0f) return null
     for (text in candidates) {
-        val measured = measureWidthDp(context, text, size, theme, weight)
-        val lines = if (measured <= width) 1 else ceil(measured * WRAP_MARGIN / width).toInt()
-        // En uzun kelime tek başına satıra sığmalı.
-        val longest = text.split(' ').maxOf { measureWidthDp(context, it, size, theme, weight) }
+        val measured = measureWidthDp(context, text, size, theme, weight) * MEASURE_MARGIN
+        val lines = if (measured <= width) 1 else ceil(measured * WRAP_MARGIN / width).toInt() + 1
+        // Bölünemeyen en uzun parça tek başına satıra sığmalı (bölünmez boşlukla bağlı kelimeler birlikte sayılır).
+        val longest = text.split(' ').maxOf { measureWidthDp(context, it, size, theme, weight) } * MEASURE_MARGIN
         if (lines <= maxLines && longest <= width) return text to lines
     }
     return null
 }
 
-private const val WRAP_MARGIN = 1.2f
+/** Ölçüm ile gerçek çizim arasındaki küçük fark için pay. */
+private const val MEASURE_MARGIN = 1.08f
+
+/** Satır sonlarında kelime bölünmediği için bırakılan pay; ayrıca bir yedek satır sayılır. */
+private const val WRAP_MARGIN = 1.15f
 
 /** Satıra sığan ikonlar: önce katmanın ilk ikonu, sonra ekler (şemsiye…), yer kalırsa katmanın diğer ikonları. */
 private fun wearIcons(advice: ClothingAdvice, widthDp: Float, iconDp: Float, gapDp: Float): List<Int> {

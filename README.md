@@ -17,6 +17,10 @@
 - **A living sky** — an animated background that follows the weather and the time of day: sun, moon and stars, drifting clouds, rain, snow, fog and lightning, with sunrise and sunset colours.
 - **Hourly and 7-day forecast** — a temperature curve for the next 24 hours, temperature-coloured daily range bars, and precipitation chance on every row.
 - **Details at a glance** — feels-like, humidity, wind with compass, UV index, sun path, visibility, pressure, precipitation and cloud cover.
+- **For today** — what to wear in the morning, at midday and in the evening, worked out on your phone from the feels-like temperature, rain, wind and UV, and adapting to you; everyday tips (umbrella, sunscreen, drying laundry, the best two hours for a run, car wash, stargazing); how today compares with yesterday; an optional morning summary notification.
+- **Detail pages** — tap a tile for today's chart hour by hour, a comparison with yesterday, the week ahead and a plain explanation: feels like, wind, humidity, UV, visibility, pressure, cloud, precipitation and the sun.
+- **Air quality and the moon** — the European air quality index with pollutants and health advice (CAMS), and a moon page calculated on your phone: phase, moonrise and moonset, the next full and new moon.
+- **National forecasts and warnings** — in Türkiye, forecasts, weather warnings and seasonal normals from MGM; in France and the United Kingdom, the Météo-France and Met Office models. The app measures how accurate each source is at your place and picks the closest one by itself.
 - **Honest skies** — clear/cloudy conditions are recomputed from sunshine duration and cloud layers, so thin high cirrus doesn't turn a sunny day "overcast".
 - **Offline-first** — the last forecast appears instantly from the local cache, then refreshes in the background. Pull to refresh any time.
 - **Your places** — search any city, district or neighbourhood worldwide, save it, drag to reorder and mark one as Home. Swipe between places on the home screen.
@@ -24,7 +28,7 @@
 - **Home screen widgets** — ten widgets with more than 30 styles (clocks, hourly curve, weekly range bars, rain in the next two hours, details and more). A "Home & location" widget knows whether you are home, nearby or away, worked out on your phone. Each widget has its own place, background, transparency, colors, corners and text size, with a live preview when you add it.
 - **Your location, if you want it** — approximate location shows your district; optional precise location shows your neighbourhood and picks the closest station. Without permission it shows your saved places, or Istanbul.
 - **Units and theme** — °C or °F, four wind units, light or dark.
-- **English and Turkish**, with per-app language support.
+- **English, Turkish and French**, with per-app language support.
 - **Fast** — R8-optimised release build, Baseline Profiles for quick start-up, and Compose stability tuning for smooth animations.
 
 See the [changelog](CHANGELOG.md) for what's new in each version. Contributors: please read [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -33,9 +37,9 @@ See the [changelog](CHANGELOG.md) for what's new in each version. Contributors: 
 
 Commune Sky has no ads, no analytics and no accounts, and the developer never receives your location, searches or saved places. To show the weather the app talks directly to:
 
-- **Open-Meteo** (forecast and place search): coordinates of your location and saved places, rounded to about 1 km; the text you search for
+- **Open-Meteo** (forecast, air quality and place search): coordinates of your location and saved places, rounded to about 1 km; the text you search for
 - **Photon by komoot** (place search): the text you search for
-- **MGM**, Turkish State Meteorological Service (current conditions in Türkiye): rounded coordinates and the province name once to find nearby stations, then station numbers
+- **MGM**, Turkish State Meteorological Service (forecasts, warnings and current conditions in Türkiye): rounded coordinates and the province name once to find the district and nearby stations, then district and station numbers
 - **NOAA Aviation Weather Center** (airport reports, everywhere): an area of about 50 km around the place
 - **Android Geocoder** (district and neighbourhood names, and searches as a last resort): your coordinates; the search text
 

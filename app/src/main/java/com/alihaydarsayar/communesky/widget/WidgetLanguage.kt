@@ -27,7 +27,7 @@ object WidgetLanguage {
     private const val PREFS = "widget_language"
     private const val KEY = "tag"
 
-    /** Uygulamanın seçili dili ("tr", "en"); "telefonun dili" seçiliyse boş. */
+    /** Uygulamanın seçili dili ("tr", "en", "fr"); "telefonun dili" seçiliyse boş. */
     fun tag(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (prefs.contains(KEY)) return prefs.getString(KEY, "").orEmpty()
@@ -81,7 +81,7 @@ object WidgetLanguage {
     }
 
     /** Varsayılan saat biçimi: Türkçede 24 saat ("9öö", "12ös" yazılmasın); diğer dillerde telefonla aynı. Saf; test edilir. */
-    fun defaultClockFormat(language: String): ClockFormat = if (language == "tr") ClockFormat.H24 else ClockFormat.System
+    fun defaultClockFormat(language: String): ClockFormat = if (language == "tr" || language == "fr") ClockFormat.H24 else ClockFormat.System
 
     /**
      * Saat 24 saatlik mi yazılacak? Ayarlar'daki "Saat biçimi"ne göre; "Telefonla aynı" seçiliyse telefonun
