@@ -15,6 +15,7 @@ What's new in each version of Commune Sky.
 - Fixed: the sunscreen tip could ask for sunscreen in the evening, using the midday UV value.
 - Fixed: with the 12-hour clock, hour labels under the 48-hour air quality chart could run into each other, and the 7-day sunrise and sunset row was too tight.
 - Fixed: all three languages now always come with the app, so the language chosen in Settings is complete even when the phone itself uses another language.
+- Fixed: after the location permission was taken back, widgets kept showing the old weather of the last location. They now show your home or your first saved place, and no longer ask you to open the app when a saved place is available.
 
 ## 1.5 — in testing
 

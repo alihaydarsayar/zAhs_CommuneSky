@@ -54,7 +54,11 @@ data class WidgetInput(
 
     /** Evde / yakında / uzakta kararı (tamamen cihazda). */
     val homeLocation: HomeLocationState
-        get() = HomeLocationState.of(device, home, settings.homeAway.nearbyRadiusKm)
+        get() = HomeLocationState.of(device, home, settings.homeAway.nearbyRadiusKm, firstSaved)
+
+    /** Sıradaki ilk kayıtlı yer (havası önbellekteyse): ev ve konum yokken widget'ların gösterdiği yer. */
+    private val firstSaved: WidgetPlaceData?
+        get() = places.sortedBy { it.sortOrder }.firstNotNullOfOrNull { place -> weather[place.id]?.let { WidgetPlaceData(it, place.isHome) } }
 
     /** Tek yer gösteren widget'ların yeri. */
     fun place(place: WidgetPlace): WidgetPlaceData? = resolvePlace(place, this)
@@ -124,7 +128,7 @@ sealed interface HomeLocationState {
 
     companion object {
         /** Saf mantık; test edilir. Karar konumun hata payıyla verilir (bkz. HomeDetection). */
-        fun of(device: WeatherSnapshot?, home: WidgetPlaceData?, nearbyRadiusKm: Int): HomeLocationState {
+        fun of(device: WeatherSnapshot?, home: WidgetPlaceData?, nearbyRadiusKm: Int, firstSaved: WidgetPlaceData? = null): HomeLocationState {
             val here = device?.takeIf { it.isCurrentLocation }?.let { WidgetPlaceData(it, isHome = false) }
             return when {
                 here != null && home != null -> {
@@ -137,7 +141,9 @@ sealed interface HomeLocationState {
                 }
                 home != null -> Single(home, Hint.NoLocation)
                 here != null -> Single(here, Hint.NoHome)
-                // İzin yok, Ev yok: yedek şehri göster.
+                // İzin yok, Ev yok ama kayıtlı yer var: ilk kayıtlı yer ("uygulamayı aç" yazısı yerine).
+                firstSaved != null -> Single(firstSaved, Hint.NoHome)
+                // İzin yok, Ev yok, kayıtlı yer yok: yedek şehri göster.
                 device != null -> Single(WidgetPlaceData(device, isHome = false), Hint.NoHome)
                 else -> Empty
             }

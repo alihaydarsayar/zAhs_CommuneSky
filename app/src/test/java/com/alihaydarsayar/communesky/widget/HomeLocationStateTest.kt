@@ -146,6 +146,19 @@ class HomeLocationStateTest {
         assertEquals(HomeLocationState.Empty, HomeLocationState.of(null, null, 5))
     }
 
+    @Test
+    fun `without home and permission the first saved place is shown`() {
+        // Konum izni geri alınmış, ev seçilmemiş ama kayıtlı yer var: widget "uygulamayı aç" demez.
+        val saved = WidgetPlaceData(snapshot(home, isCurrentLocation = false, placeId = 4), isHome = false)
+        assertEquals(HomeLocationState.Single(saved, HomeLocationState.Hint.NoHome), HomeLocationState.of(null, null, 5, saved))
+        // Önbellekte yedek şehir kalmış olsa da kayıtlı yer önce gelir.
+        val fallbackCity = snapshot(GeoPoint(41.0082, 28.9784), isCurrentLocation = false)
+        assertEquals(HomeLocationState.Single(saved, HomeLocationState.Hint.NoHome), HomeLocationState.of(fallbackCity, null, 5, saved))
+        // Konum varsa bulunduğun yer gösterilir.
+        val here = snapshot(north(2.0), isCurrentLocation = true)
+        assertEquals(HomeLocationState.Single(WidgetPlaceData(here, isHome = false), HomeLocationState.Hint.NoHome), HomeLocationState.of(here, null, 5, saved))
+    }
+
     private fun snapshot(
         point: GeoPoint,
         isCurrentLocation: Boolean,
