@@ -73,6 +73,12 @@ fun relativeTimeSince(instant: Instant): String? {
     val millis = instant.toEpochMilli()
     if (now - millis < DateUtils.MINUTE_IN_MILLIS) return null
     // Configuration okunur ki dil değişince metin de yenilensin.
-    LocalConfiguration.current
-    return DateUtils.getRelativeTimeSpanString(millis, now, DateUtils.MINUTE_IN_MILLIS).toString()
+    val locale = LocalConfiguration.current.locales[0]
+    return midSentence(DateUtils.getRelativeTimeSpanString(millis, now, DateUtils.MINUTE_IN_MILLIS).toString(), locale)
 }
+
+/**
+ * Göreli zaman hep bir cümlenin içinde yazılır ("Mis à jour il y a 1 minute"); Android Fransızcada büyük harfle
+ * başlatır ("Il y a 1 minute"). İlk harf küçültülür.
+ */
+fun midSentence(text: String, locale: java.util.Locale): String = text.replaceFirstChar { it.lowercase(locale) }

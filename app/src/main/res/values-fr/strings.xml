@@ -15,7 +15,7 @@
     <string name="update_failed">Mise à jour impossible · données enregistrées</string>
     <string name="loading_weather">Chargement du ciel…</string>
     <string name="data_attribution">Open-Meteo.com (CC BY 4.0) · MGM · ECMWF (CC BY 4.0) · NOAA Aviation Weather Center</string>
-    <string name="station_label_mgm">station de %1$s</string>
+    <string name="station_label_mgm">station %1$s</string>
     <string name="station_label_airport">aéroport de %1$s</string>
     <string name="observation_just_now">à l’instant</string>
     <string name="observation_note_mgm">Mesure : MGM, %1$s, %2$s</string>
