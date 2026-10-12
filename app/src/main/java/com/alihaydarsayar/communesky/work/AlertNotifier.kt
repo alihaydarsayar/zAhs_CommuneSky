@@ -17,6 +17,8 @@ import com.alihaydarsayar.communesky.model.AlertEvent
 import com.alihaydarsayar.communesky.model.AlertLevel
 import com.alihaydarsayar.communesky.model.WeatherAlert
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
+import com.alihaydarsayar.communesky.widget.WidgetLanguage
+import com.alihaydarsayar.communesky.widget.displayName
 
 /**
  * Turuncu ve kırmızı meteorolojik uyarı ilk kez çıktığında bir bildirim gönderir (aynı uyarı için bir kez).
@@ -55,11 +57,13 @@ object AlertNotifier {
 
     private fun notify(context: Context, snapshot: WeatherSnapshot, alert: WeatherAlert) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        // Bildirim, öteki bildirimler gibi uygulamanın diliyle yazılır (telefonun diliyle değil).
+        val localized = WidgetLanguage.context(context)
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL, context.getString(R.string.alert_channel), NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(CHANNEL, localized.getString(R.string.alert_channel), NotificationManager.IMPORTANCE_DEFAULT),
         )
-        val events = alert.events.ifEmpty { listOf(AlertEvent.Other) }.joinToString(", ") { context.getString(eventName(it)) }
-        val level = context.getString(if (alert.level == AlertLevel.Red) R.string.alert_level_red else R.string.alert_level_orange)
+        val events = alert.events.ifEmpty { listOf(AlertEvent.Other) }.joinToString(", ") { localized.getString(eventName(it)) }
+        val level = localized.getString(if (alert.level == AlertLevel.Red) R.string.alert_level_red else R.string.alert_level_orange)
         val open = PendingIntent.getActivity(
             context, alert.id.hashCode(),
             Intent(context, MainActivity::class.java).putExtra(MainActivity.OpenPlaceKey.name, snapshot.placeId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
@@ -67,7 +71,7 @@ object AlertNotifier {
         )
         val notification = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_wl_thunderstorm)
-            .setContentTitle(context.getString(R.string.alert_notification_title, level, snapshot.city.name))
+            .setContentTitle(localized.getString(R.string.alert_notification_title, level, snapshot.displayName(localized)))
             .setContentText(events)
             .setStyle(NotificationCompat.BigTextStyle().bigText(listOf(events, alert.text).filter { it.isNotBlank() }.joinToString("\n")))
             .setContentIntent(open)
