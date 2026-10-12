@@ -898,4 +898,6 @@
     <string name="widget_diagnostics_copy">Copy widget diagnostics</string>
     <string name="widget_diagnostics_hint">If a widget looks wrong on your home screen, tap here and send the copied text to the developer. It holds only sizes and style names: no places, no location. Nothing is sent by the app.</string>
     <string name="widget_diagnostics_copied">Copied. Paste it into a message to the developer.</string>
+    <string name="tip_umbrella_now">Take one for sure: it is raining now</string>
+    <string name="tip_umbrella_thunder">Take one for sure: thunderstorms are expected</string>
 </resources>

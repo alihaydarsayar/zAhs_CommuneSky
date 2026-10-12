@@ -139,6 +139,22 @@ data class HourlyForecast(
     val precipitation: Double? = null,
 ) {
     val condition: WeatherCondition get() = WeatherCondition.fromCode(weatherCode)
+
+    /** Ekrandaki simge yağış gösteriyor mu (yağmur, çisenti, sağanak, gök gürültüsü ya da kar)? */
+    val showsPrecipitation: Boolean get() = condition.isWet || condition == WeatherCondition.Snow
+
+    /**
+     * Bu saatte yağış var sayılır mı? Simge yağış gösteriyorsa ya da ölçülebilir miktar bekleniyorsa evet.
+     * Öneriler buna bakar: ekranda yağmur simgesi varken "şemsiye gerekmez" denmez.
+     */
+    val isPrecipitating: Boolean get() = showsPrecipitation || (precipitation ?: 0.0) >= WET_MM
+
+    val isThunderstorm: Boolean get() = condition == WeatherCondition.Thunderstorm
+
+    companion object {
+        /** Bir saatte "yağış var" sayılan miktar (mm). */
+        const val WET_MM = 0.2
+    }
 }
 
 data class DailyForecast(

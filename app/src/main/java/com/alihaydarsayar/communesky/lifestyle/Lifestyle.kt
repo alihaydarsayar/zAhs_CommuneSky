@@ -6,6 +6,7 @@ import com.alihaydarsayar.communesky.model.DailyForecast
 import com.alihaydarsayar.communesky.model.Forecast
 import com.alihaydarsayar.communesky.model.HourlyForecast
 import com.alihaydarsayar.communesky.model.Moon
+import com.alihaydarsayar.communesky.model.WeatherCondition
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.today.Strings
 import java.time.LocalDateTime
@@ -61,7 +62,14 @@ data class TodayWeather(
     val moonIllumination: Double,
     /** Hava kalitesi kötü mü (bölüm C); bilinmiyorsa false. */
     val airQualityPoor: Boolean = false,
+    /** Şu an ekranda gösterilen hava (istasyon ölçümüyle düzeltilmiş olabilir); bilinmiyorsa null. */
+    val current: WeatherCondition? = null,
 ) {
+    /** Şu an yağıyor mu (yağmur, sağanak, gök gürültüsü ya da kar)? */
+    val precipitatingNow: Boolean get() = current != null && (current.isWet || current == WeatherCondition.Snow)
+
+    val thunderNow: Boolean get() = current == WeatherCondition.Thunderstorm
+
     /** Şu andan gün sonuna kadar, [from]–[until] saatleri arasındaki saatler. */
     fun remaining(from: Int, until: Int): List<HourlyForecast> =
         hours.filter { it.time.hour in from until until && !it.time.isBefore(now.withMinute(0).withSecond(0).withNano(0)) }
@@ -79,6 +87,7 @@ data class TodayWeather(
                 today = forecast.today(now),
                 moonIllumination = Moon.illumination(date.plusDays(1).atStartOfDay().toInstant(offset)),
                 airQualityPoor = airQualityPoor,
+                current = forecast.current.condition,
             )
         }
     }
@@ -122,7 +131,8 @@ object Lifestyle {
         results.sortedByDescending { it.second.attention }.take(count)
 
     /** Bir saatte "yağış var" sayılan miktar (mm). */
-    const val WET_MM = 0.2
+    const val WET_MM = HourlyForecast.WET_MM
 }
 
-internal fun HourlyForecast.isWet() = (precipitation ?: 0.0) >= Lifestyle.WET_MM
+/** Bu saatte yağış var mı: simge yağış gösteriyor ya da ölçülebilir miktar bekleniyor. */
+internal fun HourlyForecast.isWet() = isPrecipitating

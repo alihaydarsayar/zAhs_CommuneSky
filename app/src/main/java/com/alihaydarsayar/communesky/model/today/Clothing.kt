@@ -26,6 +26,8 @@ data class PartWeather(
     val rainChance: Int,
     val rainMm: Double,
     val uv: Double?,
+    /** Bu dilimde simgesi yağış gösteren bir saat var mı? */
+    val wet: Boolean = false,
 )
 
 /** Hissedilen sıcaklığa göre katman; soğuktan sıcağa değil, inceden kalına sıralı. */
@@ -137,6 +139,7 @@ object Clothing {
         rainChance = hours.maxOf { it.precipitationProbability },
         rainMm = hours.sumOf { it.precipitation ?: 0.0 },
         uv = hours.mapNotNull { it.uvIndex }.maxOrNull(),
+        wet = hours.any { it.showsPrecipitation },
     )
 
     /** Öneri hangi gün için: akşam dilimi bitmek üzereyken (21:00'den sonra) yarın. */
@@ -146,14 +149,16 @@ object Clothing {
     fun advise(forecast: Forecast, now: LocalDateTime, personalShift: Double = 0.0): ClothingAdvice? {
         val date = adviceDate(now)
         val tomorrow = date != now.toLocalDate()
-        return advise(parts(forecast, date), personalShift, fromHour = if (tomorrow) 0 else now.hour)?.copy(forTomorrow = tomorrow)
+        // Şu an yağıyorsa (ekrandaki anlık hava) bugünün önerisine şemsiye girer.
+        val wetNow = !tomorrow && forecast.current.condition.let { it.isWet || it == com.alihaydarsayar.communesky.model.WeatherCondition.Snow }
+        return advise(parts(forecast, date), personalShift, fromHour = if (tomorrow) 0 else now.hour, wetNow = wetNow)?.copy(forTomorrow = tomorrow)
     }
 
     /**
      * [allParts] gününün önerisi. [fromHour]: şu anki saat; bitmiş dilimler (ör. öğleden sonra sabah dilimi)
      * katmanı ve ekleri etkilemez ama ayrıntıda görünür.
      */
-    fun advise(allParts: List<PartWeather>, personalShift: Double = 0.0, fromHour: Int = 0): ClothingAdvice? {
+    fun advise(allParts: List<PartWeather>, personalShift: Double = 0.0, fromHour: Int = 0, wetNow: Boolean = false): ClothingAdvice? {
         if (allParts.isEmpty()) return null
         val all = allParts.map { PartAdvice(it, layer(it.feelsLike, personalShift)) }
         val advised = all.filter { it.weather.part.until > fromHour }.ifEmpty { all.takeLast(1) }
@@ -164,7 +169,8 @@ object Clothing {
         val uv = parts.mapNotNull { it.uv }.maxOrNull() ?: 0.0
         val warmest = parts.maxOf { it.feelsLike }
         val extras = buildSet {
-            if (chance > UMBRELLA_CHANCE || rainMm > UMBRELLA_MM) add(Extra.Umbrella)
+            // Simge yağış gösteriyorsa ya da şu an yağıyorsa yüzde düşük olsa da şemsiye önerilir.
+            if (chance > UMBRELLA_CHANCE || rainMm > UMBRELLA_MM || wetNow || parts.any { it.wet }) add(Extra.Umbrella)
             if (gust > WINDBREAKER_GUST) add(Extra.Windbreaker)
             if (uv >= SUN_UV) {
                 add(Extra.Sunglasses)
