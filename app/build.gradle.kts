@@ -50,6 +50,13 @@ android {
         // values-xx klasörlerinden dil listesini üretir; Android 13+ "Uygulama dilleri" ayarında görünür.
         generateLocaleConfig = true
     }
+    bundle {
+        language {
+            // Dil, Ayarlar'dan uygulamanın içinde değiştirilebiliyor: bütün diller paketle birlikte kurulur.
+            // Yoksa mağaza yalnızca telefonun dillerini kurar ve seçilen dilin metinleri eksik kalır.
+            enableSplit = false
+        }
+    }
 }
 
 composeCompiler {
