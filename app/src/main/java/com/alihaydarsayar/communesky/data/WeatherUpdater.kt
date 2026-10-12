@@ -59,6 +59,7 @@ class WeatherUpdater @Inject constructor(
     suspend fun refreshAll(resolved: ResolvedPlace, force: Boolean = false) {
         val saved = placesRepository.all()
         val device = resolved.place.takeIf { PlaceSelection.showsDevicePage(resolved.hasPermission, saved.size) }
+        if (device == null) forgetDevicePlace()
         refresh(listOfNotNull(device) + saved.map { it.toPlace() }, force)
     }
 
@@ -103,6 +104,7 @@ class WeatherUpdater @Inject constructor(
         val saved = placesRepository.all()
         val showsDevice = PlaceSelection.showsDevicePage(locationRepository.hasPermission(), saved.size)
         val device = if (showsDevice) weatherRepository.devicePlace() ?: fallbackPlace() else null
+        if (device == null) forgetDevicePlace()
         val places = listOfNotNull(device) + saved.map { it.toPlace() }
         refresh(places)
         refreshObservations()
@@ -121,6 +123,15 @@ class WeatherUpdater @Inject constructor(
     }
 
     private fun fallbackPlace() = Place(DEVICE_PLACE_ID, City.Istanbul, isCurrentLocation = false)
+
+    /**
+     * Konum izni geri alındıysa (ve kayıtlı yer varsa) "Bulunduğum yer" artık yenilenmez. Eski kaydı önbellekte
+     * kalırsa widget'lar bayat havayı konum simgesiyle göstermeyi sürdürür; kayıt silinir, widget'lar kayıtlı
+     * yere döner. İzin yeniden verilince kayıt kendiliğinden oluşur.
+     */
+    private suspend fun forgetDevicePlace() {
+        if (weatherRepository.devicePlace() != null) weatherRepository.delete(DEVICE_PLACE_ID)
+    }
 }
 
 fun SavedPlace.toPlace() = Place(
