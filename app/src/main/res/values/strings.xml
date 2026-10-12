@@ -875,4 +875,5 @@
     <string name="tip_umbrella_thunder">Take one for sure: thunderstorms are expected</string>
     <string name="tip_stargazing_rain">Rain is expected tonight</string>
     <string name="precipitation_possible">Rain is possible; very little is expected.</string>
+    <string name="status_precipitation_possible">Rain is possible</string>
 </resources>

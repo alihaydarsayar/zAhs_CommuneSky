@@ -137,6 +137,9 @@ object MetricText {
                 val sum = detail.currentSecondary ?: 0.0
                 strings.get(
                     when {
+                        // Miktar sıfır ama ihtimal yüksek: "%65" yazarken "Kuru bir gün" denmez.
+                        sum < 0.1 && (detail.current ?: 0.0) >= com.alihaydarsayar.communesky.model.PrecipitationOutlook.POSSIBLE_CHANCE ->
+                            R.string.status_precipitation_possible
                         sum < 0.1 -> R.string.status_precipitation_dry
                         sum < 2.5 -> R.string.status_precipitation_light
                         sum < 10 -> R.string.status_precipitation_wet

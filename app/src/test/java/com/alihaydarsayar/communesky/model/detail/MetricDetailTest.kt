@@ -143,6 +143,10 @@ class MetricDetailTest {
         fun status(metric: Metric, value: Double, secondary: Double? = null, trend: Trend? = null, strings: TestStrings = TestStrings.turkish) =
             MetricText.status(MetricDetail(metric, value, secondary, null, null, emptyList(), trend), strings)
 
+        // Yağış: miktar sıfırken ihtimal yüksekse "Kuru bir gün" denmez.
+        assertEquals("Kuru bir gün", status(Metric.Precipitation, 10.0, secondary = 0.0))
+        assertEquals("Yağış olabilir", status(Metric.Precipitation, 65.0, secondary = 0.0))
+        assertEquals("Hafif yağış", status(Metric.Precipitation, 65.0, secondary = 1.2))
         assertEquals("Sakin", status(Metric.Wind, 1.0))
         assertEquals("Hafif esinti", status(Metric.Wind, 8.0))
         assertEquals("Light breeze", status(Metric.Wind, 8.0, strings = TestStrings.english))
