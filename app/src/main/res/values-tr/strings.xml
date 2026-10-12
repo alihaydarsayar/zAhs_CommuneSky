@@ -274,20 +274,14 @@
 
     <!-- Widget ekleme ekranı -->
     <string name="widget_config_title">Widget\'ı ayarla</string>
-    <string name="widget_config_style">Stil</string>
-    <string name="widget_config_place">Gösterilecek yer</string>
     <string name="widget_place_smart">Ev ve konum</string>
     <string name="widget_place_smart_hint">Evdeyken ya da yakındayken evi, uzaktayken bulunduğun yeri gösterir</string>
-    <string name="widget_place_saved">Kayıtlı bir yer…</string>
     <string name="widget_config_no_home">Henüz Ev seçilmedi; konumunu gösterir</string>
-    <string name="widget_config_background">Arka plan ve saydamlık</string>
     <string name="widget_config_transparency">Saydamlık</string>
     <string name="widget_percent">%%%1$d</string>
     <string name="widget_config_colors">Renkler</string>
-    <string name="widget_config_text_color">Yazı rengi</string>
     <string name="widget_config_corners">Köşe yuvarlaklığı</string>
     <string name="widget_config_text_size">Yazı boyutu</string>
-    <string name="widget_config_contents">İçerik</string>
     <string name="widget_config_home_hint">Uzaktayken alttaki şeritte neler görüneceğini Ayarlar › Ev ve konum bölümünden seçebilirsin.</string>
     <string name="widget_config_add">Widget\'ı ekle</string>
     <string name="widget_config_save">Kaydet</string>
@@ -302,7 +296,6 @@
     <string name="widget_distance_under_one">&lt;1 km</string>
     <string name="widget_duration_hm">%1$d sa %2$d dk</string>
     <string name="widget_duration_m">%1$d dk</string>
-    <string name="widget_plus_hours">+%1$d sa</string>
     <string name="widget_you_are_home">Evdesin</string>
     <string name="widget_you_are_home_short">evdesin</string>
     <string name="widget_hint_no_home">İki yeri de görmek için evini ayarla</string>
@@ -367,13 +360,6 @@
     <string name="widget_visibility_good">İyi</string>
     <string name="widget_visibility_moderate">Orta</string>
     <string name="widget_visibility_poor">Zayıf</string>
-    <string name="widget_preview_rain">Yağmur 21:00 civarı başlıyor</string>
-    <string name="widget_preview_rain_short">21:00\'de yağmur</string>
-    <string name="widget_preview_rain_sentence">Yağmur 20:00\'de başlıyor</string>
-    <string name="widget_preview_day_1">Cmt</string>
-    <string name="widget_preview_day_2">Paz</string>
-    <string name="widget_preview_day_3">Pzt</string>
-    <string name="widget_preview_day_4">Sal</string>
 
     <!-- Ayarlar › Ev ve konum -->
     <string name="home_settings_title">Ev ve konum</string>
@@ -420,15 +406,11 @@
     <string name="widget_style_clock_radial">Dijital ışınsal</string>
     <string name="widget_style_clock_field">Analog saha</string>
     <string name="widget_style_clock_ring">Analog hava halkası</string>
-    <string name="widget_color_default">Varsayılan</string>
     <string name="widget_color_hex">HEX renk kodu</string>
     <string name="widget_color_reset">Varsayılana dön</string>
     <string name="widget_color_background">Zemin</string>
     <string name="widget_color_text">Ana yazı</string>
-    <string name="widget_color_secondary">İkincil yazı</string>
     <string name="widget_color_accent">Vurgu</string>
-    <string name="widget_color_hours">Saat rakamları</string>
-    <string name="widget_color_minutes">Dakika rakamları</string>
     <string name="widget_color_lines">Çizgiler</string>
     <string name="widget_color_pill">Hava hapı</string>
     <string name="widget_color_dial">Kadran</string>
@@ -439,8 +421,6 @@
     <string name="widget_color_ring_warm">Sıcak saatler</string>
     <string name="widget_color_ring_rain">Yağışlı saatler</string>
     <string name="widget_config_glass_hint">Cam hiç kaybolmaz: saydamlığı en fazla %85 olur.</string>
-    <string name="widget_config_legibility">Okunurluk koruması</string>
-    <string name="widget_config_legibility_hint">Yazı doğrudan duvar kâğıdının üstündeyken kullanılır. Yazı rengi duvar kâğıdına göre seçilir: açık duvar kâğıdında koyu, koyu duvar kâğıdında açık.</string>
     <string name="widget_config_digit_color_hint">Saat ve dakika ayrı renkte olabilir. Tek bir rakam ayrıca renklendirilemez: rakamlar her dakika değişir ve widget saat için uygulamayı hiç uyandırmaz.</string>
     <string name="widget_config_hands_old_android">Kol renkleri ve saniye kolu Android 12 ve üstünde çalışır.</string>
     <string name="widget_config_text">Yazı</string>
@@ -454,8 +434,6 @@
     <string name="widget_config_second_hand">Saniye kolu</string>
     <string name="widget_config_second_symbol">Saniye kolu simgesi</string>
     <string name="widget_config_highlighted">Vurgu rengindeki rakamlar</string>
-    <string name="widget_config_contrast_warning">Yazı bu zeminde zor okunabilir.</string>
-    <string name="widget_config_enable_scrim">Hafif perdeyi aç</string>
     <string name="widget_high_low_compact">Y %1$s D %2$s</string>
     <string name="settings_widgets">Widget\'lar</string>
     <string name="my_widgets_title">Widget\'larım</string>
@@ -468,9 +446,7 @@
     <string name="widget_style_clock_ss">SS</string>
     <string name="widget_content_weather_icon">Hava ikonu</string>
     <string name="widget_content_temperature">Sıcaklık</string>
-    <string name="widget_color_ink">Mürekkep (çizgi, rakam, logo, kol)</string>
     <string name="widget_color_window">Tarih penceresi</string>
-    <string name="widget_config_ss_looks">Hazır temalar</string>
     <string name="widget_ss_classic">Klasik</string>
     <string name="widget_ss_night_blue">Gece mavisi</string>
     <string name="widget_config_logo">Logo</string>
@@ -610,7 +586,6 @@
     <string name="settings_notifications">Bildirimler</string>
     <string name="settings_alert_notifications">Meteorolojik uyarılar</string>
     <string name="settings_alert_notifications_hint">Yerlerinden biri için turuncu ya da kırmızı uyarı çıkınca bir bildirim. Her uyarı için bir kez.</string>
-    <string name="settings_notifications_blocked">Telefon ayarlarında Commune Sky bildirimleri kapalı.</string>
     <string name="normal_above">Mevsim normalinin %1$d° üstünde</string>
     <string name="normal_below">Mevsim normalinin %1$d° altında</string>
     <string name="normal_same">Mevsim normallerinde</string>
@@ -786,11 +761,9 @@
     <string name="detail_gust">hamle %1$d %2$s</string>
     <string name="detail_value_unit">%1$s %2$s</string>
     <string name="detail_mm">%1$s mm</string>
-    <string name="detail_day_length">Gün uzunluğu</string>
     <string name="detail_night_length">Gece: %1$s</string>
     <string name="detail_duration">%1$d sa %2$d dk</string>
     <string name="detail_readout">%1$s · %2$s</string>
-    <string name="detail_readout_now">Şimdi</string>
     <string name="detail_secondary_actual">gerçek %1$s</string>
     <string name="detail_secondary_gust">hamle %1$s</string>
     <string name="detail_secondary_dew">çiy noktası %1$s</string>
@@ -820,7 +793,7 @@
     <string name="detail_open">Ayrıntıyı aç</string>
     <string name="what_feels">Hissedilen sıcaklık, havanın teninde bıraktığı duygudur. Rüzgâr vücudun ısısını alıp götürür ve havayı daha soğuk hissettirir; nem ise serinlemeyi zorlaştırır ve daha sıcak hissettirir. Sıcaklık, nem ve rüzgârdan hesaplanır. Giyinirken gerçek sıcaklığa değil, bu değere bakmak daha doğrudur.</string>
     <string name="what_wind">Rüzgâr hızı, yerden on metre yukarıdaki havanın ortalama hızıdır. Hamle, birkaç saniye süren ani hızlanmadır ve ortalamadan çok daha kuvvetli olabilir. Oklar rüzgârın estiği yönü gösterir. 40 km/sa üstünde şemsiye tutmak ve bisiklet sürmek zorlaşır; 60 km/sa üstünde dışarıdaki hafif eşyaları sabitlemek gerekir.</string>
-    <string name="what_humidity">Bağıl nem, havadaki su buharının, o sıcaklıkta taşıyabileceği en çok miktara oranıdır. Çoğu insan için %40 ile %60 arası rahattır. Çiy noktası, bu buharın çiye dönüştüğü sıcaklıktır: yaklaşık 18° üstünde hava yapış yapış, 10° altında kuru hissedilir. Yüksek nem sıcağı daha bunaltıcı yapar ve çamaşırın kurumasını yavaşlatır.</string>
+    <string name="what_humidity" formatted="false">Bağıl nem, havadaki su buharının, o sıcaklıkta taşıyabileceği en çok miktara oranıdır. Çoğu insan için %40 ile %60 arası rahattır. Çiy noktası, bu buharın çiye dönüştüğü sıcaklıktır: yaklaşık 18° üstünde hava yapış yapış, 10° altında kuru hissedilir. Yüksek nem sıcağı daha bunaltıcı yapar ve çamaşırın kurumasını yavaşlatır.</string>
     <string name="what_uv">UV indeksi, güneşin cildi yakan morötesi ışınlarının gücünü ölçer. Öğle saatlerinde ve açık yaz günlerinde en yüksektir; bulutlar onu ancak kısmen azaltır. 3 ve üstünde güneş kremi iyi olur; 6 ve üstünde şapka, gözlük ve öğle saatinde gölge de gerekir. 8 ve üstünde cilt yarım saatten kısa sürede yanabilir.</string>
     <string name="what_visibility">Görüş mesafesi, büyük bir cismin hâlâ net görülebildiği uzaklıktır. Sis, pus, kuvvetli yağmur, kar ve toz onu azaltır. 1 km altında sis vardır ve araç kullanırken çok dikkat gerekir; 1 ile 5 km arasında hava puslu ya da dumanlıdır. Temiz havada görüş çoğu zaman 20 km ve üstüdür.</string>
     <string name="what_pressure">Hava basıncı, üstündeki havanın ağırlığıdır; yerler karşılaştırılabilsin diye deniz seviyesine indirgenir. Yaklaşık 1013 hPa normaldir. Basınç düşüyorsa hava çoğu zaman bozabilir: bulut, rüzgâr ve yağış yaklaşıyordur. Basınç yükseliyorsa hava genellikle durulur ve açar. Sayının kendisinden çok, ne yöne değiştiği önemlidir.</string>

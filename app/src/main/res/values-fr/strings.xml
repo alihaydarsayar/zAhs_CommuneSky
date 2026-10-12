@@ -177,6 +177,7 @@
     <string name="manage_places">Gérer les lieux</string>
     <plurals name="saved_places_count">
         <item quantity="one">%d lieu enregistré</item>
+        <item quantity="many">%d lieux enregistrés</item>
         <item quantity="other">%d lieux enregistrés</item>
     </plurals>
     <string name="no_saved_places_short">Aucun lieu enregistré pour l’instant</string>
@@ -275,20 +276,14 @@
 
     <!-- Widget setup screen -->
     <string name="widget_config_title">Configurer le widget</string>
-    <string name="widget_config_style">Style</string>
-    <string name="widget_config_place">Lieu à afficher</string>
     <string name="widget_place_smart">Domicile et position</string>
     <string name="widget_place_smart_hint">Le domicile quand vous y êtes ou à proximité, votre position quand vous êtes ailleurs</string>
-    <string name="widget_place_saved">Un lieu enregistré…</string>
     <string name="widget_config_no_home">Aucun lieu défini comme domicile ; affiche votre position</string>
-    <string name="widget_config_background">Arrière-plan et transparence</string>
     <string name="widget_config_transparency">Transparence</string>
     <string name="widget_percent">%1$d %%</string>
     <string name="widget_config_colors">Couleurs</string>
-    <string name="widget_config_text_color">Couleur du texte</string>
     <string name="widget_config_corners">Coins arrondis</string>
     <string name="widget_config_text_size">Taille du texte</string>
-    <string name="widget_config_contents">Contenu</string>
     <string name="widget_config_home_hint">Ce que montre la bande du bas quand vous êtes ailleurs se règle dans Réglages › Domicile et position.</string>
     <string name="widget_config_add">Ajouter le widget</string>
     <string name="widget_config_save">Enregistrer</string>
@@ -303,7 +298,6 @@
     <string name="widget_distance_under_one">&lt;1 km</string>
     <string name="widget_duration_hm">%1$d h %2$d min</string>
     <string name="widget_duration_m">%1$d min</string>
-    <string name="widget_plus_hours">+%1$d h</string>
     <string name="widget_you_are_home">Vous êtes chez vous</string>
     <string name="widget_you_are_home_short">vous êtes chez vous</string>
     <string name="widget_hint_no_home">Définissez votre domicile pour voir les deux lieux</string>
@@ -368,13 +362,6 @@
     <string name="widget_visibility_good">Bonne</string>
     <string name="widget_visibility_moderate">Moyenne</string>
     <string name="widget_visibility_poor">Mauvaise</string>
-    <string name="widget_preview_rain">La pluie commence vers 21:00</string>
-    <string name="widget_preview_rain_short">Pluie à 21:00</string>
-    <string name="widget_preview_rain_sentence">La pluie commence à 20:00</string>
-    <string name="widget_preview_day_1">sam.</string>
-    <string name="widget_preview_day_2">dim.</string>
-    <string name="widget_preview_day_3">lun.</string>
-    <string name="widget_preview_day_4">mar.</string>
 
     <!-- Settings › Home & location -->
     <string name="home_settings_title">Domicile et position</string>
@@ -421,15 +408,11 @@
     <string name="widget_style_clock_radial">Numérique radiale</string>
     <string name="widget_style_clock_field">Analogique terrain</string>
     <string name="widget_style_clock_ring">Analogique à anneau météo</string>
-    <string name="widget_color_default">Par défaut</string>
     <string name="widget_color_hex">Code couleur HEX</string>
     <string name="widget_color_reset">Utiliser la couleur par défaut</string>
     <string name="widget_color_background">Arrière-plan</string>
     <string name="widget_color_text">Texte principal</string>
-    <string name="widget_color_secondary">Texte secondaire</string>
     <string name="widget_color_accent">Accent</string>
-    <string name="widget_color_hours">Chiffres des heures</string>
-    <string name="widget_color_minutes">Chiffres des minutes</string>
     <string name="widget_color_lines">Traits</string>
     <string name="widget_color_pill">Pastille météo</string>
     <string name="widget_color_dial">Cadran</string>
@@ -440,8 +423,6 @@
     <string name="widget_color_ring_warm">Heures chaudes</string>
     <string name="widget_color_ring_rain">Heures de pluie</string>
     <string name="widget_config_glass_hint">Le verre ne disparaît jamais tout à fait : sa transparence s’arrête à 85 %.</string>
-    <string name="widget_config_legibility">Garder le texte lisible</string>
-    <string name="widget_config_legibility_hint">Sert quand le texte est posé directement sur votre fond d’écran. La couleur du texte suit le fond d’écran : sombre sur un fond clair, claire sur un fond sombre.</string>
     <string name="widget_config_digit_color_hint">Les heures et les minutes peuvent avoir chacune leur couleur. Un chiffre seul ne peut pas être coloré : les chiffres changent chaque minute et le widget ne réveille jamais l’application pour l’horloge.</string>
     <string name="widget_config_hands_old_android">Les couleurs des aiguilles et la trotteuse nécessitent Android 12 ou plus récent.</string>
     <string name="widget_config_text">Texte</string>
@@ -455,8 +436,6 @@
     <string name="widget_config_second_hand">Trotteuse</string>
     <string name="widget_config_second_symbol">Symbole de la trotteuse</string>
     <string name="widget_config_highlighted">Chiffres dans la couleur d’accent</string>
-    <string name="widget_config_contrast_warning">Le texte risque d’être difficile à lire sur cet arrière-plan.</string>
-    <string name="widget_config_enable_scrim">Activer le voile doux</string>
     <string name="widget_high_low_compact">%1$s / %2$s</string>
     <string name="settings_widgets">Widgets</string>
     <string name="my_widgets_title">Mes widgets</string>
@@ -469,9 +448,7 @@
     <string name="widget_style_clock_ss">SS</string>
     <string name="widget_content_weather_icon">Icône météo</string>
     <string name="widget_content_temperature">Température</string>
-    <string name="widget_color_ink">Encre (repères, chiffres, sceau, aiguilles)</string>
     <string name="widget_color_window">Guichet de date</string>
-    <string name="widget_config_ss_looks">Apparences toutes prêtes</string>
     <string name="widget_ss_classic">Classique</string>
     <string name="widget_ss_night_blue">Bleu nuit</string>
     <string name="widget_config_logo">Sceau</string>
@@ -611,7 +588,6 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_alert_notifications">Alertes météo</string>
     <string name="settings_alert_notifications_hint">Une notification quand une vigilance orange ou rouge est émise pour l’un de vos lieux. Une seule fois par alerte.</string>
-    <string name="settings_notifications_blocked">Les notifications de Commune Sky sont désactivées dans les réglages de votre téléphone.</string>
     <string name="normal_above">%1$d° au-dessus des normales de saison</string>
     <string name="normal_below">%1$d° en dessous des normales de saison</string>
     <string name="normal_same">Proche des normales de saison</string>
@@ -787,11 +763,9 @@
     <string name="detail_gust">rafales %1$d %2$s</string>
     <string name="detail_value_unit">%1$s %2$s</string>
     <string name="detail_mm">%1$s mm</string>
-    <string name="detail_day_length">Durée du jour</string>
     <string name="detail_night_length">Nuit : %1$s</string>
     <string name="detail_duration">%1$d h %2$d min</string>
     <string name="detail_readout">%1$s · %2$s</string>
-    <string name="detail_readout_now">Maintenant</string>
     <string name="detail_secondary_actual">réelle %1$s</string>
     <string name="detail_secondary_gust">rafales %1$s</string>
     <string name="detail_secondary_dew">point de rosée %1$s</string>
@@ -821,7 +795,7 @@
     <string name="detail_open">Ouvrir le détail</string>
     <string name="what_feels">La température ressentie est la sensation de chaud ou de froid que l’air laisse sur la peau. Le vent emporte la chaleur du corps et donne une impression de froid ; l’humidité empêche de se rafraîchir et donne une impression de chaleur. Elle se calcule à partir de la température, de l’humidité et du vent. Pour vous habiller, fiez-vous à cette valeur plutôt qu’à la température réelle.</string>
     <string name="what_wind">La vitesse du vent est la vitesse moyenne de l’air à dix mètres au-dessus du sol. Une rafale est une accélération soudaine de quelques secondes, qui peut être bien plus forte que la moyenne. Les flèches indiquent la direction vers laquelle souffle le vent. Au-delà de 40 km/h, tenir un parapluie et rouler à vélo deviennent difficiles ; au-delà de 60 km/h, mieux vaut attacher les objets légers laissés dehors.</string>
-    <string name="what_humidity">L’humidité relative indique la quantité de vapeur d’eau que contient l’air par rapport au maximum qu’il pourrait contenir à cette température. Entre 40 % et 60 %, la plupart des gens se sentent bien. Le point de rosée est la température à laquelle cette vapeur se transforme en rosée : au-dessus de 18° environ, l’air paraît moite ; en dessous de 10°, il paraît sec. Une forte humidité rend la chaleur plus pénible et le linge plus long à sécher.</string>
+    <string name="what_humidity" formatted="false">L’humidité relative indique la quantité de vapeur d’eau que contient l’air par rapport au maximum qu’il pourrait contenir à cette température. Entre 40 % et 60 %, la plupart des gens se sentent bien. Le point de rosée est la température à laquelle cette vapeur se transforme en rosée : au-dessus de 18° environ, l’air paraît moite ; en dessous de 10°, il paraît sec. Une forte humidité rend la chaleur plus pénible et le linge plus long à sécher.</string>
     <string name="what_uv">L’indice UV mesure la force des rayons ultraviolets du soleil, ceux qui brûlent la peau. Il est au plus haut vers midi et par beau temps en été, et les nuages ne le réduisent qu’en partie. À partir de 3, la crème solaire est conseillée ; à partir de 6, ajoutez un chapeau, des lunettes et de l’ombre à la mi-journée. À partir de 8, la peau peut brûler en moins d’une demi-heure.</string>
     <string name="what_visibility">La visibilité est la distance à laquelle on distingue encore nettement un grand objet. Le brouillard, la brume, les fortes pluies, la neige et les poussières la réduisent. En dessous de 1 km, il y a du brouillard et la conduite demande une grande prudence ; entre 1 et 5 km, l’air est brumeux. Par temps clair, on voit souvent à 20 km et plus.</string>
     <string name="what_pressure">La pression atmosphérique est le poids de l’air au-dessus de vous, ramené au niveau de la mer pour pouvoir comparer les lieux. La valeur normale est d’environ 1013 hPa. Une pression en baisse annonce souvent une dégradation : nuages, vent et pluie approchent. Une pression en hausse amène en général un temps plus calme et plus dégagé. Le sens de la variation compte davantage que le chiffre lui-même.</string>
@@ -864,6 +838,7 @@
     <string name="what_air_quality">L’indice européen de qualité de l’air résume la propreté de l’air à partir du polluant le plus préoccupant du moment : particules fines, ozone, dioxyde d’azote ou dioxyde de soufre. Les particules fines (PM2,5) sont les plus importantes pour la santé, car elles pénètrent profondément dans les poumons. Les valeurs sont une prévision de modèle du service Copernicus de surveillance de l’atmosphère pour une zone d’une dizaine de kilomètres : dans une rue très fréquentée, l’air peut être plus mauvais que le chiffre affiché. L’air est souvent le plus pollué par les matins froids et sans vent et aux heures de pointe.</string>
     <plurals name="in_days">
         <item quantity="one">dans %1$d jour</item>
+        <item quantity="many">dans %1$d jours</item>
         <item quantity="other">dans %1$d jours</item>
     </plurals>
     <string name="moon">Lune</string>

@@ -477,7 +477,10 @@ private fun PreviewStage(
             val id = styles[index]
             val size = remember(appWidgetId, id) { WidgetSizes.preview(context, kind, appWidgetId, id.previewSize) }
             val styled = remember(config, id) { config.copy(style = config.style.withStyle(id)) }
-            val availableWidth = configuration.screenWidthDp - 32f - 88f
+            val windowWidth = with(androidx.compose.ui.platform.LocalDensity.current) {
+                androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp().value
+            }
+            val availableWidth = windowWidth - 32f - 88f
             val availableHeight = if (compact) 184f else 200f
             val scale = min(1f, min(availableWidth / size.frame.width.value, availableHeight / size.frame.height.value))
             val name = stringResource(id.nameRes)

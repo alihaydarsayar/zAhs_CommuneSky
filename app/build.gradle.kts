@@ -57,6 +57,20 @@ android {
             enableSplit = false
         }
     }
+    lint {
+        // Bilerek kapatılan denetimler:
+        // - RtlHardcoded: sağdan sola yazılan dil desteklenmiyor; widget düzenleri (saat kadranı, ibreler) mutlak konumludur.
+        // - UnusedAttribute: yalnızca yeni Android sürümlerinde okunan öznitelikler (widget boyut sınırları vb.); eskilerde yok sayılır.
+        // - InconsistentLayout: layout-v31'deki ek öğeler yalnızca Android 12+ özellikleri içindir.
+        // - VectorRaster, VectorPath: kadran ve ibre çizimleri bilerek büyük ve ayrıntılı vektörlerdir.
+        // - Typos: Türkçe ikilemeler ("tek tek", "hemen hemen", "yapış yapış") yazım hatası değildir.
+        // - UseKtx: yalnızca yazım önerisi.
+        // - Sürüm önerileri (kütüphane, Kotlin, AGP): güncellemeler ayrı bir iş olarak yapılır.
+        disable += setOf(
+            "RtlHardcoded", "UnusedAttribute", "InconsistentLayout", "VectorRaster", "VectorPath", "Typos", "UseKtx",
+            "GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion",
+        )
+    }
 }
 
 composeCompiler {

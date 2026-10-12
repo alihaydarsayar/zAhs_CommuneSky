@@ -281,20 +281,14 @@
 
     <!-- Widget setup screen -->
     <string name="widget_config_title">Set up widget</string>
-    <string name="widget_config_style">Style</string>
-    <string name="widget_config_place">Place to show</string>
     <string name="widget_place_smart">Home &amp; location</string>
     <string name="widget_place_smart_hint">Home when you\'re home or nearby, where you are when you\'re away</string>
-    <string name="widget_place_saved">A saved place…</string>
     <string name="widget_config_no_home">No place marked as Home yet; shows your location</string>
-    <string name="widget_config_background">Background and transparency</string>
     <string name="widget_config_transparency">Transparency</string>
     <string name="widget_percent">%1$d%%</string>
     <string name="widget_config_colors">Colors</string>
-    <string name="widget_config_text_color">Text color</string>
     <string name="widget_config_corners">Rounded corners</string>
     <string name="widget_config_text_size">Text size</string>
-    <string name="widget_config_contents">Content</string>
     <string name="widget_config_home_hint">What the bottom strip shows when you\'re away is set in Settings › Home &amp; location.</string>
     <string name="widget_config_add">Add widget</string>
     <string name="widget_config_save">Save</string>
@@ -309,7 +303,6 @@
     <string name="widget_distance_under_one">&lt;1 km</string>
     <string name="widget_duration_hm">%1$d h %2$d min</string>
     <string name="widget_duration_m">%1$d min</string>
-    <string name="widget_plus_hours">+%1$d h</string>
     <string name="widget_you_are_home">You\'re home</string>
     <string name="widget_you_are_home_short">you\'re home</string>
     <string name="widget_hint_no_home">Set your home to see both places</string>
@@ -374,13 +367,6 @@
     <string name="widget_visibility_good">Good</string>
     <string name="widget_visibility_moderate">Moderate</string>
     <string name="widget_visibility_poor">Poor</string>
-    <string name="widget_preview_rain">Rain starts around 21:00</string>
-    <string name="widget_preview_rain_short">Rain at 21:00</string>
-    <string name="widget_preview_rain_sentence">Rain starts at 20:00</string>
-    <string name="widget_preview_day_1">Sat</string>
-    <string name="widget_preview_day_2">Sun</string>
-    <string name="widget_preview_day_3">Mon</string>
-    <string name="widget_preview_day_4">Tue</string>
 
     <!-- Settings › Home & location -->
     <string name="home_settings_title">Home &amp; location</string>
@@ -427,15 +413,11 @@
     <string name="widget_style_clock_radial">Radial digital</string>
     <string name="widget_style_clock_field">Analog field</string>
     <string name="widget_style_clock_ring">Analog weather ring</string>
-    <string name="widget_color_default">Default</string>
     <string name="widget_color_hex">HEX colour code</string>
     <string name="widget_color_reset">Use default</string>
     <string name="widget_color_background">Background</string>
     <string name="widget_color_text">Main text</string>
-    <string name="widget_color_secondary">Secondary text</string>
     <string name="widget_color_accent">Accent</string>
-    <string name="widget_color_hours">Hour digits</string>
-    <string name="widget_color_minutes">Minute digits</string>
     <string name="widget_color_lines">Lines</string>
     <string name="widget_color_pill">Weather pill</string>
     <string name="widget_color_dial">Dial</string>
@@ -446,8 +428,6 @@
     <string name="widget_color_ring_warm">Warm hours</string>
     <string name="widget_color_ring_rain">Rainy hours</string>
     <string name="widget_config_glass_hint">Glass never disappears completely: its transparency stops at 85%.</string>
-    <string name="widget_config_legibility">Keep text readable</string>
-    <string name="widget_config_legibility_hint">Used when the text sits directly on your wallpaper. The text colour follows the wallpaper: dark on a light wallpaper, light on a dark one.</string>
     <string name="widget_config_digit_color_hint">Hours and minutes can have their own colours. A single digit can\'t be coloured on its own: the digits change every minute and the widget never wakes the app for the clock.</string>
     <string name="widget_config_hands_old_android">Hand colours and the second hand need Android 12 or newer.</string>
     <string name="widget_config_text">Text</string>
@@ -461,8 +441,6 @@
     <string name="widget_config_second_hand">Second hand</string>
     <string name="widget_config_second_symbol">Second hand symbol</string>
     <string name="widget_config_highlighted">Numerals in the accent colour</string>
-    <string name="widget_config_contrast_warning">The text may be hard to read on this background.</string>
-    <string name="widget_config_enable_scrim">Turn on soft veil</string>
     <string name="widget_high_low_compact">H %1$s L %2$s</string>
     <string name="settings_widgets">Widgets</string>
     <string name="my_widgets_title">My widgets</string>
@@ -475,9 +453,7 @@
     <string name="widget_style_clock_ss">SS</string>
     <string name="widget_content_weather_icon">Weather icon</string>
     <string name="widget_content_temperature">Temperature</string>
-    <string name="widget_color_ink">Ink (marks, numerals, seal, hands)</string>
     <string name="widget_color_window">Date window</string>
-    <string name="widget_config_ss_looks">Ready-made looks</string>
     <string name="widget_ss_classic">Classic</string>
     <string name="widget_ss_night_blue">Night blue</string>
     <string name="widget_config_logo">Seal</string>
@@ -617,7 +593,6 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_alert_notifications">Weather warnings</string>
     <string name="settings_alert_notifications_hint">A notification when an orange or red warning is issued for one of your places. Once per warning.</string>
-    <string name="settings_notifications_blocked">Notifications are turned off for Commune Sky in your phone’s settings.</string>
     <string name="normal_above">%1$d° above the seasonal normal</string>
     <string name="normal_below">%1$d° below the seasonal normal</string>
     <string name="normal_same">Around the seasonal normal</string>
@@ -793,11 +768,9 @@
     <string name="detail_gust">gusts %1$d %2$s</string>
     <string name="detail_value_unit">%1$s %2$s</string>
     <string name="detail_mm">%1$s mm</string>
-    <string name="detail_day_length">Day length</string>
     <string name="detail_night_length">Night: %1$s</string>
     <string name="detail_duration">%1$d h %2$d min</string>
     <string name="detail_readout">%1$s · %2$s</string>
-    <string name="detail_readout_now">Now</string>
     <string name="detail_secondary_actual">actual %1$s</string>
     <string name="detail_secondary_gust">gusts %1$s</string>
     <string name="detail_secondary_dew">dew point %1$s</string>
@@ -827,7 +800,7 @@
     <string name="detail_open">Open details</string>
     <string name="what_feels">The feels-like temperature is how warm or cold the air feels on your skin. Wind carries heat away from the body and makes it feel colder; humidity makes it harder to cool down and makes it feel warmer. It is worked out from the temperature, the humidity and the wind. Dress for this number rather than for the actual temperature.</string>
     <string name="what_wind">Wind speed is the average speed of the air ten metres above the ground. A gust is a sudden burst that lasts a few seconds and can be much stronger than the average. The arrows show where the wind is blowing to. Above 40 km/h umbrellas struggle and cycling gets hard; above 60 km/h loose things outside should be secured.</string>
-    <string name="what_humidity">Relative humidity tells how much water vapour the air holds compared with the most it could hold at that temperature. Between 40% and 60% feels comfortable for most people. The dew point is the temperature at which that vapour turns into dew: above about 18° the air feels sticky, below 10° it feels dry. High humidity makes heat harder to bear and laundry slower to dry.</string>
+    <string name="what_humidity" formatted="false">Relative humidity tells how much water vapour the air holds compared with the most it could hold at that temperature. Between 40% and 60% feels comfortable for most people. The dew point is the temperature at which that vapour turns into dew: above about 18° the air feels sticky, below 10° it feels dry. High humidity makes heat harder to bear and laundry slower to dry.</string>
     <string name="what_uv">The UV index measures the strength of the sun\'s ultraviolet rays that burn the skin. It is highest around midday and on clear summer days, and clouds lower it only partly. From 3 upwards sunscreen is a good idea; from 6 upwards add a hat, sunglasses and shade at midday. From 8 upwards the skin can burn in under half an hour.</string>
     <string name="what_visibility">Visibility is the distance at which a large object can still be seen clearly. Fog, mist, heavy rain, snow and dust all reduce it. Below 1 km there is fog and driving needs great care; between 1 and 5 km the air is misty or hazy. Clear air often means views of 20 km and more.</string>
     <string name="what_pressure">Air pressure is the weight of the air above you, reduced to sea level so that places can be compared. About 1013 hPa is normal. Falling pressure usually means the weather may turn: cloud, wind and rain are on the way. Rising pressure usually brings calmer, clearer weather. The direction of the change matters more than the number itself.</string>

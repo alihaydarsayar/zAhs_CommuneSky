@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.alihaydarsayar.communesky.MainActivity
 import com.alihaydarsayar.communesky.R
@@ -49,11 +48,9 @@ object AirQualityNotifier {
     private fun notify(context: Context, snapshot: WeatherSnapshot, level: AqiLevel) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         val localized = WidgetLanguage.context(context)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(CHANNEL, localized.getString(R.string.air_quality), NotificationManager.IMPORTANCE_DEFAULT),
-            )
-        }
+        manager.createNotificationChannel(
+            NotificationChannel(CHANNEL, localized.getString(R.string.air_quality), NotificationManager.IMPORTANCE_DEFAULT),
+        )
         val id = 7400 + (snapshot.placeId % 1000).toInt()
         val open = PendingIntent.getActivity(
             context, id,

@@ -126,6 +126,9 @@ enum class ClockFormat { System, H24, H12 }
  */
 class WidgetDateReceiver : BroadcastReceiver() {
 
+    // Alıcı dışa kapalıdır (exported=false): yalnızca sistem ve uygulamanın kendi alarmı ulaşır; yaptığı tek iş
+    // widget'ları yeniden çizmektir. Bu yüzden gelen eylemin adı ayrıca denetlenmez.
+    @android.annotation.SuppressLint("UnsafeProtectedBroadcastReceiver")
     override fun onReceive(context: Context, intent: Intent) {
         val app = context.applicationContext
         val pending = goAsync()

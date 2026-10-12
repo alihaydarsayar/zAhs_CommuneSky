@@ -74,7 +74,7 @@ private data class MyWidgets(val widgets: List<PlacedWidget>, val input: WidgetI
 fun MyWidgetsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var state by remember { mutableStateOf<MyWidgets?>(null) }
-    var refresh by remember { mutableStateOf(0) }
+    var refresh by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     // Ayar ekranından dönünce liste ve önizlemeler yenilenir.
     LifecycleResumeEffect(Unit) {
         refresh++

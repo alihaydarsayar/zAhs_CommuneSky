@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -54,7 +55,7 @@ import kotlin.math.roundToInt
 @Composable
 fun rememberStrings(): Strings {
     val context = LocalContext.current
-    return remember(context, context.resources.configuration) { AndroidStrings(context) }
+    return remember(context, LocalConfiguration.current) { AndroidStrings(context) }
 }
 
 /** Bir sıra çizgi ikon: önce katman (tişört, kazak, mont…), sonra ekler (şemsiye, gözlük…). */

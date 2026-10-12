@@ -55,11 +55,9 @@ object AlertNotifier {
 
     private fun notify(context: Context, snapshot: WeatherSnapshot, alert: WeatherAlert) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(CHANNEL, context.getString(R.string.alert_channel), NotificationManager.IMPORTANCE_DEFAULT),
-            )
-        }
+        manager.createNotificationChannel(
+            NotificationChannel(CHANNEL, context.getString(R.string.alert_channel), NotificationManager.IMPORTANCE_DEFAULT),
+        )
         val events = alert.events.ifEmpty { listOf(AlertEvent.Other) }.joinToString(", ") { context.getString(eventName(it)) }
         val level = context.getString(if (alert.level == AlertLevel.Red) R.string.alert_level_red else R.string.alert_level_orange)
         val open = PendingIntent.getActivity(

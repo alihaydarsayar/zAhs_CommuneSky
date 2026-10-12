@@ -7,7 +7,6 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.alihaydarsayar.communesky.MainActivity
 import com.alihaydarsayar.communesky.R
@@ -150,11 +149,9 @@ object MorningSummary {
             { unit.fromCelsius(it).roundToInt() }, { it.format(clock) },
         ) ?: return
         val manager = app.getSystemService(NotificationManager::class.java) ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(CHANNEL, localized.getString(R.string.summary_channel), NotificationManager.IMPORTANCE_DEFAULT),
-            )
-        }
+        manager.createNotificationChannel(
+            NotificationChannel(CHANNEL, localized.getString(R.string.summary_channel), NotificationManager.IMPORTANCE_DEFAULT),
+        )
         val open = PendingIntent.getActivity(
             app, NOTIFICATION_ID,
             Intent(app, MainActivity::class.java)
