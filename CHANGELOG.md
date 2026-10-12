@@ -39,6 +39,7 @@ What's new in each version of Commune Sky.
 - The app, its widgets and notifications are now available in French (Settings › Language).
 - Fixed: on the Card clock at its smallest size a long date could be squeezed; it now switches to the short form.
 - Less data: forecasts from the other models and air quality are now fetched for all your places in one request each.
+- The "For today" card now sits right below the 7-day forecast.
 
 ## 1.4 — October 11, 2026
 

@@ -484,17 +484,17 @@ private fun ForecastList(
                 }
             }
         }
-        // "Bugün için": ne giysem, en önemli iki öneri ve hepsine giden bağlantı.
-        item(key = "today") {
-            val actions = LocalHomeActions.current
-            TodayCard(todayAdvice, actions.onWearFeedback, actions.onOpenToday)
-        }
         // Meteorolojik uyarı varsa renkli şerit.
         if (weather.alerts.isNotEmpty()) item(key = "alerts") { AlertBanner(weather.alerts, now.toLocalDate()) }
         // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.
         weather.sources?.rainNote?.let { note -> item(key = "rainNote") { RainNoteLine(note) } }
         item(key = "hourly") { HourlyCard(forecast.current, hours) }
         item(key = "daily") { DailyCard(days, forecast.current.temperature) }
+        // "Bugün için", 7 günlük tahminin hemen altında: ne giysem, en önemli iki öneri ve hepsine giden bağlantı.
+        item(key = "today") {
+            val actions = LocalHomeActions.current
+            TodayCard(todayAdvice, actions.onWearFeedback, actions.onOpenToday)
+        }
         if (weather.sources != null) item(key = "sources") { SourceLine(weather) }
         // Hava kalitesi: küçük kart; dokununca sayfası açılır.
         weather.airQuality?.let { air ->
