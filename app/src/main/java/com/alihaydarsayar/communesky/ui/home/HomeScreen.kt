@@ -92,6 +92,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.drop
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alihaydarsayar.communesky.R
@@ -239,8 +240,10 @@ fun HomeContent(
 
     // Kaydırma bitince seçili yeri kaydet; gökyüzü de bu yere göre değişir.
     val currentPages by rememberUpdatedState(pages)
+    // İlk değer atlanır: ekrana dönüldüğünde sayfalayıcı eski sayfasıyla kurulur; o sayfayı "seçilmiş" diye
+    // kaydetmek, Yerler ekranında az önce yapılan seçimi ezer.
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }.collect { index ->
+        snapshotFlow { pagerState.settledPage }.drop(1).collect { index ->
             currentPages.getOrNull(index)?.let { onPageSelected(it.placeId) }
         }
     }
