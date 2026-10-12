@@ -2,6 +2,12 @@
 
 What's new in each version of Commune Sky.
 
+## 1.5.1 — in testing
+
+- Fixed: with two widgets of the same kind (for example two clocks), a widget could take on the look of the one you saved last. When you save a widget, the others of its kind now keep the look they have.
+- Fixed: on some home screens a widget could be laid out for a wider space than it really has, so its edges were cut off (for example the date and the weather on the radial clock). This no longer depends on how the phone is held when the widget updates.
+- Settings › My widgets can copy a short diagnostic text (sizes and style names only) to help track down a widget that looks wrong.
+
 ## 1.5 — in testing
 
 - Fixed: on some home screens a clock showed a small, different layout in a corner instead of the style you saved. Widgets now keep their style and fill their space at every size.
@@ -41,9 +47,6 @@ What's new in each version of Commune Sky.
 - Less data: forecasts from the other models and air quality are now fetched for all your places in one request each.
 - The "For today" card now sits right below the 7-day forecast.
 - Fixed: choosing a place on the Places screen sometimes went back to the place you were on instead of opening the one you chose.
-- Fixed: with two widgets of the same kind (for example two clocks), a widget could take on the look of the one you saved last. Each widget now keeps its own look.
-- Fixed: on some home screens a widget could be laid out for a wider space than it really has, so its edges were cut off (for example the date and the weather on the radial clock).
-- Settings › My widgets can copy a short diagnostic text (sizes and style names only) to help track down a widget that looks wrong.
 
 ## 1.4 — October 11, 2026
 
