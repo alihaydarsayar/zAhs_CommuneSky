@@ -31,7 +31,6 @@ import com.alihaydarsayar.communesky.model.today.Layer
 import com.alihaydarsayar.communesky.model.today.WearText
 import com.alihaydarsayar.communesky.model.today.list
 import com.alihaydarsayar.communesky.ui.common.LocalAppSettings
-import kotlin.math.ceil
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -83,7 +82,9 @@ private fun fitText(
     if (maxLines < 1 || width <= 0f) return null
     for (text in candidates) {
         val measured = measureWidthDp(context, text, size, theme, weight) * MEASURE_MARGIN
-        val lines = if (measured <= width) 1 else ceil(measured * WRAP_MARGIN / width).toInt() + 1
+        // Satır sayısı sözcük sözcük sarılarak sayılır (ölçüm payıyla): tahminle sayınca fazladan satır ayrılıyor,
+        // widget'ın ortasında boş yer kalıyordu.
+        val lines = if (measured <= width) 1 else wrappedLines(context, text, size, width / MEASURE_MARGIN, theme, weight)
         // Bölünemeyen en uzun parça tek başına satıra sığmalı (bölünmez boşlukla bağlı kelimeler birlikte sayılır).
         val longest = text.split(' ').maxOf { measureWidthDp(context, it, size, theme, weight) } * MEASURE_MARGIN
         if (lines <= maxLines && longest <= width) return text to lines
@@ -94,8 +95,6 @@ private fun fitText(
 /** Ölçüm ile gerçek çizim arasındaki küçük fark için pay. */
 private const val MEASURE_MARGIN = 1.08f
 
-/** Satır sonlarında kelime bölünmediği için bırakılan pay; ayrıca bir yedek satır sayılır. */
-private const val WRAP_MARGIN = 1.15f
 
 /** Satıra sığan ikonlar: önce katmanın ilk ikonu, sonra ekler (şemsiye…), yer kalırsa katmanın diğer ikonları. */
 private fun wearIcons(advice: ClothingAdvice, widthDp: Float, iconDp: Float, gapDp: Float): List<Int> {
