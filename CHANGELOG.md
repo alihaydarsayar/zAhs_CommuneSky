@@ -9,6 +9,7 @@ What's new in each version of Commune Sky.
 - Settings › My widgets can copy a short diagnostic text (sizes and style names only) to help track down a widget that looks wrong.
 - Fixed: the umbrella tip could say "No need" while it was raining or while the hourly forecast showed rain or thunderstorms. It now follows the weather you see on the screen: the current conditions and the hourly icons, not only the rain chance.
 - Fixed: the best time for a run or walk could fall on hours with thunderstorms. Laundry, car wash, stargazing and the morning summary now also follow the hourly icons and the current weather.
+- Fixed: on the rain widget a sentence such as "Yağmur başlamak üzere" could wrap onto a third line and be cut off at the bottom.
 
 ## 1.5 — in testing
 

@@ -765,6 +765,25 @@ fun measureWidthDp(context: Context, text: String, sizeSp: Float, theme: WidgetT
     return paint.measureText(text) + 4f / theme.grow
 }
 
+/**
+ * [text], [widthDp] genişliğe sözcük sözcük sarılınca kaç satır tutar (gerçek ölçümle). Satır sonunda sözcük
+ * bölünmediği için harf sayısından yapılan tahmin eksik çıkabilir: "Yağmur başlamak üzere" dar sütunda üç satırdır.
+ */
+fun wrappedLines(context: Context, text: String, sizeSp: Float, widthDp: Float, theme: WidgetTheme, weight: WWeight = WWeight.Regular): Int {
+    var lines = 1
+    var line = ""
+    for (word in text.split(' ').filter { it.isNotEmpty() }) {
+        val longer = if (line.isEmpty()) word else "$line $word"
+        if (line.isEmpty() || measureWidthDp(context, longer, sizeSp, theme, weight) <= widthDp) {
+            line = longer
+        } else {
+            lines++
+            line = word
+        }
+    }
+    return lines
+}
+
 /** Bugünün tarihi, widget'taki saat bileşeninin yazacağı biçimde ("10 Ekim Cumartesi"); sığma hesabı için. */
 fun todayText(context: Context, dateSkeleton: String): String {
     val locale = locale(context)

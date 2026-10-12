@@ -93,6 +93,65 @@ class WidgetSizeAuditTest {
         assertTrue("Kısaltılan sıcaklık, saat ve sayılar:\n" + shortened.joinToString("\n"), shortened.isEmpty())
     }
 
+    /**
+     * Yağış widget'ının her cümlesi (başlıyor, başlamak üzere, diniyor, sürüyor, yok, veri yok; yağmur ve kar)
+     * üç dilde ve launcher ölçülerinde kesilmeden sığmalı. "Yağmur başlamak üzere" dar sütunda üç satıra
+     * sarılıp alt satırı kesiliyordu.
+     */
+    @Test
+    fun precipitationSentencesAreNeverCut(): Unit = runBlocking {
+        val system = Locale.getDefault()
+        val cut = mutableListOf<String>()
+        val sizes = listOf(
+            DpSize(250.dp, 110.dp), DpSize(306.dp, 95.dp), DpSize(320.dp, 78.dp), DpSize(320.dp, 110.dp), DpSize(400.dp, 90.dp),
+            DpSize(260.dp, 66.dp), DpSize(300.dp, 200.dp), DpSize(245.dp, 105.dp), DpSize(180.dp, 110.dp), DpSize(180.dp, 70.dp),
+        )
+        // Yağışlı dilimler, anlık hava kodu, sıcaklık (1° ve altı kar), istasyon "kuru" ölçüyor mu, dilim var mı.
+        data class Case(val name: String, val wet: List<Int>, val code: Int = 3, val temperature: Double = 15.0, val dryStation: Boolean = false, val slices: Int = 12)
+        val cases = listOf(
+            Case("yok", emptyList()), Case("basliyor", (3..11).toList()), Case("baslamak-uzere", (0..11).toList(), dryStation = true),
+            Case("diniyor", (0..3).toList(), code = 61), Case("suruyor", (0..11).toList(), code = 61),
+            Case("kar-basliyor", (3..11).toList(), temperature = 0.0), Case("kar-baslamak-uzere", (0..11).toList(), temperature = 0.0, dryStation = true),
+            Case("kar-diniyor", (0..3).toList(), code = 73, temperature = 0.0), Case("kar-suruyor", (0..11).toList(), code = 73, temperature = 0.0),
+            Case("veri-yok", emptyList(), slices = 0),
+        )
+        try {
+            for (language in listOf("tr", "en", "fr")) {
+                Locale.setDefault(Locale.forLanguageTag(language))
+                val context = localized(target, language)
+                val base = WidgetSamples.input(context)
+                for (case in cases) {
+                    val input = base.copy(weather = base.weather.mapValues { (_, snapshot) ->
+                        val forecast = snapshot.forecast
+                        val now = forecast.localNow()
+                        val quarter = now.withMinute(now.minute / 15 * 15).withSecond(0).withNano(0)
+                        val minutely = (0 until case.slices).map { i ->
+                            val start = quarter.plusMinutes(15L * i)
+                            com.alihaydarsayar.communesky.model.PrecipitationSlice(start, start.plusMinutes(15), if (i in case.wet) 0.6 else 0.0, isWet = i in case.wet)
+                        }
+                        val station = com.alihaydarsayar.communesky.model.Observation(
+                            com.alihaydarsayar.communesky.model.ObservationSource.Mgm, "Beşiktaş", snapshot.city.latitude, snapshot.city.longitude,
+                            observedAtMillis = System.currentTimeMillis(), weatherCode = case.code,
+                        )
+                        snapshot.copy(
+                            forecast = forecast.copy(current = forecast.current.copy(weatherCode = case.code, temperature = case.temperature), minutely = minutely),
+                            observation = if (case.dryStation) com.alihaydarsayar.communesky.model.ObservationUse.Override(station, 1.0) else null,
+                        )
+                    })
+                    for (style in listOf(WidgetStyleId.PrecipitationBars, WidgetStyleId.PrecipitationSentence)) {
+                        for (size in sizes) {
+                            val result = draw(context, input, style, style.defaultStyle(), size, null).third
+                            result.cut.forEach { cut += "$language ${case.name} ${style.name} ${size.width.value.toInt()}x${size.height.value.toInt()}: $it" }
+                        }
+                    }
+                }
+            }
+        } finally {
+            Locale.setDefault(system)
+        }
+        assertTrue("Kesilen yağış cümleleri:\n" + cut.joinToString("\n"), cut.isEmpty())
+    }
+
     /** Çizer; (genişlik dp, yükseklik dp, ölçüm) döner. [size] null: launcher ölçü bildirmedi. */
     private suspend fun draw(context: Context, input: WidgetInput, style: WidgetStyleId, widgetStyle: WidgetStyle, size: DpSize?, file: File?): Triple<Int, Int, Result> {
         val widget = style.kind.widget(WidgetConfig(WidgetPlace.Smart, widgetStyle), input)

@@ -62,19 +62,25 @@ private fun PrecipitationBars(data: WidgetPlaceData) {
     val maxMm = max(1.2, nowcast.slices.maxOfOrNull { it.precipitationMm } ?: 0.0)
     // Cümle, sol sütunda kesilmeden sığacak en büyük boyutta (en çok 3 satır).
     val sentenceWidth = if (size.width >= 300.dp) 132f else 112f
-    val sentenceHeight = size.height.value - 24f - (if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(13f, theme) else 0f)
-    val sentenceSize = listOf(19f, 17f, 15f, 14f, 13f, 12f).firstOrNull { sp ->
-        val lines = kotlin.math.ceil(estimateWidthDp(sentence, sp, theme) / (sentenceWidth - 4f) * 1.15f).toInt().coerceAtLeast(1)
+    val column = (sentenceWidth - 4f) * FIT_MARGIN
+    fun fits(sp: Float, placeHeight: Float): Boolean {
+        // Satır sayısı gerçek sarmayla sayılır: sözcükler bölünmediği için tahmin eksik çıkıyor, son satır kesiliyordu.
+        val lines = wrappedLines(context, sentence, sp, column, theme, WWeight.Medium)
         // En uzun sözcük de sütuna sığmalı; yoksa sözcüğün sonu kırpılır.
         val longest = sentence.split(' ').maxOf { measureWidthDp(context, it, sp, theme, WWeight.Medium) }
-        lines <= 3 && lines * lineHeightDp(sp, theme) <= sentenceHeight && longest <= (sentenceWidth - 4f) * FIT_MARGIN
-    } ?: 12f
+        return lines <= 3 && lines * lineHeightDp(sp, theme) <= size.height.value - 24f - placeHeight && longest <= column
+    }
+    val sizes = listOf(19f, 17f, 15f, 14f, 13f, 12f)
+    val placeHeight = if (theme.shows(WidgetContent.PlaceName)) lineHeightDp(13f, theme) + 2f else 0f
+    // Cümle yer adıyla birlikte sığmıyorsa önce yazı küçülür, sonra yer adı düşer (yalın cümle düzenindeki gibi).
+    val withPlace = sizes.firstOrNull { placeHeight > 0f && fits(it, placeHeight) }
+    val sentenceSize = withPlace ?: sizes.firstOrNull { fits(it, 0f) } ?: 12f
     val formatter = timeFormatter(context)
     val origin = nowcast.slices.firstOrNull()?.start ?: now
     WidgetSurface(onClick = openAppAction(), horizontal = 16.sd, vertical = 12.sd, contentAlignment = Alignment.CenterStart) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             Column(GlanceModifier.width(sentenceWidth.sd)) {
-                if (theme.shows(WidgetContent.PlaceName)) {
+                if (withPlace != null) {
                     PlaceLabel(data, 13f)
                     VSpace(2.sd)
                 }
