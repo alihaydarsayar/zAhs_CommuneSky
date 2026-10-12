@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.AppSettings
+import com.alihaydarsayar.communesky.model.PrecipitationOutlook
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.model.detail.DayValue
 import com.alihaydarsayar.communesky.model.detail.Metric
@@ -374,7 +375,11 @@ private fun headerNote(detail: MetricDetail, weather: WeatherSnapshot, formatter
         Metric.Uv -> detail.currentSecondary?.let { stringResource(R.string.uv_max_today, decimal.format(it)) }
         Metric.Precipitation -> {
             val sum = detail.currentSecondary ?: 0.0
-            if (sum >= 0.1) stringResource(R.string.precipitation_expected, decimal.format(sum)) else stringResource(R.string.precipitation_none)
+            when {
+                sum >= PrecipitationOutlook.EXPECTED_MM -> stringResource(R.string.precipitation_expected, decimal.format(sum))
+                today?.precipitationOutlook == PrecipitationOutlook.Possible -> stringResource(R.string.precipitation_possible)
+                else -> stringResource(R.string.precipitation_none)
+            }
         }
         Metric.Sun -> {
             val sunrise = today?.sunrise ?: return null

@@ -895,4 +895,5 @@
     <string name="tip_umbrella_now">À prendre absolument : il pleut en ce moment</string>
     <string name="tip_umbrella_thunder">À prendre absolument : des orages sont attendus</string>
     <string name="tip_stargazing_rain">De la pluie est attendue cette nuit</string>
+    <string name="precipitation_possible">Pluie possible, en très faible quantité.</string>
 </resources>

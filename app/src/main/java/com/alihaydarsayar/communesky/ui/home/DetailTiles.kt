@@ -47,6 +47,7 @@ import com.alihaydarsayar.communesky.ui.common.labelRes
 import com.alihaydarsayar.communesky.ui.common.asTemperature
 import com.alihaydarsayar.communesky.model.CurrentWeather
 import com.alihaydarsayar.communesky.model.DailyForecast
+import com.alihaydarsayar.communesky.model.PrecipitationOutlook
 import com.alihaydarsayar.communesky.ui.common.GlassCard
 import com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat
 import com.alihaydarsayar.communesky.ui.common.rememberTimeFormatter
@@ -107,10 +108,10 @@ private fun PrecipitationTile(today: DailyForecast?, modifier: Modifier) {
     val probability = today?.precipitationProbability ?: 0
     val sum = today?.precipitationSum ?: 0.0
     val decimal = rememberDecimalFormat()
-    val caption = if (sum >= 0.1) {
-        stringResource(R.string.precipitation_expected, decimal.format(sum))
-    } else {
-        stringResource(R.string.precipitation_none)
+    val caption = when (today?.precipitationOutlook) {
+        PrecipitationOutlook.Expected -> stringResource(R.string.precipitation_expected, decimal.format(sum))
+        PrecipitationOutlook.Possible -> stringResource(R.string.precipitation_possible)
+        else -> stringResource(R.string.precipitation_none)
     }
     Tile(stringResource(R.string.precipitation), modifier, caption) {
         Text(stringResource(R.string.precipitation_value, probability), color = TextPrimary, style = ValueStyle)

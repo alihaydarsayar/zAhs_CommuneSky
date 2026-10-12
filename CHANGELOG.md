@@ -11,6 +11,7 @@ What's new in each version of Commune Sky.
 - Fixed: the best time for a run or walk could fall on hours with thunderstorms. Laundry, car wash, stargazing and the morning summary now also follow the hourly icons and the current weather.
 - Fixed: on the rain widget a sentence such as "Yağmur başlamak üzere" could wrap onto a third line and be cut off at the bottom.
 - Fixed: a widget could say "Raining" while the screen showed dry weather measured by a nearby station. It now says when the rain is expected instead.
+- Fixed: the rain tile could show a high chance next to "No rain expected today". It now says that rain is possible when the chance is high but the amount is very small.
 
 ## 1.5 — in testing
 

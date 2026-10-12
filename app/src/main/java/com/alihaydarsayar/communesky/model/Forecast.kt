@@ -184,6 +184,28 @@ data class DailyForecast(
     val windDirection: Int? = null,
 ) {
     val condition: WeatherCondition get() = WeatherCondition.fromCode(weatherCode)
+
+    /**
+     * Yağış kutusunun cümlesi. Yüzde ve toplam miktar ayrı modellerden gelebilir: yüzde yüksekken ya da günün
+     * simgesi yağış gösterirken miktar sıfır diye "yağış beklenmiyor" denmez.
+     */
+    val precipitationOutlook: PrecipitationOutlook
+        get() = when {
+            (precipitationSum ?: 0.0) >= PrecipitationOutlook.EXPECTED_MM -> PrecipitationOutlook.Expected
+            precipitationProbability >= PrecipitationOutlook.POSSIBLE_CHANCE || condition.isWet || condition == WeatherCondition.Snow ->
+                PrecipitationOutlook.Possible
+            else -> PrecipitationOutlook.None
+        }
+}
+
+/** Bugün yağış: miktar bekleniyor, yalnızca ihtimal var (miktar çok az) ya da beklenmiyor. */
+enum class PrecipitationOutlook {
+    Expected, Possible, None;
+
+    companion object {
+        const val EXPECTED_MM = 0.1
+        const val POSSIBLE_CHANCE = 40
+    }
 }
 
 /** Önbellekten okunan, ekrana hazır hava durumu: hangi yer, ne zaman alındı. */

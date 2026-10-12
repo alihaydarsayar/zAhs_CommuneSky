@@ -2,6 +2,7 @@ package com.alihaydarsayar.communesky.lifestyle
 
 import com.alihaydarsayar.communesky.model.Forecast
 import com.alihaydarsayar.communesky.model.HourlyForecast
+import com.alihaydarsayar.communesky.model.PrecipitationOutlook
 import com.alihaydarsayar.communesky.model.today.Extra
 import com.alihaydarsayar.communesky.model.today.Layer
 import com.alihaydarsayar.communesky.testing.TestForecast
@@ -153,6 +154,16 @@ class TipScenarioTest {
         // Sıcak saatler koşu için önerilmez: en iyi aralık sabah erken ya da akşam.
         val run = hot.result(RunTip)
         if (run.args.isNotEmpty()) assertTrue((run.args.first() as LocalTime).hour !in 9..18)
+    }
+
+    @Test
+    fun `the rain tile does not say no rain next to a high chance`() {
+        // Yüzde ve miktar ayrı modellerden gelir: %63 yazarken "Bugün yağış beklenmiyor" denmez.
+        assertEquals(PrecipitationOutlook.Possible, TestForecast.daily(mm = 0.0).copy(precipitationProbability = 63).precipitationOutlook)
+        assertEquals(PrecipitationOutlook.Possible, TestForecast.daily(mm = 0.0).copy(weatherCode = THUNDER).precipitationOutlook)
+        assertEquals(PrecipitationOutlook.Expected, TestForecast.daily(mm = 0.2).copy(precipitationProbability = 29).precipitationOutlook)
+        assertEquals(PrecipitationOutlook.None, TestForecast.daily(mm = 0.0).copy(precipitationProbability = 20).precipitationOutlook)
+        assertEquals("Yağış ihtimali var; miktar çok az.", TestStrings.turkish.get(com.alihaydarsayar.communesky.R.string.precipitation_possible))
     }
 
     @Test
