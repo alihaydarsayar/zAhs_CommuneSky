@@ -103,6 +103,18 @@ class ForecastMergeTest {
     }
 
     @Test
+    fun `when MGM answers again the forecast returns to MGM`() {
+        val failed = turkey.copy(nationalFailed = true, models = listOf(ecmwf()))
+        assertEquals(ForecastSource.EcmwfIfs, ForecastMerge.merge(base(), failed, now).sources.forecast)
+        // Sonraki istekte MGM cevap verdi: işaret kalkar, tahmin yeniden MGM'den gelir.
+        val back = ForecastMerge.merge(base(), failed.copy(national = mgm(), nationalFailed = false), now)
+        assertEquals(ForecastSource.Mgm, back.sources.forecast)
+        assertFalse(back.sources.nationalUnavailable)
+        // Başarısız bir isteğin zamanı kaydedilmez: 30 dakika beklenmeden yeniden denenir.
+        assertTrue(ExtrasFreshness.isStale(0, 10_000_000L, ExtrasFreshness.FORECAST, force = false))
+    }
+
+    @Test
     fun `outside Türkiye the forecast stays as it is`() {
         val abroad = PlaceExtras(models = listOf(ecmwf()))
         val result = ForecastMerge.merge(base(), abroad, now)
