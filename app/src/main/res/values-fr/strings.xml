@@ -889,4 +889,7 @@
     <string name="moon_thirty_days">30 jours</string>
     <string name="what_moon">La lune ne brille pas par elle-même : nous voyons la moitié que le soleil éclaire. En tournant autour de la Terre en 29 jours et demi environ, elle nous montre une part plus ou moins grande de cette moitié éclairée : de la nouvelle lune, invisible, au premier quartier, à la pleine lune, puis retour. La lune se lève chaque jour environ 50 minutes plus tard. Autour de la pleine lune, elle est présente toute la nuit et sa lumière masque les étoiles peu brillantes ; autour de la nouvelle lune, le ciel est au plus sombre. Tout ce qui figure sur cette page est calculé sur votre téléphone.</string>
     <string name="today_short">Auj.</string>
+    <string name="widget_diagnostics_copy">Copier le diagnostic des widgets</string>
+    <string name="widget_diagnostics_hint">Si un widget s’affiche mal sur l’écran d’accueil, touchez ici et envoyez le texte copié au développeur. Il ne contient que des dimensions et des noms de style : ni lieux ni position. L’application n’envoie rien.</string>
+    <string name="widget_diagnostics_copied">Copié. Collez-le dans un message au développeur.</string>
 </resources>

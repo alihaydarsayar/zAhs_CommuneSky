@@ -43,6 +43,7 @@ What's new in each version of Commune Sky.
 - Fixed: choosing a place on the Places screen sometimes went back to the place you were on instead of opening the one you chose.
 - Fixed: with two widgets of the same kind (for example two clocks), a widget could take on the look of the one you saved last. Each widget now keeps its own look.
 - Fixed: on some home screens a widget could be laid out for a wider space than it really has, so its edges were cut off (for example the date and the weather on the radial clock).
+- Settings › My widgets can copy a short diagnostic text (sizes and style names only) to help track down a widget that looks wrong.
 
 ## 1.4 — October 11, 2026
 
