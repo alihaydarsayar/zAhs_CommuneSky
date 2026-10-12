@@ -73,7 +73,7 @@ fun ClockContent(style: WidgetStyleId, place: WidgetPlaceData?, input: WidgetInp
 @Composable
 private fun clockSize(max: Float, widthDp: Float, heightDp: Float, ems: Float = LocalWidgetTheme.current.clockEms): Float {
     val theme = LocalWidgetTheme.current
-    val scale = theme.style.textSize.scale * theme.fontScaleFix
+    val scale = theme.style.textSize.scale * theme.fontScaleDp
     // Genişlikte %10 pay: launcher'ın yazı tipi ve bildirdiği ölçü tahminden biraz farklı olabilir.
     return min(max, min(widthDp * FIT_MARGIN / (ems * scale), heightDp / (1.2f * scale))).coerceAtLeast(18f)
 }
@@ -105,7 +105,7 @@ private fun ClockWeather(data: WidgetPlaceData) {
     val pinned = theme.shows(WidgetContent.PlaceName) && placeIcon(data) != null
     // Sağ sütun: ikon + sıcaklık, altında "yer · Y/D". Ayrıntı gerçek genişliğiyle ölçülür; saate en az
     // 48 sp'lik yer kalmıyorsa (büyük yazı boyutu, uzun yer adı) sondan düşer.
-    val clockFloor = theme.clockEms * 48f * theme.style.textSize.scale * theme.fontScaleFix
+    val clockFloor = theme.clockEms * 48f * theme.style.textSize.scale * theme.fontScaleDp
     fun detailWidth(text: String) = if (text.isEmpty()) 0f else measureWidthDp(context, text, 13f, theme) + (if (pinned) 16f else 0f)
     val detailParts = buildList {
         if (theme.shows(WidgetContent.PlaceName)) add(data.snapshot.displayName(context))

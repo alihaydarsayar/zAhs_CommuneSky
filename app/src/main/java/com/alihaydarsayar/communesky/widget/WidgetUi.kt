@@ -63,6 +63,8 @@ data class WidgetTheme(
     val colors: WidgetColors,
     /** Sistem yazı boyutu çok büyükse widget düzeni bozulmasın diye ölçek en fazla 1,15 sayılır. */
     val fontScaleFix: Float,
+    /** Telefonun yazı boyutu ayarı (1 = normal). */
+    val systemFontScale: Float = 1f,
     /**
      * Tarih normal metin olarak mı yazılsın? Çizim dili telefonun dilinden farklıysa evet: Android'in
      * saat bileşeni tarihi ana ekran uygulamasının diliyle yazar (bkz. [WidgetLanguage.differs]).
@@ -94,6 +96,13 @@ data class WidgetTheme(
 
     /** Arka planın görünürlüğü (0–1), saydamlık kaydırıcısından. */
     val backgroundAlpha: Float get() = (100 - style.effectiveTransparency) / 100f
+
+    /**
+     * Yazının ekranda gerçekten büyüdüğü oran (en çok 1,15): sp, telefonun ölçeğiyle çarpılıp [fontScaleFix] ile
+     * düzeltilir. Satır yüksekliği ve genişlik tahminleri bununla yapılır; yalnız [fontScaleFix] kullanılınca büyük
+     * yazıda satırlar olduğundan alçak sayılıyor, üst üste binip altları kesiliyordu.
+     */
+    val fontScaleDp: Float get() = fontScaleFix * systemFontScale
 
     companion object {
         fun fontScaleFix(context: Context): Float {
@@ -737,7 +746,7 @@ private const val LINE_EM = 1.2f
  */
 fun estimateWidthDp(text: String, sizeSp: Float, theme: WidgetTheme): Float {
     val em = if (isNumeric(text, 12f)) 0.5f else 0.55f
-    return text.length * sizeSp * em * theme.style.textSize.scale * theme.fontScaleFix
+    return text.length * sizeSp * em * theme.style.textSize.scale * theme.fontScaleDp
 }
 
 /**
@@ -798,11 +807,11 @@ fun fitWidth(text: String, max: Float, availableDp: Float, theme: WidgetTheme): 
 
 /** Sıkı (yazı dolgusuz) bir satırın yüksekliği (dp). */
 fun lineHeightDp(sizeSp: Float, theme: WidgetTheme): Float =
-    sizeSp * theme.style.textSize.scale * theme.fontScaleFix * LINE_EM + 2f
+    sizeSp * theme.style.textSize.scale * theme.fontScaleDp * LINE_EM + 2f
 
 /** Büyük sıcaklık yazısı: hem genişliğe hem yüksekliğe sığan en büyük boyut. */
 fun fitTemperature(text: String, max: Float, widthDp: Float, heightDp: Float, theme: WidgetTheme): Float =
-    min(fitWidth(text, max, widthDp, theme), heightDp / (1.2f * theme.style.textSize.scale * theme.fontScaleFix))
+    min(fitWidth(text, max, widthDp, theme), heightDp / (1.2f * theme.style.textSize.scale * theme.fontScaleDp))
         .coerceAtLeast(18f)
 
 /** Bu yükseklikten (dp) alçak widget'lar tek satıra düşer. */

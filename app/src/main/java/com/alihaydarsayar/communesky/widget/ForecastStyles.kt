@@ -273,7 +273,7 @@ private fun WeeklyRows(data: WidgetPlaceData, bars: Boolean) {
     val scale = theme.style.textSize.scale
     val header = theme.shows(WidgetContent.Current)
     val available = size.height.value - 32f - (if (header) 38f * scale else 0f)
-    val dayCount = (available / (26f * scale * theme.fontScaleFix)).toInt().coerceIn(3, 6)
+    val dayCount = (available / (26f * scale * theme.fontScaleDp)).toInt().coerceIn(3, 6)
     val days = forecast.upcomingDays(now).take(dayCount)
     if (days.isEmpty()) return EmptyContent()
     val weekMin = days.minOf { it.minTemperature }

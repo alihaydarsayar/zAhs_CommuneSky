@@ -388,6 +388,7 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput, wallp
         style = config.style,
         colors = WidgetColors.resolve(context, config.style, primary.skyTheme(), wallpaperDarkText ?: WallpaperTone.prefersDarkText(context)),
         fontScaleFix = WidgetTheme.fontScaleFix(context),
+        systemFontScale = context.resources.configuration.fontScale,
         staticDate = WidgetLanguage.differsFromSystem(context),
         grow = grow,
         compact = WidgetScale.compact(styleId, real) || tooHeavy,

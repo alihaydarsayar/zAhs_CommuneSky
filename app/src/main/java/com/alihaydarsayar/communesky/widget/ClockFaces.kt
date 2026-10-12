@@ -209,7 +209,7 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
     val showDay = w >= 290f
     val dayWidth = if (showDay) 36f else 0f
     // Büyük yazı boyutunda hava sütunu da genişler (hap kesilmesin).
-    val weatherWidth = if (showWeather) (if (w >= 380f) 96f else 72f) * (theme.style.textSize.scale * theme.fontScaleFix).coerceAtLeast(1f) else 0f
+    val weatherWidth = if (showWeather) (if (w >= 380f) 96f else 72f) * (theme.style.textSize.scale * theme.fontScaleDp).coerceAtLeast(1f) else 0f
     // Rakamlar hem genişliğe hem yüksekliğe sığar: "17:22" ≈ 2,45 em; rakamın kendisi 0,71 em yüksek.
     // Rakamlar yatayda sıkıştırılır (RADIAL_SCALE_X): tasarımdaki gibi dar ve uzun, daha büyük.
     val digitsDp = min((w - 2 * ring - dayWidth - weatherWidth - 8f) / 2.0f, (h - 2 * ring) / 0.76f).coerceIn(28f, 150f)
