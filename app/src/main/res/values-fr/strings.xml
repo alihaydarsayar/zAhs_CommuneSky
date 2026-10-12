@@ -666,7 +666,7 @@
     <string name="wear_details_show">Afficher le matin, le midi et le soir</string>
     <string name="wear_details_hide">Masquer le détail</string>
     <string name="settings_wear">Comment s’habiller</string>
-    <string name="wear_sensitivity_cold">Je suis frileux</string>
+    <string name="wear_sensitivity_cold">Je crains le froid</string>
     <string name="wear_sensitivity_normal">Normal</string>
     <string name="wear_sensitivity_warm">J’ai vite chaud</string>
     <string name="settings_wear_hint">Les conseils vestimentaires se décalent de 3° selon votre façon de ressentir le temps. Tout reste sur votre téléphone.</string>
