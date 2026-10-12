@@ -403,7 +403,7 @@ private fun ComparisonBars(metric: Metric, compared: Compared, formatter: Metric
     @Composable
     fun bar(label: String, value: Double, color: Color) {
         Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(label, color = TextSecondary, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(64.dp))
+            Text(label, color = TextSecondary, style = MaterialTheme.typography.bodyMedium, maxLines = 1, modifier = Modifier.width(88.dp))
             Box(Modifier.weight(1f)) {
                 val fraction = if (top <= 0) 0f else ((value - base) / top).toFloat().coerceIn(0.02f, 1f)
                 Box(
