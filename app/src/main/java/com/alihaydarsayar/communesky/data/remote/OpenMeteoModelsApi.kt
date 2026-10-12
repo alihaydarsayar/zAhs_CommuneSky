@@ -14,20 +14,22 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 /**
- * Open-Meteo'dan birden çok modelin tahmini, tek istekte. Open-Meteo her değişkenin adına modelin adını
- * ekler ("temperature_2m_ecmwf_ifs"); alan adları isteğe göre değiştiği için cevap elle okunur.
+ * Open-Meteo'dan birden çok modelin tahmini, birden çok yer için tek istekte: modeller ve koordinatlar virgülle
+ * ayrılır. Open-Meteo her değişkenin adına modelin adını ekler ("temperature_2m_ecmwf_ifs"); alan adları isteğe
+ * göre değiştiği için cevap elle okunur. Tek yer istenince cevap bir nesne, birden çok yer istenince aynı sırada
+ * bir listedir (bkz. [OpenMeteoModels.places]).
  */
 interface OpenMeteoModelsApi {
     @GET("v1/forecast")
     suspend fun models(
-        @Query("latitude") latitude: Double,
-        @Query("longitude") longitude: Double,
+        @Query("latitude") latitudes: String,
+        @Query("longitude") longitudes: String,
         @Query("models") models: String,
         @Query("hourly") hourly: String = "temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m",
         @Query("daily") daily: String = "temperature_2m_max,temperature_2m_min,weather_code",
         @Query("forecast_days") forecastDays: Int = 8,
         @Query("timezone") timezone: String = "auto",
-    ): JsonObject
+    ): JsonElement
 }
 
 /** Open-Meteo'daki model adları. Adlar Open-Meteo belgelerinden; yanlış ad sessizce boş veri döndürür (testle sabit). */
@@ -41,6 +43,13 @@ object OpenMeteoModels {
     )
 
     fun query(sources: List<ForecastSource>): String = sources.mapNotNull { names[it] }.joinToString(",")
+
+    /** Cevabın yer başına parçaları: tek yer için nesne, birden çok yer için liste gelir. Saf; test edilir. */
+    fun places(response: JsonElement): List<JsonObject> = when (response) {
+        is JsonObject -> listOf(response)
+        is JsonArray -> response.filterIsInstance<JsonObject>()
+        else -> emptyList()
+    }
 
     /** Cevaptaki her modelin serisi. Hiç sıcaklığı olmayan (o noktayı kapsamayan) model atlanır. Saf; test edilir. */
     fun parse(response: JsonObject, sources: List<ForecastSource>): List<CandidateSeries> {

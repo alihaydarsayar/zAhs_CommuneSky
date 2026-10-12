@@ -8,6 +8,7 @@ import com.alihaydarsayar.communesky.data.mgm.MgmParsing
 import com.alihaydarsayar.communesky.data.observation.ObservationRepository
 import com.alihaydarsayar.communesky.data.remote.OpenMeteoModels
 import com.alihaydarsayar.communesky.data.remote.OpenMeteoModelsApi
+import com.alihaydarsayar.communesky.model.AirQuality
 import com.alihaydarsayar.communesky.model.CandidateSeries
 import com.alihaydarsayar.communesky.model.ForecastSource
 import com.alihaydarsayar.communesky.model.GeoDistance
@@ -36,6 +37,9 @@ import javax.inject.Singleton
  *
  * Tazelik eşikleri kaynağın kendi güncellenme sıklığına göredir; değişmemiş veri boşuna yeniden istenmez.
  * Kullanıcı aşağı çekip yenilerse ([force]) eşiklere bakılmaz. Bütün istekler aynı anda gider.
+ *
+ * Open-Meteo'ya giden ek istekler yer sayısından bağımsızdır: modeller için aynı model kümesini isteyen bütün
+ * yerler tek istekte (çoğu zaman toplam bir istek), hava kalitesi için bütün yerler tek istekte sorulur.
  */
 @Singleton
 class ExtrasRepository @Inject constructor(
@@ -58,7 +62,32 @@ class ExtrasRepository @Inject constructor(
                     val lists = listOfNotNull(today.await(), tomorrow.await())
                     if (lists.isEmpty()) null else lists.flatten()
                 }
-                val changed = places.map { place -> async { refreshOne(place, force, now, alerts) } }.awaitAll().any { it }
+                // Her yerin kayıtlı ek verisi; yer değiştiyse (ör. "Bulunduğum yer") eski yerin merkezi, tahmini ve
+                // kararları geçersizdir.
+                val saved = places.associate { it.id to store.get(it.id) }
+                val start = places.associate { place ->
+                    val lat = place.city.latitude
+                    val lon = place.city.longitude
+                    place.id to (
+                        saved[place.id]?.takeIf { GeoDistance.kilometers(it.queryLatitude, it.queryLongitude, lat, lon) < MOVED_KM }
+                            ?: PlaceExtras(queryLatitude = lat, queryLongitude = lon)
+                        )
+                }
+                val millis = now.toEpochMilli()
+                // Öteki modeller: aynı modelleri isteyen yerler tek istekte.
+                val models = async {
+                    places.filter { ExtrasFreshness.isStale(start.getValue(it.id).modelsFetchedAt, millis, ExtrasFreshness.FORECAST, force) }
+                        .groupBy { ExtrasFreshness.modelsFor(start.getValue(it.id)) }
+                        .map { (sources, group) -> async { fetchModels(group, sources) } }
+                        .awaitAll().fold(emptyMap<Long, List<CandidateSeries>>()) { all, part -> all + part }
+                }
+                // Hava kalitesi: saatte bir, bütün yerler tek istekte.
+                val air = async {
+                    fetchAir(places.filter { ExtrasFreshness.isStale(start.getValue(it.id).airFetchedAt, millis, ExtrasFreshness.AIR, force) })
+                }
+                val changed = places.map { place ->
+                    async { refreshOne(place, saved[place.id], start.getValue(place.id), force, now, alerts, models, air) }
+                }.awaitAll().any { it }
                 alerts.cancel()
                 changed
             }
@@ -67,32 +96,56 @@ class ExtrasRepository @Inject constructor(
 
     suspend fun delete(placeId: Long) = store.delete(placeId)
 
-    private suspend fun refreshOne(place: Place, force: Boolean, now: Instant, alerts: Deferred<List<MgmAlertDto>?>): Boolean = coroutineScope {
+    /** [places] için [sources] modellerinin tahmini, tek istekte; gelmeyen ya da boş gelen yer sonuçta yer almaz. */
+    private suspend fun fetchModels(places: List<Place>, sources: List<ForecastSource>): Map<Long, List<CandidateSeries>> {
+        if (places.isEmpty()) return emptyMap()
+        val answers = attempt("modeller") {
+            OpenMeteoModels.places(
+                modelsApi.get().models(
+                    latitudes = places.joinToString(",") { CoordinatePrivacy.round(it.city.latitude).toString() },
+                    longitudes = places.joinToString(",") { CoordinatePrivacy.round(it.city.longitude).toString() },
+                    models = OpenMeteoModels.query(sources),
+                ),
+            )
+        }?.takeIf { it.size == places.size } ?: return emptyMap()
+        return places.indices.mapNotNull { i ->
+            OpenMeteoModels.parse(answers[i], sources).takeIf { it.isNotEmpty() }?.let { places[i].id to it }
+        }.toMap()
+    }
+
+    /** [places] için hava kalitesi, tek istekte; gelmeyen ya da boş gelen yer sonuçta yer almaz. */
+    private suspend fun fetchAir(places: List<Place>): Map<Long, AirQuality> {
+        if (places.isEmpty()) return emptyMap()
+        val answers = attempt("hava kalitesi") {
+            if (places.size == 1) {
+                val city = places.single().city
+                listOf(airApi.get().airQuality(CoordinatePrivacy.round(city.latitude), CoordinatePrivacy.round(city.longitude)))
+            } else {
+                airApi.get().airQualities(
+                    latitudes = places.joinToString(",") { CoordinatePrivacy.round(it.city.latitude).toString() },
+                    longitudes = places.joinToString(",") { CoordinatePrivacy.round(it.city.longitude).toString() },
+                )
+            }
+        }?.takeIf { it.size == places.size } ?: return emptyMap()
+        return places.indices.mapNotNull { i ->
+            answers[i].toModel().takeIf { quality -> quality.hours.any { it.aqi != null } }?.let { places[i].id to it }
+        }.toMap()
+    }
+
+    private suspend fun refreshOne(
+        place: Place,
+        saved: PlaceExtras?,
+        start: PlaceExtras,
+        force: Boolean,
+        now: Instant,
+        alerts: Deferred<List<MgmAlertDto>?>,
+        models: Deferred<Map<Long, List<CandidateSeries>>>,
+        air: Deferred<Map<Long, AirQuality>>,
+    ): Boolean = coroutineScope {
         val lat = place.city.latitude
         val lon = place.city.longitude
-        val saved = store.get(place.id)
-        // Yer değiştiyse (ör. "Bulunduğum yer") eski yerin merkezi, tahmini ve kararları geçersizdir.
-        var extras = saved?.takeIf { GeoDistance.kilometers(it.queryLatitude, it.queryLongitude, lat, lon) < MOVED_KM }
-            ?: PlaceExtras(queryLatitude = lat, queryLongitude = lon)
+        var extras = start
         val millis = now.toEpochMilli()
-
-        val models = async {
-            if (!ExtrasFreshness.isStale(extras.modelsFetchedAt, millis, ExtrasFreshness.FORECAST, force)) return@async null
-            val sources = ExtrasFreshness.modelsFor(extras)
-            attempt("modeller") {
-                OpenMeteoModels.parse(
-                    modelsApi.get().models(CoordinatePrivacy.round(lat), CoordinatePrivacy.round(lon), OpenMeteoModels.query(sources)),
-                    sources,
-                )
-            }?.takeIf { it.isNotEmpty() }
-        }
-
-        // Hava kalitesi: saatte bir, öteki isteklerle aynı anda.
-        val air = async {
-            if (!ExtrasFreshness.isStale(extras.airFetchedAt, millis, ExtrasFreshness.AIR, force)) return@async null
-            attempt("hava kalitesi") { airApi.get().airQuality(CoordinatePrivacy.round(lat), CoordinatePrivacy.round(lon)).toModel() }
-                ?.takeIf { quality -> quality.hours.any { it.aqi != null } }
-        }
 
         if (ObservationRepository.isInTurkey(lat, lon)) {
             if (extras.centerId == null) {
@@ -131,8 +184,8 @@ class ExtrasRepository @Inject constructor(
                 if (placeAlerts != null) extras = extras.copy(alerts = placeAlerts, alertsFetchedAt = millis)
             }
         }
-        models.await()?.let { extras = extras.copy(models = it, modelsFetchedAt = millis) }
-        air.await()?.let { extras = extras.copy(airQuality = it, airFetchedAt = millis) }
+        models.await()[place.id]?.let { extras = extras.copy(models = it, modelsFetchedAt = millis) }
+        air.await()[place.id]?.let { extras = extras.copy(airQuality = it, airFetchedAt = millis) }
 
         if (extras == saved) return@coroutineScope false
         store.save(place.id, extras)

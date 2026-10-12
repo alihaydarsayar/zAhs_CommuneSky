@@ -9,7 +9,8 @@ import retrofit2.http.Query
 
 /**
  * Open-Meteo Air Quality API: Copernicus Atmosphere Monitoring Service (CAMS) verisi, CC BY 4.0. Anahtar
- * gerekmez. Üç günün saatlik değerleri tek istekte gelir; saatte bir, hava güncellemesiyle aynı çalışmada istenir.
+ * gerekmez. Bütün yerlerin üç günlük saatlik değerleri tek istekte gelir (koordinatlar virgülle ayrılır); saatte
+ * bir, hava güncellemesiyle aynı çalışmada ve öteki isteklerle aynı anda istenir.
  */
 interface AirQualityApi {
     @GET("v1/air-quality")
@@ -20,6 +21,16 @@ interface AirQualityApi {
         @Query("forecast_days") forecastDays: Int = 3,
         @Query("timezone") timezone: String = "auto",
     ): AirQualityDto
+
+    /** Birden çok yer: cevap aynı sırada bir listedir. */
+    @GET("v1/air-quality")
+    suspend fun airQualities(
+        @Query("latitude") latitudes: String,
+        @Query("longitude") longitudes: String,
+        @Query("hourly") hourly: String = HOURLY_FIELDS,
+        @Query("forecast_days") forecastDays: Int = 3,
+        @Query("timezone") timezone: String = "auto",
+    ): List<AirQualityDto>
 
     companion object {
         const val BASE_URL = "https://air-quality-api.open-meteo.com/"

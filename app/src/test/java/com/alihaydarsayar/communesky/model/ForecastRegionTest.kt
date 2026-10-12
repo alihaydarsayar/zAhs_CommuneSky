@@ -54,6 +54,25 @@ class ForecastRegionTest {
     }
 
     @Test
+    fun `several places come back as a list in the same order`() {
+        val json = kotlinx.serialization.json.Json
+        val one = json.parseToJsonElement("""{"hourly":{"time":["2026-10-12T09:00"],"temperature_2m_best_match":[11.0]}}""")
+        assertEquals(1, OpenMeteoModels.places(one).size)
+        val two = json.parseToJsonElement(
+            """[{"hourly":{"time":["2026-10-12T09:00"],"temperature_2m_ukmo_seamless":[11.0],"temperature_2m_best_match":[12.0]}},
+                {"hourly":{"time":["2026-10-12T09:00"],"temperature_2m_ukmo_seamless":[null],"temperature_2m_best_match":[14.0]}}]""",
+        )
+        val places = OpenMeteoModels.places(two)
+        assertEquals(2, places.size)
+        val sources = listOf(ForecastSource.UkMetOffice, ForecastSource.OpenMeteo)
+        assertEquals(listOf(ForecastSource.UkMetOffice, ForecastSource.OpenMeteo), OpenMeteoModels.parse(places[0], sources).map { it.source })
+        // İkinci yerde Met Office modeli veri vermiyor: yalnız Open-Meteo'nun seçimi kalır.
+        assertEquals(listOf(ForecastSource.OpenMeteo), OpenMeteoModels.parse(places[1], sources).map { it.source })
+        assertEquals(14.0, OpenMeteoModels.parse(places[1], sources).single().hours.single().temperature!!, 1e-9)
+        assertTrue(OpenMeteoModels.places(json.parseToJsonElement("3")).isEmpty())
+    }
+
+    @Test
     fun `defaults - local model in France and the UK, the referee decides in Ireland`() {
         assertEquals(ForecastSource.MeteoFrance, ForecastMerge.defaultSource(PlaceExtras(queryLatitude = 48.86, queryLongitude = 2.35)))
         assertEquals(ForecastSource.UkMetOffice, ForecastMerge.defaultSource(PlaceExtras(queryLatitude = 53.41, queryLongitude = -2.99)))

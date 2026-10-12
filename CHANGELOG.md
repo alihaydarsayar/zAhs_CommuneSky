@@ -38,6 +38,7 @@ What's new in each version of Commune Sky.
 - In France the forecast now comes from the Météo-France models and in the United Kingdom from the Met Office models (both through Open-Meteo); in Ireland the app measures which one is closer and picks it by itself.
 - The app, its widgets and notifications are now available in French (Settings › Language).
 - Fixed: on the Card clock at its smallest size a long date could be squeezed; it now switches to the short form.
+- Less data: forecasts from the other models and air quality are now fetched for all your places in one request each.
 
 ## 1.4 — October 11, 2026
 
