@@ -13,6 +13,16 @@ class MidSentenceTest {
     }
 
     @Test
+    fun `dense rows stop growing at their font scale limit`() {
+        // Normal ve biraz büyük yazıda hiçbir şey değişmez; çok büyük yazıda satırlar sınırda kalır.
+        assertEquals(1.0f, FontScaleLimits.limited(1.0f, FontScaleLimits.ROWS))
+        assertEquals(1.3f, FontScaleLimits.limited(1.3f, FontScaleLimits.ROWS))
+        assertEquals(1.3f, FontScaleLimits.limited(2.0f, FontScaleLimits.ROWS))
+        assertEquals(1.2f, FontScaleLimits.limited(2.0f, FontScaleLimits.TILES))
+        assertEquals(0.85f, FontScaleLimits.limited(0.85f, FontScaleLimits.TILES))
+    }
+
+    @Test
     fun `turkish and english texts stay as they are`() {
         assertEquals("5 dakika önce", midSentence("5 dakika önce", Locale.forLanguageTag("tr")))
         assertEquals("7 minutes ago", midSentence("7 minutes ago", Locale.ENGLISH))

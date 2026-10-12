@@ -100,6 +100,8 @@ import com.alihaydarsayar.communesky.model.SkyTheme
 import com.alihaydarsayar.communesky.model.WeatherCondition
 import com.alihaydarsayar.communesky.model.WeatherScene
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
+import com.alihaydarsayar.communesky.ui.common.FontScaleLimits
+import com.alihaydarsayar.communesky.ui.common.LimitFontScale
 import com.alihaydarsayar.communesky.ui.common.GlassCard
 import com.alihaydarsayar.communesky.ui.common.GlassIconButton
 import com.alihaydarsayar.communesky.ui.common.WeatherIcon
@@ -491,8 +493,9 @@ private fun ForecastList(
         if (weather.alerts.isNotEmpty()) item(key = "alerts") { AlertBanner(weather.alerts, now.toLocalDate()) }
         // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.
         weather.sources?.rainNote?.let { note -> item(key = "rainNote") { RainNoteLine(note) } }
-        item(key = "hourly") { HourlyCard(forecast.current, hours) }
-        item(key = "daily") { DailyCard(days, forecast.current.temperature) }
+        // Saat ve gün satırları sabit genişlikli sütunlardır: çok büyük yazıda etiketler birbirine biner, kesilir.
+        item(key = "hourly") { LimitFontScale(FontScaleLimits.ROWS) { HourlyCard(forecast.current, hours) } }
+        item(key = "daily") { LimitFontScale(FontScaleLimits.ROWS) { DailyCard(days, forecast.current.temperature) } }
         // "Bugün için", 7 günlük tahminin hemen altında: ne giysem, en önemli iki öneri ve hepsine giden bağlantı.
         item(key = "today") {
             val actions = LocalHomeActions.current
@@ -506,7 +509,9 @@ private fun ForecastList(
                 com.alihaydarsayar.communesky.ui.detail.AirQualityCard(air, weather, onOpen = { actions.onOpenTab(com.alihaydarsayar.communesky.ui.detail.DetailTab.AirQuality) })
             }
         }
-        item(key = "details") { DetailTiles(forecast.current, today, now, onOpen = LocalHomeActions.current.onOpenDetail) }
+        item(key = "details") {
+            LimitFontScale(FontScaleLimits.TILES) { DetailTiles(forecast.current, today, now, onOpen = LocalHomeActions.current.onOpenDetail) }
+        }
         // Ay: evre, aydınlanma, doğuş ve batış (telefonda hesaplanır).
         item(key = "moon") {
             val actions = LocalHomeActions.current
