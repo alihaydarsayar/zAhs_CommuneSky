@@ -48,8 +48,10 @@ val LocalWidgetBounds = staticCompositionLocalOf { WidgetBounds(null, null) }
  * taşar, kesilir. Bunu önlemek için telefon dikeyken ve yatay ölçünün alanı daha küçükken yatay çizim de dikey
  * ölçüyle yerleştirilir: ana ekran hangisini seçerse seçsin doğru düzen görünür.
  *
- * Bedeli: böyle bir ana ekran yatay döndürülürse widget, bir sonraki güncellemeye kadar dikey düzeniyle kalır.
- * Dikey ölçünün alanı daha küçük olan ana ekranlarda (ör. Pixel) hiçbir şey değişmez.
+ * Telefonlarda ana ekran her zaman dikey sayılır (bkz. [treatAsPortrait]): güncelleme telefon yan tutulurken gelse
+ * de dikey düzen çizilir. Bedeli: yatay dönebilen ve yatay ölçüsünün alanı daha küçük olan bir telefon ana ekranında
+ * widget yatayda da dikey düzeniyle görünür; tabletlerde ise yatay döndürülünce bir sonraki güncellemeye kadar dikey
+ * düzeniyle kalır. Dikey ölçünün alanı daha küçük olan ana ekranlarda (ör. Pixel) hiçbir şey değişmez.
  */
 object WidgetVariants {
     /** İki ölçü bundan yakınsa aynı sayılır (launcher'lar aynı ölçüyü 373 ve 374 gibi iki biçimde bildirir). */
@@ -67,7 +69,25 @@ object WidgetVariants {
     private fun distance(a: DpSize, b: DpSize) = abs(a.width.value - b.width.value) + abs(a.height.value - b.height.value)
     private fun same(a: DpSize, b: DpSize) = abs(a.width.value - b.width.value) <= SAME_DP && abs(a.height.value - b.height.value) <= SAME_DP
 
-    fun isPortrait(context: Context): Boolean = context.resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
+    /** Bundan dar ekranlar telefondur (en kısa kenar, dp); Android'in tablet eşiği. */
+    const val TABLET_MIN_DP = 600
+
+    /**
+     * Ana ekran dikey mi sayılsın? Telefonlarda ana ekran dikeydir; widget güncellemesi telefon yan tutulurken
+     * (ör. video izlerken) gelse bile yerleşim dikey ölçüye göre yapılır, o anki yöne bakılmaz. Tabletlerde ana
+     * ekran gerçekten yatay olabildiği için çizim anındaki yöne bakılır. Saf mantık; test edilir.
+     */
+    fun treatAsPortrait(smallestScreenWidthDp: Int, landscapeNow: Boolean): Boolean =
+        smallestScreenWidthDp < TABLET_MIN_DP || !landscapeNow
+
+    /** Yerleşim için: ana ekran dikey mi sayılır (bkz. [treatAsPortrait])? */
+    fun isPortrait(context: Context): Boolean {
+        val configuration = context.resources.configuration
+        return treatAsPortrait(configuration.smallestScreenWidthDp, isLandscapeNow(context))
+    }
+
+    /** Ekranın şu anki gerçek yönü (tanılama kaydı için). */
+    fun isLandscapeNow(context: Context): Boolean = context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 }
 
 /**
@@ -86,7 +106,7 @@ object WidgetDiagnostics {
         val line = "%tT #%d %s/%s cizim=%.0fx%.0f yerlesim=%.0fx%.0f%s %s".format(
             java.util.Locale.ROOT, java.util.Date(), appWidgetId, kind.name, style.name,
             variant.width.value, variant.height.value, layout.width.value, layout.height.value,
-            if (compact) " yedek" else "", if (WidgetVariants.isPortrait(context)) "dikey" else "yatay",
+            if (compact) " yedek" else "", if (WidgetVariants.isLandscapeNow(context)) "yatay" else "dikey",
         )
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         synchronized(this) {
@@ -108,7 +128,7 @@ object WidgetDiagnostics {
         appendLine("Commune Sky $version · Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}) · ${Build.MANUFACTURER} ${Build.MODEL}")
         appendLine(
             "ekran=${configuration.screenWidthDp}x${configuration.screenHeightDp}dp yogunluk=${metrics.density} yazi=${configuration.fontScale} " +
-                "yon=${if (WidgetVariants.isPortrait(context)) "dikey" else "yatay"} ana_ekran=${launchers(context)}",
+                "yon=${if (WidgetVariants.isLandscapeNow(context)) "yatay" else "dikey"} en_kisa_kenar=${configuration.smallestScreenWidthDp}dp ana_ekran=${launchers(context)}",
         )
         for (kind in WidgetKind.entries) {
             for (id in manager.getAppWidgetIds(android.content.ComponentName(context, kind.receiverClass))) {

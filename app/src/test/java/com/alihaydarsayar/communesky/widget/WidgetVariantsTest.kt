@@ -32,6 +32,26 @@ class WidgetVariantsTest {
     }
 
     @Test
+    fun `on phones the home screen counts as portrait even while the phone is held sideways`() {
+        // Telefon (en kısa kenar 600 dp'den küçük): yöne bakılmaz.
+        assertEquals(true, WidgetVariants.treatAsPortrait(smallestScreenWidthDp = 411, landscapeNow = false))
+        assertEquals(true, WidgetVariants.treatAsPortrait(smallestScreenWidthDp = 411, landscapeNow = true))
+        assertEquals(true, WidgetVariants.treatAsPortrait(smallestScreenWidthDp = 599, landscapeNow = true))
+        // Tablet: çizim anındaki yön geçerlidir.
+        assertEquals(true, WidgetVariants.treatAsPortrait(smallestScreenWidthDp = 600, landscapeNow = false))
+        assertEquals(false, WidgetVariants.treatAsPortrait(smallestScreenWidthDp = 600, landscapeNow = true))
+        assertEquals(false, WidgetVariants.treatAsPortrait(smallestScreenWidthDp = 800, landscapeNow = true))
+
+        // Güncelleme video izlerken (telefon yatay) gelirse de yatay çizim dikey ölçüyle yerleşir.
+        val bounds = WidgetBounds(portrait = size(341, 183), landscape = size(428, 140))
+        val phoneSideways = WidgetVariants.treatAsPortrait(411, landscapeNow = true)
+        assertEquals(size(341, 183), WidgetVariants.layoutSize(size(428, 140), bounds, phoneSideways))
+        // Tablet yatayken yatay çizim kendi ölçüsüyle kalır.
+        val tabletSideways = WidgetVariants.treatAsPortrait(800, landscapeNow = true)
+        assertEquals(size(428, 140), WidgetVariants.layoutSize(size(428, 140), bounds, tabletSideways))
+    }
+
+    @Test
     fun `missing or identical sizes change nothing`() {
         assertEquals(size(300, 150), WidgetVariants.layoutSize(size(300, 150), WidgetBounds(null, null), devicePortrait = true))
         assertEquals(size(300, 150), WidgetVariants.layoutSize(size(300, 150), WidgetBounds(size(250, 110), null), devicePortrait = true))
