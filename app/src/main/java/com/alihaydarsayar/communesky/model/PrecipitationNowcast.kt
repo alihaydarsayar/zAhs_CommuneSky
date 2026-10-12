@@ -84,8 +84,11 @@ object RainTiming {
     /**
      * Şimdiden itibaren [hours] saat içinde yağışın başladığı ilk an. Önce 15 dakikalık dilimlere,
      * onların bittiği yerden sonra saatlik tahmine bakılır. Şu an yağıyorsa [RainStart.isNow].
+     *
+     * @param observed anlık durum istasyon ölçümünden geldiyse true: istasyon kuru ölçerken modelin içinde
+     *   bulunulan dilimi "şu an yağıyor" dedirtmez (ekranda "Kapalı" yazarken "Yağmur yağıyor" denmesin).
      */
-    fun next(forecast: Forecast, now: LocalDateTime, hours: Long = 12): RainStart? {
+    fun next(forecast: Forecast, now: LocalDateTime, hours: Long = 12, observed: Boolean = false): RainStart? {
         val until = now.plusHours(hours)
         val current = forecast.current.condition
         val snow = current == WeatherCondition.Snow || forecast.current.temperature <= 1.0
@@ -93,7 +96,10 @@ object RainTiming {
 
         val minutely = forecast.minutely.filter { it.end.isAfter(now) }
         minutely.firstOrNull { it.isWet && it.start.isBefore(until) }?.let {
-            return RainStart(maxOf(it.start, now), snow, isNow = !it.start.isAfter(now))
+            val started = !it.start.isAfter(now)
+            // İstasyon kuru ölçüyor: yağış henüz başlamadı, bu dilimin sonunda bekleniyor.
+            if (started && observed) return RainStart(it.end, snow, isNow = false)
+            return RainStart(maxOf(it.start, now), snow, isNow = started)
         }
         val covered = minutely.lastOrNull()?.end ?: now
         val currentHour = now.withMinute(0).withSecond(0).withNano(0)

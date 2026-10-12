@@ -56,6 +56,19 @@ class PrecipitationNowcastTest {
     }
 
     @Test
+    fun `next rain is not now when the station says dry`() {
+        // Model içinde bulunulan dilimde yağış diyor. İstasyon yoksa "şu an yağıyor"; istasyon kuru ölçüyorsa
+        // yağış bir sonraki çeyrekte beklenir (ekranda "Kapalı" yazarken widget "Yağmur yağıyor" demez).
+        val wetSlice = forecast(wet = listOf(0, 1))
+        assertTrue(RainTiming.next(wetSlice, now)!!.isNow)
+        val observed = RainTiming.next(wetSlice, now, observed = true)!!
+        assertFalse(observed.isNow)
+        assertEquals(LocalDateTime.of(2026, 10, 9, 19, 45), observed.time)
+        // İstasyon yağış ölçüyorsa yine "şu an".
+        assertTrue(RainTiming.next(forecast(wet = listOf(0, 1), code = 61), now, observed = true)!!.isNow)
+    }
+
+    @Test
     fun `without quarter-hour data the sentence is unknown`() {
         val nowcast = PrecipitationNowcast.of(forecast(wet = emptyList(), slices = 0), now)
         assertEquals(Kind.Unknown, nowcast.kind)

@@ -43,7 +43,7 @@ object WidgetPhrases {
     }
 
     fun nextRain(snapshot: WeatherSnapshot): RainStart? =
-        RainTiming.next(snapshot.forecast, snapshot.forecast.localNow())
+        RainTiming.next(snapshot.forecast, snapshot.forecast.localNow(), observed = snapshot.observation is ObservationUse.Override)
 
     /** Uzun uyarı: "Yağmur 21:00 civarı başlıyor" / "Şu an yağmur yağıyor". Yağış yoksa null. */
     fun rainAlert(context: Context, snapshot: WeatherSnapshot): String? {
