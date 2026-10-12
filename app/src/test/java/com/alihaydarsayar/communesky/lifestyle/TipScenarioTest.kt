@@ -167,6 +167,15 @@ class TipScenarioTest {
     }
 
     @Test
+    fun `no sunscreen is suggested after dark`() {
+        // Öğlen UV 9 olan bir günün akşamı: ekranda UV 0 yazarken "Gerekli: UV en fazla 9" denmez.
+        val sunny = forecast(currentCode = CLEAR) { hour(it, feels = 22.0, code = CLEAR, uv = if (it in 10..16) 9.0 else 0.0) }
+        assertEquals(TipStatus.Poor, advice(sunny, today.atTime(9, 0)).result(SunscreenTip).status)
+        assertEquals("Gerek yok: UV düşük", advice(sunny, today.atTime(20, 50)).text(SunscreenTip))
+        assertEquals("Gerek yok: UV düşük", advice(sunny, today.atTime(17, 30)).text(SunscreenTip))
+    }
+
+    @Test
     fun `poor air quality`() {
         val advice = advice(forecast { hour(it, feels = 15.0, code = CLEAR) }, airQualityPoor = true)
         assertEquals(TipStatus.Poor, advice.result(RunTip).status)
