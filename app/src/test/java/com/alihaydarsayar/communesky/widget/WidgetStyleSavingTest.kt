@@ -194,6 +194,40 @@ class WidgetStyleSavingTest {
     }
 
     @Test
+    fun `a widget without its own record keeps its look when another widget of its kind is saved`() = runTest {
+        val store = WidgetConfigStore(dataStore())
+        val analog = WidgetConfig(WidgetPlace.Smart, WidgetStyleId.ClockSS.defaultStyle())
+        val digital = WidgetConfig(WidgetPlace.Smart, WidgetStyleId.ClockRadial.defaultStyle())
+        // Birinci saat kaydedilir; ana ekrandaki kimliği (2) launcher'ın ayar ekranına verdiğinden (1) farklıdır.
+        store.set(1, analog, WidgetKind.Clock)
+        assertEquals("yok", store.recordKind(2))
+        assertEquals(analog, store.get(2, WidgetKind.Clock))
+        // İlk çizimde görünümü sabitlenir.
+        store.pin(2, WidgetKind.Clock)
+        assertEquals("sabit", store.recordKind(2))
+        // İkinci saat başka bir stille kaydedilir: birinci saat ona dönüşmez.
+        store.set(3, digital, WidgetKind.Clock)
+        assertEquals(analog, store.get(2, WidgetKind.Clock))
+        assertEquals(digital, store.get(3, WidgetKind.Clock))
+        // Ayar ekranı, ana ekranda görüneni açar; sabitleme "kayıtlı" sayılmaz ("Widget'ı ekle" yazısı kalır).
+        assertEquals(analog, store.initial(2, WidgetKind.Clock))
+        assertFalse(store.exists(2))
+        // Kendi kaydı olan widget'a dokunulmaz; sabitleme ikinci kez yazılmaz.
+        store.pin(3, WidgetKind.Clock)
+        assertEquals("kendi", store.recordKind(3))
+        store.pin(2, WidgetKind.Clock)
+        assertEquals(analog, store.get(2, WidgetKind.Clock))
+        // Kullanıcı kaydedince sabitleme silinir; widget kaldırılınca hiçbir şey kalmaz.
+        store.set(2, digital, WidgetKind.Clock)
+        assertEquals("kendi", store.recordKind(2))
+        store.remove(intArrayOf(2))
+        assertEquals("yok", store.recordKind(2))
+        // Hiç kayıt yokken sabitlenen görünüm varsayılandır.
+        store.pin(8, WidgetKind.Small)
+        assertEquals(WidgetConfig.default(WidgetKind.Small), store.get(8, WidgetKind.Small))
+    }
+
+    @Test
     fun `a broken record falls back to the default instead of crashing`() = runTest {
         val dataStore = dataStore()
         dataStore.edit {

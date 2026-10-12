@@ -134,7 +134,10 @@ abstract class CommuneSkyWidget(
         if (previewConfig != null) return flowOf(previewConfig)
         val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }.getOrNull()
             ?: return flowOf(WidgetConfig.default(kind))
-        return WidgetConfigStore.get(context).observe(appWidgetId, kind)
+        val store = WidgetConfigStore.get(context)
+        // Kendi kaydı olmayan widget'ın görünümü sabitlenir: aynı türden başka bir widget kaydedilince değişmesin.
+        runCatching { store.pin(appWidgetId, kind) }
+        return store.observe(appWidgetId, kind)
     }
 }
 

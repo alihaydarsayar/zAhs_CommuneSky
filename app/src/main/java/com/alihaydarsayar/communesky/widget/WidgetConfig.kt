@@ -395,7 +395,8 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
      */
     suspend fun initial(appWidgetId: Int, kind: WidgetKind): WidgetConfig {
         val prefs = dataStore.data.first()
-        if (prefs[configKey(appWidgetId)] != null || prefs[legacyPlaceKey(appWidgetId)] != null) return read(prefs, appWidgetId, kind)
+        // Sabitlenmiş görünüm de widget'ın kendisine aittir: ayar ekranı, ana ekranda görüneni açar.
+        if (prefs[configKey(appWidgetId)] != null || prefs[pinKey(appWidgetId)] != null || prefs[legacyPlaceKey(appWidgetId)] != null) return read(prefs, appWidgetId, kind)
         return template(kind) ?: WidgetConfig.default(kind)
     }
 
@@ -416,6 +417,7 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
         val encoded = encode(config)
         dataStore.edit {
             it[configKey(appWidgetId)] = encoded
+            it.remove(pinKey(appWidgetId))
             if (kind != null) it[templateKey(kind)] = encoded
             it.remove(legacyPlaceKey(appWidgetId))
             it.remove(legacyBackgroundKey(appWidgetId))
@@ -432,6 +434,7 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
         dataStore.edit { prefs ->
             appWidgetIds.forEach {
                 prefs.remove(configKey(it))
+                prefs.remove(pinKey(it))
                 prefs.remove(legacyPlaceKey(it))
                 prefs.remove(legacyBackgroundKey(it))
             }
@@ -453,8 +456,36 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
         dataStore.edit { it[PREVIEWS_VERSION] = version }
     }
 
+    /**
+     * Kendi kaydı olmayan widget'a (launcher ayar ekranını açmadıysa ya da kaydı başka bir kimlikle yazıldıysa)
+     * o anki görünümünü **sabitler**: aynı türün son ayarı (yoksa varsayılan) bu widget'ın kimliğine yazılır.
+     * Böylece sonradan aynı türden başka bir widget kaydedilince bu widget onun görünümüne dönüşmez.
+     * Kullanıcı widget'ı kaydedince sabitleme silinir.
+     */
+    suspend fun pin(appWidgetId: Int, kind: WidgetKind) {
+        val prefs = dataStore.data.first()
+        if (prefs[configKey(appWidgetId)] != null || prefs[pinKey(appWidgetId)] != null || prefs[legacyPlaceKey(appWidgetId)] != null) return
+        dataStore.edit {
+            if (it[configKey(appWidgetId)] == null && it[pinKey(appWidgetId)] == null) {
+                it[pinKey(appWidgetId)] = it[templateKey(kind)] ?: encode(WidgetConfig.default(kind))
+            }
+        }
+    }
+
+    /** Tanılama için: bu widget'ın ayarı nereden geliyor? */
+    suspend fun recordKind(appWidgetId: Int): String = dataStore.data.first().let {
+        when {
+            it[configKey(appWidgetId)] != null -> "kendi"
+            it[pinKey(appWidgetId)] != null -> "sabit"
+            it[legacyPlaceKey(appWidgetId)] != null -> "eski"
+            else -> "yok"
+        }
+    }
+
     private fun read(prefs: Preferences, id: Int, kind: WidgetKind): WidgetConfig {
         prefs[configKey(id)]?.let { raw -> decode(raw, kind, "widget $id")?.let { return it } }
+        // Sabitlenmiş görünüm (bkz. pin): widget'ın kendi kaydı yokken ilk çizimde yazılır.
+        prefs[pinKey(id)]?.let { raw -> decode(raw, kind, "pin $id")?.let { return it } }
         // 1.2'den kalan ayar: yer ve üç arka plandan biri. Görünüm korunur, yeni seçenekler varsayılan.
         // Hiç kaydı olmayan widget (launcher ayar ekranını açmadıysa): aynı türün son ayarı, yoksa varsayılan.
         val legacyPlace = prefs[legacyPlaceKey(id)]
@@ -498,6 +529,7 @@ class WidgetConfigStore internal constructor(private val dataStore: DataStore<Pr
     internal data class StoredConfig(val place: String, val style: WidgetStyle, val version: Int = 1)
 
     private fun configKey(id: Int) = stringPreferencesKey("widget_${id}_config")
+    private fun pinKey(id: Int) = stringPreferencesKey("widget_${id}_pin")
     private fun templateKey(kind: WidgetKind) = stringPreferencesKey("template_${kind.name}")
     private fun legacyPlaceKey(id: Int) = stringPreferencesKey("widget_${id}_place")
     private fun legacyBackgroundKey(id: Int) = stringPreferencesKey("widget_${id}_background")

@@ -41,6 +41,7 @@ What's new in each version of Commune Sky.
 - Less data: forecasts from the other models and air quality are now fetched for all your places in one request each.
 - The "For today" card now sits right below the 7-day forecast.
 - Fixed: choosing a place on the Places screen sometimes went back to the place you were on instead of opening the one you chose.
+- Fixed: with two widgets of the same kind (for example two clocks), a widget could take on the look of the one you saved last. Each widget now keeps its own look.
 
 ## 1.4 — October 11, 2026
 
