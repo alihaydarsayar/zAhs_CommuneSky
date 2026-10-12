@@ -436,7 +436,11 @@ private fun ComparisonBars(metric: Metric, compared: Compared, formatter: Metric
 @Composable
 private fun WeekRow(metric: Metric, week: List<DayValue>, today: LocalDate, weather: WeatherSnapshot, formatter: MetricFormatter) {
     val locale = currentLocale()
-    val time = rememberTimeFormatter()
+    val full = rememberTimeFormatter()
+    // 12 saat biçiminde yedi sütuna "7:11 AM" sığmaz (dar ekranda ve büyük yazıda kesilir): üst satır doğuş,
+    // alt satır batış olduğu için AM/PM yazılmaz.
+    val is24Hour = com.alihaydarsayar.communesky.widget.WidgetLanguage.is24Hour(androidx.compose.ui.platform.LocalContext.current)
+    val time = remember(full, is24Hour, locale) { if (is24Hour) full else java.time.format.DateTimeFormatter.ofPattern("h:mm", locale) }
     Row(Modifier.fillMaxWidth()) {
         for (day in week) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
