@@ -24,15 +24,27 @@ object RunTip : LifestyleTip {
         ).count { it }
     }
 
-    /** En iyi iki saatlik aralığın başlangıcı ve toplam puanı (0–8); iki ardışık saat yoksa null. */
-    fun bestWindow(hours: List<HourlyForecast>): Pair<HourlyForecast, Int>? =
-        hours.zipWithNext().filter { (a, b) -> b.time == a.time.plusHours(1) }
-            .map { (a, b) -> a to score(a) + score(b) }
+    /**
+     * En iyi iki saatlik aralığın başlangıcı ve toplam puanı (0–8); iki ardışık saat yoksa null. Gök gürültüsü
+     * gösterilen bir saati içeren aralık hiç önerilmez. [wetNow]: şu an yağıyorsa içinde bulunulan saat
+     * "yağış yok" koşulunu tutmuş sayılmaz.
+     */
+    fun bestWindow(hours: List<HourlyForecast>, wetNow: Boolean = false): Pair<HourlyForecast, Int>? =
+        hours.zipWithNext().filter { (a, b) -> b.time == a.time.plusHours(1) && !a.isThunderstorm && !b.isThunderstorm }
+            .mapIndexed { index, (a, b) ->
+                // İlk aralık içinde bulunulan saatle başlar; şu an yağıyorsa o saatin yağış puanı düşülür.
+                val penalty = if (wetNow && index == 0 && a == hours.first() && !a.isWet() && a.precipitationProbability < 30) 1 else 0
+                a to score(a) + score(b) - penalty
+            }
             .maxWithOrNull(compareBy<Pair<HourlyForecast, Int>> { it.second }.thenByDescending { it.first.time })
 
     override fun evaluate(day: TodayWeather): TipResult {
         if (day.airQualityPoor) return TipResult(TipStatus.Poor, R.string.tip_run_air, attention = 2)
-        val best = bestWindow(day.remaining(6, 22)) ?: return TipResult(TipStatus.Poor, R.string.tip_run_none)
+        val hours = day.remaining(6, 22)
+        // Şu an gök gürültüsü varsa içinde bulunulan saat hiç önerilmez.
+        val candidates = if (day.thunderNow && hours.firstOrNull()?.time?.hour == day.now.hour) hours.drop(1) else hours
+        val wetNow = day.precipitatingNow && candidates.firstOrNull()?.time?.hour == day.now.hour
+        val best = bestWindow(candidates, wetNow) ?: return TipResult(TipStatus.Poor, R.string.tip_run_none)
         val from: LocalTime = best.first.time.toLocalTime()
         val until: LocalTime = from.plusHours(2)
         return when {

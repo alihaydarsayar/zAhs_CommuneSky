@@ -11,7 +11,7 @@ object LaundryTip : LifestyleTip {
     override fun evaluate(day: TodayWeather): TipResult {
         val hours = day.remaining(9, 19)
         if (hours.size < 3) return TipResult(TipStatus.Poor, R.string.tip_laundry_late)
-        val rain = hours.any { it.isWet() || it.precipitationProbability >= 50 }
+        val rain = day.precipitatingNow || hours.any { it.isWet() || it.precipitationProbability >= 50 }
         val humidity = hours.mapNotNull { it.humidity }.average().takeIf { !it.isNaN() } ?: 60.0
         val breezy = hours.mapNotNull { it.windSpeed }.average().let { !it.isNaN() && it >= 8.0 }
         val sunny = hours.mapNotNull { it.cloudCover }.average().let { !it.isNaN() && it < 50.0 }

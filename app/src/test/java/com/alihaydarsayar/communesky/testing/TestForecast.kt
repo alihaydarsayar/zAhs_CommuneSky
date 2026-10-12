@@ -24,10 +24,11 @@ object TestForecast {
         cloud: Int = 30,
         visibility: Double = 20_000.0,
         temperature: Double = feels,
+        code: Int = 1,
     ) = HourlyForecast(
         time = date.atTime(hour, 0),
         temperature = temperature,
-        weatherCode = 1,
+        weatherCode = code,
         precipitationProbability = chance,
         isDay = hour in 7..18,
         apparentTemperature = feels,
@@ -58,7 +59,12 @@ object TestForecast {
         windGustMax = gust,
     )
 
-    fun forecast(hourly: List<HourlyForecast>, daily: List<DailyForecast> = listOf(daily()), now: LocalDateTime = day.atTime(8, 0)) = Forecast(
+    fun forecast(
+        hourly: List<HourlyForecast>,
+        daily: List<DailyForecast> = listOf(daily()),
+        now: LocalDateTime = day.atTime(8, 0),
+        currentCode: Int = 1,
+    ) = Forecast(
         current = CurrentWeather(
             time = now,
             temperature = 18.0,
@@ -67,7 +73,7 @@ object TestForecast {
             dewPoint = 8.0,
             windSpeed = 8.0,
             windDirection = 180,
-            weatherCode = 1,
+            weatherCode = currentCode,
             isDay = true,
             pressure = 1015.0,
             uvIndex = 2.0,

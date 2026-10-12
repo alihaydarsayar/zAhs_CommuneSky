@@ -8,6 +8,7 @@ What's new in each version of Commune Sky.
 - Fixed: on some home screens a widget could be laid out for a wider space than it really has, so its edges were cut off (for example the date and the weather on the radial clock). This no longer depends on how the phone is held when the widget updates.
 - Settings › My widgets can copy a short diagnostic text (sizes and style names only) to help track down a widget that looks wrong.
 - Fixed: the umbrella tip could say "No need" while it was raining or while the hourly forecast showed rain or thunderstorms. It now follows the weather you see on the screen: the current conditions and the hourly icons, not only the rain chance.
+- Fixed: the best time for a run or walk could fall on hours with thunderstorms. Laundry, car wash, stargazing and the morning summary now also follow the hourly icons and the current weather.
 
 ## 1.5 — in testing
 

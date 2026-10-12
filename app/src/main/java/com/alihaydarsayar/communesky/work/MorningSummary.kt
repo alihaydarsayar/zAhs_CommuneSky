@@ -77,7 +77,7 @@ object MorningSummary {
         val from = now.withMinute(0).withSecond(0).withNano(0)
         return forecast.hourly.firstOrNull { hour ->
             hour.time.toLocalDate() == now.toLocalDate() && !hour.time.isBefore(from) &&
-                ((hour.isWet() && hour.precipitationProbability >= RAIN_CHANCE) || hour.precipitationProbability >= RAIN_LIKELY)
+                (hour.showsPrecipitation || (hour.isWet() && hour.precipitationProbability >= RAIN_CHANCE) || hour.precipitationProbability >= RAIN_LIKELY)
         }
     }
 

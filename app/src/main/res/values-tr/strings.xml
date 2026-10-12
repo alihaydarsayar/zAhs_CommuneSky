@@ -893,4 +893,5 @@
     <string name="widget_diagnostics_copied">Kopyalandı. Geliştiriciye yazacağın mesaja yapıştır.</string>
     <string name="tip_umbrella_now">Mutlaka al: şu an yağıyor</string>
     <string name="tip_umbrella_thunder">Mutlaka al: gök gürültülü sağanak bekleniyor</string>
+    <string name="tip_stargazing_rain">Bu gece yağış bekleniyor</string>
 </resources>

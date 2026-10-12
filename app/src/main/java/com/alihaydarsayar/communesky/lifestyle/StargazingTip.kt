@@ -15,6 +15,8 @@ object StargazingTip : LifestyleTip {
         val visibility = day.tonight.mapNotNull { it.visibility }.minOrNull() ?: 20_000.0
         val brightMoon = day.moonIllumination >= 0.35
         return when {
+            // Gece saatlerinin simgesi yağış gösteriyorsa bulut oranı ne derse desin gözlem olmaz.
+            day.tonight.any { it.isWet() } -> TipResult(TipStatus.Poor, R.string.tip_stargazing_rain)
             cloud < 20 && !brightMoon && visibility >= 10_000 -> TipResult(TipStatus.Good, R.string.tip_stargazing_good, attention = 2)
             cloud < 20 && brightMoon -> TipResult(TipStatus.Fair, R.string.tip_stargazing_moon)
             cloud < 20 -> TipResult(TipStatus.Fair, R.string.tip_stargazing_hazy)

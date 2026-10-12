@@ -12,7 +12,7 @@ object CarWashTip : LifestyleTip {
     override fun evaluate(day: TodayWeather): TipResult {
         fun rainy(hours: List<HourlyForecast>) = hours.any { it.isWet() || it.precipitationProbability >= 50 }
         return when {
-            rainy(day.next48.take(24)) -> TipResult(TipStatus.Poor, R.string.tip_car_wash_rain_soon)
+            day.precipitatingNow || rainy(day.next48.take(24)) -> TipResult(TipStatus.Poor, R.string.tip_car_wash_rain_soon)
             rainy(day.next48.drop(24)) -> TipResult(TipStatus.Fair, R.string.tip_car_wash_rain_later)
             else -> TipResult(TipStatus.Good, R.string.tip_car_wash_ok, attention = 1)
         }

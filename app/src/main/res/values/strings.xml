@@ -900,4 +900,5 @@
     <string name="widget_diagnostics_copied">Copied. Paste it into a message to the developer.</string>
     <string name="tip_umbrella_now">Take one for sure: it is raining now</string>
     <string name="tip_umbrella_thunder">Take one for sure: thunderstorms are expected</string>
+    <string name="tip_stargazing_rain">Rain is expected tonight</string>
 </resources>
