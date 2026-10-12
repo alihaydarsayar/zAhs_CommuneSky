@@ -130,15 +130,18 @@ fun GlassSegmented(
                     .selectable(selected = selected, role = Role.RadioButton, onClick = { onSelect(index) }),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = label,
-                    color = textColor,
-                    style = MaterialTheme.typography.labelLarge,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 6.dp),
-                )
+                // Seçenekler eşit genişlikli dar kutulardır: çok büyük yazıda "Tür…", "km/…" diye kısalmasın.
+                LimitFontScale(FontScaleLimits.TILES) {
+                    Text(
+                        text = label,
+                        color = textColor,
+                        style = MaterialTheme.typography.labelLarge,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 6.dp),
+                    )
+                }
             }
         }
     }

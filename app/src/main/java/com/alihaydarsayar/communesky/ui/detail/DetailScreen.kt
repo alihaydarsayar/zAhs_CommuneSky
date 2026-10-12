@@ -441,6 +441,8 @@ private fun WeekRow(metric: Metric, week: List<DayValue>, today: LocalDate, weat
     // alt satır batış olduğu için AM/PM yazılmaz.
     val is24Hour = com.alihaydarsayar.communesky.widget.WidgetLanguage.is24Hour(androidx.compose.ui.platform.LocalContext.current)
     val time = remember(full, is24Hour, locale) { if (is24Hour) full else java.time.format.DateTimeFormatter.ofPattern("h:mm", locale) }
+    // Yedi eşit sütun: çok büyük yazıda gün adları ("Bug", "Cu") ve değerler kesilmesin.
+    com.alihaydarsayar.communesky.ui.common.LimitFontScale(com.alihaydarsayar.communesky.ui.common.FontScaleLimits.TILES) {
     Row(Modifier.fillMaxWidth()) {
         for (day in week) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -472,5 +474,6 @@ private fun WeekRow(metric: Metric, week: List<DayValue>, today: LocalDate, weat
                 }
             }
         }
+    }
     }
 }

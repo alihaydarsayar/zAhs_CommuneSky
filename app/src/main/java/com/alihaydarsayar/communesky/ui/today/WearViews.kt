@@ -109,12 +109,16 @@ fun WearSection(advice: ClothingAdvice, onFeedback: (feltCold: Boolean) -> Unit,
 @Composable
 private fun PartRow(part: PartAdvice) {
     Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            stringResource(WearText.label(part.weather.part)),
-            color = TextPrimary,
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.width(72.dp),
-        )
+        // Dilim adı sabit genişlikli sütundadır: çok büyük yazıda "Saba / h" diye bölünmesin.
+        com.alihaydarsayar.communesky.ui.common.LimitFontScale(com.alihaydarsayar.communesky.ui.common.FontScaleLimits.TILES) {
+            Text(
+                stringResource(WearText.label(part.weather.part)),
+                color = TextPrimary,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                modifier = Modifier.width(72.dp),
+            )
+        }
         Column(Modifier.weight(1f)) {
             Text(stringResource(WearText.name(part.layer)), color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
             Text(
