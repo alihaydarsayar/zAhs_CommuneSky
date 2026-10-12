@@ -510,7 +510,9 @@ private fun ClockCard(data: WidgetPlaceData) {
     WidgetSurface(horizontal = 16.sd, vertical = 16.sd) {
         Column(GlanceModifier.fillMaxSize()) {
             WClock(ClockPart.Time, clockSize(52f, size.width.value - 32f, size.height.value - 32f - lineHeightDp(13f, theme) - 9f - lineHeightDp(24f, theme) - lineHeightDp(12f, theme) - 4f))
-            WClock(ClockPart.Date, 13f, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = "EEEEdMMMM")
+            // Uzun tarih ("Wednesday, September 30") dar kartta sıkışır: sığmıyorsa kısa yazım ("Wed, Sep 30").
+            val longDate = measureWidthDp(context, todayText(context, "EEEEdMMMM"), 13f, theme) * 1.06f <= size.width.value - 32f
+            WClock(ClockPart.Date, 13f, weight = WWeight.Regular, color = theme.colors.secondary, dateSkeleton = if (longDate) "EEEEdMMMM" else "EEEdMMM")
             Spacer(GlanceModifier.defaultWeight())
             HDivider()
             VSpace(8.sd)

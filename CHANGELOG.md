@@ -37,6 +37,7 @@ What's new in each version of Commune Sky.
 - A moon page worked out entirely on your phone: phase and how much is lit, moonrise and moonset, the next full and new moon and the 30 days ahead.
 - In France the forecast now comes from the Météo-France models and in the United Kingdom from the Met Office models (both through Open-Meteo); in Ireland the app measures which one is closer and picks it by itself.
 - The app, its widgets and notifications are now available in French (Settings › Language).
+- Fixed: on the Card clock at its smallest size a long date could be squeezed; it now switches to the short form.
 
 ## 1.4 — October 11, 2026
 
