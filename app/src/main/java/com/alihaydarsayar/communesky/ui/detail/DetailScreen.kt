@@ -241,7 +241,7 @@ enum class DetailTab(val metric: Metric?) {
 }
 
 @Composable
-private fun TabChip(text: String, selected: Boolean, onClick: () -> Unit) {
+internal fun TabChip(text: String, selected: Boolean, onClick: () -> Unit) {
     Text(
         text = text,
         color = if (selected) Color(0xFF14284A) else TextSecondary,

@@ -19,6 +19,14 @@ data class ForecastResponseDto(
     @SerialName("minutely_15") val minutely15: Minutely15Dto? = null,
 )
 
+/** Belirli günlerin saatlik tahmini (gün sayfası için); anlık veri içermez. */
+@Serializable
+data class DayResponseDto(
+    @SerialName("utc_offset_seconds") val utcOffsetSeconds: Int = 0,
+    val hourly: HourlyDto,
+    val daily: DailyDto,
+)
+
 @Serializable
 data class CurrentDto(
     val time: String,

@@ -128,6 +128,7 @@ fun HomeScreen(
     onOpenToday: () -> Unit = {},
     onOpenDetail: (com.alihaydarsayar.communesky.model.detail.Metric) -> Unit = {},
     onOpenTab: (com.alihaydarsayar.communesky.ui.detail.DetailTab) -> Unit = {},
+    onOpenDay: (java.time.LocalDate, Int?) -> Unit = { _, _ -> },
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -172,8 +173,8 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
-    val actions = remember(viewModel, onOpenToday, onOpenDetail, onOpenTab) {
-        HomeActions(onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday, onOpenDetail = onOpenDetail, onOpenTab = onOpenTab)
+    val actions = remember(viewModel, onOpenToday, onOpenDetail, onOpenTab, onOpenDay) {
+        HomeActions(onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday, onOpenDetail = onOpenDetail, onOpenTab = onOpenTab, onOpenDay = onOpenDay)
     }
     androidx.compose.runtime.CompositionLocalProvider(LocalHomeActions provides actions) {
     HomeContent(
@@ -208,6 +209,8 @@ class HomeActions(
     val onOpenDetail: (com.alihaydarsayar.communesky.model.detail.Metric) -> Unit = {},
     /** Kendi düzeni olan bir ayrıntı sayfası (hava kalitesi, ay). */
     val onOpenTab: (com.alihaydarsayar.communesky.ui.detail.DetailTab) -> Unit = {},
+    /** 7 günlük karttaki bir güne ya da saatlik karttaki bir saate dokunuldu: o günün sayfası (saat seçiliyse o saatle). */
+    val onOpenDay: (java.time.LocalDate, Int?) -> Unit = { _, _ -> },
 )
 
 val LocalHomeActions = androidx.compose.runtime.staticCompositionLocalOf { HomeActions() }
@@ -494,8 +497,14 @@ private fun ForecastList(
         // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.
         weather.sources?.rainNote?.let { note -> item(key = "rainNote") { RainNoteLine(note) } }
         // Saat ve gün satırları sabit genişlikli sütunlardır: çok büyük yazıda etiketler birbirine biner, kesilir.
-        item(key = "hourly") { LimitFontScale(FontScaleLimits.ROWS) { HourlyCard(forecast.current, hours) } }
-        item(key = "daily") { LimitFontScale(FontScaleLimits.ROWS) { DailyCard(days, forecast.current.temperature) } }
+        item(key = "hourly") {
+            val open = LocalHomeActions.current.onOpenDay
+            LimitFontScale(FontScaleLimits.ROWS) { HourlyCard(forecast.current, hours, onOpenHour = { open(it.toLocalDate(), it.hour) }) }
+        }
+        item(key = "daily") {
+            val open = LocalHomeActions.current.onOpenDay
+            LimitFontScale(FontScaleLimits.ROWS) { DailyCard(days, forecast.current.temperature, onOpenDay = { open(it, null) }) }
+        }
         // "Bugün için", 7 günlük tahminin hemen altında: ne giysem, en önemli iki öneri ve hepsine giden bağlantı.
         item(key = "today") {
             val actions = LocalHomeActions.current

@@ -53,6 +53,9 @@ import kotlinx.serialization.Serializable
 /** Ayrıntı sayfaları; [tab]: açılışta seçili sekme (DetailTab adı). */
 @Serializable private data class DetailRoute(val tab: String)
 
+/** Gün sayfası: [date] "2026-10-17"; [hour] saatlik karttan açıldıysa seçili saat, yoksa -1. */
+@Serializable private data class DayRoute(val date: String, val hour: Int = -1)
+
 // AppCompatActivity: uygulama içinden dil değiştirmenin Android 12 ve altında da çalışması için.
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -206,6 +209,18 @@ private fun CommuneSkyApp(
                             navController.navigate(DetailRoute(com.alihaydarsayar.communesky.ui.detail.DetailTab.of(metric).name)) { launchSingleTop = true }
                         },
                         onOpenTab = { tab -> navController.navigate(DetailRoute(tab.name)) { launchSingleTop = true } },
+                        onOpenDay = { date, hour -> navController.navigate(DayRoute(date.toString(), hour ?: -1)) { launchSingleTop = true } },
+                    )
+                }
+                composable<DayRoute> { entry ->
+                    val route = entry.toRoute<DayRoute>()
+                    val page = uiState.selectedPage
+                    com.alihaydarsayar.communesky.ui.detail.DayScreen(
+                        weather = page?.weather,
+                        initialDate = runCatching { java.time.LocalDate.parse(route.date) }.getOrNull(),
+                        initialHour = route.hour.takeIf { it >= 0 },
+                        title = page?.name ?: page?.weather?.city?.name,
+                        onBack = { navController.popBackStack() },
                     )
                 }
                 composable<DetailRoute> { entry ->

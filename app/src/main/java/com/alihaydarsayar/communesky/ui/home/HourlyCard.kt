@@ -1,5 +1,8 @@
 package com.alihaydarsayar.communesky.ui.home
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
@@ -61,6 +64,8 @@ fun HourlyCard(
     current: CurrentWeather,
     hours: List<HourlyForecast>,
     modifier: Modifier = Modifier,
+    /** Bir saate dokunuldu: o günün sayfası o saat seçili açılır. */
+    onOpenHour: (java.time.LocalDateTime) -> Unit = {},
 ) {
     if (hours.isEmpty()) return
     // "Şimdi" sütunu üstteki büyük sıcaklıkla çelişmesin diye anlık veriyi gösterir.
@@ -98,6 +103,7 @@ fun HourlyCard(
                         label = if (index == 0) stringResource(R.string.now) else hour.time.format(formatter),
                         hour = hour,
                         isNow = index == 0,
+                        onClick = { onOpenHour(hour.time) },
                     )
                 }
             }
@@ -125,9 +131,12 @@ fun HourlyCard(
 }
 
 @Composable
-private fun HourHeader(label: String, hour: HourlyForecast, isNow: Boolean) {
+private fun HourHeader(label: String, hour: HourlyForecast, isNow: Boolean, onClick: () -> Unit) {
     Column(
-        modifier = Modifier.width(ColumnWidth),
+        modifier = Modifier
+            .width(ColumnWidth)
+            .clip(MaterialTheme.shapes.small)
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.day_details), onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(

@@ -243,7 +243,7 @@ private fun DailyDto.sunTimes(date: LocalDate): Pair<LocalDateTime?, LocalDateTi
 }
 
 // Sütunları satırlara çeviriyoruz; sıcaklığı veya kodu eksik olan saat/gün atlanır.
-private fun HourlyDto.toModel(daily: DailyDto): List<HourlyForecast> = time.indices.mapNotNull { i ->
+internal fun HourlyDto.toModel(daily: DailyDto): List<HourlyForecast> = time.indices.mapNotNull { i ->
     val hourStart = LocalDateTime.parse(time[i])
     val (sunrise, sunset) = daily.sunTimes(hourStart.toLocalDate())
     HourlyForecast(

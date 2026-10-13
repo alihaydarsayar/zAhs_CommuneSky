@@ -2,6 +2,9 @@ package com.alihaydarsayar.communesky.ui.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,6 +49,8 @@ fun DailyCard(
     days: List<DailyForecast>,
     currentTemperature: Double,
     modifier: Modifier = Modifier,
+    /** Bir güne dokunuldu: o günün sayfası açılır. */
+    onOpenDay: (java.time.LocalDate) -> Unit = {},
 ) {
     if (days.isEmpty()) return
     val weekMin = days.minOf { it.minTemperature }
@@ -72,6 +77,7 @@ fun DailyCard(
                 weekMin = weekMin,
                 weekMax = weekMax,
                 currentTemperature = if (index == 0) currentTemperature else null,
+                onClick = { onOpenDay(day.date) },
             )
         }
     }
@@ -84,10 +90,13 @@ private fun DayRow(
     weekMin: Double,
     weekMax: Double,
     currentTemperature: Double?,
+    onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(MaterialTheme.shapes.small)
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.day_details), onClick = onClick)
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

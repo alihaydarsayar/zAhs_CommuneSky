@@ -53,6 +53,21 @@ interface OpenMeteoApi {
         @Query("timezone") timezone: String = "auto",
     ): List<ForecastResponseDto>
 
+    /**
+     * Tek bir yerin belirli günleri: saat saat tahmin ([startDate]–[endDate], "2026-10-17"). Gün sayfası açılınca
+     * yalnız o gün için istenir; arka plan isteği büyümez.
+     */
+    @GET("v1/forecast")
+    suspend fun getDays(
+        @Query("latitude") latitude: Double,
+        @Query("longitude") longitude: Double,
+        @Query("start_date") startDate: String,
+        @Query("end_date") endDate: String,
+        @Query("hourly") hourly: String = HOURLY_FIELDS,
+        @Query("daily") daily: String = DAILY_FIELDS,
+        @Query("timezone") timezone: String = "auto",
+    ): DayResponseDto
+
     companion object {
         const val BASE_URL = "https://api.open-meteo.com/"
 
