@@ -115,11 +115,21 @@ def _index_path():
 
 def load_index() -> dict:
     path = _index_path()
-    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    if not path.exists():
+        return {}
+    # İndirme sürerken rapor da çalışabilir: dosya tam o an yazılıyorsa kısa bir süre sonra yeniden okunur.
+    for _ in range(5):
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            time.sleep(0.5)
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _save_index(index: dict) -> None:
-    _index_path().write_text(json.dumps(index, indent=0), encoding="utf-8")
+    temporary = _index_path().with_suffix(".tmp")
+    temporary.write_text(json.dumps(index, indent=0), encoding="utf-8")
+    temporary.replace(_index_path())
 
 
 def _budget_path():
@@ -144,6 +154,7 @@ def fetch(stations: list[dict], budget: float = DAILY_BUDGET, log=print) -> dict
     by_id = {station["id"]: station for station in stations}
     today = datetime.now(timezone.utc).date()
     chunks = plan(stations, today)
+    repair(log)
     index = load_index()
     spent_by_day = _load_budget()
     day_key = today.isoformat()
@@ -191,6 +202,36 @@ def fetch(stations: list[dict], budget: float = DAILY_BUDGET, log=print) -> dict
     return {"stopped": stopped, "remaining_chunks": remaining, "remaining_calls": round(remaining_weight)}
 
 
+def _is_forecast(text: str) -> bool:
+    try:
+        payload = json.loads(text)
+    except ValueError:
+        return False
+    first = payload[0] if isinstance(payload, list) and payload else payload
+    return isinstance(first, dict) and "hourly" in first
+
+
+def repair(log=print) -> int:
+    """Bozuk inmiş parçaları (yarım cevap) dizinden ve diskten siler; sonraki indirmede yeniden istenir."""
+    index = load_index()
+    broken = []
+    for key in index:
+        path = config.OPENMETEO_DIR / f"{key}.json.gz"
+        try:
+            ok = path.exists() and _is_forecast(gzip.decompress(path.read_bytes()).decode("utf-8"))
+        except (OSError, ValueError):
+            ok = False
+        if not ok:
+            broken.append(key)
+    for key in broken:
+        index.pop(key)
+        (config.OPENMETEO_DIR / f"{key}.json.gz").unlink(missing_ok=True)
+    if broken:
+        _save_index(index)
+        log(f"Open-Meteo: {len(broken)} bozuk parça silindi, yeniden istenecek")
+    return len(broken)
+
+
 def _get(session: requests.Session, params: dict, log) -> tuple[str | None, str]:
     waits = 0
     for attempt in range(4):
@@ -201,7 +242,12 @@ def _get(session: requests.Session, params: dict, log) -> tuple[str | None, str]
             time.sleep(20 * (attempt + 1))
             continue
         if response.status_code == 200:
-            return response.text, ""
+            if _is_forecast(response.text):
+                return response.text, ""
+            # Servis bazen 200 ile birlikte yarım bir cevap ya da hata metni döndürür: yeniden dene.
+            log(f"  eksik cevap: {response.text[:80]!r}")
+            time.sleep(20 * (attempt + 1))
+            continue
         reason = response.text[:200]
         if response.status_code == 429:
             lowered = reason.lower()
@@ -248,7 +294,11 @@ def load_station(station_id: str, axis: np.ndarray) -> dict[tuple[str, str, int]
         path = config.OPENMETEO_DIR / f"{key}.json.gz"
         if not path.exists():
             continue
-        payload = json.loads(gzip.decompress(path.read_bytes()))
+        try:
+            payload = json.loads(gzip.decompress(path.read_bytes()))
+        except (OSError, ValueError):
+            # Bozuk parça: `forecasts` komutu bir sonraki çalışmada yeniden indirir.
+            continue
         if isinstance(payload, dict):
             payload = [payload]
         hourly = payload[entry["stations"].index(station_id)]["hourly"]

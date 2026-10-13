@@ -204,7 +204,7 @@ def render(scores: score.Scores, stations: list[dict]) -> str:
         base = scores.table(1, config.RAIN_THRESHOLD, r_models[0], r_leads[0])
         add("Ölçüm: o saatin METAR'larında RA, SN, DZ, SH, TS, GR ya da PL var mı (VC ve RE ile başlayanlar hariç). "
             f"Tahmin: saatlik yağış ≥ {num(config.RAIN_THRESHOLD, 1)} mm. "
-            f"Yağışlı saat oranı %{100 * (base.hits + base.misses) / base.n:.1f} ({count(base.n)} saat).\n")
+            f"Yağışlı saat oranı %{num(100 * (base.hits + base.misses) / base.n, 1)} ({count(base.n)} saat).\n")
         add("İsabet: yağan saatlerin kaçı tahmin edildi. Yanlış alarm: \"yağacak\" denen saatlerin kaçı kuru geçti. "
             "ETS: şansla tutanlar düşüldükten sonraki beceri (0 yok, 1 kusursuz).\n")
         for window, title in ((1, "Saatlik"), (3, "3 saatlik pencere")):
@@ -385,6 +385,12 @@ def render(scores: score.Scores, stations: list[dict]) -> str:
             f"tek modele sapma düzeltmesi %{g['sapma_duzeltme']:.0f}, Kalman %{g['kalman']:.0f}, "
             f"düzeltilmiş modellerin ağırlıklı ortalaması %{g['duzeltilmis_agirlikli']:.0f} daha az hata veriyor.")
     add("")
+    # Elle tutulan notlar (servis denemeleri, tahminler): design/karne/NOTLAR.md varsa rapora eklenir.
+    notes = config.DATA_DIR / "NOTLAR.md"
+    if notes.exists():
+        add("## 8. Notlar\n")
+        add(notes.read_text(encoding="utf-8").strip())
+        add("")
     return "\n".join(out)
 
 
