@@ -7,6 +7,7 @@ import com.alihaydarsayar.communesky.model.GeoDistance
 import com.alihaydarsayar.communesky.model.Observation
 import com.alihaydarsayar.communesky.model.ObservationPolicy
 import com.alihaydarsayar.communesky.model.ObservationSource
+import com.alihaydarsayar.communesky.model.StationNetwork
 import dagger.Lazy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -31,6 +32,8 @@ data class MgmCandidate(
     val latitude: Double,
     val longitude: Double,
     val elevation: Double? = null,
+    /** İlin plaka numarası: ilin bütün ölçümlerini tek istekte almak için. Eski kayıtlarda yoktur. */
+    val provincePlate: Int? = null,
 )
 
 /**
@@ -80,6 +83,10 @@ class ObservationRepository @Inject constructor(
     /** Açılış ve ön plana gelme aynı anda tetiklerse istekler çift gitmesin. */
     private val mutex = Mutex()
 
+    /** İl ölçümleri: plaka → (alındığı an, istasyon numarası → ölçüm). Aynı ildeki yerler paylaşır. */
+    private val provinceCache = mutableMapOf<Int, Pair<Long, Map<Int, MgmObservationDto>>>()
+    private val provinceMutex = Mutex()
+
     val observations: Flow<Map<Long, Observation>> = store.observeAll()
 
     suspend fun observation(placeId: Long): Observation? = store.get(placeId)
@@ -117,8 +124,10 @@ class ObservationRepository @Inject constructor(
         log(place, "konum %.4f, %.4f".format(Locale.ROOT, lat, lon))
         val mgm = async { if (isInTurkey(lat, lon)) mgm(place, now) else null }
         val metars = async { metars(place, now) }
-        val candidates = listOfNotNull(mgm.await()) + metars.await()
-        val best = ObservationPolicy.chooseBest(candidates, lat, lon, now)
+        val network = mgm.await()
+        val candidates = listOfNotNull(network) + metars.await()
+        // İstasyon ağı kurulduysa o kullanılır; yoksa adaylar arasından en yakın ve en taze olan.
+        val best = network?.takeIf { it.network.isNotEmpty() } ?: ObservationPolicy.chooseBest(candidates, lat, lon, now)
         if (best == null) {
             log(place, "kullanılabilir ölçüm yok (${candidates.size} aday); tahmin kullanılacak")
         } else {
@@ -133,35 +142,89 @@ class ObservationRepository @Inject constructor(
 
     // --- MGM ---
 
-    /** Yere en yakın, sıcaklık ölçen ve taze ölçüm veren MGM istasyonunun ölçümü. */
+    /**
+     * Yerin MGM ölçümü. Çevrede (25 km) en az iki geçerli istasyon varsa istasyon ağı kurulur: dönen ölçüm en
+     * yakın geçerli istasyonun ham ölçümüdür ve ağın bütün ölçümlerini taşır. Ağ kurulamazsa eskisi gibi
+     * sıcaklık ölçen, taze ilk aday (ilçenin resmi istasyonu dahil) alınır.
+     */
     private suspend fun mgm(place: Place, now: Instant): Observation? {
         val station = mgmStations(place) ?: return null
-        for (candidate in station.candidates.take(MAX_STATION_TRIES + 1)) {
-            val distance = GeoDistance.kilometers(candidate.latitude, candidate.longitude, place.city.latitude, place.city.longitude)
-            val dto = attempt("MGM ${candidate.id}") { mgmApi.get().latest(candidate.id).firstOrNull() }
+        val lat = place.city.latitude
+        val lon = place.city.longitude
+        val latest = latestReadings(place, station.candidates)
+        val observations = station.candidates.mapNotNull { candidate ->
+            val dto = latest[candidate.id]
             if (dto == null) {
-                log(place, "MGM ${candidate.name} (%.1f km) atlandı: cevap yok".format(Locale.ROOT, distance))
-                continue
+                log(place, "MGM ${candidate.name} atlandı: cevap yok")
+                return@mapNotNull null
             }
-            val observation = mgmObservation(candidate, dto)
+            mgmObservation(candidate, dto).also {
+                if (it == null) log(place, "MGM ${candidate.name} atlandı: ölçüm zamanı okunamadı (${dto.time})")
+            }
+        }
+        val network = StationNetwork.valid(observations, lat, lon, now)
+        val nearest = network.firstOrNull { it.temperature != null }
+        if (nearest != null && network.size >= 2) {
+            log(
+                place,
+                "MGM ağı: ${network.size}/${observations.size} istasyon geçerli; en yakını ${nearest.stationName} " +
+                    "(%.1f km)".format(Locale.ROOT, ObservationPolicy.distanceKm(nearest, lat, lon)),
+            )
+            return nearest.copy(network = network)
+        }
+        for (observation in observations) {
+            val distance = ObservationPolicy.distanceKm(observation, lat, lon)
             when {
-                observation == null ->
-                    log(place, "MGM ${candidate.name} atlandı: ölçüm zamanı okunamadı (${dto.time})")
                 observation.temperature == null ->
-                    log(place, "MGM ${candidate.name} (%.1f km) atlandı: sıcaklık ölçmüyor".format(Locale.ROOT, distance))
+                    log(place, "MGM ${observation.stationName} (%.1f km) atlandı: sıcaklık ölçmüyor".format(Locale.ROOT, distance))
                 !ObservationPolicy.isFresh(observation, now) ->
                     log(
                         place,
-                        "MGM ${candidate.name} (%.1f km) atlandı: ölçüm %d dk önce (en fazla %d)"
+                        "MGM ${observation.stationName} (%.1f km) atlandı: ölçüm %d dk önce (en fazla %d)"
                             .format(Locale.ROOT, distance, ageMinutes(observation, now), ObservationPolicy.MAX_AGE.toMinutes()),
                     )
                 else -> {
-                    log(place, "MGM ${candidate.name} (%.1f km): %d dk önce".format(Locale.ROOT, distance, ageMinutes(observation, now)))
-                    return observation
+                    log(place, "MGM ${observation.stationName} (%.1f km): %d dk önce".format(Locale.ROOT, distance, ageMinutes(observation, now)))
+                    return StationNetwork.clean(observation)
                 }
             }
         }
         return null
+    }
+
+    /**
+     * Adayların son ölçümleri (istasyon numarası → ölçüm). Önce ilin bütün ölçümleri tek istekte alınır; aynı
+     * ildeki yerler bu cevabı 3 dakika boyunca paylaşır. İl isteği cevap vermezse adaylar tek tek, aynı anda
+     * sorulur (yer başına en çok 6 istek).
+     */
+    private suspend fun latestReadings(place: Place, candidates: List<MgmCandidate>): Map<Int, MgmObservationDto> = coroutineScope {
+        val result = mutableMapOf<Int, MgmObservationDto>()
+        val missing = mutableListOf<MgmCandidate>()
+        for ((plate, group) in candidates.groupBy { it.provincePlate }) {
+            val province = plate?.takeIf { it != UNKNOWN_PLATE }?.let { provinceLatest(it) }
+            if (province == null) {
+                missing += group
+            } else {
+                group.forEach { candidate -> province[candidate.id]?.let { result[candidate.id] = it } }
+            }
+        }
+        if (missing.isNotEmpty()) {
+            val asked = missing.take(StationNetwork.MAX_STATIONS)
+            log(place, "MGM il ölçümleri alınamadı; ${asked.size} istasyon tek tek soruluyor")
+            asked.map { candidate -> async { candidate.id to attempt("MGM ${candidate.id}") { mgmApi.get().latest(candidate.id).firstOrNull() } } }
+                .awaitAll()
+                .forEach { (id, dto) -> if (dto != null) result[id] = dto }
+        }
+        result
+    }
+
+    /** Bir ilin bütün son ölçümleri; 3 dakikadan taze cevap yeniden istenmez. Alınamazsa null. */
+    private suspend fun provinceLatest(plate: Int): Map<Int, MgmObservationDto>? = provinceMutex.withLock {
+        val now = clock()
+        provinceCache[plate]?.takeIf { now - it.first < MIN_INTERVAL_MS }?.let { return@withLock it.second }
+        val answer = attempt("MGM il $plate") { mgmApi.get().latestInProvince(plate) }?.takeIf { it.isNotEmpty() }
+            ?: return@withLock null
+        answer.associateBy { it.stationId }.also { provinceCache[plate] = now to it }
     }
 
     private fun mgmObservation(candidate: MgmCandidate, dto: MgmObservationDto): Observation? {
@@ -195,7 +258,8 @@ class ObservationRepository @Inject constructor(
         val lon = place.city.longitude
         store.station(place.id)?.let { saved ->
             val moved = GeoDistance.kilometers(saved.queryLatitude, saved.queryLongitude, lat, lon)
-            if (moved < STATION_REUSE_KM && saved.candidates.isNotEmpty()) return saved
+            // Plakası olmayan kayıt eski sürümdendir (en çok 3 istasyon, 15 km): ağ için yeniden bulunur.
+            if (moved < STATION_REUSE_KM && saved.candidates.isNotEmpty() && saved.candidates.all { it.provincePlate != null }) return saved
         }
         val center = attempt("MGM merkez") {
             mgmApi.get().center(CoordinatePrivacy.round(lat), CoordinatePrivacy.round(lon))
@@ -213,7 +277,7 @@ class ObservationRepository @Inject constructor(
         val official = center.observationStationId?.let { id ->
             province.firstOrNull { it.id == id } ?: attempt("MGM istasyon") { mgmApi.get().station(id).firstOrNull() }
         }
-        val candidates = nearestCandidates(province, official, lat, lon)
+        val candidates = nearestCandidates(province, official, lat, lon, center.provincePlate)
         if (candidates.isEmpty()) {
             log(place, "MGM istasyonu bulunamadı; bir sonraki yenilemede tekrar denenecek")
             return null
@@ -294,10 +358,13 @@ class ObservationRepository @Inject constructor(
         const val KNOT_TO_KMH = 1.852
 
         /** Bu mesafeden uzak MGM istasyonu aday sayılmaz (resmi ilçe istasyonu hariç). */
-        const val CANDIDATE_KM = 15.0
+        const val CANDIDATE_KM = StationNetwork.RADIUS_KM
 
         /** En yakın kaç MGM istasyonu aday olur (resmi ilçe istasyonu ayrıca eklenebilir). */
-        const val MAX_STATION_TRIES = 3
+        const val MAX_STATION_TRIES = StationNetwork.MAX_STATIONS
+
+        /** İlin plakası öğrenilemedi: ölçümler istasyon istasyon sorulur. */
+        const val UNKNOWN_PLATE = 0
 
         /** Türkiye'yi kabaca kapsayan kutu; dışındaki yerler için MGM'ye hiç sorulmaz. */
         fun isInTurkey(lat: Double, lon: Double) = lat in 35.8..42.2 && lon in 25.6..44.9
@@ -306,14 +373,16 @@ class ObservationRepository @Inject constructor(
         private fun Double?.valid(): Double? = this?.takeIf { it > -9000 }
 
         /**
-         * Yere en yakın istasyonlar (15 km içinde, en fazla 3), en yakından uzağa. Resmi ilçe
+         * Yere en yakın istasyonlar (25 km içinde, en fazla 6), en yakından uzağa. Resmi ilçe
          * istasyonu bu listede yoksa sona eklenir: başka hiçbiri ölçüm vermezse o denenir.
+         * [provincePlate]: istasyonun kendi kaydında plaka yoksa kullanılacak il plakası.
          */
         fun nearestCandidates(
             province: List<MgmStationDto>,
             official: MgmStationDto?,
             latitude: Double,
             longitude: Double,
+            provincePlate: Int? = null,
         ): List<MgmCandidate> {
             fun MgmStationDto.distance() = GeoDistance.kilometers(this.latitude, this.longitude, latitude, longitude)
             val nearest = province
@@ -321,7 +390,9 @@ class ObservationRepository @Inject constructor(
                 .sortedBy { it.distance() }
                 .take(MAX_STATION_TRIES)
             val all = if (official != null && nearest.none { it.id == official.id }) nearest + official else nearest
-            return all.map { MgmCandidate(it.id, titleCaseTurkish(it.name ?: it.id.toString()), it.latitude, it.longitude, it.elevation) }
+            return all.map {
+                MgmCandidate(it.id, titleCaseTurkish(it.name ?: it.id.toString()), it.latitude, it.longitude, it.elevation, it.provincePlate ?: provincePlate ?: UNKNOWN_PLATE)
+            }
         }
 
         /** "SAMSUN BÖLGE" → "Samsun Bölge" (Türkçe büyük/küçük harf kurallarıyla). */

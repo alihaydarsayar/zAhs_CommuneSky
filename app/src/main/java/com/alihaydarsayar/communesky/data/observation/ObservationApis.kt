@@ -36,6 +36,11 @@ interface MgmApi {
     @GET("web/sondurumlar")
     suspend fun latest(@Query("istno") stationId: Int): List<MgmObservationDto>
 
+    /** Bir ildeki bütün istasyonların son ölçümleri, tek istekte ([plate]: ilin plaka numarası). */
+    @Headers("Origin: $ORIGIN")
+    @GET("web/sondurumlar/ilTumSondurum")
+    suspend fun latestInProvince(@Query("ilPlaka") plate: Int): List<MgmObservationDto>
+
     companion object {
         const val BASE_URL = "https://servis.mgm.gov.tr/"
         const val ORIGIN = "https://www.mgm.gov.tr"
@@ -64,6 +69,7 @@ data class MgmCenterDto(
     @SerialName("boylam") val longitude: Double? = null,
     val il: String? = null,
     val ilce: String? = null,
+    @SerialName("ilPlaka") val provincePlate: Int? = null,
 )
 
 @Serializable
@@ -73,6 +79,7 @@ data class MgmStationDto(
     @SerialName("enlem") val latitude: Double,
     @SerialName("boylam") val longitude: Double,
     @SerialName("yukseklik") val elevation: Double? = null,
+    @SerialName("ilPlaka") val provincePlate: Int? = null,
 )
 
 /** -9999 değeri "ölçüm yok" demek. */

@@ -64,8 +64,10 @@ class ObservationRepositoryTest {
         var stationAnswer: suspend () -> List<MgmStationDto> = { throw IOException() }
         var provinceAnswer: suspend () -> List<MgmStationDto> = { throw IOException() }
         var latestAnswer: suspend (Int) -> List<MgmObservationDto> = { throw IOException() }
+        var provinceLatestAnswer: suspend (Int) -> List<MgmObservationDto> = { throw IOException() }
         var centerCalls = 0
         val latestCalls = mutableListOf<Int>()
+        val provinceLatestCalls = mutableListOf<Int>()
         override suspend fun center(latitude: Double, longitude: Double): MgmCenterDto {
             centerCalls++
             // Dışarı giden koordinat yaklaşık 1 km'ye yuvarlanmış olmalı.
@@ -77,6 +79,10 @@ class ObservationRepositoryTest {
         override suspend fun latest(stationId: Int): List<MgmObservationDto> {
             latestCalls += stationId
             return latestAnswer(stationId)
+        }
+        override suspend fun latestInProvince(plate: Int): List<MgmObservationDto> {
+            provinceLatestCalls += plate
+            return provinceLatestAnswer(plate)
         }
     }
 
@@ -261,9 +267,97 @@ class ObservationRepositoryTest {
         assertEquals(ObservationSource.Mgm, obs.source)
         assertEquals("Beşiktaş", obs.stationName)
         assertEquals(23.1, obs.temperature!!, 0.0)
-        assertEquals(listOf(18100), mgm.latestCalls)
+        // İl ölçümleri tek istekte alınamadı: üç aday tek tek sorulur ve ağı kurar.
+        assertEquals(setOf(18100, 17448, 17063), mgm.latestCalls.toSet())
+        assertEquals(listOf("Beşiktaş", "Beşiktaş İskele Feneri", "İstanbul Havalimanı"), obs.network.map { it.stationName })
         // NOAA'ya giden kutu yuvarlanmış koordinattan kurulur.
         assertTrue(metar.lastBbox.startsWith("40.59,28.38"))
+    }
+
+    private val istanbulStations = listOf(
+        MgmStationDto(18100, "BEŞİKTAŞ", 41.039166, 28.989994, 3.0, provincePlate = 34),
+        MgmStationDto(17448, "BEŞİKTAŞ İSKELE FENERİ", 41.0215, 28.9872, 1.0, provincePlate = 34),
+        MgmStationDto(17063, "İSTANBUL HAVALİMANI", 41.104340, 28.994463, 99.0, provincePlate = 34),
+    )
+
+    private fun istanbulWorks() {
+        mgm.centerAnswer = { MgmCenterDto(observationStationId = 18100, il = "İstanbul", ilce = "Beşiktaş", provincePlate = 34) }
+        mgm.provinceAnswer = { istanbulStations }
+        mgm.provinceLatestAnswer = {
+            listOf(
+                mgmObservation(id = 18100, temperature = 17.0),
+                mgmObservation(id = 17448, temperature = 17.4),
+                mgmObservation(id = 17063, temperature = 16.2),
+                // İldeki başka bir istasyon: aday değil, yok sayılır.
+                mgmObservation(id = 17999, temperature = 9.0),
+            )
+        }
+    }
+
+    @Test
+    fun `one request brings the whole province and builds the network`() = runTest {
+        istanbulWorks()
+        repository.refresh(listOf(besiktas))
+
+        val obs = store.get(5)!!
+        assertEquals(listOf(34), mgm.provinceLatestCalls)
+        assertTrue(mgm.latestCalls.isEmpty())
+        // Saklanan ölçüm en yakın geçerli istasyonun ham ölçümüdür (hakem bunu kullanır); ağ yanında taşınır.
+        assertEquals("Beşiktaş", obs.stationName)
+        assertEquals(17.0, obs.temperature!!, 0.0)
+        assertEquals(3, obs.network.size)
+        assertTrue(obs.network.all { it.network.isEmpty() })
+        assertEquals(34, store.station(5)!!.candidates.first().provincePlate)
+    }
+
+    @Test
+    fun `places in the same province share one request`() = runTest {
+        istanbulWorks()
+        val sisli = Place(6, City("Şişli", 41.0602, 28.9877), isCurrentLocation = false)
+        repository.refresh(listOf(besiktas, sisli))
+        assertEquals(listOf(34), mgm.provinceLatestCalls)
+        assertEquals(3, store.get(6)!!.network.size)
+
+        // Üç dakika sonra il yeniden, yine tek istekle sorulur.
+        clockMillis += 4 * 60 * 1000
+        repository.refresh(listOf(besiktas, sisli))
+        assertEquals(listOf(34, 34), mgm.provinceLatestCalls)
+        assertTrue(mgm.latestCalls.isEmpty())
+    }
+
+    @Test
+    fun `when the province request fails the stations are asked one by one`() = runTest {
+        istanbulWorks()
+        mgm.provinceLatestAnswer = { throw IOException() }
+        mgm.latestAnswer = { id -> listOf(mgmObservation(id = id, temperature = 17.0)) }
+        repository.refresh(listOf(besiktas))
+        assertEquals(setOf(18100, 17448, 17063), mgm.latestCalls.toSet())
+        assertEquals(3, store.get(5)!!.network.size)
+    }
+
+    @Test
+    fun `a station far off its neighbours is left out of the network`() = runTest {
+        istanbulWorks()
+        mgm.provinceLatestAnswer = {
+            listOf(
+                mgmObservation(id = 18100, temperature = 25.3), // arızalı: komşularından 8° sıcak
+                mgmObservation(id = 17448, temperature = 17.4),
+                mgmObservation(id = 17063, temperature = 16.2),
+            )
+        }
+        repository.refresh(listOf(besiktas))
+        val obs = store.get(5)!!
+        assertEquals("Beşiktaş İskele Feneri", obs.stationName)
+        assertEquals(2, obs.network.size)
+    }
+
+    @Test
+    fun `stations saved by an older version are looked up again`() = runTest {
+        istanbulWorks()
+        store.stations[5] = MgmStationInfo(besiktas.city.latitude, besiktas.city.longitude, listOf(MgmCandidate(18100, "Beşiktaş", 41.039166, 28.989994, 3.0)))
+        repository.refresh(listOf(besiktas))
+        assertEquals(1, mgm.centerCalls)
+        assertEquals(3, store.station(5)!!.candidates.size)
     }
 
     @Test
