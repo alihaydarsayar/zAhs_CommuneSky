@@ -125,7 +125,10 @@ def render(scores: score.Scores, stations: list[dict]) -> str:
     add(table(["Model"] + [f"{l} gün önce" for l in leads],
               [[label(m)] + [f"{bolded[i][j]} ({signed(scores.error('temperature_2m', m, leads[i]).bias)})"
                              for i in range(len(leads))] for j, (m, _) in enumerate(rows)]))
-    add(f"\nEşleşen saat: {count(scores.error('temperature_2m', models[0], leads[0]).n)} ({leads[0]} gün önce).\n")
+    add("\nEşleşen saat: " + ", ".join(
+        f"{lead} gün önce {count(scores.error('temperature_2m', models[0], lead).n)}" for lead in leads)
+        + ". Vadelerin dönemi aynı değilse (bir vade henüz az indiyse) sütunlar birbiriyle değil, "
+          "yalnız kendi içinde karşılaştırılmalı.\n")
 
     add("### Günün en yüksek ve en düşük sıcaklığı\n")
     add("Türkiye takvim gününde, eşleşen saatlerin en yükseği ve en düşüğü (°C ortalama mutlak hata, parantezde sapma).\n")
@@ -381,9 +384,10 @@ def render(scores: score.Scores, stations: list[dict]) -> str:
     if gains:
         g = gains[leads[0]]
         add(f"- **Ortak tahmin ve düzeltme ({leads[0]} gün önce):** en iyi tek modele ({num(g['_best_single'])}°) göre "
-            f"düz ortalama %{g['duz_ortalama']:.0f}, ağırlıklı ortalama %{g['agirlikli_ortalama']:.0f}, "
-            f"tek modele sapma düzeltmesi %{g['sapma_duzeltme']:.0f}, Kalman %{g['kalman']:.0f}, "
-            f"düzeltilmiş modellerin ağırlıklı ortalaması %{g['duzeltilmis_agirlikli']:.0f} daha az hata veriyor.")
+            f"hata değişimi (+ iyileşme): düz ortalama {gain(g['duz_ortalama'] / 100)}, "
+            f"ağırlıklı ortalama {gain(g['agirlikli_ortalama'] / 100)}, "
+            f"tek modele sapma düzeltmesi {gain(g['sapma_duzeltme'] / 100)}, Kalman {gain(g['kalman'] / 100)}, "
+            f"düzeltilmiş modellerin ağırlıklı ortalaması {gain(g['duzeltilmis_agirlikli'] / 100)}.")
     add("")
     # Elle tutulan notlar (servis denemeleri, tahminler): design/karne/NOTLAR.md varsa rapora eklenir.
     notes = config.DATA_DIR / "NOTLAR.md"
