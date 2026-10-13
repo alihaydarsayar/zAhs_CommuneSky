@@ -24,7 +24,7 @@
 - **Honest skies** — clear/cloudy conditions are recomputed from sunshine duration and cloud layers, so thin high cirrus doesn't turn a sunny day "overcast".
 - **Offline-first** — the last forecast appears instantly from the local cache, then refreshes in the background. Pull to refresh any time.
 - **Your places** — search any city, district or neighbourhood worldwide, save it, drag to reorder and mark one as Home. Swipe between places on the home screen.
-- **Checked against real measurements** — current conditions are compared with the nearest weather station (MGM in Türkiye, airport reports elsewhere). A nearby station sets the current temperature and sky; a farther one warns about storms on the way.
+- **Checked against real measurements** — current conditions are compared with the nearest weather station (MGM in Türkiye, airport reports elsewhere). In Türkiye the current temperature is worked out from up to six nearby MGM stations; elsewhere a nearby station sets the current temperature and sky, and a farther one warns about storms on the way.
 - **Home screen widgets** — ten widgets with more than 30 styles (clocks, hourly curve, weekly range bars, rain in the next two hours, details and more). A "Home & location" widget knows whether you are home, nearby or away, worked out on your phone. Each widget has its own place, background, transparency, colors, corners and text size, with a live preview when you add it.
 - **Your location, if you want it** — approximate location shows your district; optional precise location shows your neighbourhood and picks the closest station. Without permission it shows your saved places, or Istanbul.
 - **Units and theme** — °C or °F, four wind units, light or dark.
@@ -39,7 +39,7 @@ Commune Sky has no ads, no analytics and no accounts, and the developer never re
 
 - **Open-Meteo** (forecast, air quality and place search): coordinates of your location and saved places, rounded to about 1 km; the text you search for
 - **Photon by komoot** (place search): the text you search for
-- **MGM**, Turkish State Meteorological Service (forecasts, warnings and current conditions in Türkiye): rounded coordinates and the province name once to find the district and nearby stations, then district and station numbers
+- **MGM**, Turkish State Meteorological Service (forecasts, warnings and current conditions in Türkiye): rounded coordinates and the province name once to find the district and nearby stations, then district, province and station numbers
 - **NOAA Aviation Weather Center** (airport reports, everywhere): an area of about 50 km around the place
 - **Android Geocoder** (district and neighbourhood names, and searches as a last resort): your coordinates; the search text
 
