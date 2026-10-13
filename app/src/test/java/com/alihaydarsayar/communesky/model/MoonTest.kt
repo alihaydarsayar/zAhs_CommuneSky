@@ -117,4 +117,69 @@ class MoonTest {
         assertTrue(info.nextFullMoon.isAfter(info.nextNewMoon) || info.nextNewMoon.isAfter(info.nextFullMoon))
         assertTrue(info.illumination in 0.0..1.0)
     }
+
+    /** Biçimin aydınlık alanı, birim çemberin alanına oranla (ızgarayla sayılır). */
+    private fun litShare(shape: MoonShape): Double {
+        var lit = 0
+        var disc = 0
+        val n = 200
+        for (i in 0 until n) {
+            for (j in 0 until n) {
+                val x = -1 + (i + 0.5) * 2 / n
+                val y = -1 + (j + 0.5) * 2 / n
+                if (x * x + y * y > 1) continue
+                disc++
+                if (shape.isLit(x, y)) lit++
+            }
+        }
+        return lit.toDouble() / disc
+    }
+
+    @Test
+    fun `the drawn shape covers the lit share of the disc`() {
+        // Hilal, yarım, şişkin, dolunay: çizilen alan aydınlanma oranına eşittir.
+        for (illumination in listOf(0.0, 0.05, 0.25, 0.5, 0.75, 0.95, 1.0)) {
+            assertEquals("aydınlanma $illumination", illumination, litShare(MoonShape(illumination, litOnRight = true)), 0.01)
+            assertEquals("aydınlanma $illumination", illumination, litShare(MoonShape(illumination, litOnRight = false)), 0.01)
+        }
+    }
+
+    @Test
+    fun `the lit side is right when waxing in the north and mirrored in the south`() {
+        val waxingNorth = MoonShape.of(0.2, waxing = true, latitude = 41.04)
+        assertTrue(waxingNorth.litOnRight)
+        // Büyüyen hilal: sağ kenar aydınlık, orta ve sol karanlık.
+        assertTrue(waxingNorth.isLit(0.95, 0.0))
+        assertTrue(!waxingNorth.isLit(0.0, 0.0))
+        assertTrue(!waxingNorth.isLit(-0.95, 0.0))
+        val waningNorth = MoonShape.of(0.2, waxing = false, latitude = 53.41)
+        assertTrue(!waningNorth.litOnRight)
+        assertTrue(waningNorth.isLit(-0.95, 0.0))
+        assertTrue(!waningNorth.isLit(0.95, 0.0))
+        // Güney yarımkürede ayna görüntüsü.
+        assertTrue(!MoonShape.of(0.2, waxing = true, latitude = -33.0).litOnRight)
+        assertTrue(MoonShape.of(0.2, waxing = false, latitude = -33.0).litOnRight)
+        // Şişkin ay: merkez de aydınlık, yalnız karşı kenar karanlık.
+        val gibbous = MoonShape.of(0.8, waxing = true, latitude = 41.04)
+        assertTrue(gibbous.isLit(0.0, 0.0))
+        assertTrue(!gibbous.isLit(-0.95, 0.0))
+        // Dolunayda her yer, yeni ayda hiçbir yer; çemberin dışı hiçbir zaman.
+        assertTrue(MoonShape(1.0, true).isLit(-0.99, 0.0))
+        assertTrue(!MoonShape(0.0, true).isLit(0.5, 0.0))
+        assertTrue(!MoonShape(1.0, true).isLit(0.9, 0.9))
+    }
+
+    @Test
+    fun `the scene moon follows the phase of the day`() {
+        // 12 Ekim 2026: yeni aydan iki gün sonra, ince büyüyen hilal (dolunay değil). 26 Ekim: dolunay.
+        val crescent = MoonShape.at(Instant.parse("2026-10-12T19:00:00Z"), 41.04)
+        assertTrue(crescent.illumination < 0.1)
+        assertTrue(crescent.litOnRight)
+        assertTrue(crescent.terminator > 0.8)
+        val full = MoonShape.at(Instant.parse("2026-10-26T04:00:00Z"), 41.04)
+        assertTrue(full.illumination > 0.99)
+        assertEquals(-1.0, full.terminator, 0.02)
+        // Dolunaydan sonra küçülür: aydınlık yan sola geçer.
+        assertTrue(!MoonShape.at(Instant.parse("2026-10-30T19:00:00Z"), 41.04).litOnRight)
+    }
 }

@@ -166,6 +166,8 @@ private fun CommuneSkyApp(
     // Ayarlar ve Yerler ekranına geçerken de kesilmez.
     val weather = uiState.selectedPage?.weather
     val scene = remember(weather) { weather?.currentScene() ?: placeholderScene() }
+    // Gece sahnesindeki ay, ay sayfasındaki evre hesabıyla çizilir (hava verisi yenilenince yeniden hesaplanır).
+    val moon = remember(weather) { weather?.let { com.alihaydarsayar.communesky.model.MoonShape.at(java.time.Instant.now(), it.city.latitude) } }
     val navController = rememberNavController()
     LaunchedEffect(openTab) {
         if (openTab != null) {
@@ -192,7 +194,7 @@ private fun CommuneSkyApp(
         LocalSkyIsLight provides scene.theme.isLight,
     ) {
         Box(Modifier.fillMaxSize()) {
-            SkyBackground(scene, Modifier.fillMaxSize())
+            SkyBackground(scene, Modifier.fillMaxSize(), moon)
             NavHost(navController, startDestination = HomeRoute) {
                 composable<HomeRoute> {
                     HomeScreen(

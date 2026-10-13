@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.drawscope.clipPath
+import com.alihaydarsayar.communesky.model.MoonShape
 import com.alihaydarsayar.communesky.model.SkyTheme
 import com.alihaydarsayar.communesky.model.WeatherScene
 import com.alihaydarsayar.communesky.ui.common.colorRes
@@ -53,7 +55,7 @@ import kotlin.math.sin
  * kaydırılırken gökyüzü yeniden çizilmez; gökyüzü de her karede kartları yeniden çizdirmez.
  */
 @Composable
-fun SkyBackground(scene: WeatherScene, modifier: Modifier = Modifier) {
+fun SkyBackground(scene: WeatherScene, modifier: Modifier = Modifier, moon: MoonShape? = null) {
     val colors = scene.theme.colorRes
     val colorSpec = tween<Color>(durationMillis = 1600, easing = FastOutSlowInEasing)
     val top by animateColorAsState(colorResource(colors.top), colorSpec, label = "skyTop")
@@ -92,7 +94,9 @@ fun SkyBackground(scene: WeatherScene, modifier: Modifier = Modifier) {
                     .graphicsLayer()
                     .drawWithCache {
                         val rays = createSunRays(size)
-                        onDrawBehind { drawScene(target, effects, time, cloudSprite, rays) }
+                        // Ayın aydınlık kısmı: evre ya da boyut değişmedikçe bir kez oluşturulur.
+                        val moonLit = if (target.theme == SkyTheme.ClearNight && moon != null) createMoonLit(size, MOON_RADIUS.toPx(), moon) else null
+                        onDrawBehind { drawScene(target, effects, time, cloudSprite, rays, moonLit) }
                     },
             )
         }
@@ -110,10 +114,11 @@ private fun DrawScope.drawScene(
     timeState: State<Float>,
     cloudSprite: ImageBitmap,
     sunRays: Path,
+    moonLit: Path?,
 ) {
     // Saat değeri burada, çizim sırasında okunur: her karede sadece bu katman yeniden çizilir.
     val t = timeState.value
-    drawCelestial(scene, t, sunRays)
+    drawCelestial(scene, t, sunRays, moonLit)
     effects.stars?.let { drawStars(it, t) }
     effects.clouds?.let { drawClouds(it, effects.cloudTint, cloudSprite, t) }
     if (effects.fog) drawFog(cloudSprite, t)
@@ -124,7 +129,7 @@ private fun DrawScope.drawScene(
 
 // --- Güneş, ay, gün doğumu/batımı ---
 
-private fun DrawScope.drawCelestial(scene: WeatherScene, t: Float, sunRays: Path) {
+private fun DrawScope.drawCelestial(scene: WeatherScene, t: Float, sunRays: Path, moonLit: Path?) {
     when (scene.theme) {
         SkyTheme.ClearDay -> {
             val center = Offset(size.width * 0.84f, size.height * 0.07f)
@@ -186,14 +191,43 @@ private fun DrawScope.drawCelestial(scene: WeatherScene, t: Float, sunRays: Path
                 center = sunCenter,
             )
         }
-        SkyTheme.ClearNight -> drawMoon(t)
+        SkyTheme.ClearNight -> drawMoon(t, moonLit)
         else -> Unit
     }
 }
 
-private fun DrawScope.drawMoon(t: Float) {
-    val center = Offset(size.width * 0.8f, size.height * 0.11f)
-    val radius = 22.dp.toPx()
+/** Ayın sahnedeki yeri ve yarıçapı. */
+private fun moonCenter(size: Size) = Offset(size.width * 0.8f, size.height * 0.11f)
+
+private val MOON_RADIUS = 22.dp
+
+/**
+ * Ayın aydınlık kısmı: aydınlık yandaki kenar (yarım daire) ile gölge sınırı (yarım elips) arası. Biçim
+ * [MoonShape]'ten gelir; ay sayfasındaki çizimle aynıdır.
+ */
+private fun createMoonLit(size: Size, radius: Float, shape: MoonShape): Path {
+    val center = moonCenter(size)
+    val edge = radius * shape.terminator.toFloat()
+    val steps = 48
+    return Path().apply {
+        for (i in 0..steps) {
+            val angle = -PI / 2 + PI * i / steps
+            val x = center.x + shape.side * radius * cos(angle).toFloat()
+            val y = center.y + radius * sin(angle).toFloat()
+            if (i == 0) moveTo(x, y) else lineTo(x, y)
+        }
+        for (i in steps downTo 0) {
+            val angle = -PI / 2 + PI * i / steps
+            lineTo(center.x + shape.side * edge * cos(angle).toFloat(), center.y + radius * sin(angle).toFloat())
+        }
+        close()
+    }
+}
+
+/** [lit]: ayın aydınlık kısmı; null ise (evre bilinmiyor) bütün yüz çizilir. */
+private fun DrawScope.drawMoon(t: Float, lit: Path?) {
+    val center = moonCenter(size)
+    val radius = MOON_RADIUS.toPx()
     val glow = radius * (6f + 0.3f * sin(t * 0.4f))
     drawCircle(
         brush = Brush.radialGradient(
@@ -205,6 +239,16 @@ private fun DrawScope.drawMoon(t: Float) {
         radius = glow,
         center = center,
     )
+    if (lit == null) {
+        drawMoonFace(center, radius)
+    } else {
+        // Karanlık yan çok soluk görünür (ayın yeri belli olsun); aydınlık kısım evreye göre kırpılır.
+        drawCircle(Color(0xFFF4F0E3), radius, center, alpha = 0.10f)
+        clipPath(lit) { drawMoonFace(center, radius) }
+    }
+}
+
+private fun DrawScope.drawMoonFace(center: Offset, radius: Float) {
     drawCircle(Color(0xFFF4F0E3), radius, center)
     // Ay yüzeyindeki hafif lekeler.
     val crater = Color(0xFFB9B29C)

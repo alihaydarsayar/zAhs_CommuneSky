@@ -18,6 +18,7 @@ What's new in each version of Commune Sky.
 - Fixed: after the location permission was taken back, widgets kept showing the old weather of the last location. They now show your home or your first saved place, and no longer ask you to open the app when a saved place is available.
 - Fixed: with a very large phone font, hour labels and the 7-day rows ran into each other and were cut off. Those rows and the small tiles now stop growing at a readable size; all other text still follows the phone setting.
 - Fixed: with a large phone font, lines on widgets were squeezed together and the bottoms of letters were cut off.
+- The moon in the night sky now shows its real phase (crescent, half, gibbous or full, lit on the correct side) instead of always being full.
 
 ## 1.5 — in testing
 

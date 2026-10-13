@@ -18,6 +18,44 @@ enum class MoonPhase { New, WaxingCrescent, FirstQuarter, WaxingGibbous, Full, W
 /** Bir günün ay bilgisi (30 günlük şerit için): o günün öğle saatindeki evre ve aydınlanma. */
 data class MoonDay(val date: LocalDate, val phase: MoonPhase, val illumination: Double, val waxing: Boolean)
 
+/**
+ * Ayın gökyüzünde görünen biçimi: aydınlık kısmın oranı ve hangi yanda olduğu. Ay sayfasındaki çizim ile gece
+ * sahnesindeki ay aynı kuralı kullanır. Kuzey yarımkürede büyüyen ayın sağı, küçülen ayın solu aydınlıktır;
+ * güney yarımkürede tersi. Saf mantık; test edilir.
+ */
+data class MoonShape(
+    /** Aydınlık görünen kısım (0–1). */
+    val illumination: Double,
+    val litOnRight: Boolean,
+) {
+    /**
+     * Gölge sınırının (yarım elips) yatay yarıçapı, ayın yarıçapına oranla ve aydınlık yana doğru: yeni ayda +1
+     * (sınır aydınlık kenarla çakışır, alan sıfır), yarım ayda 0 (düz çizgi), dolunayda −1 (karşı kenar).
+     */
+    val terminator: Double get() = 1 - 2 * illumination.coerceIn(0.0, 1.0)
+
+    /** Aydınlık yanın yönü: sağ +1, sol −1. */
+    val side: Int get() = if (litOnRight) 1 else -1
+
+    /**
+     * Birim çemberde ([x] sağa, [y] aşağı; merkez 0,0) bu nokta ayın aydınlık kısmında mı? Aydınlık kısım, aydınlık
+     * yandaki kenar ile gölge sınırının arasıdır.
+     */
+    fun isLit(x: Double, y: Double): Boolean {
+        val inside = 1 - y * y
+        if (inside < 0 || x * x > inside) return false
+        return side * x >= terminator * kotlin.math.sqrt(inside)
+    }
+
+    companion object {
+        fun of(illumination: Double, waxing: Boolean, latitude: Double): MoonShape =
+            MoonShape(illumination, litOnRight = waxing != (latitude < 0))
+
+        /** [now] anında, [latitude] enleminden bakınca ayın biçimi. */
+        fun at(now: Instant, latitude: Double): MoonShape = of(Moon.illumination(now), Moon.phase(now) < 0.5, latitude)
+    }
+}
+
 /** Bir yer ve an için ayın durumu. Saatler yerin yerel saatidir. */
 data class MoonInfo(
     val phase: MoonPhase,
