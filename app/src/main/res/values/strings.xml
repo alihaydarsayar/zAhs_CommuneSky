@@ -131,6 +131,21 @@
     <string name="snow_starting_in">Snow expected in about %1$d min</string>
     <string name="snow_stopping_soon">Snow should ease within minutes</string>
     <string name="snow_stopping_in">Snow should stop in about %1$d min</string>
+    <string name="rain_rough_start_soon">Rain may start soon</string>
+    <string name="rain_rough_start_hour">Rain may start within the hour</string>
+    <string name="rain_rough_start_two_hours">Rain may start within two hours</string>
+    <string name="rain_rough_stop_soon">Rain may ease soon</string>
+    <string name="rain_rough_stop_hour">Rain may stop within the hour</string>
+    <string name="rain_rough_stop_two_hours">Rain may stop within two hours</string>
+    <string name="snow_rough_start_soon">Snow may start soon</string>
+    <string name="snow_rough_start_hour">Snow may start within the hour</string>
+    <string name="snow_rough_start_two_hours">Snow may start within two hours</string>
+    <string name="snow_rough_stop_soon">Snow may ease soon</string>
+    <string name="snow_rough_stop_hour">Snow may stop within the hour</string>
+    <string name="snow_rough_stop_two_hours">Snow may stop within two hours</string>
+    <string name="soon">Soon</string>
+    <string name="widget_rain_soon_short">Rain soon</string>
+    <string name="widget_snow_soon_short">Snow soon</string>
 
     <!-- Navigation -->
     <string name="back">Back</string>

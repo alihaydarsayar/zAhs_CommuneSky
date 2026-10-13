@@ -130,6 +130,21 @@
     <string name="snow_starting_in">Neige attendue dans environ %1$d min</string>
     <string name="snow_stopping_soon">La neige devrait faiblir d’ici quelques minutes</string>
     <string name="snow_stopping_in">La neige devrait cesser dans environ %1$d min</string>
+    <string name="rain_rough_start_soon">La pluie pourrait bientôt commencer</string>
+    <string name="rain_rough_start_hour">Pluie possible d’ici une heure</string>
+    <string name="rain_rough_start_two_hours">Pluie possible d’ici deux heures</string>
+    <string name="rain_rough_stop_soon">La pluie pourrait bientôt cesser</string>
+    <string name="rain_rough_stop_hour">La pluie pourrait cesser d’ici une heure</string>
+    <string name="rain_rough_stop_two_hours">La pluie pourrait cesser d’ici deux heures</string>
+    <string name="snow_rough_start_soon">La neige pourrait bientôt commencer</string>
+    <string name="snow_rough_start_hour">Neige possible d’ici une heure</string>
+    <string name="snow_rough_start_two_hours">Neige possible d’ici deux heures</string>
+    <string name="snow_rough_stop_soon">La neige pourrait bientôt cesser</string>
+    <string name="snow_rough_stop_hour">La neige pourrait cesser d’ici une heure</string>
+    <string name="snow_rough_stop_two_hours">La neige pourrait cesser d’ici deux heures</string>
+    <string name="soon">Bientôt</string>
+    <string name="widget_rain_soon_short">Pluie bientôt</string>
+    <string name="widget_snow_soon_short">Neige bientôt</string>
 
     <!-- Navigation -->
     <string name="back">Retour</string>

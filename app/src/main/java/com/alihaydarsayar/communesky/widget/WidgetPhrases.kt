@@ -3,6 +3,8 @@ package com.alihaydarsayar.communesky.widget
 import android.content.Context
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.HomeAwaySettings
+import com.alihaydarsayar.communesky.model.NowcastPrecision
+import com.alihaydarsayar.communesky.model.RoughSpan
 import com.alihaydarsayar.communesky.model.ObservationUse
 import com.alihaydarsayar.communesky.model.PrecipitationNowcast
 import com.alihaydarsayar.communesky.model.RainStart
@@ -20,10 +22,16 @@ object WidgetPhrases {
 
     fun nowcast(snapshot: WeatherSnapshot, now: LocalDateTime = snapshot.forecast.localNow()): PrecipitationNowcast =
         PrecipitationNowcast.of(snapshot.forecast, now, observed = snapshot.observation is ObservationUse.Override)
+            .copy(isRough = NowcastPrecision.isRough(snapshot))
 
     /** Yağış widget'ının cümlesi: "Yağmur 20:00'de başlıyor", "Önümüzdeki 2 saat yağış yok". */
     fun nowcastSentence(context: Context, nowcast: PrecipitationNowcast, now: LocalDateTime): String {
         val snow = nowcast.isSnow
+        val at = nowcast.at
+        // Türkiye'de 15 dakikalık veri saatlikten türetilir: saat verilmez, yuvarlak konuşulur.
+        if (nowcast.isRough && at != null && (nowcast.kind == PrecipitationNowcast.Kind.Starting || nowcast.kind == PrecipitationNowcast.Kind.Stopping)) {
+            return context.getString(roughRainRes(nowcast.kind == PrecipitationNowcast.Kind.Starting, NowcastPrecision.span(now, at), snow))
+        }
         return when (nowcast.kind) {
             PrecipitationNowcast.Kind.Unknown -> context.getString(R.string.widget_precip_unknown)
             PrecipitationNowcast.Kind.Dry -> context.getString(R.string.widget_precip_dry)
@@ -42,14 +50,18 @@ object WidgetPhrases {
         }
     }
 
-    fun nextRain(snapshot: WeatherSnapshot): RainStart? =
-        RainTiming.next(snapshot.forecast, snapshot.forecast.localNow(), observed = snapshot.observation is ObservationUse.Override)
+    fun nextRain(snapshot: WeatherSnapshot): RainStart? {
+        val now = snapshot.forecast.localNow()
+        val start = RainTiming.next(snapshot.forecast, now, observed = snapshot.observation is ObservationUse.Override) ?: return null
+        return if (NowcastPrecision.isRough(snapshot)) NowcastPrecision.roughen(start, now) else start
+    }
 
     /** Uzun uyarı: "Yağmur 21:00 civarı başlıyor" / "Şu an yağmur yağıyor". Yağış yoksa null. */
     fun rainAlert(context: Context, snapshot: WeatherSnapshot): String? {
         val start = nextRain(snapshot) ?: return null
         return when {
             start.isNow -> context.getString(if (start.isSnow) R.string.widget_snowing_now else R.string.widget_raining_now)
+            start.isSoon -> context.getString(roughRainRes(starting = true, RoughSpan.Soon, start.isSnow))
             else -> context.getString(
                 if (start.isSnow) R.string.widget_snow_starts_around else R.string.widget_rain_starts_around,
                 start.time.format(timeFormatter(context)),
@@ -62,6 +74,7 @@ object WidgetPhrases {
         val start = nextRain(snapshot) ?: return null
         return when {
             start.isNow -> context.getString(if (start.isSnow) R.string.widget_snowing_short else R.string.widget_raining_short)
+            start.isSoon -> context.getString(if (start.isSnow) R.string.widget_snow_soon_short else R.string.widget_rain_soon_short)
             else -> context.getString(
                 if (start.isSnow) R.string.widget_snow_at else R.string.widget_rain_at,
                 atTime(context, start.time),
@@ -72,7 +85,11 @@ object WidgetPhrases {
     /** Sadece yağışın saati ("21:00"); şu an yağıyorsa "Şimdi". */
     fun rainTime(context: Context, snapshot: WeatherSnapshot): String? {
         val start = nextRain(snapshot) ?: return null
-        return if (start.isNow) context.getString(R.string.now) else start.time.format(timeFormatter(context))
+        return when {
+            start.isNow -> context.getString(R.string.now)
+            start.isSoon -> context.getString(R.string.soon)
+            else -> start.time.format(timeFormatter(context))
+        }
     }
 
     /** Uzaktayken alt şeritteki öğeler: "Evden 9 km", "Evde 2° serin", "Evde yağmur 21:00". */
@@ -147,9 +164,32 @@ fun WidgetPhrases.rainStartSentence(context: android.content.Context, snapshot: 
     val start = nextRain(snapshot) ?: return null
     return when {
         start.isNow -> context.getString(if (start.isSnow) R.string.widget_snowing_now else R.string.widget_raining_now)
+        start.isSoon -> context.getString(roughRainRes(starting = true, RoughSpan.Soon, start.isSnow))
+        // Saat başına yuvarlanmış başlangıç "20:00 civarı" diye söylenir.
+        start.isRough -> context.getString(
+            if (start.isSnow) R.string.widget_snow_starts_around else R.string.widget_rain_starts_around,
+            start.time.format(timeFormatter(context)),
+        )
         else -> context.getString(
             if (start.isSnow) R.string.widget_snow_starts_at else R.string.widget_rain_starts_at,
             atTime(context, start.time),
         )
+    }
+}
+
+/** Yuvarlak dille yağış notu: "Yağmur birazdan başlayabilir", "Yağmur 1 saat içinde dinebilir". Uygulama ve widget ortak kullanır. */
+@androidx.annotation.StringRes
+fun roughRainRes(starting: Boolean, span: RoughSpan, isSnow: Boolean): Int = when (span) {
+    RoughSpan.Soon -> when {
+        starting -> if (isSnow) R.string.snow_rough_start_soon else R.string.rain_rough_start_soon
+        else -> if (isSnow) R.string.snow_rough_stop_soon else R.string.rain_rough_stop_soon
+    }
+    RoughSpan.WithinAnHour -> when {
+        starting -> if (isSnow) R.string.snow_rough_start_hour else R.string.rain_rough_start_hour
+        else -> if (isSnow) R.string.snow_rough_stop_hour else R.string.rain_rough_stop_hour
+    }
+    RoughSpan.WithinTwoHours -> when {
+        starting -> if (isSnow) R.string.snow_rough_start_two_hours else R.string.rain_rough_start_two_hours
+        else -> if (isSnow) R.string.snow_rough_stop_two_hours else R.string.rain_rough_stop_two_hours
     }
 }

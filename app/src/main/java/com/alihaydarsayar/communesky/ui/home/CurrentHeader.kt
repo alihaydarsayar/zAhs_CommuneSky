@@ -41,6 +41,7 @@ import com.alihaydarsayar.communesky.model.ObservationUse
 import com.alihaydarsayar.communesky.model.RainOutlook
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.model.rainOutlook
+import com.alihaydarsayar.communesky.widget.roughRainRes
 import com.alihaydarsayar.communesky.ui.common.weatherDescriptionRes
 import com.alihaydarsayar.communesky.ui.common.relativeTimeSince
 import com.alihaydarsayar.communesky.ui.theme.HeroTemperatureStyle
@@ -221,7 +222,9 @@ private fun LocationChip(status: LocationStatus, onClick: () -> Unit) {
 /** "Yağmur 20 dk içinde başlıyor" gibi kısa yağış uyarısı. */
 @Composable
 private fun RainOutlookChip(outlook: RainOutlook) {
-    val text = when (outlook.kind) {
+    val text = if (outlook.isRough) {
+        stringResource(roughRainRes(outlook.kind == RainOutlook.Kind.Starting, outlook.roughSpan, outlook.isSnow))
+    } else when (outlook.kind) {
         RainOutlook.Kind.Starting -> when {
             outlook.minutes <= 5 && outlook.isSnow -> stringResource(R.string.snow_starting_soon)
             outlook.minutes <= 5 -> stringResource(R.string.rain_starting_soon)

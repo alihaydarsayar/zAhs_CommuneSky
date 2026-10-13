@@ -80,9 +80,14 @@ data class PrecipitationSlice(
     val isWet: Boolean,
 )
 
-/** "Yağmur X dakika içinde başlıyor / diniyor" bilgisi. */
-data class RainOutlook(val kind: Kind, val minutes: Int, val isSnow: Boolean) {
+/**
+ * "Yağmur X dakika içinde başlıyor / diniyor" bilgisi. [isRough]: veri dakika verecek kadar kesin değil;
+ * not yuvarlak konuşur ("birazdan", "1 saat içinde"). Bkz. [NowcastPrecision].
+ */
+data class RainOutlook(val kind: Kind, val minutes: Int, val isSnow: Boolean, val isRough: Boolean = false) {
     enum class Kind { Starting, Stopping }
+
+    val roughSpan: RoughSpan get() = NowcastPrecision.span(minutes.toLong())
 }
 
 data class CurrentWeather(
@@ -233,4 +238,4 @@ data class WeatherSnapshot(
 
 /** Yağış uyarısı; anlık durum istasyon ölçümünden geliyorsa çelişkiler gösterilmez. */
 fun WeatherSnapshot.rainOutlook(now: LocalDateTime = forecast.localNow()): RainOutlook? =
-    forecast.rainOutlook(now, observed = observation is ObservationUse.Override)
+    forecast.rainOutlook(now, observed = observation is ObservationUse.Override)?.copy(isRough = NowcastPrecision.isRough(this))

@@ -129,6 +129,21 @@
     <string name="snow_starting_in">Yaklaşık %1$d dk içinde kar bekleniyor</string>
     <string name="snow_stopping_soon">Kar birkaç dakika içinde dinecek gibi</string>
     <string name="snow_stopping_in">Karın yaklaşık %1$d dk içinde dinmesi bekleniyor</string>
+    <string name="rain_rough_start_soon">Yağmur birazdan başlayabilir</string>
+    <string name="rain_rough_start_hour">1 saat içinde yağmur başlayabilir</string>
+    <string name="rain_rough_start_two_hours">2 saat içinde yağmur başlayabilir</string>
+    <string name="rain_rough_stop_soon">Yağmur birazdan dinebilir</string>
+    <string name="rain_rough_stop_hour">Yağmur 1 saat içinde dinebilir</string>
+    <string name="rain_rough_stop_two_hours">Yağmur 2 saat içinde dinebilir</string>
+    <string name="snow_rough_start_soon">Kar birazdan başlayabilir</string>
+    <string name="snow_rough_start_hour">1 saat içinde kar başlayabilir</string>
+    <string name="snow_rough_start_two_hours">2 saat içinde kar başlayabilir</string>
+    <string name="snow_rough_stop_soon">Kar birazdan dinebilir</string>
+    <string name="snow_rough_stop_hour">Kar 1 saat içinde dinebilir</string>
+    <string name="snow_rough_stop_two_hours">Kar 2 saat içinde dinebilir</string>
+    <string name="soon">Birazdan</string>
+    <string name="widget_rain_soon_short">Birazdan yağmur</string>
+    <string name="widget_snow_soon_short">Birazdan kar</string>
 
     <!-- Gezinme -->
     <string name="back">Geri</string>

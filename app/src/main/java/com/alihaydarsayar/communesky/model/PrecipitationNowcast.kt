@@ -14,6 +14,8 @@ data class PrecipitationNowcast(
     val isSnow: Boolean,
     /** Şimdiden başlayan en fazla 8 dilim (2 saat). */
     val slices: List<PrecipitationSlice>,
+    /** Veri saat vermeye yetecek kadar kesin değil: cümle yuvarlak konuşur. Bkz. [NowcastPrecision]. */
+    val isRough: Boolean = false,
 ) {
     enum class Kind {
         /** İki saat boyunca yağış yok. */
@@ -77,8 +79,17 @@ data class PrecipitationNowcast(
     }
 }
 
-/** Yağışın bir sonraki başlangıcı: "Evde yağmur 21:00" gibi kısa uyarılar için. */
-data class RainStart(val time: LocalDateTime, val isSnow: Boolean, val isNow: Boolean)
+/**
+ * Yağışın bir sonraki başlangıcı: "Evde yağmur 21:00" gibi kısa uyarılar için. [isRough]: saat, saat başına
+ * yuvarlanmıştır; [isSoon]: yarım saatten yakın, "birazdan" denir. Bkz. [NowcastPrecision].
+ */
+data class RainStart(
+    val time: LocalDateTime,
+    val isSnow: Boolean,
+    val isNow: Boolean,
+    val isRough: Boolean = false,
+    val isSoon: Boolean = false,
+)
 
 object RainTiming {
     /**
