@@ -20,6 +20,7 @@
     <string name="observation_just_now">à l’instant</string>
     <string name="observation_note_mgm">Mesure : MGM, %1$s, %2$s</string>
     <string name="observation_note_metar">Mesure : %1$s (METAR), %2$s</string>
+    <string name="observation_note_network">Actuel : %1$d stations MGM, la plus proche %2$s (%3$s km)</string>
     <string name="observation_thunder_nearby">Orage à proximité (%1$s, %2$s)</string>
     <string name="observation_rain_nearby">Pluie à proximité (%1$s, %2$s)</string>
 
@@ -555,6 +556,7 @@
     <string name="source_info_unavailable">%1$s n’a pas pu être joint pour le moment. L’application y revient dès qu’il répond.</string>
     <string name="source_info_precipitation">Risque et quantité de pluie, UV, pression et visibilité : %1$s.</string>
     <string name="source_info_observation">La température actuelle est une mesure réelle de la station la plus proche.</string>
+    <string name="source_info_network">La température actuelle est calculée à partir de %1$d stations MGM autour de vous ; plus une station est proche, plus elle compte. La plus proche : %2$s (%3$s km).</string>
     <string name="dialog_close">Fermer</string>
     <string name="rain_expected_by">Pluie attendue (%1$s)</string>
     <string name="rain_chance_note">Risque de pluie %1$d %%</string>

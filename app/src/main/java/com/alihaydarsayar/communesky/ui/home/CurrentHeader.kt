@@ -144,6 +144,12 @@ fun CurrentHeader(
             Spacer(Modifier.height(10.dp))
             ObservationAdvisoryChip(observation)
         }
+        // İstasyon ağı: yerde yağmıyor ama çevredeki bir istasyon yağış ya da gök gürültüsü ölçüyor.
+        val nearbyWet = (observation as? ObservationUse.Override)?.network?.nearbyWet
+        if (nearbyWet != null && !current.condition.isWet) {
+            Spacer(Modifier.height(10.dp))
+            ObservationAdvisoryChip(ObservationUse.Advisory(nearbyWet, 0.0))
+        }
         if (locationStatus != LocationStatus.Current) {
             Spacer(Modifier.height(18.dp))
             LocationChip(locationStatus, onClick = { onLocationAction(locationStatus) })

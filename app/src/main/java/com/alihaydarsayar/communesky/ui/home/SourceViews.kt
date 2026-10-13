@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.ForecastSource
 import com.alihaydarsayar.communesky.model.ForecastSources
+import com.alihaydarsayar.communesky.model.ObservationUse
 import com.alihaydarsayar.communesky.model.RainNote
 import com.alihaydarsayar.communesky.model.TemperatureUnit
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
@@ -121,7 +122,13 @@ private fun sourceInfoLines(weather: WeatherSnapshot, sources: ForecastSources):
     add(stringResource(R.string.source_info_forecast, stringResource(sources.forecast.fullNameRes)))
     if (sources.nationalUnavailable) add(stringResource(R.string.source_info_unavailable, stringResource(R.string.source_mgm)))
     if (sources.forecast != sources.precipitation) add(stringResource(R.string.source_info_precipitation, stringResource(sources.precipitation.fullNameRes)))
-    if (weather.observation != null) add(stringResource(R.string.source_info_observation))
+    val network = (weather.observation as? ObservationUse.Override)?.network
+    if (network != null) {
+        val distance = com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat().format(network.nearestKm)
+        add(stringResource(R.string.source_info_network, network.stationCount, network.nearest.stationName, distance))
+    } else if (weather.observation != null) {
+        add(stringResource(R.string.source_info_observation))
+    }
     // Karne: yeterli gün birikince yarının en yükseğindeki ortalama hata, öteki kaynaklarla yan yana.
     val decimal = com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat()
     val own = sources.accuracy.firstOrNull { it.source == sources.forecast }

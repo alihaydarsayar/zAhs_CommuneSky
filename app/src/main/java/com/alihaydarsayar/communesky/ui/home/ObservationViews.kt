@@ -24,6 +24,7 @@ import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.Observation
 import com.alihaydarsayar.communesky.model.ObservationSource
 import com.alihaydarsayar.communesky.model.ObservationUse
+import com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat
 import com.alihaydarsayar.communesky.ui.common.relativeTimeSince
 import com.alihaydarsayar.communesky.ui.theme.TextPrimary
 import com.alihaydarsayar.communesky.ui.theme.TextTertiary
@@ -50,7 +51,11 @@ private fun observedAgo(observation: Observation): String =
 @Composable
 fun ObservationNote(use: ObservationUse.Override, modifier: Modifier = Modifier) {
     val observation = use.observation
-    val text = when (observation.source) {
+    val network = use.network
+    val text = if (network != null) {
+        // İstasyon ağı: "Anlık: 4 MGM istasyonu, en yakını Beşiktaş (1,2 km)".
+        stringResource(R.string.observation_note_network, network.stationCount, observation.stationName, rememberDecimalFormat().format(use.distanceKm))
+    } else when (observation.source) {
         ObservationSource.Mgm -> stringResource(R.string.observation_note_mgm, stationLabel(observation), observedAgo(observation))
         ObservationSource.Metar -> stringResource(R.string.observation_note_metar, stationLabel(observation), observedAgo(observation))
     }

@@ -21,6 +21,7 @@ What's new in each version of Commune Sky.
 - The moon in the night sky now shows its real phase (crescent, half, gibbous or full, lit on the correct side) instead of always being full.
 - In Türkiye the current temperature now comes from up to six nearby MGM stations instead of one. Closer stations count more, each reading is adjusted to the height of your place, a faulty or much higher station is left out, and the forecast model fills in when stations are far away.
 - It now says it is raining when a station within 5 km, or most stations around you, measure rain; a single dry station no longer hides the rain around it.
+- The line under the place name shows how many stations the current weather comes from and which one is nearest; the source details explain it.
 
 ## 1.5 — in testing
 

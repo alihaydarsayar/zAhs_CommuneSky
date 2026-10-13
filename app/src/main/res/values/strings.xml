@@ -21,6 +21,7 @@
     <string name="observation_just_now">just now</string>
     <string name="observation_note_mgm">Measured: MGM, %1$s, %2$s</string>
     <string name="observation_note_metar">Measured: %1$s (METAR), %2$s</string>
+    <string name="observation_note_network">Now: %1$d MGM stations, nearest %2$s (%3$s km)</string>
     <string name="observation_thunder_nearby">Thunderstorm nearby (%1$s, %2$s)</string>
     <string name="observation_rain_nearby">Rain nearby (%1$s, %2$s)</string>
 
@@ -560,6 +561,7 @@
     <string name="source_info_unavailable">%1$s could not be reached just now. The app goes back to it as soon as it answers.</string>
     <string name="source_info_precipitation">Rain chance and amount, UV, pressure and visibility: %1$s.</string>
     <string name="source_info_observation">The current temperature is a real measurement from the nearest station.</string>
+    <string name="source_info_network">The current temperature is worked out from %1$d MGM stations around you; the closer a station, the more it counts. Nearest: %2$s (%3$s km).</string>
     <string name="dialog_close">Close</string>
     <string name="rain_expected_by">Rain expected (%1$s)</string>
     <string name="rain_chance_note">Chance of rain %1$d%%</string>
