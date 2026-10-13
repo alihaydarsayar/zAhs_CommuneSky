@@ -37,6 +37,11 @@ data class Observation(
     val isWet: Boolean = false,
     /** Şu an gök gürültüsü var mı. */
     val hasThunder: Boolean = false,
+    /**
+     * İstasyon ağı: bu ölçüm bir ağın en yakın geçerli istasyonuysa, kaliteden geçen bütün istasyonların
+     * ölçümleri (bu dahil, en yakından uzağa). Tek istasyon kullanılıyorsa boştur. Bkz. [StationNetwork].
+     */
+    val network: List<Observation> = emptyList(),
 ) {
     val observedAt: Instant get() = Instant.ofEpochMilli(observedAtMillis)
 }
@@ -46,8 +51,15 @@ sealed interface ObservationUse {
     val observation: Observation
     val distanceKm: Double
 
-    /** İstasyon yakın: anlık sıcaklık ve durum ölçümden gelir. */
-    data class Override(override val observation: Observation, override val distanceKm: Double) : ObservationUse
+    /**
+     * İstasyon yakın: anlık sıcaklık ve durum ölçümden gelir. [network] doluysa değerler tek istasyondan değil
+     * istasyon ağından hesaplanmıştır; [observation] o zaman ağın en yakın geçerli istasyonudur.
+     */
+    data class Override(
+        override val observation: Observation,
+        override val distanceKm: Double,
+        val network: StationNetwork.Result? = null,
+    ) : ObservationUse
 
     /** İstasyon uzak ama orada yağış/gök gürültüsü var: durum değişmez, uyarı gösterilir. */
     data class Advisory(override val observation: Observation, override val distanceKm: Double) : ObservationUse
@@ -153,6 +165,34 @@ object ObservationPolicy {
         )
     }
 
+    /**
+     * İstasyon ağının sonucunu modelin anlık verisine işler: sıcaklık ağın ağırlıklı değeridir; nem ve rüzgâr
+     * en yakın geçerli istasyondan gelir (rüzgârı ortalamak anlamsızdır).
+     */
+    fun applyNetwork(current: CurrentWeather, network: StationNetwork.Result): CurrentWeather {
+        val nearest = network.nearest
+        val humidity = nearest.humidity ?: current.humidity
+        val dewPoint = if (network.temperature != current.temperature || humidity != current.humidity) {
+            dewPoint(network.temperature, humidity)
+        } else {
+            current.dewPoint
+        }
+        val wind = if (nearest.windSpeedKmh != null && nearest.windDirection != null) {
+            nearest.windSpeedKmh to nearest.windDirection
+        } else {
+            current.windSpeed to current.windDirection
+        }
+        return current.copy(
+            temperature = network.temperature,
+            apparentTemperature = current.apparentTemperature + (network.temperature - current.temperature),
+            humidity = humidity,
+            dewPoint = dewPoint,
+            windSpeed = wind.first,
+            windDirection = wind.second,
+            weatherCode = network.weatherCode ?: current.weatherCode,
+        )
+    }
+
     /** Sıcaklık (°C) ve bağıl nemden (%) çiy noktası (Magnus formülü). */
     fun dewPoint(temperature: Double, humidity: Int): Double {
         val rh = humidity.coerceIn(1, 100) / 100.0
@@ -174,6 +214,22 @@ object ObservationBlend {
      * olarak eklenir. [now] anında artık taze olmayan ölçüm yok sayılır, veri olduğu gibi kalır.
      */
     fun apply(snapshot: WeatherSnapshot, observation: Observation?, now: Instant): WeatherSnapshot {
+        // İstasyon ağı: en az iki geçerli istasyon varsa değerler ağdan hesaplanır; yoksa tek istasyonun kuralları.
+        val network = observation?.network.orEmpty()
+        if (network.size >= 2) {
+            StationNetwork.blend(
+                readings = network,
+                latitude = snapshot.city.latitude,
+                longitude = snapshot.city.longitude,
+                placeElevation = snapshot.forecast.elevation,
+                modelTemperature = snapshot.forecast.current.temperature,
+                now = now,
+            )?.let { result ->
+                val current = ObservationPolicy.applyNetwork(snapshot.forecast.current, result)
+                val use = ObservationUse.Override(result.nearest, result.nearestKm, result)
+                return snapshot.copy(forecast = snapshot.forecast.copy(current = current), observation = use)
+            }
+        }
         val use = ObservationPolicy.evaluate(
             observation = observation,
             latitude = snapshot.city.latitude,
