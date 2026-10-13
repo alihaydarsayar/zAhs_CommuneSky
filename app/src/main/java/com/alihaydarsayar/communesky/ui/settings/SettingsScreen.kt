@@ -43,6 +43,7 @@ import androidx.lifecycle.viewModelScope
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.data.places.PlacesRepository
 import com.alihaydarsayar.communesky.data.settings.SettingsRepository
+import com.alihaydarsayar.communesky.debug.debugSettingsItems
 import com.alihaydarsayar.communesky.model.AppSettings
 import com.alihaydarsayar.communesky.model.TemperatureUnit
 import com.alihaydarsayar.communesky.model.ThemeMode
@@ -393,6 +394,8 @@ fun SettingsScreen(
                     )
                 }
             }
+            // Yalnız debug sürümünde bir bölüm ekler; release'de boştur ve kodu derlenmez.
+            debugSettingsItems()
         }
     }
 }
