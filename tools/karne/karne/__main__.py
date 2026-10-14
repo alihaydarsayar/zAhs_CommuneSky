@@ -17,12 +17,19 @@ def main(argv: list[str] | None = None) -> int:
     forecasts.add_argument("--budget", type=float, default=openmeteo.DAILY_BUDGET, help="bugün için çağrı tavanı")
     sub.add_parser("report", help="RAPOR.md ve turkey_skill.json üret")
     sub.add_parser("all", help="obs + forecasts + report")
+    sub.add_parser("mgm-saat", help="MGM saatlik tahmininin saat dilimini sına (MGM-SAAT.md)")
     args = parser.parse_args(argv)
 
     config.ensure_dirs()
     if args.command == "stations":
         stations = iem.fetch_stations()
         print(f"{len(stations)} istasyon -> {config.STATIONS_FILE}")
+        return 0
+    if args.command == "mgm-saat":
+        from . import mgm_timezone
+        path = config.DATA_DIR / "MGM-SAAT.md"
+        path.write_text(mgm_timezone.analyse(), encoding="utf-8")
+        print(path)
         return 0
     stations = iem.load_stations()
     if args.command in ("obs", "all"):
