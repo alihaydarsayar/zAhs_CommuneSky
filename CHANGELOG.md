@@ -2,7 +2,15 @@
 
 What's new in each version of Commune Sky.
 
-## 1.5.1 — in testing
+## 1.5.2 — in testing
+
+- In Türkiye the current temperature now comes from up to six nearby MGM stations instead of one. Closer stations count more, each reading is adjusted to the height of your place, a faulty or much higher station is left out, and the forecast model fills in when stations are far away.
+- It now says it is raining when a station within 5 km, or most stations around you, measure rain; a single dry station no longer hides the rain around it.
+- The line under the place name shows how many stations the current weather comes from and which one is nearest; the source details explain it.
+- In Türkiye the short rain note no longer gives minutes or an exact time, because the 15-minute rain data there is derived from the hourly forecast: it now says "Rain may start soon" or "within the hour". When stations around you are measuring rain it stays exact. The rain widget and the rain lines on other widgets follow the same rule; nothing changes in France, the United Kingdom and Ireland.
+- New: tap a day in the 7-day forecast to open its page: the day's icon and a short sentence, high and low, feels like, charts hour by hour for temperature, rain chance and amount, wind and gusts, plus the highest UV, humidity range, sunrise, sunset and day length. Swipe sideways for the other days; tapping an hour in the hourly forecast opens its day with that hour selected. The hours of later days are fetched only when you open the page.
+
+## 1.5.1 — October 14, 2026
 
 - Fixed: with two widgets of the same kind (for example two clocks), a widget could take on the look of the one you saved last. When you save a widget, the others of its kind now keep the look they have.
 - Fixed: on some home screens a widget could be laid out for a wider space than it really has, so its edges were cut off (for example the date and the weather on the radial clock). This no longer depends on how the phone is held when the widget updates.
@@ -19,11 +27,6 @@ What's new in each version of Commune Sky.
 - Fixed: with a very large phone font, hour labels and the 7-day rows ran into each other and were cut off. Those rows and the small tiles now stop growing at a readable size; all other text still follows the phone setting.
 - Fixed: with a large phone font, lines on widgets were squeezed together and the bottoms of letters were cut off.
 - The moon in the night sky now shows its real phase (crescent, half, gibbous or full, lit on the correct side) instead of always being full.
-- In Türkiye the current temperature now comes from up to six nearby MGM stations instead of one. Closer stations count more, each reading is adjusted to the height of your place, a faulty or much higher station is left out, and the forecast model fills in when stations are far away.
-- It now says it is raining when a station within 5 km, or most stations around you, measure rain; a single dry station no longer hides the rain around it.
-- The line under the place name shows how many stations the current weather comes from and which one is nearest; the source details explain it.
-- In Türkiye the short rain note no longer gives minutes or an exact time, because the 15-minute rain data there is derived from the hourly forecast: it now says "Rain may start soon" or "within the hour". When stations around you are measuring rain it stays exact. The rain widget and the rain lines on other widgets follow the same rule; nothing changes in France, the United Kingdom and Ireland.
-- New: tap a day in the 7-day forecast to open its page: the day's icon and a short sentence, high and low, feels like, charts hour by hour for temperature, rain chance and amount, wind and gusts, plus the highest UV, humidity range, sunrise, sunset and day length. Swipe sideways for the other days; tapping an hour in the hourly forecast opens its day with that hour selected. The hours of later days are fetched only when you open the page.
 
 ## 1.5 — in testing
 
