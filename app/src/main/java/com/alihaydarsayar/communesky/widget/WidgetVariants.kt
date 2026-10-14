@@ -108,15 +108,22 @@ object WidgetDiagnostics {
             variant.width.value, variant.height.value, layout.width.value, layout.height.value,
             if (compact) " yedek" else "", if (WidgetVariants.isLandscapeNow(context)) "yatay" else "dikey",
         )
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        synchronized(this) {
+        // Kayıt çizimi bekletmez: tercih dosyası arka planda okunup yazılır (çizim ana iş parçacığında olabilir).
+        val app = context.applicationContext
+        writer.execute {
+            val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val lines = prefs.getString(KEY_DRAWS, "").orEmpty().lines().filter { it.isNotBlank() }
             // Aynı çizim art arda tekrarlanırsa (ör. her güncellemede) liste dolmasın.
             // Listede her farklı çizimin yalnız en son zamanı kalır.
             val content = line.substringAfter(' ')
-            if (lines.lastOrNull()?.substringAfter(' ') == content) return
+            if (lines.lastOrNull()?.substringAfter(' ') == content) return@execute
             prefs.edit().putString(KEY_DRAWS, (lines.filterNot { it.substringAfter(' ') == content } + line).takeLast(MAX_DRAWS).joinToString("\n")).apply()
         }
+    }
+
+    /** Kayıtlar sırayla, tek bir arka plan iş parçacığında yazılır. */
+    private val writer = java.util.concurrent.Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "WidgetDiagnostics").apply { isDaemon = true }
     }
 
     suspend fun report(context: Context): String = buildString {

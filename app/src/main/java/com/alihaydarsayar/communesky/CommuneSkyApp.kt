@@ -53,6 +53,8 @@ class CommuneSkyApp : Application(), Configuration.Provider {
                 android.os.StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build(),
             )
         }
+        // Saat biçimi tercihi ilk ekrandan önce arka planda okunur; ana iş parçacığı diski beklemesin.
+        appScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.alihaydarsayar.communesky.widget.WidgetLanguage.warmUp(this@CommuneSkyApp) }
         // Birim, Ev ya da kayıtlı yerler değişince widget'lar hemen yeni hale geçsin
         // (hava verisi değişmediği için internete çıkılmaz). İlk değer atlanır: açılışta gereksiz çizim yok.
         appScope.launch {

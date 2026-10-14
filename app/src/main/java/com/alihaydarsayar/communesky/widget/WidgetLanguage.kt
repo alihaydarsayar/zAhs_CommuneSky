@@ -72,12 +72,29 @@ object WidgetLanguage {
      * Widget'lar uygulama kapalıyken de okuyabilsin diye burada (küçük bir tercih dosyasında) saklanır.
      */
     fun clockFormat(context: Context): ClockFormat {
-        val stored = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CLOCK, null)
+        val stored = storedClock ?: readStoredClock(context)
         return ClockFormat.entries.firstOrNull { it.name == stored } ?: defaultClockFormat(context(context).resources.configuration.locales[0].language)
     }
 
     fun setClockFormat(context: Context, format: ClockFormat) {
+        storedClock = format.name
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_CLOCK, format.name).apply()
+    }
+
+    /**
+     * Seçilen saat biçimi bellekte tutulur: ekranlar bunu her çizimde sorar ve tercih dosyasının ilk okunuşu diskten
+     * olur (yüklü bir telefonda açılışta saniyeler sürebildi). Değer süreç başına bir kez okunur; [warmUp] bunu
+     * açılışta arka planda yapar. Boş dize: kullanıcı seçmemiş.
+     */
+    @Volatile
+    private var storedClock: String? = null
+
+    private fun readStoredClock(context: Context): String =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_CLOCK, null).orEmpty().also { storedClock = it }
+
+    /** Uygulama açılırken arka planda çağrılır: ilk ekran çizilirken saat biçimi için diske gidilmesin. */
+    fun warmUp(context: Context) {
+        readStoredClock(context)
     }
 
     /** Varsayılan saat biçimi: Türkçede 24 saat ("9öö", "12ös" yazılmasın); diğer dillerde telefonla aynı. Saf; test edilir. */
