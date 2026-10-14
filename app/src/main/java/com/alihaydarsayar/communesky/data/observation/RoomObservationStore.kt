@@ -17,6 +17,7 @@ import javax.inject.Inject
 
 /** Ölçümleri Room'da saklar. Ölçüm küçük olduğu için JSON olarak tek sütunda durur. */
 class RoomObservationStore @Inject constructor(
+    @param:dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
     private val dao: ObservationDao,
     private val json: Json,
 ) : ObservationStore {
@@ -65,6 +66,23 @@ class RoomObservationStore @Inject constructor(
                 candidatesJson = json.encodeToString(candidatesSerializer, station.candidates),
             ),
         )
+    }
+
+    // İstasyon listesi büyük (~2.000 istasyon) ve bütün yerlerde ortak: veritabanına değil, tek bir dosyaya yazılır.
+    private val directoryFile get() = java.io.File(context.filesDir, "mgm_istasyonlar.json")
+
+    override suspend fun stationDirectory(): StationDirectory? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        runCatching { json.decodeFromString(StationDirectory.serializer(), directoryFile.readText()) }.getOrNull()
+    }
+
+    override suspend fun saveStationDirectory(directory: StationDirectory) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val temporary = java.io.File(context.filesDir, "mgm_istasyonlar.json.tmp")
+        temporary.writeText(json.encodeToString(StationDirectory.serializer(), directory))
+        if (!temporary.renameTo(directoryFile)) {
+            directoryFile.delete()
+            temporary.renameTo(directoryFile)
+        }
+        Unit
     }
 
     private fun ObservationEntity.decode(): Observation? = observationJson?.let {

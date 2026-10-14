@@ -54,7 +54,15 @@ interface ObservationStore {
     suspend fun save(placeId: Long, observation: Observation?, requestedAtMillis: Long)
     suspend fun station(placeId: Long): MgmStationInfo?
     suspend fun saveStation(placeId: Long, station: MgmStationInfo)
+
+    /** MGM'nin bütün istasyonlarının listesi: bütün yerler için tek ortak kopya, diskte. */
+    suspend fun stationDirectory(): StationDirectory?
+    suspend fun saveStationDirectory(directory: StationDirectory)
 }
+
+/** MGM'nin istasyon listesi ve indirildiği an. */
+@Serializable
+data class StationDirectory(val fetchedAtMillis: Long, val stations: List<MgmStationDto>)
 
 /**
  * Anlık durum için istasyon ölçümleri.
@@ -86,6 +94,7 @@ class ObservationRepository @Inject constructor(
     /** İl ölçümleri: plaka → (alındığı an, istasyon numarası → ölçüm). Aynı ildeki yerler paylaşır. */
     private val provinceCache = mutableMapOf<Int, Pair<Long, Map<Int, MgmObservationDto>>>()
     private val provinceMutex = Mutex()
+    private val directoryMutex = Mutex()
 
     val observations: Flow<Map<Long, Observation>> = store.observeAll()
 
@@ -224,6 +233,19 @@ class ObservationRepository @Inject constructor(
         result
     }
 
+    /**
+     * MGM'nin bütün istasyonları: diskteki ortak kopya ayda bir yenilenir; bütün yerler onu kullanır. Yenilenemezse
+     * eski kopya kullanılır; hiç yoksa null.
+     */
+    private suspend fun allStations(): List<MgmStationDto>? = directoryMutex.withLock {
+        val saved = store.stationDirectory()
+        if (saved != null && clock() - saved.fetchedAtMillis < DIRECTORY_MAX_AGE_MS) return@withLock saved.stations
+        val fresh = attempt("MGM istasyonları") { mgmApi.get().allStations() }?.takeIf { it.isNotEmpty() }
+            ?: return@withLock saved?.stations
+        store.saveStationDirectory(StationDirectory(clock(), fresh))
+        fresh
+    }
+
     /** Bir ilin bütün son ölçümleri; 3 dakikadan taze cevap yeniden istenmez. Alınamazsa null. */
     private suspend fun provinceLatest(plate: Int): Map<Int, MgmObservationDto>? = provinceMutex.withLock {
         val now = clock()
@@ -282,7 +304,7 @@ class ObservationRepository @Inject constructor(
         )
         // Bütün Türkiye'nin istasyon listesi (il plakalarıyla): il sınırına yakın yerlerde komşu ilin istasyonları da
         // aday olur. Alınamazsa yalnız yerin kendi ili.
-        val province = attempt("MGM istasyonları") { mgmApi.get().allStations() }?.takeIf { it.isNotEmpty() }
+        val province = allStations()
             ?: center.il?.let { il -> attempt("MGM il istasyonları") { mgmApi.get().stationsInProvince(il) } }.orEmpty()
         val official = center.observationStationId?.let { id ->
             province.firstOrNull { it.id == id } ?: attempt("MGM istasyon") { mgmApi.get().station(id).firstOrNull() }
@@ -372,6 +394,9 @@ class ObservationRepository @Inject constructor(
         /** Bu mesafeden uzak MGM istasyonu aday sayılmaz (resmi ilçe istasyonu hariç). */
         const val CANDIDATE_KM = StationNetwork.RADIUS_KM
 
+
+        /** İstasyon listesi en çok bu kadar eskiyebilir (30 gün). */
+        const val DIRECTORY_MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
 
         /** İlin plakası öğrenilemedi: ölçümler istasyon istasyon sorulur. */
         const val UNKNOWN_PLATE = 0

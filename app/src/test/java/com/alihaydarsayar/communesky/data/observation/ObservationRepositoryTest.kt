@@ -66,6 +66,7 @@ class ObservationRepositoryTest {
         var latestAnswer: suspend (Int) -> List<MgmObservationDto> = { throw IOException() }
         var provinceLatestAnswer: suspend (Int) -> List<MgmObservationDto> = { throw IOException() }
         var allStationsAnswer: suspend () -> List<MgmStationDto> = { throw IOException() }
+        var allStationsCalls = 0
         var centerCalls = 0
         val latestCalls = mutableListOf<Int>()
         val provinceLatestCalls = mutableListOf<Int>()
@@ -76,7 +77,10 @@ class ObservationRepositoryTest {
             return centerAnswer()
         }
         override suspend fun station(stationId: Int) = stationAnswer()
-        override suspend fun allStations() = allStationsAnswer()
+        override suspend fun allStations(): List<MgmStationDto> {
+            allStationsCalls++
+            return allStationsAnswer()
+        }
         override suspend fun stationsInProvince(province: String) = provinceAnswer()
         override suspend fun latest(stationId: Int): List<MgmObservationDto> {
             latestCalls += stationId
@@ -103,6 +107,7 @@ class ObservationRepositoryTest {
         val observations = MutableStateFlow<Map<Long, Observation>>(emptyMap())
         val requested = mutableMapOf<Long, Long>()
         val stations = mutableMapOf<Long, MgmStationInfo>()
+        var directory: StationDirectory? = null
         override fun observeAll(): Flow<Map<Long, Observation>> = observations
         override suspend fun get(placeId: Long) = observations.value[placeId]
         override suspend fun lastRequestMillis(placeId: Long) = requested[placeId]
@@ -113,6 +118,10 @@ class ObservationRepositoryTest {
         override suspend fun station(placeId: Long) = stations[placeId]
         override suspend fun saveStation(placeId: Long, station: MgmStationInfo) {
             stations[placeId] = station
+        }
+        override suspend fun stationDirectory() = directory
+        override suspend fun saveStationDirectory(directory: StationDirectory) {
+            this.directory = directory
         }
     }
 
@@ -348,6 +357,30 @@ class ObservationRepositoryTest {
         assertEquals(listOf(18100, 17448, 17063, 19001), store.station(5)!!.candidates.map { it.id })
         assertEquals(41, store.station(5)!!.candidates.last().provincePlate)
         assertTrue(store.get(5)!!.network.any { it.stationName == "Sınır" })
+    }
+
+    @Test
+    fun `the station list is fetched once for all places and kept for a month`() = runTest {
+        istanbulWorks()
+        mgm.allStationsAnswer = { istanbulStations }
+        val sisli = Place(6, City("Şişli", 41.0602, 28.9877), isCurrentLocation = false)
+        repository.refresh(listOf(besiktas, sisli))
+        assertEquals(1, mgm.allStationsCalls)
+        assertEquals(3, store.directory!!.stations.size)
+
+        // Yeni bir yer eklendi: liste yeniden indirilmez.
+        val third = Place(8, City("Örnek", 41.05, 29.02), isCurrentLocation = false)
+        clockMillis += 4 * 60 * 1000
+        repository.refresh(listOf(third))
+        assertEquals(1, mgm.allStationsCalls)
+
+        // Bir ay sonra yeni bir yerin istasyonları bulunurken liste yenilenir; yenilenemezse eskisi kullanılır.
+        clockMillis += 31L * 24 * 60 * 60 * 1000
+        mgm.allStationsAnswer = { throw IOException() }
+        val fourth = Place(9, City("Örnek 2", 41.06, 29.03), isCurrentLocation = false)
+        repository.refresh(listOf(fourth))
+        assertEquals(2, mgm.allStationsCalls)
+        assertEquals(3, store.station(9)!!.candidates.size)
     }
 
     @Test
