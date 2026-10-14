@@ -38,6 +38,27 @@ object StationNetwork {
     const val RAIN_NEAR_KM = 5.0
     const val RAIN_AREA_KM = 15.0
 
+    /** Denizdeki istasyonun (fener, mendirek, şamandıra) sıcaklık ağırlığı bu oranda azalır: deniz havası karayı temsil etmez. */
+    const val SEA_WEIGHT = 0.5
+
+    private val SEA_WORDS = listOf("fener", "mendirek", "şamandıra", "samandira")
+
+    /**
+     * İstasyon denizde mi? Adında "Fener", "Mendirek" ya da "Şamandıra" geçen MGM istasyonları. Sıcaklık ağında
+     * kalırlar ama ağırlıkları yarıya iner; hakem ve öğrenen düzeltme onların ölçümünü kullanmaz.
+     */
+    fun isAtSea(observation: Observation): Boolean {
+        val name = observation.stationName.lowercase(java.util.Locale.forLanguageTag("tr"))
+        return observation.source == ObservationSource.Mgm && SEA_WORDS.any { it in name }
+    }
+
+    /**
+     * Hakemin ve öğrenen düzeltmenin kullanacağı ham ölçüm: sıcaklığı olan en yakın kara istasyonu; karada yoksa
+     * sıcaklığı olan en yakın istasyon. [stations] en yakından uzağa sıralı olmalı.
+     */
+    fun referenceStation(stations: List<Observation>): Observation? =
+        stations.firstOrNull { it.temperature != null && !isAtSea(it) } ?: stations.firstOrNull { it.temperature != null }
+
     /** Yerin hemen dibindeki istasyon sonsuz ağırlık almasın. */
     private const val MIN_DISTANCE_KM = 0.5
 
@@ -132,17 +153,19 @@ object StationNetwork {
         val nearest = stations.firstOrNull { it.temperature != null } ?: stations.first()
 
         // --- Sıcaklık
-        data class Weighted(val temperature: Double, val weight: Double, val km: Double)
+        data class Weighted(val temperature: Double, val weight: Double, val km: Double, val sea: Boolean)
         val parts = stations.mapNotNull { station ->
             val temperature = station.temperature ?: return@mapNotNull null
             val lift = if (station.elevationMeters != null && placeElevation != null) station.elevationMeters - placeElevation else 0.0
             if (abs(lift) > MAX_ELEVATION_DIFF_M) return@mapNotNull null
             val distance = max(km(station, latitude, longitude), MIN_DISTANCE_KM)
             // İstasyon yerden yüksekteyse orası daha soğuktur: yerin yüksekliğine inerken sıcaklık artar.
-            Weighted(temperature + LAPSE_C_PER_M * lift, 1 / (distance * distance), distance)
+            val sea = isAtSea(station)
+            Weighted(temperature + LAPSE_C_PER_M * lift, (if (sea) SEA_WEIGHT else 1.0) / (distance * distance), distance, sea)
         }.toMutableList()
         val modelWeight = 1 / (MODEL_DISTANCE_KM * MODEL_DISTANCE_KM)
-        val closest = parts.minByOrNull { it.km }
+        // Baskın ağırlık yalnız karadaki yakın istasyona verilir.
+        val closest = parts.filter { !it.sea }.minByOrNull { it.km }
         if (closest != null && closest.km <= DOMINANT_KM) {
             val rest = parts.sumOf { it.weight } - closest.weight + modelWeight
             val needed = rest * DOMINANT_SHARE / (1 - DOMINANT_SHARE)

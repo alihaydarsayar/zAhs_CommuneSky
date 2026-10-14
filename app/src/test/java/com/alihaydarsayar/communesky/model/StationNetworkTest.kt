@@ -378,4 +378,35 @@ class StationNetworkTest {
         assertEquals(16.0, single.forecast.current.temperature, 0.0)
         assertFalse(single.precipitationMeasured)
     }
+
+    // --- Denizdeki istasyonlar
+
+    @Test
+    fun `the referee uses the land station, not the lighthouse`() {
+        // Fener 1 km'de, kara istasyonu 3 km'de: hakemin ham ölçümü kara istasyonundan.
+        val stations = listOf(lighthouse(1.0), station("İlçe", 3.0, temperature = 15.6))
+        assertEquals("İlçe", StationNetwork.referenceStation(stations)!!.stationName)
+        // Karada istasyon yoksa fener de olur.
+        assertEquals("Fener", StationNetwork.referenceStation(listOf(lighthouse(1.0)))!!.stationName)
+    }
+
+    @Test
+    fun `sea stations are recognised by their names`() {
+        assertTrue(StationNetwork.isAtSea(station("İtü Güney Mendirek Feneri", 1.0)))
+        assertTrue(StationNetwork.isAtSea(station("Beşiktaş İskele Feneri", 1.0)))
+        assertTrue(StationNetwork.isAtSea(station("Örnek Şamandıra", 1.0)))
+        assertFalse(StationNetwork.isAtSea(station("Beşiktaş", 1.0)))
+        // Havalimanı raporları hiçbir zaman denizde sayılmaz.
+        assertFalse(StationNetwork.isAtSea(station("Fener", 1.0).copy(source = ObservationSource.Metar)))
+    }
+
+    @Test
+    fun `a sea station counts half in the temperature and takes no dominant share`() {
+        // Fener 1,5 km'de 14°, kara istasyonu 3 km'de 18°; model kara istasyonuyla aynı.
+        val result = blend(listOf(station("Fener", 1.5, temperature = 14.0), station("Kara", 3.0, temperature = 18.0)), model = 18.0)!!
+        // Ağırlıklar: fener 0,5/2,25 = 0,222, kara 1/9 = 0,111, model 0,0044. Fener yarıya inmeseydi ve
+        // 2 km kuralıyla %70 alsaydı sonuç 15,2° olurdu.
+        val expected = (14.0 * 0.5 / 2.25 + 18.0 / 9 + 18.0 / 225) / (0.5 / 2.25 + 1.0 / 9 + 1.0 / 225)
+        assertEquals(expected, result.temperature, 0.01)
+    }
 }

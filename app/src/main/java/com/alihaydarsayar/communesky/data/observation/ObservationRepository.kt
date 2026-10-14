@@ -166,17 +166,19 @@ class ObservationRepository @Inject constructor(
         }
         val nearbyAirports = airports().filter { ObservationPolicy.distanceKm(it, lat, lon) <= StationNetwork.RADIUS_KM }
         val network = StationNetwork.valid(observations + nearbyAirports, lat, lon, now)
-        val nearest = network.firstOrNull { it.temperature != null }
+        // Saklanan ölçüm hakemin ve öğrenen düzeltmenin kullandığı ham ölçümdür: denizdeki istasyon değil, en yakın kara istasyonu.
+        val nearest = StationNetwork.referenceStation(network)
         if (nearest != null && network.size >= 2) {
             log(
                 place,
                 "İstasyon ağı: ${network.size}/${observations.size + nearbyAirports.size} istasyon geçerli " +
-                    "(${nearbyAirports.size} havalimanı); en yakını ${nearest.stationName} " +
+                    "(${nearbyAirports.size} havalimanı); ölçüm istasyonu ${nearest.stationName} " +
                     "(%.1f km)".format(Locale.ROOT, ObservationPolicy.distanceKm(nearest, lat, lon)),
             )
             return nearest.copy(network = network)
         }
-        for (observation in observations) {
+        // Tek istasyon: önce karadakiler denenir.
+        for (observation in observations.sortedBy { StationNetwork.isAtSea(it) }) {
             val distance = ObservationPolicy.distanceKm(observation, lat, lon)
             when {
                 observation.temperature == null ->

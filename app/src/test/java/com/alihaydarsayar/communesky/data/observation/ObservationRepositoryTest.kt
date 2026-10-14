@@ -396,7 +396,8 @@ class ObservationRepositoryTest {
         }
         repository.refresh(listOf(besiktas))
         val obs = store.get(5)!!
-        assertEquals("Beşiktaş İskele Feneri", obs.stationName)
+        // Arızalı Beşiktaş istasyonu dışarıda; fener daha yakın ama denizde: ölçüm istasyonu havalimanı istasyonu.
+        assertEquals("İstanbul Havalimanı", obs.stationName)
         assertEquals(2, obs.network.size)
     }
 
@@ -446,6 +447,18 @@ class ObservationRepositoryTest {
         clockMillis += 4 * 60 * 1000
         repository.refresh(listOf(london))
         assertFalse(store.get(7)!!.knowsPrecipitation)
+    }
+
+    @Test
+    fun `the stored measurement for the referee comes from the land station`() = runTest {
+        istanbulWorks()
+        // Fener istasyonu en yakın (1 km) ama denizde; Beşiktaş istasyonu karada.
+        mgm.provinceAnswer = { listOf(istanbulStations[0], MgmStationDto(17448, "BEŞİKTAŞ İSKELE FENERİ", 41.0422 + 1 / 111.19, 29.0083, 1.0, provincePlate = 34), istanbulStations[2]) }
+        mgm.centerAnswer = { MgmCenterDto(observationStationId = 18100, il = "İstanbul", ilce = "Beşiktaş", provincePlate = 34) }
+        repository.refresh(listOf(besiktas))
+        val obs = store.get(5)!!
+        assertEquals("Beşiktaş", obs.stationName)
+        assertTrue(obs.network.any { it.stationName == "Beşiktaş İskele Feneri" })
     }
 
     @Test
