@@ -19,7 +19,7 @@
     <string name="observation_just_now">az önce</string>
     <string name="observation_note_mgm">Ölçüm: MGM, %1$s, %2$s</string>
     <string name="observation_note_metar">Ölçüm: %1$s (METAR), %2$s</string>
-    <string name="observation_note_network">Anlık: %1$d MGM istasyonu, en yakını %2$s (%3$s km)</string>
+    <string name="observation_note_network">Anlık: %1$d istasyon, en yakını %2$s (%3$s km)</string>
     <string name="observation_thunder_nearby">Yakında gök gürültülü yağış var (%1$s, %2$s)</string>
     <string name="observation_rain_nearby">Yakında yağış var (%1$s, %2$s)</string>
 
@@ -569,7 +569,7 @@
     <string name="source_info_unavailable">%1$s şu an cevap vermedi. Cevap verir vermez yeniden ona dönülür.</string>
     <string name="source_info_precipitation">Yağış ihtimali ve miktarı, UV, basınç ve görüş: %1$s.</string>
     <string name="source_info_observation">Şu anki sıcaklık en yakın istasyonun gerçek ölçümüdür.</string>
-    <string name="source_info_network">Şu anki sıcaklık çevredeki %1$d MGM istasyonunun ölçümlerinden hesaplanır; istasyon ne kadar yakınsa payı o kadar büyüktür. En yakını: %2$s (%3$s km).</string>
+    <string name="source_info_network">Şu anki sıcaklık çevredeki %1$d istasyonun (MGM istasyonları ve havalimanları) ölçümlerinden hesaplanır; istasyon ne kadar yakınsa payı o kadar büyüktür. En yakını: %2$s (%3$s km).</string>
     <string name="dialog_close">Kapat</string>
     <string name="rain_expected_by">Yağmur bekleniyor (%1$s)</string>
     <string name="rain_chance_note">Yağmur ihtimali %%%1$d</string>

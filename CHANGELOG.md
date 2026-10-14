@@ -4,7 +4,7 @@ What's new in each version of Commune Sky.
 
 ## 1.5.2 — in testing
 
-- In Türkiye the current temperature now comes from up to six nearby MGM stations instead of one. Closer stations count more, each reading is adjusted to the height of your place, a faulty or much higher station is left out, and the forecast model fills in when stations are far away.
+- In Türkiye the current temperature now comes from every MGM station within 25 km (also across a province border) and nearby airports, instead of one station. Closer stations count more, each reading is adjusted to the height of your place, a faulty or much higher station is left out, and the forecast model fills in when stations are far away.
 - It now says it is raining when a station within 5 km, or most stations around you, measure rain; a single dry station no longer hides the rain around it.
 - The line under the place name shows how many stations the current weather comes from and which one is nearest; the source details explain it.
 - In Türkiye the short rain note no longer gives minutes or an exact time, because the 15-minute rain data there is derived from the hourly forecast: it now says "Rain may start soon" or "within the hour". When stations around you are measuring rain it stays exact. The rain widget and the rain lines on other widgets follow the same rule; nothing changes in France, the United Kingdom and Ireland.

@@ -122,8 +122,9 @@ class ObservationRepository @Inject constructor(
         val lat = place.city.latitude
         val lon = place.city.longitude
         log(place, "konum %.4f, %.4f".format(Locale.ROOT, lat, lon))
-        val mgm = async { if (isInTurkey(lat, lon)) mgm(place, now) else null }
         val metars = async { metars(place, now) }
+        // Türkiye'de havalimanı ölçümleri de ağa bir istasyon olarak girer; MGM istekleri onları beklemeden gider.
+        val mgm = async { if (isInTurkey(lat, lon)) mgm(place, now) { metars.await() } else null }
         val network = mgm.await()
         val candidates = listOfNotNull(network) + metars.await()
         // İstasyon ağı kurulduysa o kullanılır; yoksa adaylar arasından en yakın ve en taze olan.
@@ -143,11 +144,12 @@ class ObservationRepository @Inject constructor(
     // --- MGM ---
 
     /**
-     * Yerin MGM ölçümü. Çevrede (25 km) en az iki geçerli istasyon varsa istasyon ağı kurulur: dönen ölçüm en
-     * yakın geçerli istasyonun ham ölçümüdür ve ağın bütün ölçümlerini taşır. Ağ kurulamazsa eskisi gibi
-     * sıcaklık ölçen, taze ilk aday (ilçenin resmi istasyonu dahil) alınır.
+     * Yerin MGM ölçümü. Çevrede (25 km) en az iki geçerli istasyon varsa istasyon ağı kurulur; yakındaki
+     * havalimanlarının ölçümleri ([airports]) de ağa girer. Dönen ölçüm en yakın geçerli istasyonun ham ölçümüdür
+     * ve ağın bütün ölçümlerini taşır. Ağ kurulamazsa eskisi gibi sıcaklık ölçen, taze ilk MGM adayı (ilçenin
+     * resmi istasyonu dahil) alınır.
      */
-    private suspend fun mgm(place: Place, now: Instant): Observation? {
+    private suspend fun mgm(place: Place, now: Instant, airports: suspend () -> List<Observation>): Observation? {
         val station = mgmStations(place) ?: return null
         val lat = place.city.latitude
         val lon = place.city.longitude
@@ -162,12 +164,14 @@ class ObservationRepository @Inject constructor(
                 if (it == null) log(place, "MGM ${candidate.name} atlandı: ölçüm zamanı okunamadı (${dto.time})")
             }
         }
-        val network = StationNetwork.valid(observations, lat, lon, now)
+        val nearbyAirports = airports().filter { ObservationPolicy.distanceKm(it, lat, lon) <= StationNetwork.RADIUS_KM }
+        val network = StationNetwork.valid(observations + nearbyAirports, lat, lon, now)
         val nearest = network.firstOrNull { it.temperature != null }
         if (nearest != null && network.size >= 2) {
             log(
                 place,
-                "MGM ağı: ${network.size}/${observations.size} istasyon geçerli; en yakını ${nearest.stationName} " +
+                "İstasyon ağı: ${network.size}/${observations.size + nearbyAirports.size} istasyon geçerli " +
+                    "(${nearbyAirports.size} havalimanı); en yakını ${nearest.stationName} " +
                     "(%.1f km)".format(Locale.ROOT, ObservationPolicy.distanceKm(nearest, lat, lon)),
             )
             return nearest.copy(network = network)
@@ -209,7 +213,7 @@ class ObservationRepository @Inject constructor(
             }
         }
         if (missing.isNotEmpty()) {
-            val asked = missing.take(StationNetwork.MAX_STATIONS)
+            val asked = missing.take(StationNetwork.MAX_SINGLE_REQUESTS)
             log(place, "MGM il ölçümleri alınamadı; ${asked.size} istasyon tek tek soruluyor")
             asked.map { candidate -> async { candidate.id to attempt("MGM ${candidate.id}") { mgmApi.get().latest(candidate.id).firstOrNull() } } }
                 .awaitAll()
@@ -273,7 +277,10 @@ class ObservationRepository @Inject constructor(
             "MGM merkezi: ${center.ilce}/${center.il} (${center.latitude}, ${center.longitude}), " +
                 "resmi istasyon ${center.observationStationId}",
         )
-        val province = center.il?.let { il -> attempt("MGM il istasyonları") { mgmApi.get().stationsInProvince(il) } }.orEmpty()
+        // Bütün Türkiye'nin istasyon listesi (il plakalarıyla): il sınırına yakın yerlerde komşu ilin istasyonları da
+        // aday olur. Alınamazsa yalnız yerin kendi ili.
+        val province = attempt("MGM istasyonları") { mgmApi.get().allStations() }?.takeIf { it.isNotEmpty() }
+            ?: center.il?.let { il -> attempt("MGM il istasyonları") { mgmApi.get().stationsInProvince(il) } }.orEmpty()
         val official = center.observationStationId?.let { id ->
             province.firstOrNull { it.id == id } ?: attempt("MGM istasyon") { mgmApi.get().station(id).firstOrNull() }
         }
@@ -360,8 +367,6 @@ class ObservationRepository @Inject constructor(
         /** Bu mesafeden uzak MGM istasyonu aday sayılmaz (resmi ilçe istasyonu hariç). */
         const val CANDIDATE_KM = StationNetwork.RADIUS_KM
 
-        /** En yakın kaç MGM istasyonu aday olur (resmi ilçe istasyonu ayrıca eklenebilir). */
-        const val MAX_STATION_TRIES = StationNetwork.MAX_STATIONS
 
         /** İlin plakası öğrenilemedi: ölçümler istasyon istasyon sorulur. */
         const val UNKNOWN_PLATE = 0
@@ -373,7 +378,7 @@ class ObservationRepository @Inject constructor(
         private fun Double?.valid(): Double? = this?.takeIf { it > -9000 }
 
         /**
-         * Yere en yakın istasyonlar (25 km içinde, en fazla 6), en yakından uzağa. Resmi ilçe
+         * Yere 25 km'den yakın bütün istasyonlar, en yakından uzağa (komşu illerinkiler dahil). Resmi ilçe
          * istasyonu bu listede yoksa sona eklenir: başka hiçbiri ölçüm vermezse o denenir.
          * [provincePlate]: istasyonun kendi kaydında plaka yoksa kullanılacak il plakası.
          */
@@ -388,7 +393,6 @@ class ObservationRepository @Inject constructor(
             val nearest = province
                 .filter { it.distance() <= CANDIDATE_KM }
                 .sortedBy { it.distance() }
-                .take(MAX_STATION_TRIES)
             val all = if (official != null && nearest.none { it.id == official.id }) nearest + official else nearest
             return all.map {
                 MgmCandidate(it.id, titleCaseTurkish(it.name ?: it.id.toString()), it.latitude, it.longitude, it.elevation, it.provincePlate ?: provincePlate ?: UNKNOWN_PLATE)

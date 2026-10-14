@@ -26,6 +26,11 @@ interface MgmApi {
     @GET("web/istasyonlar")
     suspend fun station(@Query("istno") stationId: Int): List<MgmStationDto>
 
+    /** Türkiye'deki bütün istasyonlar, konum ve il plakasıyla (yer başına bir kez; komşu illerin istasyonları için). */
+    @Headers("Origin: $ORIGIN")
+    @GET("web/istasyonlar")
+    suspend fun allStations(): List<MgmStationDto>
+
     /** Bir ildeki bütün istasyonlar ve konumları (en yakın istasyonu bulmak için). */
     @Headers("Origin: $ORIGIN")
     @GET("web/istasyonlar/ilAdDetay")

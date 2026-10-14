@@ -65,6 +65,7 @@ class ObservationRepositoryTest {
         var provinceAnswer: suspend () -> List<MgmStationDto> = { throw IOException() }
         var latestAnswer: suspend (Int) -> List<MgmObservationDto> = { throw IOException() }
         var provinceLatestAnswer: suspend (Int) -> List<MgmObservationDto> = { throw IOException() }
+        var allStationsAnswer: suspend () -> List<MgmStationDto> = { throw IOException() }
         var centerCalls = 0
         val latestCalls = mutableListOf<Int>()
         val provinceLatestCalls = mutableListOf<Int>()
@@ -75,6 +76,7 @@ class ObservationRepositoryTest {
             return centerAnswer()
         }
         override suspend fun station(stationId: Int) = stationAnswer()
+        override suspend fun allStations() = allStationsAnswer()
         override suspend fun stationsInProvince(province: String) = provinceAnswer()
         override suspend fun latest(stationId: Int): List<MgmObservationDto> {
             latestCalls += stationId
@@ -267,9 +269,10 @@ class ObservationRepositoryTest {
         assertEquals(ObservationSource.Mgm, obs.source)
         assertEquals("Beşiktaş", obs.stationName)
         assertEquals(23.1, obs.temperature!!, 0.0)
-        // İl ölçümleri tek istekte alınamadı: üç aday tek tek sorulur ve ağı kurar.
+        // İl ölçümleri tek istekte alınamadı: üç aday tek tek sorulur ve ağı kurar; 7,6 km'deki havalimanı da ağa girer.
         assertEquals(setOf(18100, 17448, 17063), mgm.latestCalls.toSet())
-        assertEquals(listOf("Beşiktaş", "Beşiktaş İskele Feneri", "İstanbul Havalimanı"), obs.network.map { it.stationName })
+        assertEquals(listOf("Beşiktaş", "Beşiktaş İskele Feneri", "İstanbul Havalimanı", "Istanbul"), obs.network.map { it.stationName })
+        assertEquals(ObservationSource.Metar, obs.network.last().source)
         // NOAA'ya giden kutu yuvarlanmış koordinattan kurulur.
         assertTrue(metar.lastBbox.startsWith("40.59,28.38"))
     }
@@ -323,6 +326,52 @@ class ObservationRepositoryTest {
         repository.refresh(listOf(besiktas, sisli))
         assertEquals(listOf(34, 34), mgm.provinceLatestCalls)
         assertTrue(mgm.latestCalls.isEmpty())
+    }
+
+    @Test
+    fun `stations of a neighbouring province within 25 km join, with their own province request`() = runTest {
+        istanbulWorks()
+        // Sahte bir sınır istasyonu: Beşiktaş'a 20 km, komşu ilde (plaka 41). 30 km'deki istasyon aday değil.
+        val border = MgmStationDto(19001, "SINIR", 41.0422 + 20 / 111.19, 29.0083, 40.0, provincePlate = 41)
+        val far = MgmStationDto(19002, "UZAK", 41.0422 + 30 / 111.19, 29.0083, 40.0, provincePlate = 41)
+        mgm.allStationsAnswer = { istanbulStations + border + far }
+        mgm.provinceLatestAnswer = { plate ->
+            if (plate == 41) {
+                listOf(mgmObservation(id = 19001, temperature = 16.0), mgmObservation(id = 19002, temperature = 15.0))
+            } else {
+                listOf(mgmObservation(id = 18100, temperature = 17.0), mgmObservation(id = 17448, temperature = 17.4), mgmObservation(id = 17063, temperature = 16.2))
+            }
+        }
+        repository.refresh(listOf(besiktas))
+
+        assertEquals(setOf(34, 41), mgm.provinceLatestCalls.toSet())
+        assertEquals(listOf(18100, 17448, 17063, 19001), store.station(5)!!.candidates.map { it.id })
+        assertEquals(41, store.station(5)!!.candidates.last().provincePlate)
+        assertTrue(store.get(5)!!.network.any { it.stationName == "Sınır" })
+    }
+
+    @Test
+    fun `a nearby airport report joins the network as one more station`() = runTest {
+        istanbulWorks()
+        metar.answer = {
+            listOf(carsambaMetar.copy(icaoId = "LTXX", lat = 41.1105, lon = 29.0062, elev = 50.0, name = "Istanbul Arpt, IS, TR", wxString = null, temp = 17.0))
+        }
+        repository.refresh(listOf(besiktas))
+        val obs = store.get(5)!!
+        assertEquals(4, obs.network.size)
+        assertEquals("Istanbul", obs.network.single { it.source == ObservationSource.Metar }.stationName)
+        // En yakın geçerli istasyon yine MGM'nin Beşiktaş istasyonu.
+        assertEquals("Beşiktaş", obs.stationName)
+    }
+
+    @Test
+    fun `an airport far off its neighbours is left out like any station`() = runTest {
+        istanbulWorks()
+        metar.answer = {
+            listOf(carsambaMetar.copy(icaoId = "LTXX", lat = 41.1105, lon = 29.0062, elev = 50.0, name = "Istanbul Arpt, IS, TR", wxString = null, temp = 26.0))
+        }
+        repository.refresh(listOf(besiktas))
+        assertTrue(store.get(5)!!.network.none { it.source == ObservationSource.Metar })
     }
 
     @Test

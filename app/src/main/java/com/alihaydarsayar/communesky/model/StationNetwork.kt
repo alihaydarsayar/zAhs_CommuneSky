@@ -19,7 +19,9 @@ import kotlin.math.max
  */
 object StationNetwork {
     const val RADIUS_KM = 25.0
-    const val MAX_STATIONS = 6
+
+    /** İl ölçümleri tek istekte alınamazsa en çok bu kadar istasyon tek tek sorulur. */
+    const val MAX_SINGLE_REQUESTS = 6
     const val OUTLIER_C = 4.0
     const val MAX_ELEVATION_DIFF_M = 300.0
     const val LAPSE_C_PER_M = 0.0065
@@ -77,7 +79,7 @@ object StationNetwork {
     }
 
     /**
-     * Kaliteden geçen ölçümler, en yakından uzağa: taze, 25 km içinde, değerleri temizlenmiş ve sıcaklığı
+     * Kaliteden geçen ölçümler, en yakından uzağa: taze, 25 km içinde (MGM istasyonları ve havalimanları), değerleri temizlenmiş ve sıcaklığı
      * komşularından kopuk olmayanlar. Kopukluk, hepsi ortak bir yüksekliğe indirgenerek ölçülür (dağdaki
      * istasyon "arızalı" sayılmasın); karşılaştırma için en az iki komşu gerekir.
      */
@@ -86,7 +88,6 @@ object StationNetwork {
             .filter { ObservationPolicy.isFresh(it, now) && km(it, latitude, longitude) <= RADIUS_KM }
             .map(::clean)
             .sortedBy { km(it, latitude, longitude) }
-            .take(MAX_STATIONS)
         val elevations = fresh.mapNotNull { it.elevationMeters }
         val reference = if (elevations.isEmpty()) 0.0 else elevations.average()
         fun level(observation: Observation): Double? = observation.temperature?.let { temperature ->
