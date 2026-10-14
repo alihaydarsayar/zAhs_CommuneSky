@@ -250,6 +250,7 @@ class ObservationRepository @Inject constructor(
             weatherCode = weather.wmoCode,
             isWet = weather.isWet,
             hasThunder = weather.hasThunder,
+            knowsPrecipitation = MgmWeatherCodes.knowsPrecipitation(dto.weatherCode, dto.precipitation10Min),
         )
     }
 
@@ -336,6 +337,8 @@ class ObservationRepository @Inject constructor(
             weatherCode = code.wmoCode,
             isWet = code.isWet,
             hasThunder = code.hasThunder,
+            // Hava grubu ya da bulut bilgisi olan rapor yağışı da söyler (hava grubu yoksa yağış yoktur).
+            knowsPrecipitation = wxString != null || cover != null,
         )
     }
 

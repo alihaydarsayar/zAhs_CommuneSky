@@ -38,6 +38,11 @@ data class Observation(
     /** Şu an gök gürültüsü var mı. */
     val hasThunder: Boolean = false,
     /**
+     * İstasyon yağışı biliyor mu? Bazı istasyonlar (ör. deniz fenerleri) yalnız sıcaklık ve rüzgâr ölçer: yağış
+     * miktarı ve hava kodu boş gelir. O zaman [isWet] false'tur ama bu "kuru" demek değil, "bilinmiyor" demektir.
+     */
+    val knowsPrecipitation: Boolean = true,
+    /**
      * İstasyon ağı: bu ölçüm bir ağın en yakın geçerli istasyonuysa, kaliteden geçen bütün istasyonların
      * ölçümleri (bu dahil, en yakından uzağa). Tek istasyon kullanılıyorsa boştur. Bkz. [StationNetwork].
      */

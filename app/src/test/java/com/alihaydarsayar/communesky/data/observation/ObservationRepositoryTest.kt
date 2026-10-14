@@ -410,6 +410,45 @@ class ObservationRepositoryTest {
     }
 
     @Test
+    fun `a station that measures no rain says so instead of looking dry`() = runTest {
+        mgmWorks()
+        // Deniz feneri gibi: sıcaklık var, 10 dakikalık yağış ve hava kodu yok.
+        mgm.latestAnswer = { listOf(mgmObservation(code = "", tenMinutes = -9999.0)) }
+        repository.refresh(listOf(atakum))
+        val obs = store.get(3)!!
+        assertFalse(obs.knowsPrecipitation)
+        assertFalse(obs.isWet)
+        assertEquals(18.6, obs.temperature!!, 0.0)
+    }
+
+    @Test
+    fun `rain is known from the amount or from a known weather code`() {
+        assertTrue(MgmWeatherCodes.knowsPrecipitation(null, 0.0))
+        assertTrue(MgmWeatherCodes.knowsPrecipitation("", 0.4))
+        assertTrue(MgmWeatherCodes.knowsPrecipitation("CB", null))
+        assertTrue(MgmWeatherCodes.knowsPrecipitation("HY", -9999.0))
+        assertFalse(MgmWeatherCodes.knowsPrecipitation(null, null))
+        assertFalse(MgmWeatherCodes.knowsPrecipitation("", -9999.0))
+        assertFalse(MgmWeatherCodes.knowsPrecipitation("-9999", null))
+        assertFalse(MgmWeatherCodes.knowsPrecipitation("XYZ", null))
+    }
+
+    @Test
+    fun `an airport report knows the rain when it has a weather group or clouds`() = runTest {
+        metar.answer = {
+            listOf(
+                carsambaMetar.copy(icaoId = "EGLC", lat = 51.505, lon = 0.055, name = "London City Arpt, EN, GB", wxString = null, cover = "BKN"),
+            )
+        }
+        repository.refresh(listOf(london))
+        assertTrue(store.get(7)!!.knowsPrecipitation)
+        metar.answer = { listOf(carsambaMetar.copy(icaoId = "EGLC", lat = 51.505, lon = 0.055, name = "London City Arpt, EN, GB", wxString = null, cover = null)) }
+        clockMillis += 4 * 60 * 1000
+        repository.refresh(listOf(london))
+        assertFalse(store.get(7)!!.knowsPrecipitation)
+    }
+
+    @Test
     fun `MGM rain amount marks the measurement wet`() = runTest {
         mgmWorks()
         mgm.latestAnswer = { listOf(mgmObservation(code = "CB", tenMinutes = 0.4)) }

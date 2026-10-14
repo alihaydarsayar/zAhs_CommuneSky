@@ -53,6 +53,16 @@ object MgmWeatherCodes {
     }
 
     /**
+     * İstasyon yağışı biliyor mu? Son 10 dakikanın yağışı ölçülmüşse ya da hava kodu dolu ve tanıdığımız bir kodsa
+     * evet. İkisi de yoksa (yalnız sıcaklık ve rüzgâr ölçen istasyon) hayır: "yağış yok" değil, "bilinmiyor".
+     */
+    fun knowsPrecipitation(code: String?, precipitation10MinMm: Double?): Boolean {
+        if (precipitation10MinMm != null && precipitation10MinMm > -9000) return true
+        val trimmed = code?.trim().orEmpty()
+        return trimmed.isNotEmpty() && trimmed != "-9999" && map(trimmed).isKnown
+    }
+
+    /**
      * Koda ek olarak istasyonun son 10 dakikada ölçtüğü yağışa bakar. Anlamlı yağış varsa kod ne
      * derse desin "yağış var" sayılır; kod yağış söylemiyorsa (açık/bulutlu/eksik) ya da sadece
      * "yağışlı" diyorsa (HHY), miktardan uygun yağmur/kar kodu seçilir.
