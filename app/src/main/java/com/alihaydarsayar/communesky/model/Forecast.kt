@@ -238,4 +238,11 @@ data class WeatherSnapshot(
 
 /** Yağış uyarısı; anlık durum istasyon ölçümünden geliyorsa çelişkiler gösterilmez. */
 fun WeatherSnapshot.rainOutlook(now: LocalDateTime = forecast.localNow()): RainOutlook? =
-    forecast.rainOutlook(now, observed = observation is ObservationUse.Override)?.copy(isRough = NowcastPrecision.isRough(this))
+    forecast.rainOutlook(now, observed = precipitationMeasured)?.copy(isRough = NowcastPrecision.isRough(this))
+
+/**
+ * Anlık yağış durumu bir istasyon ölçümünden mi geliyor? Yalnız sıcaklık ölçen istasyonlar (ör. deniz fenerleri)
+ * sayılmaz: onların "yağış yok"u bilinmiyor demektir.
+ */
+val WeatherSnapshot.precipitationMeasured: Boolean
+    get() = (observation as? ObservationUse.Override)?.let { use -> use.network?.knowsPrecipitation ?: use.observation.knowsPrecipitation } == true

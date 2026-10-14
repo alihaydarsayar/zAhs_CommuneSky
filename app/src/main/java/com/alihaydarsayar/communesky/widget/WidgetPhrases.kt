@@ -13,6 +13,7 @@ import com.alihaydarsayar.communesky.model.TemperatureUnit
 import com.alihaydarsayar.communesky.model.TurkishSuffix
 import com.alihaydarsayar.communesky.model.WeatherCondition
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
+import com.alihaydarsayar.communesky.model.precipitationMeasured
 import java.time.LocalDateTime
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -21,7 +22,7 @@ import kotlin.math.roundToInt
 object WidgetPhrases {
 
     fun nowcast(snapshot: WeatherSnapshot, now: LocalDateTime = snapshot.forecast.localNow()): PrecipitationNowcast =
-        PrecipitationNowcast.of(snapshot.forecast, now, observed = snapshot.observation is ObservationUse.Override)
+        PrecipitationNowcast.of(snapshot.forecast, now, observed = snapshot.precipitationMeasured)
             .copy(isRough = NowcastPrecision.isRough(snapshot))
 
     /** Yağış widget'ının cümlesi: "Yağmur 20:00'de başlıyor", "Önümüzdeki 2 saat yağış yok". */
@@ -52,7 +53,7 @@ object WidgetPhrases {
 
     fun nextRain(snapshot: WeatherSnapshot): RainStart? {
         val now = snapshot.forecast.localNow()
-        val start = RainTiming.next(snapshot.forecast, now, observed = snapshot.observation is ObservationUse.Override) ?: return null
+        val start = RainTiming.next(snapshot.forecast, now, observed = snapshot.precipitationMeasured) ?: return null
         return if (NowcastPrecision.isRough(snapshot)) NowcastPrecision.roughen(start, now) else start
     }
 

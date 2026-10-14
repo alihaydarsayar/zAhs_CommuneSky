@@ -343,4 +343,39 @@ class StationNetworkTest {
         assertFalse(result.knowsPrecipitation)
         assertNull(result.weatherCode)
     }
+
+    /** Modelin anlık kodu "kapalı" (3); MGM'nin o saatlik tahmini [hourCode]. Yerel saat 15:00 (UTC 12:00). */
+    private fun withHour(hourCode: Int): WeatherSnapshot {
+        val base = snapshot(besiktas, code = 3)
+        val hour = HourlyForecast(LocalDateTime.of(2026, 10, 13, 15, 0), 16.0, hourCode, 80, isDay = true)
+        return base.copy(forecast = base.forecast.copy(hourly = listOf(hour)))
+    }
+
+    @Test
+    fun `heavy rain at the district station shows as rain even with a lighthouse nearer`() {
+        val stations = listOf(lighthouse(), station("İlçe", 3.0, temperature = 15.6, wet = true, code = 63))
+        val blended = ObservationBlend.apply(withHour(3), stations.first().copy(network = stations), now)
+        assertEquals(63, blended.forecast.current.weatherCode)
+        assertTrue(blended.forecast.current.condition.isWet)
+        assertTrue(blended.precipitationMeasured)
+    }
+
+    @Test
+    fun `with only a lighthouse the weather comes from the forecast, never a measured dry sky`() {
+        // Ağ: iki fener. MGM'nin bu saatlik tahmini sağanak (80): simge onu gösterir.
+        val pair = listOf(lighthouse(1.0), lighthouse(4.0).copy(stationName = "Fener 2"))
+        val rainy = ObservationBlend.apply(withHour(80), pair.first().copy(network = pair), now)
+        assertEquals(80, rainy.forecast.current.weatherCode)
+        assertFalse(rainy.precipitationMeasured)
+        // Tahmin de kuru diyorsa modelin kodu kalır; sıcaklık yine istasyonlardan.
+        val cloudy = ObservationBlend.apply(withHour(2), pair.first().copy(network = pair), now)
+        assertEquals(3, cloudy.forecast.current.weatherCode)
+        assertEquals(16.0, cloudy.forecast.current.temperature, 0.2)
+
+        // Tek fener (ağ yok): eski tek istasyon yolu da aynı kurala uyar.
+        val single = ObservationBlend.apply(withHour(95), lighthouse(), now)
+        assertEquals(95, single.forecast.current.weatherCode)
+        assertEquals(16.0, single.forecast.current.temperature, 0.0)
+        assertFalse(single.precipitationMeasured)
+    }
 }

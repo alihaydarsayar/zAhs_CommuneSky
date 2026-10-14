@@ -230,7 +230,9 @@ object ObservationBlend {
                 modelTemperature = snapshot.forecast.current.temperature,
                 now = now,
             )?.let { result ->
-                val current = ObservationPolicy.applyNetwork(snapshot.forecast.current, result)
+                val measured = ObservationPolicy.applyNetwork(snapshot.forecast.current, result)
+                // Çevrede yağışı bilen istasyon yoksa "kuru" denmez: hava durumu tahminden gelir.
+                val current = if (result.knowsPrecipitation) measured else withForecastWeather(measured, snapshot.forecast, now)
                 val use = ObservationUse.Override(result.nearest, result.nearestKm, result)
                 return snapshot.copy(forecast = snapshot.forecast.copy(current = current), observation = use)
             }
@@ -242,7 +244,23 @@ object ObservationBlend {
             now = now,
             modelIsWet = snapshot.forecast.current.condition.isWet,
         ) ?: return snapshot
-        val current = ObservationPolicy.applyTo(snapshot.forecast.current, use, snapshot.forecast.elevation)
+        val applied = ObservationPolicy.applyTo(snapshot.forecast.current, use, snapshot.forecast.elevation)
+        // İstasyon yağışı ölçmüyorsa (ör. deniz feneri) hava durumu ondan değil tahminden gelir.
+        val current = if (use is ObservationUse.Override && !use.observation.knowsPrecipitation) {
+            withForecastWeather(applied, snapshot.forecast, now)
+        } else {
+            applied
+        }
         return snapshot.copy(forecast = snapshot.forecast.copy(current = current), observation = use)
+    }
+
+    /**
+     * Yağış ölçülemediğinde anlık hava durumu: o saatin tahmini (Türkiye'de MGM'nin saatlik tahmini) yağış ya da gök
+     * gürültüsü diyorsa simge de onu gösterir; demiyorsa modelin anlık kodu kalır.
+     */
+    fun withForecastWeather(current: CurrentWeather, forecast: Forecast, now: Instant): CurrentWeather {
+        val hour = forecast.localNow(now).withMinute(0).withSecond(0).withNano(0)
+        val wet = forecast.hourly.firstOrNull { it.time == hour }?.takeIf { it.showsPrecipitation } ?: return current
+        return current.copy(weatherCode = wet.weatherCode)
     }
 }
