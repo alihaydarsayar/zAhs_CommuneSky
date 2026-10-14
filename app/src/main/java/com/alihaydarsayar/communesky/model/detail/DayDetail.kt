@@ -68,6 +68,26 @@ object DayData {
         return merged.forecast.hourly.filter { it.time.toLocalDate() == date } to merged.sources.forecast
     }
 
+    /**
+     * Saatlik eğriyi günün en yüksek ve en düşüğüne (7 günlük karttaki değerler) oturtur: 3.–7. günlerde saatler
+     * çoğu zaman günlük değerlerden başka bir kaynaktan gelir ve eğrinin tepesi sayfadaki en yüksekle ayrışır.
+     * Her saat, eğrideki yerine göre kaydırılır: en sıcak saat en yüksek farkı, en soğuk saat en düşük farkı
+     * kadar, aradakiler sıcaklıklarına göre ikisinin arasında. Böylece eğrinin biçimi korunur, tepesi en yükseğe,
+     * dibi en düşüğe denk gelir. Hissedilen aynı miktarda kayar.
+     */
+    fun anchor(hours: List<HourlyForecast>, day: DailyForecast): List<HourlyForecast> {
+        if (hours.isEmpty()) return hours
+        val top = hours.maxOf { it.temperature }
+        val bottom = hours.minOf { it.temperature }
+        val high = day.maxTemperature - top
+        val low = day.minTemperature - bottom
+        return hours.map { hour ->
+            val share = if (top > bottom) (hour.temperature - bottom) / (top - bottom) else 0.5
+            val shift = low + (high - low) * share
+            hour.copy(temperature = hour.temperature + shift, apparentTemperature = hour.apparentTemperature?.plus(shift))
+        }
+    }
+
     fun of(day: DailyForecast, hours: List<HourlyForecast>, now: LocalDateTime): DayDetail {
         val isToday = day.date == now.toLocalDate()
         val position = (now.hour + now.minute / 60f).takeIf { isToday && hours.isNotEmpty() }

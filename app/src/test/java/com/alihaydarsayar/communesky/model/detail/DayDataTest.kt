@@ -185,4 +185,36 @@ class DayDataTest {
         assertEquals(7, days.size)
         assertEquals(today, days.first().date)
     }
+
+    @Test
+    fun `a curve from another source is fitted to the day's high and low`() {
+        // 4. gün: MGM en yüksek 18°, en düşük 8°; ECMWF'in eğrisi 9° ile 15° arasında, tepesi 15:00'te.
+        val day = TestForecast.daily(fourth, min = 8.0, max = 18.0)
+        val ecmwf = TestForecast.hours(fourth) {
+            val temperature = 12.0 + 3.0 * kotlin.math.cos((it - 15) * Math.PI / 12)
+            TestForecast.hour(it, temperature = temperature, feels = temperature - 1.0, date = fourth)
+        }
+        assertEquals(15.0, ecmwf.maxOf { it.temperature }, 0.001)
+
+        val fitted = DayData.anchor(ecmwf, day)
+        assertEquals(18.0, fitted.maxOf { it.temperature }, 0.001)
+        assertEquals(8.0, fitted.minOf { it.temperature }, 0.001)
+        // Tepe aynı saatte kalır; hissedilen aynı miktarda kayar.
+        assertEquals(15, fitted.maxByOrNull { it.temperature }!!.time.hour)
+        fitted.zip(ecmwf).forEach { (after, before) ->
+            assertEquals(after.temperature - before.temperature, after.apparentTemperature!! - before.apparentTemperature!!, 0.001)
+        }
+        // Grafiğin tepesi sayfadaki en yüksekle aynı.
+        val detail = DayData.of(day, fitted, now)
+        assertEquals(18.0, detail.temperature!!.points.maxOf { it.value!! }, 0.001)
+        assertEquals(detail.day.maxTemperature, detail.temperature.points.maxOf { it.value!! }, 0.001)
+    }
+
+    @Test
+    fun `a flat curve is moved to the middle of the day's range`() {
+        val day = TestForecast.daily(fourth, min = 10.0, max = 14.0)
+        val flat = TestForecast.hours(fourth) { TestForecast.hour(it, temperature = 20.0, date = fourth) }
+        assertTrue(DayData.anchor(flat, day).all { kotlin.math.abs(it.temperature - 12.0) < 0.001 })
+        assertTrue(DayData.anchor(emptyList(), day).isEmpty())
+    }
 }

@@ -164,10 +164,14 @@ fun DayScreen(
             // Bugün ve yarın eldeki saatlerden; sonraki günler sayfa görünür olunca istenir.
             val local = remember(weather, day.date) { DayData.localHours(weather.forecast, day.date) }
             if (local == null) LaunchedEffect(weather.placeId, day.date) { viewModel.load(weather, day.date) }
-            val state: DayHours = if (local != null) {
-                DayHours.Ready(local, weather.sources?.forecast ?: ForecastSource.OpenMeteo)
-            } else {
-                fetched[day.date] ?: DayHours.Loading
+            val loaded = fetched[day.date]
+            val state: DayHours = remember(local, loaded, day) {
+                when {
+                    local != null -> DayHours.Ready(local, weather.sources?.forecast ?: ForecastSource.OpenMeteo)
+                    // Ayrıca istenen saatler 7 günlük karttaki en yüksek ve en düşüğe oturtulur.
+                    loaded is DayHours.Ready -> loaded.copy(hours = DayData.anchor(loaded.hours, day))
+                    else -> loaded ?: DayHours.Loading
+                }
             }
             val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             Column(
