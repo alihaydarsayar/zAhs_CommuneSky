@@ -29,6 +29,7 @@ class StationNetworkTest {
         code: Int? = if (thunder) 95 else if (wet) 61 else 2,
         humidity: Int? = 70,
         wind: Double? = 12.0,
+        knows: Boolean = true,
     ) = Observation(
         source = ObservationSource.Mgm,
         stationName = name,
@@ -43,6 +44,7 @@ class StationNetworkTest {
         weatherCode = code,
         isWet = wet,
         hasThunder = thunder,
+        knowsPrecipitation = knows,
     )
 
     private fun blend(stations: List<Observation>, model: Double = 18.0, at: Instant = now) =
@@ -288,5 +290,57 @@ class StationNetworkTest {
             assertEquals(expected, blended.forecast.current)
             assertEquals(12.0, blended.forecast.current.temperature, 0.0)
         }
+    }
+
+    // --- Yağışı ölçmeyen istasyonlar (ör. deniz feneri)
+
+    /** Telefonda görülen örnek (14 Ekim): şiddetli yağmurda en yakın istasyon bir fenerdi ve yağış ölçmüyordu. */
+    private fun lighthouse(km: Double = 1.0) = station("Fener", km, temperature = 16.0, code = null, humidity = 96, knows = false)
+
+    @Test
+    fun `a lighthouse that measures no rain does not make heavy rain look dry`() {
+        // Fener 1 km'de (sıcaklık var, yağış yok); ilçe istasyonu 3 km'de yağmur ölçüyor (10 dk'da 0,5 mm).
+        val result = blend(listOf(lighthouse(), station("İlçe", 3.0, temperature = 15.6, wet = true, code = 63)))!!
+        assertTrue(result.isRaining)
+        assertEquals(63, result.weatherCode)
+        assertTrue(result.knowsPrecipitation)
+        assertEquals("İlçe", result.precipitationStation!!.stationName)
+        assertEquals(3.0, result.precipitationStationKm!!, 0.05)
+        // Sıcaklığa fener katılmaya devam eder; nem ve rüzgâr da en yakın istasyondan (fener).
+        assertEquals("Fener", result.nearest.stationName)
+        assertEquals(2, result.temperatureStations)
+    }
+
+    @Test
+    fun `with only stations that measure no rain the network does not say dry`() {
+        val result = blend(listOf(lighthouse(1.0), lighthouse(4.0).copy(stationName = "Fener 2")))!!
+        assertFalse(result.knowsPrecipitation)
+        assertFalse(result.isRaining)
+        assertNull(result.weatherCode)
+        assertNull(result.precipitationStation)
+        assertNull(result.nearbyWet)
+    }
+
+    @Test
+    fun `stations that measure no rain are not counted on either side of the vote`() {
+        // nearWet: 5 km içinde yağış ölçen yok; heavierWet ve majorityWet yalnız bilenlerle hesaplanır.
+        // Bilen iki istasyonun ikisi de yağışlı (6 ve 8 km); bilmeyen üç fener 1–2 km'de. Fenerler paydaya girseydi
+        // ağırlıkça ve sayıca azınlıkta kalırlardı.
+        val stations = listOf(lighthouse(1.0), lighthouse(1.5).copy(stationName = "Fener 2"), lighthouse(2.0).copy(stationName = "Fener 3"),
+            station("Yağışlı 1", 6.0, wet = true), station("Yağışlı 2", 8.0, wet = true))
+        assertTrue(blend(stations)!!.isRaining)
+
+        // Tersi: yalnız bir bilen istasyon var ve kuru; fenerler onu "azınlık" yapamaz.
+        val dry = blend(listOf(lighthouse(1.0), station("Kuru", 9.0)))!!
+        assertFalse(dry.isRaining)
+        assertEquals(2, dry.weatherCode)
+        assertEquals("Kuru", dry.precipitationStation!!.stationName)
+    }
+
+    @Test
+    fun `a dry station beyond 15 km cannot call the place dry`() {
+        val result = blend(listOf(lighthouse(1.0), station("Uzak", 20.0)))!!
+        assertFalse(result.knowsPrecipitation)
+        assertNull(result.weatherCode)
     }
 }

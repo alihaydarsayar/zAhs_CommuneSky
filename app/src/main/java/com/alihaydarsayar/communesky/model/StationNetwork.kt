@@ -15,7 +15,9 @@ import kotlin.math.max
  *   karesiyle ters ağırlıklı ortalanır. Model de 15 km uzaktaki bir istasyon gibi ağırlık alır: yakın istasyon
  *   varken etkisi küçük, istasyonlar uzakken büyüktür. Yüksekliği 300 m'den fazla farklı istasyon sıcaklığa katılmaz.
  * - Yağış: 5 km içindeki bir istasyon yağış ölçüyorsa ya da 15 km içindekilerin çoğu yağış ölçüyorsa "yağıyor".
- *   Kuru diyen tek bir istasyon çevredeki yağışı ezemez.
+ *   Kuru diyen tek bir istasyon çevredeki yağışı ezemez. Yağışı ölçmeyen istasyonlar (ör. deniz fenerleri) bu
+ *   oylamaya hiç girmez: ne kuru ne ıslak sayılır; sıcaklığa katılmaya devam eder. 15 km içinde yağışı bilen
+ *   istasyon yoksa ağ yağış hakkında bir şey söylemez ([Result.knowsPrecipitation] false).
  */
 object StationNetwork {
     const val RADIUS_KM = 25.0
@@ -57,6 +59,11 @@ object StationNetwork {
         val weatherCode: Int?,
         /** Yerde yağmıyor ama çevredeki bir istasyon yağış ya da gök gürültüsü ölçüyor: uyarı için. */
         val nearbyWet: Observation?,
+        /** 15 km içinde yağışı bilen istasyon var mı? Yoksa [isRaining] "kuru" değil, "bilinmiyor" demektir. */
+        val knowsPrecipitation: Boolean = true,
+        /** Yağışı bilen en yakın istasyon (yağış kararının geldiği yer); yoksa null. */
+        val precipitationStation: Observation? = null,
+        val precipitationStationKm: Double? = null,
     )
 
     /** Fiziksel olmayan değerleri atar: nem 0–100 dışında, rüzgâr eksi. */
@@ -144,8 +151,9 @@ object StationNetwork {
         val total = parts.sumOf { it.weight } + modelWeight
         val temperature = (parts.sumOf { it.temperature * it.weight } + modelTemperature * modelWeight) / total
 
-        // --- Yağış
-        val area = stations.filter { km(it, latitude, longitude) <= RAIN_AREA_KM }
+        // --- Yağış: yalnız yağışı bilen istasyonlarla. Bilmeyenler paydaya da girmez.
+        val informed = stations.filter { it.knowsPrecipitation }
+        val area = informed.filter { km(it, latitude, longitude) <= RAIN_AREA_KM }
         fun weight(station: Observation) = max(km(station, latitude, longitude), MIN_DISTANCE_KM).let { 1 / (it * it) }
         val wet = area.filter { it.isWet }
         val nearWet = wet.any { km(it, latitude, longitude) <= RAIN_NEAR_KM }
@@ -153,14 +161,16 @@ object StationNetwork {
         // Çoğunluk yağış ölçüyorsa, en yakındaki tek kuru istasyon bunu değiştiremez.
         val majorityWet = wet.size >= 2 && wet.size > area.size - wet.size
         val raining = nearWet || heavierWet || majorityWet
-        val thunder = stations.any { it.hasThunder }
+        val thunder = informed.any { it.hasThunder }
 
         val code = when {
-            raining && thunder -> stations.firstOrNull { it.hasThunder }?.weatherCode ?: THUNDER_CODE
-            raining -> stations.firstOrNull { it.isWet }?.weatherCode
-            else -> stations.firstOrNull { !it.isWet && !it.hasThunder }?.weatherCode
+            raining && thunder -> informed.firstOrNull { it.hasThunder }?.weatherCode ?: THUNDER_CODE
+            raining -> informed.firstOrNull { it.isWet }?.weatherCode
+            // Kuru: yalnız 15 km içinde yağışı bilen ve kuru ölçen bir istasyon bunu söyleyebilir.
+            else -> area.firstOrNull { !it.isWet && !it.hasThunder }?.weatherCode
         }
-        val nearbyWet = if (raining) null else stations.firstOrNull { it.hasThunder } ?: stations.firstOrNull { it.isWet }
+        val nearbyWet = if (raining) null else informed.firstOrNull { it.hasThunder } ?: informed.firstOrNull { it.isWet }
+        val precipitationStation = area.firstOrNull()
         return Result(
             temperature = temperature,
             isRaining = raining,
@@ -171,6 +181,9 @@ object StationNetwork {
             nearestKm = km(nearest, latitude, longitude),
             weatherCode = code,
             nearbyWet = nearbyWet,
+            knowsPrecipitation = area.isNotEmpty(),
+            precipitationStation = precipitationStation,
+            precipitationStationKm = precipitationStation?.let { km(it, latitude, longitude) },
         )
     }
 
