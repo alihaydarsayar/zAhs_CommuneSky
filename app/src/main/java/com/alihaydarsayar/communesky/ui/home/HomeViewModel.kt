@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 import retrofit2.HttpException
 import java.io.IOException
 import java.time.Duration
@@ -71,6 +72,25 @@ sealed interface LocationStatus {
 
     /** İzin var ama konum bulunamadı (ör. telefonda konum kapalı). */
     data object Unavailable : LocationStatus
+}
+
+/**
+ * Yenilemenin hatası kullanıcıya nasıl söylenir. Kesilen bir istek (OkHttp "Canceled": önceki yenileme yeni
+ * konum ya da yeni bir yenileme yüzünden iptal edildi) hata sayılmaz; gerçek ağ ve sunucu hataları gösterilir.
+ * Saf; test edilir.
+ */
+internal object RefreshFailure {
+    fun of(error: Throwable): LoadError? = when {
+        error is CancellationException -> null
+        error is IOException && isCancelledCall(error) -> null
+        error is IOException -> LoadError.Network
+        error is HttpException -> LoadError.Server(error.code())
+        else -> LoadError.Unknown
+    }
+
+    /** OkHttp, iptal edilen isteği "Canceled" iletisiyle bir IOException olarak bitirir. */
+    private fun isCancelledCall(error: IOException): Boolean =
+        generateSequence<Throwable>(error) { it.cause }.take(5).any { it.message.equals("Canceled", ignoreCase = true) }
 }
 
 /** Hatanın türü; hangi dilde gösterileceğine ekran (strings.xml) karar verir. */
@@ -157,18 +177,17 @@ class HomeViewModel @Inject constructor(
                 !resolved.hasPermission -> LocationStatus.NoPermission(canAskPermissionAgain)
                 else -> LocationStatus.Unavailable
             }
+            val job = coroutineContext[Job]
             val error = try {
                 updater.refreshAll(resolved, force = userInitiated)
                 null
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: IOException) {
-                LoadError.Network
-            } catch (e: HttpException) {
-                LoadError.Server(e.code())
             } catch (e: Exception) {
-                Log.e(TAG, "Hava durumu alınamadı", e)
-                LoadError.Unknown
+                // Konum değişince ya da yeni bir yenileme başlayınca eskisi kesilir: bu bir hata değildir.
+                val stillWanted = job?.isActive == true && refreshJob === job
+                if (!stillWanted) return@launch
+                RefreshFailure.of(e).also { if (it == LoadError.Unknown) Log.e(TAG, "Hava durumu alınamadı", e) }
             }
             refreshState.value = RefreshState(error = error, locationStatus = locationStatus)
         }

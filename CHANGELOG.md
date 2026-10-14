@@ -18,6 +18,7 @@ What's new in each version of Commune Sky.
 - Less data: MGM's list of stations is downloaded once for all your places and kept on the phone for a month.
 - Fixed: MGM weather warnings showed their start and end three hours early (for example "6:00 – 20:59" instead of "9:00 – 23:59"). They now match MGM's own warning page.
 - Faster start on a busy phone: the clock format setting and the widget diagnostics no longer read or write storage while the screen or a widget is being drawn.
+- Fixed: "Couldn't update" could appear when your location changed during a refresh and the earlier refresh was simply replaced. Real network and server errors are still shown.
 
 ## 1.5.1 — October 14, 2026
 
