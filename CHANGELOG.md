@@ -10,6 +10,7 @@ What's new in each version of Commune Sky.
 - In Türkiye the short rain note no longer gives minutes or an exact time, because the 15-minute rain data there is derived from the hourly forecast: it now says "Rain may start soon" or "within the hour". When stations around you are measuring rain it stays exact. The rain widget and the rain lines on other widgets follow the same rule; nothing changes in France, the United Kingdom and Ireland.
 - New: tap a day in the 7-day forecast to open its page: the day's icon and a short sentence, high and low, feels like, charts hour by hour for temperature, rain chance and amount, wind and gusts, plus the highest UV, humidity range, sunrise, sunset and day length. Swipe sideways for the other days; tapping an hour in the hourly forecast opens its day with that hour selected. The hours of later days are fetched only when you open the page.
 - Fixed: in Türkiye the hourly MGM forecast was shown three hours early (MGM gives these hours in UTC). The temperature curve now peaks in the afternoon as it should, and the app's accuracy check forgets the misread MGM hours and learns again.
+- In Türkiye, when MGM cannot be reached, the forecast now falls back to Open-Meteo's own choice of models instead of the ECMWF model: measured against a year of airport reports, it was clearly closer.
 
 ## 1.5.1 — October 14, 2026
 

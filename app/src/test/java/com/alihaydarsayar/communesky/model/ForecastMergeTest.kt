@@ -75,12 +75,13 @@ class ForecastMergeTest {
 
     @Test
     fun `missing MGM values fall back piece by piece`() {
-        // Saatlik istasyonu olmayan kırsal yer: saatlik yok, günlük var. Saatlik ECMWF'ye düşer; günlük MGM'den.
+        // Saatlik istasyonu olmayan kırsal yer: saatlik yok, günlük var. Saatlik Open-Meteo'da kalır; günlük MGM'den.
         val onlyDaily = mgm().copy(hours = emptyList())
         val result = ForecastMerge.merge(base(), turkey.copy(national = onlyDaily, models = listOf(ecmwf())), now)
-        assertEquals(ForecastSource.EcmwfIfs, result.sources.forecast)
+        assertEquals(ForecastSource.OpenMeteo, result.sources.forecast)
         assertTrue(result.sources.nationalUnavailable)
-        assertEquals(30.0, result.forecast.hourly.first().temperature, 0.001)
+        assertEquals(10.0, result.forecast.hourly.first().temperature, 0.001)
+        assertEquals(27.0, result.forecast.daily[0].maxTemperature, 0.001)
         // Tek bir saatin sıcaklığı eksikse (‑9999) o saat komşularından hesaplanır.
         val gap = mgm().let { series -> series.copy(hours = series.hours.map { if (it.at.hour == 12) it.copy(temperature = null) else it }) }
         val filled = ForecastMerge.merge(base(), turkey.copy(national = gap), now)
@@ -89,13 +90,17 @@ class ForecastMergeTest {
     }
 
     @Test
-    fun `when MGM fails, ECMWF is used and then Open-Meteo`() {
+    fun `when MGM fails, Open-Meteo's own choice is used, not ECMWF`() {
         val failed = turkey.copy(nationalFailed = true, models = listOf(ecmwf()))
         val result = ForecastMerge.merge(base(), failed, now)
-        assertEquals(ForecastSource.EcmwfIfs, result.sources.forecast)
+        assertEquals(ForecastSource.OpenMeteo, result.sources.forecast)
         assertTrue(result.sources.nationalUnavailable)
-        assertEquals(31.0, result.forecast.daily[0].maxTemperature, 0.001)
-        // ECMWF de yoksa ana tahmin olduğu gibi kalır; ekran asla boş kalmaz.
+        // Saatler de günler de ana tahminden (best_match); ECMWF karışmaz.
+        assertEquals(base().hourly, result.forecast.hourly)
+        assertEquals(12.0, result.forecast.daily[0].maxTemperature, 0.001)
+        assertEquals(listOf(ForecastSource.Mgm, ForecastSource.OpenMeteo), ForecastMerge.order(turkey))
+        // Hakem ECMWF'i seçtiyse o kullanılır.
+        assertEquals(ForecastSource.EcmwfIfs, ForecastMerge.merge(base(), failed.copy(chosen = ForecastSource.EcmwfIfs), now).sources.forecast)
         val nothing = ForecastMerge.merge(base(), turkey.copy(nationalFailed = true), now)
         assertEquals(ForecastSource.OpenMeteo, nothing.sources.forecast)
         assertTrue(nothing.sources.nationalUnavailable)
@@ -105,7 +110,7 @@ class ForecastMergeTest {
     @Test
     fun `when MGM answers again the forecast returns to MGM`() {
         val failed = turkey.copy(nationalFailed = true, models = listOf(ecmwf()))
-        assertEquals(ForecastSource.EcmwfIfs, ForecastMerge.merge(base(), failed, now).sources.forecast)
+        assertEquals(ForecastSource.OpenMeteo, ForecastMerge.merge(base(), failed, now).sources.forecast)
         // Sonraki istekte MGM cevap verdi: işaret kalkar, tahmin yeniden MGM'den gelir.
         val back = ForecastMerge.merge(base(), failed.copy(national = mgm(), nationalFailed = false), now)
         assertEquals(ForecastSource.Mgm, back.sources.forecast)

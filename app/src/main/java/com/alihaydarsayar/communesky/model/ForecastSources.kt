@@ -158,10 +158,13 @@ object ForecastMerge {
      */
     fun defaultSource(extras: PlaceExtras): ForecastSource = if (extras.isNational) ForecastSource.Mgm else extras.region.defaultSource
 
-    /** Kaynak sırası: hakemin seçtiği (yoksa varsayılan), sonra yedekler. */
+    /**
+     * Kaynak sırası: hakemin seçtiği (yoksa varsayılan), sonra yedekler. Türkiye'de MGM cevap vermezse yedek
+     * Open-Meteo'nun kendi seçimidir (best_match): karnede Türkiye'de ECMWF IFS'ten 0,23° daha isabetli çıktı.
+     */
     fun order(extras: PlaceExtras): List<ForecastSource> {
         val default = defaultSource(extras)
-        val fallbacks = if (extras.isNational) listOf(ForecastSource.Mgm, ForecastSource.EcmwfIfs, ForecastSource.OpenMeteo) else listOf(default, ForecastSource.OpenMeteo)
+        val fallbacks = listOf(default, ForecastSource.OpenMeteo)
         return (listOfNotNull(extras.chosen, default) + fallbacks).distinct()
     }
 
@@ -176,7 +179,8 @@ object ForecastMerge {
         val series = extras.series(chosen).takeIf { chosen != ForecastSource.OpenMeteo }
         // Günlük tahmin ayrı bir parçadır: saatliği vermeyen kaynak günlüğü verebilir (ör. saatlik istasyonu olmayan yer).
         val dailySeries = order.takeWhile { it != ForecastSource.OpenMeteo }.firstNotNullOfOrNull { source -> extras.series(source)?.takeIf { it.days.isNotEmpty() } }
-        val later = extras.series(ForecastSource.EcmwfIfs)?.takeIf { extras.isNational && dailySeries?.source != ForecastSource.EcmwfIfs }
+        // MGM'nin beş gününden sonrası ECMWF'ten. MGM hiç cevap vermediyse günler de saatler gibi Open-Meteo'dan kalır.
+        val later = extras.series(ForecastSource.EcmwfIfs)?.takeIf { extras.isNational && dailySeries?.source == ForecastSource.Mgm }
 
         val hourly = base.hourly.map { hour ->
             val temperature = series?.let { temperatureAt(it.hours, hour.time) } ?: return@map hour

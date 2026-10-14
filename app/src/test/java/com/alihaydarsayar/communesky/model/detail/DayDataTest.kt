@@ -61,8 +61,9 @@ class DayDataTest {
     }
 
     @Test
-    fun `the fourth day takes its hours from ECMWF when MGM does not reach that far`() {
-        val extras = besiktas.copy(national = mgm(), models = listOf(ecmwf()))
+    fun `the fourth day takes its hours from ECMWF when the referee chose it`() {
+        // MGM'nin saatlik tahmini iki gün sonrasına uzanmıyor; hakem ECMWF'i seçmiş.
+        val extras = besiktas.copy(national = mgm(), models = listOf(ecmwf()), chosen = ForecastSource.EcmwfIfs)
         val (hours, source) = DayData.mergeFetched(fetched(), base(), extras, fourth)
 
         assertEquals(ForecastSource.EcmwfIfs, source)
@@ -78,8 +79,9 @@ class DayDataTest {
     }
 
     @Test
-    fun `without ECMWF the fourth day stays with the main forecast`() {
-        val (hours, source) = DayData.mergeFetched(fetched(), base(), besiktas.copy(national = mgm()), fourth)
+    fun `without a choice the fourth day stays with the main forecast`() {
+        // MGM o güne uzanmıyor; yedek ECMWF değil, ana tahmin (best_match).
+        val (hours, source) = DayData.mergeFetched(fetched(), base(), besiktas.copy(national = mgm(), models = listOf(ecmwf())), fourth)
         assertEquals(ForecastSource.OpenMeteo, source)
         assertEquals(14.0, hours[15].temperature, 0.001)
         assertEquals(40, hours[15].precipitationProbability)
@@ -94,7 +96,7 @@ class DayDataTest {
 
     @Test
     fun `the learned correction also applies to the fetched hours`() {
-        val extras = besiktas.copy(national = mgm(), models = listOf(ecmwf()), dayCorrection = -1.0, nightCorrection = 0.5)
+        val extras = besiktas.copy(national = mgm(), models = listOf(ecmwf()), chosen = ForecastSource.EcmwfIfs, dayCorrection = -1.0, nightCorrection = 0.5)
         val (hours, _) = DayData.mergeFetched(fetched(), base(), extras, fourth)
         assertEquals(21.0, hours[15].temperature, 0.001)   // gündüz
         assertEquals(22.5, hours[2].temperature, 0.001)    // gece
