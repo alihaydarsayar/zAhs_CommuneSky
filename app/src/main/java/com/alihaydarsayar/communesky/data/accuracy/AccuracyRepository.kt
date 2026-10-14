@@ -116,7 +116,7 @@ class AccuracyRepository @Inject constructor(
     }
 
     /**
-     * 1.5.2'ye kadar MGM'nin saatlik tahmini 3 saat erken okunuyordu (bkz. MgmParsing.hourlyTime). O tahminlerle
+     * 1.5.2'ye kadar MGM'nin saatlik tahmini 3 saat erken okunuyordu (bkz. MgmParsing.utcTime). O tahminlerle
      * yazılmış kayıtlar bir kez silinir; hakem ve öğrenen düzeltme MGM'yi doğru saatlerle yeniden öğrenir.
      */
     private suspend fun forgetShiftedMgmHours(places: List<Place>) {

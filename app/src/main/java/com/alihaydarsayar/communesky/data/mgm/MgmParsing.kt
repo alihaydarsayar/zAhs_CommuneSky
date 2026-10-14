@@ -21,20 +21,22 @@ import kotlin.math.roundToInt
 object MgmParsing {
 
     /**
-     * Günlük tahminin tarihleri ve uyarıların saatleri: "2026-10-12T00:00:00.000Z" biçimindedir ama sondaki Z
-     * yanlıştır; değer Türkiye saatidir (günlük tahminin tarihleri gece yarısıdır). Z atılır, yerel saat okunur.
-     * Saatlik tahmin için [hourlyTime].
+     * Günlük tahminin tarihleri: "2026-10-12T00:00:00.000Z" biçimindedir ama sondaki Z yanlıştır; değer Türkiye'deki
+     * takvim günüdür (gece yarısı). Z atılır, yerel saat okunur. Saatlik tahmin ve uyarılar için [utcTime].
      */
     fun localTime(text: String?): LocalDateTime? =
         runCatching { LocalDateTime.parse(text!!.trim().removeSuffix("Z")) }.getOrNull()
 
     /**
-     * Saatlik tahminin damgaları gerçekten UTC'dir: "2026-10-14T12:00:00.000Z" Türkiye'de 15:00'tir. 14 Ekim
-     * 2026'da 81 il merkezinin MGM eğrisi aynı noktadaki ICON-EU, ECMWF ve Open-Meteo eğrileriyle karşılaştırıldı:
-     * merkezlerin 69'unda en iyi uyum (korelasyon) damgalar UTC okununca çıktı, Türkiye saati okununca 11'inde;
-     * ortalama fark 1,5° ile 1,9°. Günün en düşüğü de böylece sabah 06:00'ya, en yükseği öğleden sonra 15:00'e düşer.
+     * Saatlik tahminin damgaları ve uyarıların başlangıç/bitiş saatleri gerçekten UTC'dir: "2026-10-14T12:00:00.000Z"
+     * Türkiye'de 15:00'tir.
+     * - Saatlik tahmin: 14 Ekim 2026'da 81 il merkezinin MGM eğrisi aynı noktadaki ICON-EU, ECMWF ve Open-Meteo
+     *   eğrileriyle karşılaştırıldı: merkezlerin 69'unda en iyi uyum (korelasyon) damgalar UTC okununca çıktı,
+     *   Türkiye saati okununca 11'inde; ortalama fark 1,5° ile 1,9°.
+     * - Uyarılar: MGM'nin kendi MeteoUyarı sayfası (il-detay.js) bu alanları `new Date(...)` ile UTC okuyup +03:00
+     *   ile yazar; "17:00:27Z" sitede 20.00 görünür. Bitişler de böylece gün sonuna (23:59) denk gelir.
      */
-    fun hourlyTime(text: String?): LocalDateTime? =
+    fun utcTime(text: String?): LocalDateTime? =
         runCatching { Instant.parse(text!!.trim()).atZone(TURKEY).toLocalDateTime() }.getOrNull()
 
     private val TURKEY: ZoneId = ZoneId.of("Europe/Istanbul")
@@ -44,7 +46,7 @@ object MgmParsing {
 
     fun hours(response: List<MgmHourlyForecastDto>): List<NationalHour> =
         response.firstOrNull()?.tahmin.orEmpty().mapNotNull { hour ->
-            val time = hourlyTime(hour.tarih) ?: return@mapNotNull null
+            val time = utcTime(hour.tarih) ?: return@mapNotNull null
             NationalHour(
                 time = time.withSecond(0).withNano(0).toString(),
                 weatherCode = MgmWeatherCodes.map(hour.hadise).wmoCode,
@@ -86,8 +88,8 @@ object MgmParsing {
             val key = level.name.lowercase()
             val towns = (alert.towns?.get(key) as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.intOrNull }
             if (centerId !in towns) return@mapNotNull null
-            val begin = localTime(alert.begin) ?: return@mapNotNull null
-            val end = localTime(alert.end) ?: return@mapNotNull null
+            val begin = utcTime(alert.begin) ?: return@mapNotNull null
+            val end = utcTime(alert.end) ?: return@mapNotNull null
             WeatherAlert(
                 id = "mgm-${alert.alertNo ?: alert.id}-$key",
                 level = level,

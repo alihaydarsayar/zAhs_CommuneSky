@@ -20,8 +20,8 @@ class MgmParsingTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     @Test
-    fun `daily dates and warning times end with Z but are local time in Türkiye`() {
-        // Günlük tahmin ve uyarılarda sondaki Z yanlış: 15:00 Türkiye saatidir.
+    fun `daily dates end with Z but are local time in Türkiye`() {
+        // Günlük tahminin tarihlerinde sondaki Z yanlış: değer Türkiye saatidir.
         assertEquals(LocalDateTime.of(2026, 10, 12, 15, 0), MgmParsing.localTime("2026-10-12T15:00:00.000Z"))
         assertEquals(LocalDateTime.of(2026, 10, 12, 0, 0), MgmParsing.localTime("2026-10-12T00:00:00.000Z"))
         assertNull(MgmParsing.localTime(null))
@@ -31,10 +31,10 @@ class MgmParsingTest {
     @Test
     fun `hourly forecast stamps are UTC and become Türkiye time`() {
         // Saatlik tahminde Z doğru: 12:00 UTC, Türkiye'de 15:00; 21:00 UTC ertesi günün 00:00'ı.
-        assertEquals(LocalDateTime.of(2026, 10, 14, 15, 0), MgmParsing.hourlyTime("2026-10-14T12:00:00.000Z"))
-        assertEquals(LocalDateTime.of(2026, 10, 15, 0, 0), MgmParsing.hourlyTime("2026-10-14T21:00:00.000Z"))
-        assertNull(MgmParsing.hourlyTime(null))
-        assertNull(MgmParsing.hourlyTime("2026-10-14T12:00"))
+        assertEquals(LocalDateTime.of(2026, 10, 14, 15, 0), MgmParsing.utcTime("2026-10-14T12:00:00.000Z"))
+        assertEquals(LocalDateTime.of(2026, 10, 15, 0, 0), MgmParsing.utcTime("2026-10-14T21:00:00.000Z"))
+        assertNull(MgmParsing.utcTime(null))
+        assertNull(MgmParsing.utcTime("2026-10-14T12:00"))
     }
 
     @Test
@@ -108,12 +108,26 @@ class MgmParsingTest {
         assertEquals(AlertLevel.Yellow, yellow.level)
         assertEquals(listOf(AlertEvent.Thunderstorm), yellow.events)
         assertEquals("Kuvvetli sağanak bekleniyor.", yellow.text)
-        assertEquals("2026-10-12T09:00", yellow.begin)
-        assertEquals("2026-10-12T20:59", yellow.end)
+        // Uyarı saatleri UTC: 09:00Z Türkiye'de 12:00, 20:59Z gün sonu 23:59 (MGM'nin kendi sayfası da böyle gösterir).
+        assertEquals("2026-10-12T12:00", yellow.begin)
+        assertEquals("2026-10-12T23:59", yellow.end)
         // Başka bir ilçe: turuncu ve kırmızı; en ağır olan önce.
         val other = MgmParsing.alerts(alerts, centerId = 93420)
         assertEquals(listOf(AlertLevel.Red, AlertLevel.Orange), other.map { it.level })
         assertEquals(listOf(AlertEvent.Rain, AlertEvent.Wind), other[1].events)
+    }
+
+    @Test
+    fun `warning times are UTC like on the MGM warning page`() {
+        // MGM sitesi bu uyarıyı "14 Ekim 2026 20.00 - 15 Ekim 2026 09.00" diye gösterir (UTC okuyup +03:00 ile yazar).
+        val alert = json.decodeFromString(
+            ListSerializer(MgmAlertDto.serializer()),
+            """[{"_id":"a3","alertNo":2026101439,"text":{"yellow":"Sağanak."},"weather":{"yellow":["thunderstorm"],"orange":[],"red":[]},
+              "towns":{"yellow":[93414],"orange":[],"red":[]},"begin":"2026-10-14T17:00:27.223Z","end":"2026-10-15T06:00:27.223Z"}]""",
+        )
+        val warning = MgmParsing.alerts(alert, centerId = 93414).single()
+        assertEquals("2026-10-14T20:00", warning.begin)
+        assertEquals("2026-10-15T09:00", warning.end)
     }
 
     @Test
