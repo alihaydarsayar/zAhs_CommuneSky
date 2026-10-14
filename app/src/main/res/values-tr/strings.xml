@@ -23,6 +23,11 @@
         <item quantity="one">Anlık: %1$d istasyon, en yakını %2$s (%3$s km)</item>
         <item quantity="other">Anlık: %1$d istasyon, en yakını %2$s (%3$s km)</item>
     </plurals>
+    <plurals name="observation_note_network_rain">
+        <item quantity="one">Anlık: %1$d istasyon, yağış: %2$s (%3$s km)</item>
+        <item quantity="other">Anlık: %1$d istasyon, yağış: %2$s (%3$s km)</item>
+    </plurals>
+    <string name="observation_rain_forecast">yağış: tahmin</string>
     <string name="observation_thunder_nearby">Yakında gök gürültülü yağış var (%1$s, %2$s)</string>
     <string name="observation_rain_nearby">Yakında yağış var (%1$s, %2$s)</string>
 
@@ -576,6 +581,8 @@
         <item quantity="one">Şu anki sıcaklık çevredeki %1$d istasyonun (MGM istasyonları ve havalimanları) ölçümlerinden hesaplanır; istasyon ne kadar yakınsa payı o kadar büyüktür. En yakını: %2$s (%3$s km).</item>
         <item quantity="other">Şu anki sıcaklık çevredeki %1$d istasyonun (MGM istasyonları ve havalimanları) ölçümlerinden hesaplanır; istasyon ne kadar yakınsa payı o kadar büyüktür. En yakını: %2$s (%3$s km).</item>
     </plurals>
+    <string name="source_info_rain_station">Yağış durumu, yağış ölçen en yakın istasyondan gelir: %1$s (%2$s km).</string>
+    <string name="source_info_rain_forecast">Yakında yağış ölçen istasyon yok; yağış durumu tahminden gelir.</string>
     <string name="dialog_close">Kapat</string>
     <string name="rain_expected_by">Yağmur bekleniyor (%1$s)</string>
     <string name="rain_chance_note">Yağmur ihtimali %%%1$d</string>

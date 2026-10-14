@@ -25,6 +25,12 @@
         <item quantity="many">Actuel : %1$d stations, la plus proche %2$s (%3$s km)</item>
         <item quantity="other">Actuel : %1$d stations, la plus proche %2$s (%3$s km)</item>
     </plurals>
+    <plurals name="observation_note_network_rain">
+        <item quantity="one">Actuel : %1$d station, pluie : %2$s (%3$s km)</item>
+        <item quantity="many">Actuel : %1$d stations, pluie : %2$s (%3$s km)</item>
+        <item quantity="other">Actuel : %1$d stations, pluie : %2$s (%3$s km)</item>
+    </plurals>
+    <string name="observation_rain_forecast">pluie : prévision</string>
     <string name="observation_thunder_nearby">Orage à proximité (%1$s, %2$s)</string>
     <string name="observation_rain_nearby">Pluie à proximité (%1$s, %2$s)</string>
 
@@ -580,6 +586,8 @@
         <item quantity="many">La température actuelle est calculée à partir de %1$d stations autour de vous (stations de la MGM et aéroports) ; plus une station est proche, plus elle compte. La plus proche : %2$s (%3$s km).</item>
         <item quantity="other">La température actuelle est calculée à partir de %1$d stations autour de vous (stations de la MGM et aéroports) ; plus une station est proche, plus elle compte. La plus proche : %2$s (%3$s km).</item>
     </plurals>
+    <string name="source_info_rain_station">La pluie est déterminée par la station la plus proche qui la mesure : %1$s (%2$s km).</string>
+    <string name="source_info_rain_forecast">Aucune station proche ne mesure la pluie ; la pluie est déterminée par la prévision.</string>
     <string name="dialog_close">Fermer</string>
     <string name="rain_expected_by">Pluie attendue (%1$s)</string>
     <string name="rain_chance_note">Risque de pluie %1$d %%</string>

@@ -52,13 +52,26 @@ private fun observedAgo(observation: Observation): String =
 fun ObservationNote(use: ObservationUse.Override, modifier: Modifier = Modifier) {
     val observation = use.observation
     val network = use.network
-    val text = if (network != null) {
-        // İstasyon ağı: "Anlık: 4 MGM istasyonu, en yakını Beşiktaş (1,2 km)".
-        androidx.compose.ui.res.pluralStringResource(R.plurals.observation_note_network, network.stationCount, network.stationCount, observation.stationName, rememberDecimalFormat().format(use.distanceKm))
-    } else when (observation.source) {
-        ObservationSource.Mgm -> stringResource(R.string.observation_note_mgm, stationLabel(observation), observedAgo(observation))
-        ObservationSource.Metar -> stringResource(R.string.observation_note_metar, stationLabel(observation), observedAgo(observation))
+    val decimal = rememberDecimalFormat()
+    val rainStation = network?.precipitationStation
+    val base = when {
+        // En yakın istasyon yağış ölçmüyor: yağış kararının geldiği istasyon yazılır.
+        // "Anlık: 5 istasyon, yağış: İlçe (2,1 km)".
+        network != null && !observation.knowsPrecipitation && rainStation != null ->
+            androidx.compose.ui.res.pluralStringResource(
+                R.plurals.observation_note_network_rain, network.stationCount, network.stationCount,
+                rainStation.stationName, decimal.format(network.precipitationStationKm ?: 0.0),
+            )
+        // İstasyon ağı: "Anlık: 4 istasyon, en yakını Beşiktaş (1,2 km)".
+        network != null -> androidx.compose.ui.res.pluralStringResource(
+            R.plurals.observation_note_network, network.stationCount, network.stationCount, observation.stationName, decimal.format(use.distanceKm),
+        )
+        observation.source == ObservationSource.Mgm -> stringResource(R.string.observation_note_mgm, stationLabel(observation), observedAgo(observation))
+        else -> stringResource(R.string.observation_note_metar, stationLabel(observation), observedAgo(observation))
     }
+    // Çevrede yağış ölçen istasyon yoksa yağışın tahminden geldiği söylenir.
+    val rainFromForecast = network?.knowsPrecipitation?.not() ?: !observation.knowsPrecipitation
+    val text = if (rainFromForecast) base + " · " + stringResource(R.string.observation_rain_forecast) else base
     Text(
         text = text,
         color = TextTertiary,

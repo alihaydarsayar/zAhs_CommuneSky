@@ -13,6 +13,7 @@ What's new in each version of Commune Sky.
 - In Türkiye, when MGM cannot be reached, the forecast now falls back to Open-Meteo's own choice of models instead of the ECMWF model: measured against a year of airport reports, it was clearly closer.
 - On the page of a later day, the hourly temperature curve now meets the day's high and low shown in the 7-day forecast, even when the hours come from another model.
 - Fixed: when the nearest station measures only temperature (for example a lighthouse), the app could say "Overcast" during heavy rain. Rain is now decided only by stations that measure it; if none nearby does, the weather comes from the forecast (in Türkiye MGM's hourly forecast) instead of being called dry.
+- The line under the place name says which station the rain comes from when the nearest one does not measure rain (for example "Now: 5 stations, rain: … (2.1 km)"), or that it comes from the forecast.
 
 ## 1.5.1 — October 14, 2026
 

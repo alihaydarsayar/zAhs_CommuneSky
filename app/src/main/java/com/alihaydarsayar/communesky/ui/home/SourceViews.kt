@@ -28,6 +28,7 @@ import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.ForecastSource
 import com.alihaydarsayar.communesky.model.ForecastSources
 import com.alihaydarsayar.communesky.model.ObservationUse
+import com.alihaydarsayar.communesky.model.precipitationMeasured
 import com.alihaydarsayar.communesky.model.RainNote
 import com.alihaydarsayar.communesky.model.TemperatureUnit
 import com.alihaydarsayar.communesky.model.WeatherSnapshot
@@ -126,9 +127,15 @@ private fun sourceInfoLines(weather: WeatherSnapshot, sources: ForecastSources):
     if (network != null) {
         val distance = com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat().format(network.nearestKm)
         add(androidx.compose.ui.res.pluralStringResource(R.plurals.source_info_network, network.stationCount, network.stationCount, network.nearest.stationName, distance))
+        val rainStation = network.precipitationStation
+        if (!network.nearest.knowsPrecipitation && rainStation != null) {
+            val km = com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat().format(network.precipitationStationKm ?: 0.0)
+            add(stringResource(R.string.source_info_rain_station, rainStation.stationName, km))
+        }
     } else if (weather.observation != null) {
         add(stringResource(R.string.source_info_observation))
     }
+    if (weather.observation is ObservationUse.Override && !weather.precipitationMeasured) add(stringResource(R.string.source_info_rain_forecast))
     // Karne: yeterli gün birikince yarının en yükseğindeki ortalama hata, öteki kaynaklarla yan yana.
     val decimal = com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat()
     val own = sources.accuracy.firstOrNull { it.source == sources.forecast }

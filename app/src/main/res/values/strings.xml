@@ -25,6 +25,11 @@
         <item quantity="one">Now: %1$d station, nearest %2$s (%3$s km)</item>
         <item quantity="other">Now: %1$d stations, nearest %2$s (%3$s km)</item>
     </plurals>
+    <plurals name="observation_note_network_rain">
+        <item quantity="one">Now: %1$d station, rain: %2$s (%3$s km)</item>
+        <item quantity="other">Now: %1$d stations, rain: %2$s (%3$s km)</item>
+    </plurals>
+    <string name="observation_rain_forecast">rain: forecast</string>
     <string name="observation_thunder_nearby">Thunderstorm nearby (%1$s, %2$s)</string>
     <string name="observation_rain_nearby">Rain nearby (%1$s, %2$s)</string>
 
@@ -583,6 +588,8 @@
         <item quantity="one">The current temperature is worked out from %1$d station around you; the closer a station, the more it counts. Nearest: %2$s (%3$s km).</item>
         <item quantity="other">The current temperature is worked out from %1$d stations around you (MGM stations and airports); the closer a station, the more it counts. Nearest: %2$s (%3$s km).</item>
     </plurals>
+    <string name="source_info_rain_station">Whether it is raining comes from the nearest station that measures rain: %1$s (%2$s km).</string>
+    <string name="source_info_rain_forecast">No station nearby measures rain; whether it is raining comes from the forecast.</string>
     <string name="dialog_close">Close</string>
     <string name="rain_expected_by">Rain expected (%1$s)</string>
     <string name="rain_chance_note">Chance of rain %1$d%%</string>
