@@ -54,7 +54,7 @@ fun ObservationNote(use: ObservationUse.Override, modifier: Modifier = Modifier)
     val network = use.network
     val text = if (network != null) {
         // İstasyon ağı: "Anlık: 4 MGM istasyonu, en yakını Beşiktaş (1,2 km)".
-        stringResource(R.string.observation_note_network, network.stationCount, observation.stationName, rememberDecimalFormat().format(use.distanceKm))
+        androidx.compose.ui.res.pluralStringResource(R.plurals.observation_note_network, network.stationCount, network.stationCount, observation.stationName, rememberDecimalFormat().format(use.distanceKm))
     } else when (observation.source) {
         ObservationSource.Mgm -> stringResource(R.string.observation_note_mgm, stationLabel(observation), observedAgo(observation))
         ObservationSource.Metar -> stringResource(R.string.observation_note_metar, stationLabel(observation), observedAgo(observation))

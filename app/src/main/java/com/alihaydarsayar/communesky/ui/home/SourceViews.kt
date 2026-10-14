@@ -125,7 +125,7 @@ private fun sourceInfoLines(weather: WeatherSnapshot, sources: ForecastSources):
     val network = (weather.observation as? ObservationUse.Override)?.network
     if (network != null) {
         val distance = com.alihaydarsayar.communesky.ui.common.rememberDecimalFormat().format(network.nearestKm)
-        add(stringResource(R.string.source_info_network, network.stationCount, network.nearest.stationName, distance))
+        add(androidx.compose.ui.res.pluralStringResource(R.plurals.source_info_network, network.stationCount, network.stationCount, network.nearest.stationName, distance))
     } else if (weather.observation != null) {
         add(stringResource(R.string.source_info_observation))
     }
