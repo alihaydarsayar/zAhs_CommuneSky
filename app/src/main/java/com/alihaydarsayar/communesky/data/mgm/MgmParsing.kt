@@ -12,26 +12,39 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
 import kotlin.math.roundToInt
 
 /** MGM cevaplarını uygulamanın modeline çevirir. Saf mantık; test edilir. */
 object MgmParsing {
 
     /**
-     * MGM tarihleri "2026-10-12T15:00:00.000Z" biçimindedir ama sondaki Z yanlıştır: saatler UTC değil,
-     * Türkiye saatidir (günlük tahminin tarihleri gece yarısıdır; UTC olsaydı 21:00 olurdu). Z atılır ve
-     * değer yerel saat olarak okunur.
+     * Günlük tahminin tarihleri ve uyarıların saatleri: "2026-10-12T00:00:00.000Z" biçimindedir ama sondaki Z
+     * yanlıştır; değer Türkiye saatidir (günlük tahminin tarihleri gece yarısıdır). Z atılır, yerel saat okunur.
+     * Saatlik tahmin için [hourlyTime].
      */
     fun localTime(text: String?): LocalDateTime? =
         runCatching { LocalDateTime.parse(text!!.trim().removeSuffix("Z")) }.getOrNull()
+
+    /**
+     * Saatlik tahminin damgaları gerçekten UTC'dir: "2026-10-14T12:00:00.000Z" Türkiye'de 15:00'tir. 14 Ekim
+     * 2026'da 81 il merkezinin MGM eğrisi aynı noktadaki ICON-EU, ECMWF ve Open-Meteo eğrileriyle karşılaştırıldı:
+     * merkezlerin 69'unda en iyi uyum (korelasyon) damgalar UTC okununca çıktı, Türkiye saati okununca 11'inde;
+     * ortalama fark 1,5° ile 1,9°. Günün en düşüğü de böylece sabah 06:00'ya, en yükseği öğleden sonra 15:00'e düşer.
+     */
+    fun hourlyTime(text: String?): LocalDateTime? =
+        runCatching { Instant.parse(text!!.trim()).atZone(TURKEY).toLocalDateTime() }.getOrNull()
+
+    private val TURKEY: ZoneId = ZoneId.of("Europe/Istanbul")
 
     /** -9999 (ve benzeri) "veri yok" demektir. */
     fun valid(value: Double?): Double? = value?.takeIf { it > -9000 }
 
     fun hours(response: List<MgmHourlyForecastDto>): List<NationalHour> =
         response.firstOrNull()?.tahmin.orEmpty().mapNotNull { hour ->
-            val time = localTime(hour.tarih) ?: return@mapNotNull null
+            val time = hourlyTime(hour.tarih) ?: return@mapNotNull null
             NationalHour(
                 time = time.withSecond(0).withNano(0).toString(),
                 weatherCode = MgmWeatherCodes.map(hour.hadise).wmoCode,

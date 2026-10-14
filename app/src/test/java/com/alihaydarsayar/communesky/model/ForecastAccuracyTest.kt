@@ -83,4 +83,25 @@ class ForecastAccuracyTest {
         assertEquals(-3.0, result.day, 0.0)
         assertEquals(3.0, result.night, 0.0)
     }
+
+    @Test
+    fun `after the MGM hour fix the place forgets what it learned from shifted hours`() {
+        val extras = PlaceExtras(
+            centerId = 93414,
+            chosen = ForecastSource.EcmwfIfs,
+            dayCorrection = -1.5,
+            nightCorrection = 0.6,
+            accuracy = listOf(StoredAccuracy(ForecastSource.Mgm, 12, 2.1), StoredAccuracy(ForecastSource.EcmwfIfs, 12, 1.2)),
+            decidedDay = 20_000,
+            nationalFetchedAt = 1_000,
+        )
+        val fixed = MgmHourlyFix.forget(extras)
+        assertEquals(null, fixed.chosen)
+        assertEquals(0.0, fixed.dayCorrection, 0.0)
+        assertEquals(0.0, fixed.nightCorrection, 0.0)
+        assertEquals(listOf(ForecastSource.EcmwfIfs), fixed.accuracy.map { it.source })
+        assertEquals(-1L, fixed.decidedDay)
+        assertEquals(0L, fixed.nationalFetchedAt)
+        assertEquals(93414, fixed.centerId)
+    }
 }

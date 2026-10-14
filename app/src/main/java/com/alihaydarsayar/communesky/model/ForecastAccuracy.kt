@@ -132,3 +132,18 @@ object LearnedCorrection {
         return (-mean).coerceIn(-LIMIT, LIMIT)
     }
 }
+
+/**
+ * MGM saatlik tahmininin saat düzeltmesinden (1.5.2) sonra bir yerin ek verisi: eski kayıtlardan çıkan karar ve
+ * düzeltme unutulur, MGM'nin tahmini ilk yenilemede doğru saatlerle yeniden istenir. Saf; test edilir.
+ */
+object MgmHourlyFix {
+    fun forget(extras: PlaceExtras): PlaceExtras = extras.copy(
+        chosen = null,
+        dayCorrection = 0.0,
+        nightCorrection = 0.0,
+        accuracy = extras.accuracy.filter { it.source != ForecastSource.Mgm },
+        decidedDay = -1,
+        nationalFetchedAt = 0,
+    )
+}

@@ -72,6 +72,9 @@ interface AccuracyDao {
     @Query("DELETE FROM observed_records WHERE hour < :beforeHour")
     suspend fun deleteOldObserved(beforeHour: Long)
 
+    @Query("DELETE FROM forecast_records WHERE source = :source AND kind = :kind")
+    suspend fun deleteForecasts(source: String, kind: String)
+
     @Query("DELETE FROM forecast_records WHERE placeId NOT IN (:placeIds)")
     suspend fun deleteForecastsExcept(placeIds: List<Long>)
 
@@ -95,6 +98,7 @@ class AccuracyRepository @Inject constructor(
      */
     suspend fun update(places: List<Place>, utcOffsetSeconds: (Long) -> Int?, observation: suspend (Long) -> Observation?, now: Instant = Instant.now()) {
         runCatching {
+            forgetShiftedMgmHours(places)
             val nowHour = now.epochSecond / 3600
             for (place in places) {
                 val extras = extrasStore.get(place.id) ?: continue
@@ -109,6 +113,21 @@ class AccuracyRepository @Inject constructor(
             dao.deleteForecastsExcept(ids)
             dao.deleteObservedExcept(ids)
         }
+    }
+
+    /**
+     * 1.5.2'ye kadar MGM'nin saatlik tahmini 3 saat erken okunuyordu (bkz. MgmParsing.hourlyTime). O tahminlerle
+     * yazılmış kayıtlar bir kez silinir; hakem ve öğrenen düzeltme MGM'yi doğru saatlerle yeniden öğrenir.
+     */
+    private suspend fun forgetShiftedMgmHours(places: List<Place>) {
+        val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        if (preferences.getBoolean(MGM_HOURS_FIXED, false)) return
+        dao.deleteForecasts(com.alihaydarsayar.communesky.model.ForecastSource.Mgm.name, HOURLY)
+        for (place in places) {
+            val extras = extrasStore.get(place.id) ?: continue
+            extrasStore.save(place.id, com.alihaydarsayar.communesky.model.MgmHourlyFix.forget(extras))
+        }
+        preferences.edit().putBoolean(MGM_HOURS_FIXED, true).apply()
     }
 
     private suspend fun record(place: Place, extras: PlaceExtras, offset: Int, observation: Observation?, now: Instant) {
@@ -181,6 +200,8 @@ class AccuracyRepository @Inject constructor(
 
     private companion object {
         const val TAG = "ForecastAccuracy"
+        const val PREFERENCES = "accuracy"
+        const val MGM_HOURS_FIXED = "mgm_hours_utc"
         const val HOURLY = "H"
         const val MAX = "X"
         const val MIN = "N"

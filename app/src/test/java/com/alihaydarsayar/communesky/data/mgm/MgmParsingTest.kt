@@ -20,12 +20,21 @@ class MgmParsingTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     @Test
-    fun `times end with Z but are local time in Türkiye, not UTC`() {
-        // Sondaki Z yanlış: 15:00 Türkiye saatidir. UTC diye okunsaydı 18:00 olurdu.
+    fun `daily dates and warning times end with Z but are local time in Türkiye`() {
+        // Günlük tahmin ve uyarılarda sondaki Z yanlış: 15:00 Türkiye saatidir.
         assertEquals(LocalDateTime.of(2026, 10, 12, 15, 0), MgmParsing.localTime("2026-10-12T15:00:00.000Z"))
         assertEquals(LocalDateTime.of(2026, 10, 12, 0, 0), MgmParsing.localTime("2026-10-12T00:00:00.000Z"))
         assertNull(MgmParsing.localTime(null))
         assertNull(MgmParsing.localTime("yarın"))
+    }
+
+    @Test
+    fun `hourly forecast stamps are UTC and become Türkiye time`() {
+        // Saatlik tahminde Z doğru: 12:00 UTC, Türkiye'de 15:00; 21:00 UTC ertesi günün 00:00'ı.
+        assertEquals(LocalDateTime.of(2026, 10, 14, 15, 0), MgmParsing.hourlyTime("2026-10-14T12:00:00.000Z"))
+        assertEquals(LocalDateTime.of(2026, 10, 15, 0, 0), MgmParsing.hourlyTime("2026-10-14T21:00:00.000Z"))
+        assertNull(MgmParsing.hourlyTime(null))
+        assertNull(MgmParsing.hourlyTime("2026-10-14T12:00"))
     }
 
     @Test
@@ -38,7 +47,7 @@ class MgmParsingTest {
               {"tarih":"2026-10-12T21:00:00.000Z","hadise":"XYZ","sicaklik":16,"nem":85,"ruzgarYonu":172,"ruzgarHizi":3,"maksimumRuzgarHizi":9}]}]""",
         )
         val hours = MgmParsing.hours(response)
-        assertEquals(listOf("2026-10-12T15:00", "2026-10-12T18:00", "2026-10-12T21:00"), hours.map { it.time })
+        assertEquals(listOf("2026-10-12T18:00", "2026-10-12T21:00", "2026-10-13T00:00"), hours.map { it.time })
         assertEquals(21.0, hours[0].temperature!!, 0.0)
         assertEquals(2, hours[0].weatherCode)
         assertEquals(8.0, hours[0].gust!!, 0.0)
