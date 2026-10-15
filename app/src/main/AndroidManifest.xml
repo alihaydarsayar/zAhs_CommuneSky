@@ -18,6 +18,11 @@
         <intent>
             <action android:name="android.intent.action.SHOW_ALARMS" />
         </intent>
+        <!-- Saate dokununca telefonun saat uygulamasını bulmak için (bazıları "alarmları göster" isteğini karşılamaz). -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
     </queries>
 
     <application

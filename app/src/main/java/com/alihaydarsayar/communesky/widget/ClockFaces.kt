@@ -1,10 +1,8 @@
 package com.alihaydarsayar.communesky.widget
 
 import android.content.Context
-import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Build
-import android.provider.AlarmClock
 import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
@@ -592,10 +590,6 @@ private fun analogHands(context: Context, kind: WidgetBitmaps.Dial, style: Widge
 
 /** Saate dokununca telefonun saat/alarm uygulaması; yoksa Commune Sky. */
 fun clockAction(context: Context): Action {
-    val alarms = Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    return if (alarms.resolveActivity(context.packageManager) != null) {
-        actionStartActivity(alarms)
-    } else {
-        actionStartActivity<MainActivity>()
-    }
+    val clock = ClockApp.intent(context)
+    return if (clock != null) actionStartActivity(clock) else actionStartActivity<MainActivity>()
 }

@@ -14,6 +14,7 @@ What's new in each version of Commune Sky.
 - Fixed: right after you chose a home, the Home & location widget asked you to set your home until the home's weather arrived. It now says the home's weather is loading, and choosing a home downloads its weather at once.
 - Settings › Home & location: "Save my current location as home" no longer adds a second copy of a place you already saved there; that place becomes home.
 - Fixed: home-screen widgets (clocks, for example) could suddenly turn into the Home & location widget after the app had been used or the phone's time changed. Each widget now keeps its own type.
+- Tapping a clock widget now finds the phone's clock app on more phones (some clock apps do not answer Android's standard "show alarms" request); if none is found it still opens Commune Sky.
 
 ## 1.5.2 — October 14, 2026
 

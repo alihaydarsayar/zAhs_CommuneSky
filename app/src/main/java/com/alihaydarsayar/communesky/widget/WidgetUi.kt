@@ -4,7 +4,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.provider.AlarmClock
 import android.text.format.DateFormat
 import android.util.TypedValue
 import android.view.Gravity
@@ -713,12 +712,8 @@ private fun ClockView(
  * Saate dokununca telefonun saat/alarm uygulaması açılır; böyle bir uygulama yoksa Commune Sky.
  */
 fun clockAppIntent(context: Context): PendingIntent {
-    val alarms = Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    val intent = if (alarms.resolveActivity(context.packageManager) != null) {
-        alarms
-    } else {
-        Intent(context, com.alihaydarsayar.communesky.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
+    val intent = ClockApp.intent(context)
+        ?: Intent(context, com.alihaydarsayar.communesky.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 }
 
