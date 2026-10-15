@@ -33,7 +33,7 @@ class ContrastTest {
 
     @Test
     fun `the default widget colours are readable`() {
-        val ground = 0xFF121316.toInt()
+        val ground = 0xFF000000.toInt()
         assertTrue(Contrast.ratio(0xFFF2F3F5.toInt(), ground) > 15)
         // İkincil yazı (%70) ve vurgu rengi de koyu zeminde okunur.
         assertTrue(Contrast.isReadable(0xB3F2F3F5.toInt(), ground))
@@ -83,7 +83,7 @@ class ContrastTest {
         val fixed = Contrast.ensure(red, sky)
         assertTrue(sky.all { Contrast.ratio(fixed, it) >= Contrast.MIN_LARGE })
         // Koyu zeminde kırmızı zaten okunur: renk değişmez.
-        assertEquals(red, Contrast.ensure(red, listOf(0xFF121316.toInt())))
+        assertEquals(red, Contrast.ensure(red, listOf(0xFF000000.toInt())))
         // Açık zeminde açık sarı koyulaşır.
         val yellow = 0xFFFDE68A.toInt()
         val onPaper = Contrast.ensure(yellow, listOf(0xFFF4F2EC.toInt()))

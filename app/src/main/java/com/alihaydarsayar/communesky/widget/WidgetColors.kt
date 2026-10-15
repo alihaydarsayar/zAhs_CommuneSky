@@ -42,8 +42,8 @@ object WidgetInk {
     /** Açık ("kâğıt") zemin. Saf beyaz zemin kullanılmaz. */
     val Paper = Color(0xFFF2EEE6)
 
-    /** Varsayılan koyu zemin. */
-    val Ground = Color(0xFF121316)
+    /** Varsayılan koyu zemin: tam siyah (OLED ekranda gerçekten kapalı piksel; "siyah" seçilince de aynısı). */
+    val Ground = Color(0xFF000000)
 
     /** Varsayılan vurgu: saniye çizgisi, gün adı, "Bugün", "Şimdi", uyarılar. */
     val Accent = Color(0xFFFF3B3B)
@@ -60,7 +60,7 @@ object WidgetInk {
 
     /** Renk seçicideki 12 hazır renk. */
     val Presets: List<Int> = listOf(
-        0xFFFFFFFF, 0xFFF1ECE3, 0xFFA8A39D, 0xFF141416, 0xFFFF3B3B, 0xFFFF7A2F,
+        0xFFFFFFFF, 0xFFF1ECE3, 0xFFA8A39D, 0xFF000000, 0xFFFF3B3B, 0xFFFF7A2F,
         0xFFFFB000, 0xFF2ED3A0, 0xFF3D8BFF, 0xFF8E6BFF, 0xFFFF5FA2, 0xFF3F6B4A,
     ).map { it.toInt() }
 }
@@ -95,8 +95,8 @@ object WidgetPalettes {
     fun of(context: Context, theme: ColorTheme, sky: SkyTheme, custom: Int? = null): Palette = when (theme) {
         ColorTheme.Dark -> Palette(
             top = WidgetInk.Ground,
-            mid = Color(0xFF17191D),
-            bottom = Color(0xFF22252B),
+            mid = Color(0xFF0B0C0E),
+            bottom = Color(0xFF16181B),
             solid = WidgetInk.Ground,
             container = Color(0xFFF4F2EC),
             onContainer = WidgetInk.Dark,
@@ -116,8 +116,8 @@ object WidgetPalettes {
         )
         ColorTheme.Coral -> Palette(
             top = WidgetInk.Ground,
-            mid = Color(0xFF1B1517),
-            bottom = Color(0xFF2A191B),
+            mid = Color(0xFF110B0C),
+            bottom = Color(0xFF211214),
             solid = WidgetInk.Ground,
             container = Color(0xFFF4F2EC),
             onContainer = WidgetInk.Dark,

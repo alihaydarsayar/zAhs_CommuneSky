@@ -73,7 +73,7 @@ enum class BackgroundKind(@param:StringRes val labelRes: Int, val defaultTranspa
 /** Renk teması: gradyanın, düz rengin ve vurguların renkleri. */
 @Serializable
 enum class ColorTheme(@param:StringRes val labelRes: Int) {
-    /** "Gece": 1.4'ün ortak görünümü, koyu zemin (#121316), açık yazı. */
+    /** "Gece": 1.4'ün ortak görünümü, koyu zemin (tam siyah), açık yazı. */
     Dark(R.string.widget_theme_dark),
 
     /** "Kâğıt": açık, sıcak zemin (#F2EEE6), koyu yazı. */
