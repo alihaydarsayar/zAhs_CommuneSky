@@ -16,6 +16,7 @@ What's new in each version of Commune Sky.
 - Fixed: home-screen widgets (clocks, for example) could suddenly turn into the Home & location widget after the app had been used or the phone's time changed. Each widget now keeps its own type.
 - Tapping a clock widget now finds the phone's clock app on more phones (some clock apps do not answer Android's standard "show alarms" request); if none is found it still opens Commune Sky.
 - Widgets: the dark "Night" look and the "Black" swatch in the colour picker are now truly black instead of a very dark grey.
+- Widgets: the radial clock and the text lines in other widgets now leave a little more room, so on phones with a slightly wider system font nothing is cut off at the edge (the day name, the weather pill, high and low).
 
 ## 1.5.2 — October 14, 2026
 

@@ -741,8 +741,15 @@ private const val LINE_EM = 1.2f
  */
 fun estimateWidthDp(text: String, sizeSp: Float, theme: WidgetTheme): Float {
     val em = if (isNumeric(text, 12f)) 0.5f else 0.55f
-    return text.length * sizeSp * em * theme.style.textSize.scale * theme.fontScaleDp
+    return text.length * sizeSp * em * theme.style.textSize.scale * theme.fontScaleDp * TEXT_SAFETY
 }
+
+/**
+ * Yazı genişliği tahmin ve ölçümlerine eklenen pay. Widget'ı çizen launcher, yazıyı bizim ölçtüğümüzden birkaç
+ * yüzde geniş çizebiliyor (yazı tipi ve ölçek farkları); bazı telefonlarda "13° · Y 20° · D 10°" gibi satırlar
+ * sütunun kenarında kesiliyordu. Bu pay sığmayan bilgiyi kesmek yerine düşürür.
+ */
+const val TEXT_SAFETY = 1.06f
 
 /**
  * Yazının gerçek genişliği (dp): sistem yazı tipiyle ölçülür, yazı kutusunun kenar boşluğu dahil.
@@ -766,7 +773,7 @@ fun measureWidthDp(context: Context, text: String, sizeSp: Float, theme: WidgetT
         textSize = theme.sp(sizeSp).value / theme.grow * context.resources.configuration.fontScale
     }
     // Yazı kutusunun kenar boşluğu (2 dp + 2 dp) büyümeyle ölçeklenmez; tasarım ölçüsüne çevrilir.
-    return paint.measureText(text) + 4f / theme.grow
+    return paint.measureText(text) * (TEXT_SAFETY + 0.02f) + 4f / theme.grow
 }
 
 /**
