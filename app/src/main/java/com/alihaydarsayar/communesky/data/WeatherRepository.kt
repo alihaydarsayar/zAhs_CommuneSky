@@ -67,8 +67,9 @@ class WeatherRepository @Inject constructor(
         observationStore.observeAll(),
         extrasStore.observeAll(),
         minuteTicker(),
-    ) { weather, observations, extras, now ->
-        weather.mapValues { (id, snapshot) -> ObservationBlend.apply(snapshot.withExtras(extras[id]), observations[id], now) }
+        com.alihaydarsayar.communesky.debug.FakeAlerts.levels,
+    ) { weather, observations, extras, now, fake ->
+        weather.mapValues { (id, snapshot) -> ObservationBlend.apply(snapshot.withExtras(extras[id]), observations[id], now).withFakeAlert(fake[id]) }
     }
         .distinctUntilChanged()
         // JSON çözümleme ana iş parçacığını meşgul etmesin.
@@ -76,6 +77,7 @@ class WeatherRepository @Inject constructor(
 
     suspend fun snapshot(placeId: Long): WeatherSnapshot? = withContext(Dispatchers.Default) {
         dao.get(placeId)?.cachedSnapshot()?.let { ObservationBlend.apply(it.withExtras(extrasStore.get(placeId)), observationStore.get(placeId), Instant.now()) }
+            ?.withFakeAlert(com.alihaydarsayar.communesky.debug.FakeAlerts.current()[placeId])
     }
 
     /** "Bulunduğum yer" satırındaki son yer (izin yoksa yedek şehir); hiç yoksa null. */
@@ -149,6 +151,25 @@ class WeatherRepository @Inject constructor(
             accuracyMeters = accuracyMeters,
         )
     }
+}
+
+/**
+ * Debug sürümünün sahte uyarısı (Ayarlar › Debug); release'de [level] hep null'dur. Turuncu ve kırmızı aynı
+ * uyarının iki rengi sayılır: turuncudan kırmızıya geçiş bildirimde "yükseldi" olarak görünür.
+ */
+private fun WeatherSnapshot.withFakeAlert(level: com.alihaydarsayar.communesky.model.AlertLevel?): WeatherSnapshot {
+    if (level == null) return this
+    val now = forecast.localNow().withMinute(0).withSecond(0).withNano(0)
+    val alert = com.alihaydarsayar.communesky.model.WeatherAlert(
+        id = "debug-fake-${level.name.lowercase()}",
+        level = level,
+        events = listOf(com.alihaydarsayar.communesky.model.AlertEvent.Thunderstorm),
+        text = "Sahte uyarı (yalnız debug sürümü).",
+        begin = now.toString(),
+        end = now.toLocalDate().atTime(23, 59).toString(),
+        source = "MGM",
+    )
+    return copy(alerts = (listOf(alert) + alerts).sortedByDescending { it.level })
 }
 
 /**

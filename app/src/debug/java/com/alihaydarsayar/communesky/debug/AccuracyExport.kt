@@ -141,6 +141,8 @@ fun LazyListScope.debugSettingsItems() {
                 }
                 Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
             }
+            // Uyarı şeridini, öneriyi ve uyarı bildirimini gerçek bir uyarı beklemeden denemek için.
+            FakeAlertRows()
             // Özet bildirimlerini saatini beklemeden denemek için (ayar kapalı olsa da gönderilir).
             com.alihaydarsayar.communesky.model.today.SummaryKind.entries.forEach { kind ->
                 Text(
