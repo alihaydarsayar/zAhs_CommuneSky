@@ -54,7 +54,7 @@ data class WidgetInput(
 
     /** Evde / yakında / uzakta kararı (tamamen cihazda). */
     val homeLocation: HomeLocationState
-        get() = HomeLocationState.of(device, home, settings.homeAway.nearbyRadiusKm, firstSaved)
+        get() = HomeLocationState.of(device, home, settings.homeAway.nearbyRadiusKm, firstSaved, homeIsSet = places.any { it.isHome })
 
     /** Sıradaki ilk kayıtlı yer (havası önbellekteyse): ev ve konum yokken widget'ların gösterdiği yer. */
     private val firstSaved: WidgetPlaceData?
@@ -124,12 +124,23 @@ sealed interface HomeLocationState {
 
         /** Ev var ama konum izni yok. */
         NoLocation,
+
+        /** Ev seçili ama havası henüz indirilmedi (ör. ev az önce seçildi). */
+        HomeLoading,
     }
 
     companion object {
         /** Saf mantık; test edilir. Karar konumun hata payıyla verilir (bkz. HomeDetection). */
-        fun of(device: WeatherSnapshot?, home: WidgetPlaceData?, nearbyRadiusKm: Int, firstSaved: WidgetPlaceData? = null): HomeLocationState {
+        fun of(
+            device: WeatherSnapshot?,
+            home: WidgetPlaceData?,
+            nearbyRadiusKm: Int,
+            firstSaved: WidgetPlaceData? = null,
+            homeIsSet: Boolean = home != null,
+        ): HomeLocationState {
             val here = device?.takeIf { it.isCurrentLocation }?.let { WidgetPlaceData(it, isHome = false) }
+            // Ev seçiliyse "evini ayarla" denmez; havası gelene kadar "yükleniyor".
+            val missing = if (homeIsSet) Hint.HomeLoading else Hint.NoHome
             return when {
                 here != null && home != null -> {
                     val distance = HomeDetection.distanceKm(here.point, home.point)
@@ -140,11 +151,11 @@ sealed interface HomeLocationState {
                     }
                 }
                 home != null -> Single(home, Hint.NoLocation)
-                here != null -> Single(here, Hint.NoHome)
+                here != null -> Single(here, missing)
                 // İzin yok, Ev yok ama kayıtlı yer var: ilk kayıtlı yer ("uygulamayı aç" yazısı yerine).
-                firstSaved != null -> Single(firstSaved, Hint.NoHome)
+                firstSaved != null -> Single(firstSaved, missing)
                 // İzin yok, Ev yok, kayıtlı yer yok: yedek şehri göster.
-                device != null -> Single(WidgetPlaceData(device, isHome = false), Hint.NoHome)
+                device != null -> Single(WidgetPlaceData(device, isHome = false), missing)
                 else -> Empty
             }
         }

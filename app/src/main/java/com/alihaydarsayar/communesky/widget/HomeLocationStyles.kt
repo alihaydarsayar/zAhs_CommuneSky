@@ -490,17 +490,21 @@ fun InfoLine(content: @Composable () -> Unit) {
     }
 }
 
-/** Ev yoksa ya da konum izni yoksa küçük bir not. */
+/** Ev yoksa, konum izni yoksa ya da evin havası henüz gelmediyse küçük bir not. */
 @Composable
 fun HintLine(hint: HomeLocationState.Hint) {
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     Row(verticalAlignment = Alignment.CenterVertically) {
-        WIcon(if (hint == HomeLocationState.Hint.NoHome) R.drawable.ic_wl_home else R.drawable.ic_wl_pin, 13.sd, theme.colors.tertiary)
+        WIcon(if (hint == HomeLocationState.Hint.NoLocation) R.drawable.ic_wl_pin else R.drawable.ic_wl_home, 13.sd, theme.colors.tertiary)
         HSpace(8.sd)
         WText(
             context.getString(
-                if (hint == HomeLocationState.Hint.NoHome) R.string.widget_hint_no_home else R.string.widget_hint_no_location,
+                when (hint) {
+                    HomeLocationState.Hint.NoHome -> R.string.widget_hint_no_home
+                    HomeLocationState.Hint.NoLocation -> R.string.widget_hint_no_location
+                    HomeLocationState.Hint.HomeLoading -> R.string.widget_hint_home_loading
+                },
             ),
             12f,
             color = theme.colors.tertiary,

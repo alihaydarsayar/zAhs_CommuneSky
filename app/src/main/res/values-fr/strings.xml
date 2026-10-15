@@ -328,6 +328,7 @@
     <string name="widget_you_are_home_short">vous êtes chez vous</string>
     <string name="widget_hint_no_home">Définissez votre domicile pour voir les deux lieux</string>
     <string name="widget_hint_no_location">Autorisez la position pour voir aussi où vous êtes</string>
+    <string name="widget_hint_home_loading">Chargement de la météo du domicile…</string>
     <string name="widget_away_distance">à %1$s du domicile</string>
     <string name="widget_home_cooler">%1$d° de moins au domicile</string>
     <string name="widget_home_warmer">%1$d° de plus au domicile</string>

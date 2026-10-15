@@ -11,6 +11,7 @@ What's new in each version of Commune Sky.
 - New Settings › Notifications page: which warnings and places, sound or silent for each kind, summary times, quiet hours and a link to Android's settings.
 - With notifications off, the first orange or red warning offers to turn on warning notifications right under the warning band.
 - Fixed: the warning band read "Thunderstorms(+1)" without a space before the count of further warnings in English and Turkish.
+- Fixed: right after you chose a home, the Home & location widget asked you to set your home until the home's weather arrived. It now says the home's weather is loading, and choosing a home downloads its weather at once.
 
 ## 1.5.2 — October 14, 2026
 

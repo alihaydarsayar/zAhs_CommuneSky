@@ -190,4 +190,14 @@ class HomeLocationStateTest {
         fetchedAt = Instant.EPOCH,
         accuracyMeters = accuracy,
     )
+
+    @Test
+    fun `a home without weather yet is loading, not missing`() {
+        val here = snapshot(north(0.5), true)
+        assertEquals(
+            HomeLocationState.Single(WidgetPlaceData(here, isHome = false), HomeLocationState.Hint.HomeLoading),
+            HomeLocationState.of(here, null, 5, homeIsSet = true),
+        )
+        assertEquals(HomeLocationState.Hint.NoHome, (HomeLocationState.of(here, null, 5) as HomeLocationState.Single).hint)
+    }
 }

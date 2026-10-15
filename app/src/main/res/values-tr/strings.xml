@@ -324,6 +324,7 @@
     <string name="widget_you_are_home_short">evdesin</string>
     <string name="widget_hint_no_home">İki yeri de görmek için evini ayarla</string>
     <string name="widget_hint_no_location">Bulunduğun yeri de görmek için konum izni ver</string>
+    <string name="widget_hint_home_loading">Evin havası yükleniyor…</string>
     <string name="widget_away_distance">Evden %1$s</string>
     <string name="widget_home_cooler">Evde %1$d° serin</string>
     <string name="widget_home_warmer">Evde %1$d° sıcak</string>

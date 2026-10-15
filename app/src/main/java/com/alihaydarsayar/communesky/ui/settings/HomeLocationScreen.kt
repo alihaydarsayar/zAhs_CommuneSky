@@ -96,7 +96,7 @@ class HomeLocationViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val placesRepository: PlacesRepository,
     private val updater: WeatherUpdater,
-    weatherRepository: WeatherRepository,
+    private val weatherRepository: WeatherRepository,
     @param:ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel() {
 
@@ -113,7 +113,15 @@ class HomeLocationViewModel @Inject constructor(
     }
 
     fun setHome(id: Long) {
-        viewModelScope.launch { placesRepository.setHome(id) }
+        appScope.launch {
+            placesRepository.setHome(id)
+            if (weatherRepository.snapshot(id) == null) {
+                placesRepository.all().firstOrNull { it.id == id }?.let { saved ->
+                    runCatching { updater.refresh(listOf(saved.toPlace())) }
+                        .onFailure { Log.w("HomeLocation", "Evin havası indirilemedi", it) }
+                }
+            }
+        }
     }
 
     /** Bulunduğun yeri kayıtlı yer olarak ekler ve Ev yapar (konum cihazda kalır). */

@@ -331,6 +331,7 @@
     <string name="widget_you_are_home_short">you\'re home</string>
     <string name="widget_hint_no_home">Set your home to see both places</string>
     <string name="widget_hint_no_location">Allow location to see where you are too</string>
+    <string name="widget_hint_home_loading">Loading the weather at home…</string>
     <string name="widget_away_distance">%1$s from home</string>
     <string name="widget_home_cooler">%1$d° cooler at home</string>
     <string name="widget_home_warmer">%1$d° warmer at home</string>
