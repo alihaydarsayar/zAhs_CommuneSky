@@ -93,7 +93,10 @@ abstract class CommuneSkyWidget(
         provideContent {
             // Launcher'ın bildirdiği iki ölçü her çizimde yeniden okunur (widget yeniden boyutlandırılmış olabilir).
             val bounds = appWidgetId?.let { WidgetBounds.of(context, it) } ?: WidgetBounds(null, null)
-            CompositionLocalProvider(LocalContext provides drawContext, LocalWidgetBounds provides bounds, LocalAppWidgetId provides appWidgetId) {
+            // Dil ya da saat biçimi değişirse oturum canlı olsa da yeni bağlamla yeniden çizilir (bkz. WidgetLanguage.version).
+            val languageVersion by WidgetLanguage.version.collectAsState()
+            val liveContext = if (previewConfig == null) androidx.compose.runtime.remember(languageVersion) { WidgetLanguage.context(context) } else drawContext
+            CompositionLocalProvider(LocalContext provides liveContext, LocalWidgetBounds provides bounds, LocalAppWidgetId provides appWidgetId) {
             val config by configFlow.collectAsState(initialConfig)
             val input by inputFlow.collectAsState(initialInput)
             // Çizim, sistem izlerinde (Perfetto, Macrobenchmark) "CommuneSky.widget.<tür>" bölümü olarak görünür;

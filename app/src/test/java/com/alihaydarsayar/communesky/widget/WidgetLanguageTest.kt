@@ -54,9 +54,36 @@ class WidgetLanguageTest {
         override fun getFloat(key: String, defValue: Float) = defValue
         override fun getBoolean(key: String, defValue: Boolean) = defValue
         override fun contains(key: String) = key in values
-        override fun edit(): SharedPreferences.Editor = throw UnsupportedOperationException()
+        override fun edit(): SharedPreferences.Editor = FakeEditor()
         override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) = Unit
         override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) = Unit
+    }
+
+    private class FakeEditor : SharedPreferences.Editor {
+        override fun putString(key: String, value: String?) = this
+        override fun putStringSet(key: String, values: MutableSet<String>?) = this
+        override fun putInt(key: String, value: Int) = this
+        override fun putLong(key: String, value: Long) = this
+        override fun putFloat(key: String, value: Float) = this
+        override fun putBoolean(key: String, value: Boolean) = this
+        override fun remove(key: String) = this
+        override fun clear() = this
+        override fun commit() = true
+        override fun apply() = Unit
+    }
+
+    @Test
+    fun `changing the language or the clock format tells running widgets to redraw`() {
+        // Ana ekrandaki widget oturumu dakikalarca canlı kalır; dili oturum başında bir kez okursa ayardan sonra eski dilde
+        // kalıyordu. Oturum bu sayacı izler.
+        WidgetLanguage.resetForTest()
+        val app = CountingContext(emptyMap())
+        val before = WidgetLanguage.version.value
+        WidgetLanguage.remember(app, "tr")
+        assertEquals(before + 1, WidgetLanguage.version.value)
+        WidgetLanguage.setClockFormat(app, ClockFormat.H24)
+        assertEquals(before + 2, WidgetLanguage.version.value)
+        assertEquals("tr", WidgetLanguage.tag(app))
     }
 
     @Test
