@@ -17,6 +17,7 @@ import com.alihaydarsayar.communesky.work.RefreshScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -194,6 +195,14 @@ class HomeViewModel @Inject constructor(
     }
 
     /** Ekran açıkken ölçümleri tazeler (aynı yer için 3 dakikadan sık sorulmaz). */
+    /** Uyarı şeridinin altındaki öneri: "Aç" uyarı bildirimlerini açar, "✕" öneriyi bir daha göstermez. */
+    fun answerNotificationPrompt(enable: Boolean) {
+        viewModelScope.launch {
+            val current = settingsRepository.settings.first().notifications
+            settingsRepository.setNotifications(if (enable) current.copy(alerts = true) else current.copy(promptDismissed = true))
+        }
+    }
+
     /** "Ne giysem" kartındaki "Üşüdüm" / "Bunaldım" düğmeleri. */
     fun addWearFeedback(feltCold: Boolean) {
         viewModelScope.launch { settingsRepository.addWearFeedback(feltCold) }

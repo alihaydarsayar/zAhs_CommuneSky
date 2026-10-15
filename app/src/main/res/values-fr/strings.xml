@@ -669,6 +669,8 @@
     <string name="notifications_android_hint">Vibreur, écran de verrouillage et détails de chaque type</string>
     <string name="notifications_off">Désactivé</string>
     <string name="notifications_first_hint">Toutes les notifications sont désactivées à l’installation. Quand vous en activez une, Android demande l’autorisation.</string>
+    <string name="notification_prompt">Recevoir une notification pour ce type d’alerte ?</string>
+    <string name="notification_prompt_enable">Activer</string>
     <string name="settings_alert_notifications">Notifications d’alerte</string>
     <string name="settings_alert_notifications_hint">Quand une alerte est émise, relevée ou levée.</string>
     <string name="normal_above">%1$d° au-dessus des normales de saison</string>

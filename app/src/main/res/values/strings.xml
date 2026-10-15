@@ -670,6 +670,8 @@
     <string name="notifications_android_hint">Vibration, lock screen and details for each kind</string>
     <string name="notifications_off">Off</string>
     <string name="notifications_first_hint">Every notification is off after installing. When you turn one on, Android asks for permission.</string>
+    <string name="notification_prompt">Get a notification for warnings like this?</string>
+    <string name="notification_prompt_enable">Turn on</string>
     <string name="settings_alert_notifications">Warning notifications</string>
     <string name="settings_alert_notifications_hint">When a warning is issued, raised or lifted.</string>
     <string name="normal_above">%1$d° above the seasonal normal</string>

@@ -663,6 +663,8 @@
     <string name="notifications_android_hint">Titreşim, kilit ekranı ve her türün ayrıntıları</string>
     <string name="notifications_off">Kapalı</string>
     <string name="notifications_first_hint">Bütün bildirimler ilk kurulumda kapalı. Birini açtığında Android bildirim iznini sorar.</string>
+    <string name="notification_prompt">Bu tür uyarılar için bildirim almak ister misin?</string>
+    <string name="notification_prompt_enable">Aç</string>
     <string name="settings_alert_notifications">Uyarı bildirimleri</string>
     <string name="settings_alert_notifications_hint">MGM bir uyarı yayınlayınca, yükseltince ya da kaldırınca.</string>
     <string name="normal_above">Mevsim normalinin %1$d° üstünde</string>

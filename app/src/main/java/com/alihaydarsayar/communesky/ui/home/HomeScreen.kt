@@ -173,8 +173,25 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
-    val actions = remember(viewModel, onOpenToday, onOpenDetail, onOpenTab, onOpenDay) {
-        HomeActions(onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday, onOpenDetail = onOpenDetail, onOpenTab = onOpenTab, onOpenDay = onOpenDay)
+    // Bildirim önerisi: "Aç" uyarı bildirimlerini açar ve gerekiyorsa Android'in iznini sorar.
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val offerAlerts = settings?.notifications?.let { !it.alerts && !it.promptDismissed } == true
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    val onNotificationPrompt: (Boolean) -> Unit = remember(viewModel) {
+        { enable ->
+            viewModel.answerNotificationPrompt(enable)
+            if (enable && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+    val actions = remember(viewModel, onOpenToday, onOpenDetail, onOpenTab, onOpenDay, offerAlerts) {
+        HomeActions(
+            onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday, onOpenDetail = onOpenDetail, onOpenTab = onOpenTab, onOpenDay = onOpenDay,
+            offerAlertNotifications = offerAlerts, onNotificationPrompt = onNotificationPrompt,
+        )
     }
     androidx.compose.runtime.CompositionLocalProvider(LocalHomeActions provides actions) {
     HomeContent(
@@ -211,6 +228,10 @@ class HomeActions(
     val onOpenTab: (com.alihaydarsayar.communesky.ui.detail.DetailTab) -> Unit = {},
     /** 7 günlük karttaki bir güne ya da saatlik karttaki bir saate dokunuldu: o günün sayfası (saat seçiliyse o saatle). */
     val onOpenDay: (java.time.LocalDate, Int?) -> Unit = { _, _ -> },
+    /** Uyarı bildirimleri kapalıyken turuncu/kırmızı uyarının altında öneri gösterilsin mi. */
+    val offerAlertNotifications: Boolean = false,
+    /** Önerinin cevabı: true "Aç", false "✕". */
+    val onNotificationPrompt: (Boolean) -> Unit = {},
 )
 
 val LocalHomeActions = androidx.compose.runtime.staticCompositionLocalOf { HomeActions() }
@@ -494,6 +515,13 @@ private fun ForecastList(
         }
         // Meteorolojik uyarı varsa renkli şerit.
         if (weather.alerts.isNotEmpty()) item(key = "alerts") { AlertBanner(weather.alerts, now.toLocalDate()) }
+        // Bildirimler kapalıyken ilk turuncu/kırmızı uyarıda bir kez sorulur (bildirim değil, uygulama içi).
+        if (weather.alerts.any { it.level != com.alihaydarsayar.communesky.model.AlertLevel.Yellow }) {
+            item(key = "alertPrompt") {
+                val actions = LocalHomeActions.current
+                if (actions.offerAlertNotifications) AlertNotificationPrompt(actions.onNotificationPrompt)
+            }
+        }
         // İkon ile yağış ihtimali çelişiyorsa tek bir bilgi.
         weather.sources?.rainNote?.let { note -> item(key = "rainNote") { RainNoteLine(note) } }
         // Saat ve gün satırları sabit genişlikli sütunlardır: çok büyük yazıda etiketler birbirine biner, kesilir.

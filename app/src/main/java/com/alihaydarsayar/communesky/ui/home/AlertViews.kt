@@ -174,3 +174,29 @@ private fun AlertDialogContent(alerts: List<WeatherAlert>, today: LocalDate, onD
         shape = RoundedCornerShape(28.dp),
     )
 }
+
+/** Uyarı şeridinin altında: "Bu tür uyarılar için bildirim almak ister misin?" [Aç] [✕]. */
+@Composable
+fun AlertNotificationPrompt(onAnswer: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    com.alihaydarsayar.communesky.ui.common.GlassCard(
+        modifier.fillMaxWidth(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, top = 10.dp, end = 6.dp, bottom = 10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.notification_prompt),
+                color = TextPrimary,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f).padding(end = 12.dp),
+            )
+            com.alihaydarsayar.communesky.ui.today.GlassPill(stringResource(R.string.notification_prompt_enable)) { onAnswer(true) }
+            androidx.compose.material3.IconButton(onClick = { onAnswer(false) }) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.ui.res.painterResource(R.drawable.ic_close),
+                    contentDescription = stringResource(R.string.close),
+                    tint = TextSecondary,
+                )
+            }
+        }
+    }
+}
