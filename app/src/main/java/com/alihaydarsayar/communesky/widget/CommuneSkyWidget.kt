@@ -532,6 +532,8 @@ object WeatherWidgetUpdater {
     private suspend fun drawAll(context: Context): Boolean {
         val manager = android.appwidget.AppWidgetManager.getInstance(context)
         val glance = GlanceAppWidgetManager(context)
+        // Canlı oturumlar `update()`i yutar; yeniden çizmeleri ayrıca istenir (bkz. WidgetLanguage.requestRedraw).
+        WidgetLanguage.requestRedraw()
         var drawn = true
         WidgetKind.entries.forEach { kind ->
             val widget = kind.widget()

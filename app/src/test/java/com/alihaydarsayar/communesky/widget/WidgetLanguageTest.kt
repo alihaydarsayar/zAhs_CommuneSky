@@ -87,6 +87,13 @@ class WidgetLanguageTest {
     }
 
     @Test
+    fun `a redraw request reaches running widgets too`() {
+        val before = WidgetLanguage.version.value
+        WidgetLanguage.requestRedraw()
+        assertEquals(before + 1, WidgetLanguage.version.value)
+    }
+
+    @Test
     fun `after the start-up warm-up a screen context never goes to the preferences file`() {
         // Ana iş parçacığında ilk ekran çizilirken dil ve saat biçimi sorulur; tercih dosyası açılışta arka planda okunmuş
         // olmalı, ekranın kendi bağlamı dosyaya gitmemeli (bağlamın ilk dosya yolu sorgusu bile diskten okur).
