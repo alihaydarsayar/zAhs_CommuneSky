@@ -53,6 +53,14 @@ class CommuneSkyApp : Application(), Configuration.Provider {
                 android.os.StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build(),
             )
         }
+        // 1.5.2: bildirimler varsayılan kapalı. Güncelleyen ve izni olan kullanıcının uyarı ayarı korunur (bir kez).
+        appScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val info = packageManager.getPackageInfo(packageName, 0)
+            settingsRepository.migrateNotifications(
+                permitted = com.alihaydarsayar.communesky.work.AlertNotifier.canNotify(this@CommuneSkyApp),
+                freshInstall = info.firstInstallTime == info.lastUpdateTime,
+            )
+        }
         // Saat biçimi tercihi ilk ekrandan önce arka planda okunur; ana iş parçacığı diski beklemesin.
         appScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.alihaydarsayar.communesky.widget.WidgetLanguage.warmUp(this@CommuneSkyApp) }
         // Birim, Ev ya da kayıtlı yerler değişince widget'lar hemen yeni hale geçsin

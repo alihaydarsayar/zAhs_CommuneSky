@@ -9,14 +9,9 @@ data class AppSettings(
     val windUnit: WindUnit = WindUnit.KilometersPerHour,
     val themeMode: ThemeMode = ThemeMode.System,
     val homeAway: HomeAwaySettings = HomeAwaySettings(),
-    /** Turuncu ve kırmızı meteorolojik uyarı ilk kez çıkınca bildirim. */
-    val alertNotifications: Boolean = true,
     val wear: WearSettings = WearSettings(),
-    /** Sabah özeti bildirimi (varsayılan kapalı) ve saati (gece yarısından itibaren dakika; varsayılan 07:30). */
-    /** Hava kalitesi "kötü" olunca bildirim (varsayılan kapalı). */
-    val airQualityNotifications: Boolean = false,
-    val morningSummary: Boolean = false,
-    val morningSummaryMinutes: Int = 7 * 60 + 30,
+    /** Bildirimler: uyarılar, sabah ve akşam özeti, hava kalitesi, sessiz saatler. Hepsi varsayılan kapalı. */
+    val notifications: NotificationSettings = NotificationSettings(),
 )
 
 /** "Ne giysem" için kişisel ayar; telefonda kalır. */

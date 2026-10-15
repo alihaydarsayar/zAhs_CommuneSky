@@ -19,6 +19,7 @@ What's new in each version of Commune Sky.
 - Fixed: MGM weather warnings showed their start and end three hours early (for example "6:00 – 20:59" instead of "9:00 – 23:59"). They now match MGM's own warning page.
 - Faster start on a busy phone: the clock format setting and the widget diagnostics no longer read or write storage while the screen or a widget is being drawn.
 - Fixed: "Couldn't update" could appear when your location changed during a refresh and the earlier refresh was simply replaced. Real network and server errors are still shown.
+- Notifications are now off until you turn them on, and Commune Sky asks for the notification permission only then. If you already allowed notifications and kept warnings on, that stays as it is.
 
 ## 1.5.1 — October 14, 2026
 

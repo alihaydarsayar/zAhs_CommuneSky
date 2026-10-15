@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.alihaydarsayar.communesky.model.AppSettings
 import com.alihaydarsayar.communesky.model.HomeAwaySettings
 import com.alihaydarsayar.communesky.model.HomeDetection
+import com.alihaydarsayar.communesky.model.NotificationSettings
 import com.alihaydarsayar.communesky.model.TemperatureUnit
 import com.alihaydarsayar.communesky.model.ThemeMode
 import com.alihaydarsayar.communesky.model.WearSettings
@@ -37,10 +38,7 @@ class SettingsRepository @Inject constructor(
                 temperatureUnit = prefs[TEMPERATURE_UNIT].toEnum(TemperatureUnit.Celsius),
                 windUnit = prefs[WIND_UNIT].toEnum(WindUnit.KilometersPerHour),
                 themeMode = prefs[THEME_MODE].toEnum(ThemeMode.System),
-                alertNotifications = prefs[ALERT_NOTIFICATIONS] ?: true,
-                airQualityNotifications = prefs[AIR_NOTIFICATIONS] ?: false,
-                morningSummary = prefs[MORNING_SUMMARY] ?: false,
-                morningSummaryMinutes = (prefs[MORNING_SUMMARY_MINUTES] ?: AppSettings().morningSummaryMinutes).coerceIn(0, 24 * 60 - 1),
+                notifications = notifications(prefs),
                 wear = WearSettings(
                     sensitivity = prefs[WEAR_SENSITIVITY].toEnum(Sensitivity.Normal),
                     feedback = (prefs[WEAR_FEEDBACK] ?: 0.0).coerceIn(-Clothing.FEEDBACK_LIMIT, Clothing.FEEDBACK_LIMIT),
@@ -66,20 +64,66 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setThemeMode(mode: ThemeMode) = set(THEME_MODE, mode.name)
 
-    suspend fun setAlertNotifications(enabled: Boolean) {
-        dataStore.edit { it[ALERT_NOTIFICATIONS] = enabled }
+    /** Bildirim ayarlarının hepsini birlikte yazar. */
+    suspend fun setNotifications(settings: NotificationSettings) {
+        dataStore.edit {
+            it[ALERT_NOTIFICATIONS] = settings.alerts
+            it[ALERT_THRESHOLD] = settings.alertThreshold.name
+            it[ALERT_PLACES] = settings.alertPlaces.name
+            it[RED_SOUND] = settings.redSound
+            it[ORANGE_SOUND] = settings.orangeSound
+            it[YELLOW_SOUND] = settings.yellowSound
+            it[MORNING_SUMMARY] = settings.morning
+            it[MORNING_SUMMARY_MINUTES] = settings.morningMinutes.coerceIn(0, DAY_MINUTES - 1)
+            it[MORNING_SOUND] = settings.morningSound
+            it[EVENING_SUMMARY] = settings.evening
+            it[EVENING_SUMMARY_MINUTES] = settings.eveningMinutes.coerceIn(0, DAY_MINUTES - 1)
+            it[EVENING_SOUND] = settings.eveningSound
+            it[AIR_NOTIFICATIONS] = settings.airQuality
+            it[AIR_SOUND] = settings.airSound
+            it[QUIET_HOURS] = settings.quietHours
+            it[QUIET_START] = settings.quietStart.coerceIn(0, DAY_MINUTES - 1)
+            it[QUIET_END] = settings.quietEnd.coerceIn(0, DAY_MINUTES - 1)
+            it[QUIET_RED_SOUNDS] = settings.quietRedSounds
+            it[PROMPT_DISMISSED] = settings.promptDismissed
+        }
     }
 
-    suspend fun setAirQualityNotifications(enabled: Boolean) {
-        dataStore.edit { it[AIR_NOTIFICATIONS] = enabled }
+    /**
+     * 1.5.2'deki bir kerelik geçiş: bildirimler artık varsayılan kapalı (bkz. NotificationMigration). Yeni
+     * kurulumda ve izni olmayan güncellemelerde uyarılar kapanır.
+     */
+    suspend fun migrateNotifications(permitted: Boolean, freshInstall: Boolean) {
+        dataStore.edit {
+            if (it[NOTIFICATIONS_MIGRATED] == true) return@edit
+            it[ALERT_NOTIFICATIONS] = com.alihaydarsayar.communesky.model.NotificationMigration.alertsAfterUpdate(it[ALERT_NOTIFICATIONS], permitted, freshInstall)
+            it[NOTIFICATIONS_MIGRATED] = true
+        }
     }
 
-    suspend fun setMorningSummary(enabled: Boolean) {
-        dataStore.edit { it[MORNING_SUMMARY] = enabled }
-    }
-
-    suspend fun setMorningSummaryMinutes(minutes: Int) {
-        dataStore.edit { it[MORNING_SUMMARY_MINUTES] = minutes.coerceIn(0, 24 * 60 - 1) }
+    private fun notifications(prefs: Preferences): NotificationSettings {
+        val defaults = NotificationSettings()
+        return NotificationSettings(
+            alerts = prefs[ALERT_NOTIFICATIONS] ?: defaults.alerts,
+            alertThreshold = prefs[ALERT_THRESHOLD].toEnum(defaults.alertThreshold),
+            alertPlaces = prefs[ALERT_PLACES].toEnum(defaults.alertPlaces),
+            redSound = prefs[RED_SOUND] ?: defaults.redSound,
+            orangeSound = prefs[ORANGE_SOUND] ?: defaults.orangeSound,
+            yellowSound = prefs[YELLOW_SOUND] ?: defaults.yellowSound,
+            morning = prefs[MORNING_SUMMARY] ?: defaults.morning,
+            morningMinutes = (prefs[MORNING_SUMMARY_MINUTES] ?: defaults.morningMinutes).coerceIn(0, DAY_MINUTES - 1),
+            morningSound = prefs[MORNING_SOUND] ?: defaults.morningSound,
+            evening = prefs[EVENING_SUMMARY] ?: defaults.evening,
+            eveningMinutes = (prefs[EVENING_SUMMARY_MINUTES] ?: defaults.eveningMinutes).coerceIn(0, DAY_MINUTES - 1),
+            eveningSound = prefs[EVENING_SOUND] ?: defaults.eveningSound,
+            airQuality = prefs[AIR_NOTIFICATIONS] ?: defaults.airQuality,
+            airSound = prefs[AIR_SOUND] ?: defaults.airSound,
+            quietHours = prefs[QUIET_HOURS] ?: defaults.quietHours,
+            quietStart = (prefs[QUIET_START] ?: defaults.quietStart).coerceIn(0, DAY_MINUTES - 1),
+            quietEnd = (prefs[QUIET_END] ?: defaults.quietEnd).coerceIn(0, DAY_MINUTES - 1),
+            quietRedSounds = prefs[QUIET_RED_SOUNDS] ?: defaults.quietRedSounds,
+            promptDismissed = prefs[PROMPT_DISMISSED] ?: defaults.promptDismissed,
+        )
     }
 
     suspend fun setWearSensitivity(sensitivity: Sensitivity) = set(WEAR_SENSITIVITY, sensitivity.name)
@@ -128,6 +172,23 @@ class SettingsRepository @Inject constructor(
         val AIR_NOTIFICATIONS = booleanPreferencesKey("air_quality_notifications")
         val MORNING_SUMMARY = booleanPreferencesKey("morning_summary")
         val MORNING_SUMMARY_MINUTES = intPreferencesKey("morning_summary_minutes")
+        val ALERT_THRESHOLD = stringPreferencesKey("alert_threshold")
+        val ALERT_PLACES = stringPreferencesKey("alert_places")
+        val RED_SOUND = booleanPreferencesKey("notify_red_sound")
+        val ORANGE_SOUND = booleanPreferencesKey("notify_orange_sound")
+        val YELLOW_SOUND = booleanPreferencesKey("notify_yellow_sound")
+        val MORNING_SOUND = booleanPreferencesKey("morning_summary_sound")
+        val EVENING_SUMMARY = booleanPreferencesKey("evening_summary")
+        val EVENING_SUMMARY_MINUTES = intPreferencesKey("evening_summary_minutes")
+        val EVENING_SOUND = booleanPreferencesKey("evening_summary_sound")
+        val AIR_SOUND = booleanPreferencesKey("air_quality_sound")
+        val QUIET_HOURS = booleanPreferencesKey("quiet_hours")
+        val QUIET_START = intPreferencesKey("quiet_start")
+        val QUIET_END = intPreferencesKey("quiet_end")
+        val QUIET_RED_SOUNDS = booleanPreferencesKey("quiet_red_sounds")
+        val PROMPT_DISMISSED = booleanPreferencesKey("notification_prompt_dismissed")
+        val NOTIFICATIONS_MIGRATED = booleanPreferencesKey("notifications_migrated_152")
+        const val DAY_MINUTES = 24 * 60
         val WEAR_FEEDBACK = doublePreferencesKey("wear_feedback")
     }
 }

@@ -58,6 +58,7 @@ import com.alihaydarsayar.communesky.ui.theme.TextSecondary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -81,16 +82,18 @@ class SettingsViewModel @Inject constructor(
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settingsRepository.setThemeMode(mode) }
 
-    fun setAlertNotifications(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAlertNotifications(enabled) }
+    fun setAlertNotifications(enabled: Boolean) = updateNotifications { it.copy(alerts = enabled) }
 
-    fun setAirQualityNotifications(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAirQualityNotifications(enabled) }
+    fun setAirQualityNotifications(enabled: Boolean) = updateNotifications { it.copy(airQuality = enabled) }
 
     /** Sabah özeti: ayarı kaydeder ve alarmı kurar ya da kaldırır. */
     fun setMorningSummary(context: android.content.Context, enabled: Boolean, minutes: Int) = viewModelScope.launch {
-        settingsRepository.setMorningSummary(enabled)
-        settingsRepository.setMorningSummaryMinutes(minutes)
+        settingsRepository.setNotifications(settings.value.notifications.copy(morning = enabled, morningMinutes = minutes))
         com.alihaydarsayar.communesky.work.MorningSummary.schedule(context.applicationContext, enabled, minutes)
     }
+
+    fun updateNotifications(change: (com.alihaydarsayar.communesky.model.NotificationSettings) -> com.alihaydarsayar.communesky.model.NotificationSettings) =
+        viewModelScope.launch { settingsRepository.setNotifications(change(settingsRepository.settings.first().notifications)) }
 
     fun setWearSensitivity(sensitivity: Sensitivity) = viewModelScope.launch { settingsRepository.setWearSensitivity(sensitivity) }
 
@@ -331,7 +334,7 @@ fun SettingsScreen(
                     }
                     com.alihaydarsayar.communesky.ui.common.GlassSwitchRow(
                         title = stringResource(R.string.settings_alert_notifications),
-                        checked = settings.alertNotifications,
+                        checked = settings.notifications.alerts,
                         onCheckedChange = { on ->
                             viewModel.setAlertNotifications(on)
                             if (on) ensurePermission()
@@ -341,7 +344,7 @@ fun SettingsScreen(
                     Spacer(Modifier.height(8.dp))
                     com.alihaydarsayar.communesky.ui.common.GlassSwitchRow(
                         title = stringResource(R.string.settings_air_notifications),
-                        checked = settings.airQualityNotifications,
+                        checked = settings.notifications.airQuality,
                         onCheckedChange = { on ->
                             viewModel.setAirQualityNotifications(on)
                             if (on) ensurePermission()
@@ -352,16 +355,16 @@ fun SettingsScreen(
                     // Sabah özeti: varsayılan kapalı; açılınca saat seçilebilir.
                     com.alihaydarsayar.communesky.ui.common.GlassSwitchRow(
                         title = stringResource(R.string.settings_morning_summary),
-                        checked = settings.morningSummary,
+                        checked = settings.notifications.morning,
                         onCheckedChange = { on ->
-                            viewModel.setMorningSummary(appContext, on, settings.morningSummaryMinutes)
+                            viewModel.setMorningSummary(appContext, on, settings.notifications.morningMinutes)
                             if (on) ensurePermission()
                         },
                         subtitle = stringResource(R.string.settings_morning_summary_hint),
                     )
-                    if (settings.morningSummary) {
+                    if (settings.notifications.morning) {
                         val activity = androidx.activity.compose.LocalActivity.current
-                        val time = java.time.LocalTime.of(settings.morningSummaryMinutes / 60, settings.morningSummaryMinutes % 60)
+                        val time = java.time.LocalTime.of(settings.notifications.morningMinutes / 60, settings.notifications.morningMinutes % 60)
                         val formatter = com.alihaydarsayar.communesky.ui.common.rememberTimeFormatter()
                         val is24Hour = com.alihaydarsayar.communesky.widget.WidgetLanguage.is24Hour(appContext)
                         Row(

@@ -132,8 +132,8 @@ object MorningSummary {
         val app = context.applicationContext
         val input = withTimeoutOrNull(5_000) { WidgetDataLoader(app).input.first() } ?: return
         val settings = input.settings
-        schedule(app, settings.morningSummary, settings.morningSummaryMinutes)
-        if (!settings.morningSummary || !AlertNotifier.canNotify(app)) return
+        schedule(app, settings.notifications.morning, settings.notifications.morningMinutes)
+        if (!settings.notifications.morning || !AlertNotifier.canNotify(app)) return
         val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val today = LocalDate.now().toString()
         if (prefs.getString(KEY_LAST_DAY, null) == today) return

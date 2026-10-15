@@ -39,7 +39,7 @@ class NotificationRunTest {
             end = now.plusHours(6).toString(),
             source = "MGM",
         )
-        AlertNotifier.check(context, listOf(snapshot.copy(alerts = listOf(alert))), input.settings.alertNotifications)
+        AlertNotifier.check(context, listOf(snapshot.copy(alerts = listOf(alert))), input.settings.notifications.alerts)
     }
 
     @Test
@@ -50,6 +50,6 @@ class NotificationRunTest {
         // Bugün gönderildiyse yeniden gönderebilmek için kayıt silinir.
         context.getSharedPreferences("air_quality_notifications", Context.MODE_PRIVATE).edit().clear().apply()
         val poor = AirQuality(hours = listOf(AirHour(time = hour.toString(), aqi = 85, pm25 = 60.0)))
-        AirQualityNotifier.check(context, listOf(snapshot.copy(airQuality = poor)), input.settings.airQualityNotifications)
+        AirQualityNotifier.check(context, listOf(snapshot.copy(airQuality = poor)), input.settings.notifications.airQuality)
     }
 }
