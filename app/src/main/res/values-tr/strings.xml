@@ -395,7 +395,7 @@
     <string name="home_settings_change">Değiştir</string>
     <string name="home_settings_choose_home">Evini seç</string>
     <string name="home_settings_close">Kapat</string>
-    <string name="home_settings_use_location">Şu anki konumumu ev yap</string>
+    <string name="home_settings_use_location">Şu anki konumumu ev olarak kaydet</string>
     <string name="home_settings_radius">Yakınlık mesafesi</string>
     <string name="home_settings_radius_label">Bu mesafe içinde \"evin yakınında\" say</string>
     <string name="home_settings_away">Uzaktayken widget\'ta</string>

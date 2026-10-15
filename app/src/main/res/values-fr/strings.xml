@@ -399,7 +399,7 @@
     <string name="home_settings_change">Modifier</string>
     <string name="home_settings_choose_home">Choisissez votre domicile</string>
     <string name="home_settings_close">Fermer</string>
-    <string name="home_settings_use_location">Faire de ma position actuelle mon domicile</string>
+    <string name="home_settings_use_location">Enregistrer ma position actuelle comme domicile</string>
     <string name="home_settings_radius">Distance de proximité</string>
     <string name="home_settings_radius_label">Considérer comme proche du domicile jusqu’à</string>
     <string name="home_settings_away">Sur les widgets quand vous êtes ailleurs</string>

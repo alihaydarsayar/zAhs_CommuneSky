@@ -124,11 +124,18 @@ class HomeLocationViewModel @Inject constructor(
         }
     }
 
-    /** Bulunduğun yeri kayıtlı yer olarak ekler ve Ev yapar (konum cihazda kalır). */
+    /**
+     * Bulunduğun yeri kayıtlı yer olarak ekler ve Ev yapar (konum cihazda kalır). Aynı yer zaten kayıtlıysa
+     * yenisi eklenmez, o yer Ev olur.
+     */
     fun makeCurrentLocationHome(fallbackName: String) {
         val device = state.value.device ?: return
         appScope.launch {
             val city = device.city
+            HomeDetection.savedPlaceAt(placesRepository.all(), GeoPoint(city.latitude, city.longitude))?.let { existing ->
+                setHome(existing.id)
+                return@launch
+            }
             val id = placesRepository.add(
                 PlaceSearchResult(
                     name = city.name ?: fallbackName,

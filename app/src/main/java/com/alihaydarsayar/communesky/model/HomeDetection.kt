@@ -77,4 +77,17 @@ object HomeDetection {
 
     fun distanceKm(a: GeoPoint, b: GeoPoint): Double =
         GeoDistance.kilometers(a.latitude, a.longitude, b.latitude, b.longitude)
+
+    /** Bu mesafeden yakın kayıtlı yer, bulunduğun yerle aynı yer sayılır. */
+    const val SAME_PLACE_KM = 1.0
+
+    /**
+     * "Şu anki konumumu ev olarak kaydet": bulunduğun yer zaten kayıtlıysa (en yakını, [SAME_PLACE_KM] içinde)
+     * o yer Ev yapılır; aynı yer ikinci kez eklenmez.
+     */
+    fun savedPlaceAt(places: List<SavedPlace>, point: GeoPoint): SavedPlace? =
+        places.map { it to distanceKm(GeoPoint(it.latitude, it.longitude), point) }
+            .filter { (_, km) -> km <= SAME_PLACE_KM }
+            .minByOrNull { (_, km) -> km }
+            ?.first
 }

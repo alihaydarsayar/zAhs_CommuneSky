@@ -12,6 +12,7 @@ What's new in each version of Commune Sky.
 - With notifications off, the first orange or red warning offers to turn on warning notifications right under the warning band.
 - Fixed: the warning band read "Thunderstorms(+1)" without a space before the count of further warnings in English and Turkish.
 - Fixed: right after you chose a home, the Home & location widget asked you to set your home until the home's weather arrived. It now says the home's weather is loading, and choosing a home downloads its weather at once.
+- Settings › Home & location: "Save my current location as home" no longer adds a second copy of a place you already saved there; that place becomes home.
 
 ## 1.5.2 — October 14, 2026
 

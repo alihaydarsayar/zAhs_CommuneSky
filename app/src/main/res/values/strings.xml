@@ -402,7 +402,7 @@
     <string name="home_settings_change">Change</string>
     <string name="home_settings_choose_home">Choose your home</string>
     <string name="home_settings_close">Close</string>
-    <string name="home_settings_use_location">Make my current location home</string>
+    <string name="home_settings_use_location">Save my current location as home</string>
     <string name="home_settings_radius">Nearby distance</string>
     <string name="home_settings_radius_label">Count as near home within</string>
     <string name="home_settings_away">On widgets when you\'re away</string>
