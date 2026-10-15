@@ -816,6 +816,7 @@
     <string name="summary_kind_snow">snow</string>
     <string name="summary_event">%2$s %1$s</string>
     <string name="summary_event_warning">weather warning</string>
+    <string name="summary_event_warning_of">%1$s warning</string>
     <string name="summary_event_wind">strong wind</string>
     <string name="summary_event_cooler_yesterday">%1$d° cooler than yesterday</string>
     <string name="summary_event_warmer_yesterday">%1$d° warmer than yesterday</string>

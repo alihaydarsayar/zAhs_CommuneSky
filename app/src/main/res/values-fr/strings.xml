@@ -815,6 +815,7 @@
     <string name="summary_kind_snow">neige</string>
     <string name="summary_event">%2$s %1$s</string>
     <string name="summary_event_warning">alerte météo</string>
+    <string name="summary_event_warning_of">alerte %1$s</string>
     <string name="summary_event_wind">vent fort</string>
     <string name="summary_event_cooler_yesterday">%1$d° plus frais qu’hier</string>
     <string name="summary_event_warmer_yesterday">%1$d° plus chaud qu’hier</string>

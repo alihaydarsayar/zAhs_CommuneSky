@@ -141,6 +141,19 @@ fun LazyListScope.debugSettingsItems() {
                 }
                 Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
             }
+            // Özet bildirimlerini saatini beklemeden denemek için (ayar kapalı olsa da gönderilir).
+            com.alihaydarsayar.communesky.model.today.SummaryKind.entries.forEach { kind ->
+                Text(
+                    "${kind.name} özetini şimdi gönder",
+                    color = TextPrimary,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable { scope.launch { com.alihaydarsayar.communesky.work.MorningSummary.onAlarm(context, kind, force = true) } }
+                        .padding(vertical = 10.dp),
+                )
+            }
         }
     }
 }

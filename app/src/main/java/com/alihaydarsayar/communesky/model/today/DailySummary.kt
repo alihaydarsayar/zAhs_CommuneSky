@@ -88,17 +88,21 @@ object DailySummary {
             ?.let { WearText.sentence(it, strings, degrees) }
         val difference = change?.takeIf { abs(it) >= 1 }?.let {
             when {
-                kind == SummaryKind.Morning && it < 0 -> strings.get(R.string.yesterday_colder, -it)
-                kind == SummaryKind.Morning -> strings.get(R.string.yesterday_warmer, it)
+                kind == SummaryKind.Morning && it < 0 -> strings.get(R.string.yesterday_colder, -it) + "."
+                kind == SummaryKind.Morning -> strings.get(R.string.yesterday_warmer, it) + "."
                 it < 0 -> strings.get(R.string.summary_today_colder, -it)
                 else -> strings.get(R.string.summary_today_warmer, it)
             }
         }
         val body = listOfNotNull(difference.takeIf { kind == SummaryKind.Evening }?.let { "$it." }, wear).joinToString(" ")
             .ifEmpty { strings.get(R.string.summary_no_advice) }
+        // Gün boyu süren olayda saat aralığı başlıkla aynı şeyi söyler; yazılmaz.
+        fun window(name: String, from: LocalDateTime, until: LocalDateTime) =
+            strings.get(R.string.summary_window, capital(name, strings), clock(from), clock(until))
+                .takeIf { whenRes(from, until) != R.string.summary_when_all_day }
         val window = when (event) {
-            is SummaryEvent.Thunder -> strings.get(R.string.summary_window, capital(strings.get(R.string.summary_kind_thunder), strings), clock(event.from), clock(event.until))
-            is SummaryEvent.Precipitation -> strings.get(R.string.summary_window, capital(strings.get(kindName(event.kind)), strings), clock(event.from), clock(event.until))
+            is SummaryEvent.Thunder -> window(strings.get(R.string.summary_kind_thunder), event.from, event.until)
+            is SummaryEvent.Precipitation -> window(strings.get(kindName(event.kind)), event.from, event.until)
             else -> null
         }
         val sun = if (kind == SummaryKind.Evening && day.sunrise != null && day.sunset != null) {
@@ -143,7 +147,7 @@ object DailySummary {
 
     /** Başlığın olay kısmı: "öğleden sonra sağanak", "kuvvetli rüzgâr", "dünden 6° serin", "açık". */
     fun phrase(event: SummaryEvent, strings: Strings, kind: SummaryKind): String = when (event) {
-        is SummaryEvent.Warning -> event.alert.events.firstOrNull()?.let { strings.get(eventName(it)).lowercase(strings.locale) }
+        is SummaryEvent.Warning -> event.alert.events.firstOrNull()?.let { strings.get(R.string.summary_event_warning_of, strings.get(eventName(it)).lowercase(strings.locale)) }
             ?: strings.get(R.string.summary_event_warning)
         is SummaryEvent.Thunder -> strings.get(R.string.summary_event, strings.get(whenRes(event.from, event.until)), strings.get(R.string.summary_kind_thunder))
         is SummaryEvent.Precipitation -> strings.get(R.string.summary_event, strings.get(whenRes(event.from, event.until)), strings.get(kindName(event.kind)))

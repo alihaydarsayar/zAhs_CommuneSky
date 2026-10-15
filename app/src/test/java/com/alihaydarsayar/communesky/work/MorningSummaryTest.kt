@@ -83,7 +83,7 @@ class MorningSummaryTest {
         val text = summary(alerts = listOf(alert), each = afternoonShowers)!!
         assertEquals(alert, text.warning)
         // Başlıkta uyarının olay adı (MGM sitesindeki terim).
-        assertEquals("12–19° · gök gürültülü sağanak yağış", text.title)
+        assertEquals("12–19° · gök gürültülü sağanak yağış uyarısı", text.title)
     }
 
     @Test
@@ -104,7 +104,7 @@ class MorningSummaryTest {
         assertEquals("12–19° · parçalı bulutlu", summary(each = { hour(it, feels = 16.0, code = 0) })!!.title)
         assertEquals("12–19° · dünden 6° serin", summary(yesterdayMax = 25.0, each = { hour(it, feels = 16.0, code = 0) })!!.title)
         // Dünle farkın satırı (1°'den büyükse).
-        assertTrue(summary(yesterdayMax = 22.0)!!.lines.contains("Dünden 3° daha soğuk"))
+        assertTrue(summary(yesterdayMax = 22.0)!!.lines.contains("Dünden 3° daha soğuk."))
     }
 
     @Test
@@ -129,6 +129,16 @@ class MorningSummaryTest {
         assertEquals("Tomorrow 10–16° · rain in the morning", summary(kind = SummaryKind.Evening, strings = TestStrings.english, tomorrowEach = {
             hour(it, feels = 10.0, chance = if (it in 6..9) 70 else 10).copy(weatherCode = if (it in 6..9) 61 else 3)
         })!!.title)
+    }
+
+    @Test
+    fun `an all-day event has no time range line`() {
+        val text = summary(
+            kind = SummaryKind.Evening,
+            tomorrowEach = { hour(it, feels = 10.0, chance = 80, mm = 1.0).copy(weatherCode = 61) },
+        )!!
+        assertEquals("Yarın 10–16° · gün boyu yağmur", text.title)
+        assertTrue(text.lines.toString(), text.lines.none { it.contains("arası") })
     }
 
     @Test

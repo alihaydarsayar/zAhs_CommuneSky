@@ -809,6 +809,7 @@
     <string name="summary_kind_snow">kar</string>
     <string name="summary_event">%1$s %2$s</string>
     <string name="summary_event_warning">meteorolojik uyarı</string>
+    <string name="summary_event_warning_of">%1$s uyarısı</string>
     <string name="summary_event_wind">kuvvetli rüzgâr</string>
     <string name="summary_event_cooler_yesterday">dünden %1$d° serin</string>
     <string name="summary_event_warmer_yesterday">dünden %1$d° sıcak</string>

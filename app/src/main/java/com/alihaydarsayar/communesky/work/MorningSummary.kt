@@ -8,8 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import android.view.View
 import com.alihaydarsayar.communesky.MainActivity
 import com.alihaydarsayar.communesky.R
@@ -137,9 +135,11 @@ object MorningSummary {
             .setSmallIcon(if (kind == SummaryKind.Morning) R.drawable.ic_wl_partly_cloudy_day else R.drawable.ic_wl_partly_cloudy_night)
             .setSubText("$label · $place")
             .setContentTitle(text.title)
-            .setContentText(warning ?: text.body)
-            .setLargeIcon(ContextCompat.getDrawable(app, WeatherCondition.fromCode(text.dayCode).iconRes(isNight = false))?.toBitmap(192, 192))
+            // Kapalı görünümde öneri; uyarı açık görünümde kendi renkli satırında.
+            .setContentText(text.body)
+            // Günün simgesi kapalı görünümün içinde: büyük simge (setLargeIcon) açık görünümü daraltıyordu.
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(collapsed(app, text))
             .setCustomBigContentView(expanded(app, localized, text, warning, unit))
             .setContentIntent(if (kind == SummaryKind.Morning) wearPage else dayPage)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -160,6 +160,14 @@ object MorningSummary {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
+
+    /** Kapalı görünüm: başlık, tek satır öneri ve günün simgesi. */
+    private fun collapsed(context: Context, text: SummaryText): RemoteViews =
+        RemoteViews(context.packageName, R.layout.notification_summary_small).apply {
+            setTextViewText(R.id.summary_small_title, text.title)
+            setTextViewText(R.id.summary_small_text, text.body)
+            setImageViewResource(R.id.summary_small_icon, WeatherCondition.fromCode(text.dayCode).iconRes(isNight = false))
+        }
 
     /** Açık görünüm: başlık, uyarı satırı, sabah/öğle/akşam dilimleri ve kısa satırlar. */
     private fun expanded(context: Context, localized: Context, text: SummaryText, warning: String?, unit: com.alihaydarsayar.communesky.model.TemperatureUnit): RemoteViews {
