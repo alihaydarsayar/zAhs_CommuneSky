@@ -23,6 +23,7 @@ What's new in each version of Commune Sky.
 - Fixed: right after you chose a home, the Home & location widget asked you to set your home until the home's weather arrived. It now says the home's weather is loading, and choosing a home downloads its weather at once.
 - Settings › Home & location: "Save my current location as home" no longer adds a second copy of a place you already saved there; that place becomes home.
 - Faster first screen on a busy phone: the app language and clock format are no longer read from storage while the first screen is being drawn.
+- Fixed: a short loss of connection no longer drops the station reading that is only minutes old; the temperature and the station line stay until the reading is really out of date, instead of jumping to the forecast.
 
 ## 1.5.2 — October 14, 2026
 

@@ -224,6 +224,51 @@ class ObservationRepositoryTest {
     }
 
     @Test
+    fun `a failed refresh keeps the fresh measurement the place already has`() = runTest {
+        // Kısa süreli kesinti (tünel, zayıf çekim): 10 dakika önceki istasyon ölçümü hâlâ geçerli; ekran tahmine atlamamalı.
+        mgmWorks()
+        repository.refresh(listOf(atakum))
+        val first = store.get(3)!!
+
+        clockMillis += 4 * 60 * 1000
+        mgm.latestAnswer = { throw IOException() }
+        mgm.provinceLatestAnswer = { throw IOException() }
+        metar.answer = { throw IOException() }
+        val changed = repository.refresh(listOf(atakum))
+
+        assertEquals(first, store.get(3))
+        assertFalse(changed)
+        // İstek zamanı yine kaydedilir: servis düşükken her açılışta tekrar tekrar sorulmaz.
+        assertEquals(clockMillis, store.lastRequestMillis(3))
+    }
+
+    @Test
+    fun `a failed refresh drops a measurement that has become old`() = runTest {
+        mgmWorks()
+        repository.refresh(listOf(atakum))
+        // Ölçüm 21:04'te alındı; 40 dakika sonra artık geçerli değil.
+        clockMillis += 40 * 60 * 1000
+        mgm.latestAnswer = { throw IOException() }
+        mgm.provinceLatestAnswer = { throw IOException() }
+        metar.answer = { throw IOException() }
+        repository.refresh(listOf(atakum))
+        assertNull(store.get(3))
+    }
+
+    @Test
+    fun `a failed refresh does not keep the measurement of a place far away`() = runTest {
+        // "Bulunduğum yer" başka bir şehre geçti: eski şehrin ölçümü yeni yerde gösterilmez.
+        mgmWorks()
+        repository.refresh(listOf(atakum))
+        clockMillis += 4 * 60 * 1000
+        mgm.latestAnswer = { throw IOException() }
+        mgm.provinceLatestAnswer = { throw IOException() }
+        metar.answer = { throw IOException() }
+        repository.refresh(listOf(Place(3, City("Ankara", 39.93, 32.86), isCurrentLocation = true)))
+        assertNull(store.get(3))
+    }
+
+    @Test
     fun `failed station lookup is retried on the next refresh`() = runTest {
         mgm.centerAnswer = { throw IOException() }
         repository.refresh(listOf(atakum))

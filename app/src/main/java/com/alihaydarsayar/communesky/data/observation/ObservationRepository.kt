@@ -123,9 +123,17 @@ class ObservationRepository @Inject constructor(
             null
         }
         val previous = store.get(place.id)
-        store.save(place.id, observation, now)
-        return observation != previous
+        // Yeni ölçüm bulunamadıysa (kısa bir kesinti, servis düşük) elimizdeki ölçüm hâlâ geçerliyse ve aynı çevredense
+        // silinmez: ekran bir anda istasyondan tahmine atlamasın. Eskiyince kendiliğinden kalkar.
+        val result = observation ?: previous?.takeIf { stillGood(it, place, Instant.ofEpochMilli(now)) }
+        store.save(place.id, result, now)
+        return result != previous
     }
+
+    /** Eski ölçüm bu yer için hâlâ kullanılabilir mi: taze ve yerin çevresinde (yer başka şehre geçmediyse). */
+    private fun stillGood(observation: Observation, place: Place, now: Instant): Boolean =
+        ObservationPolicy.isFresh(observation, now) &&
+            ObservationPolicy.distanceKm(observation, place.city.latitude, place.city.longitude) <= StationNetwork.RADIUS_KM
 
     private suspend fun fetch(place: Place, now: Instant): Observation? = coroutineScope {
         val lat = place.city.latitude
