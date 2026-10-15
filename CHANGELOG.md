@@ -13,6 +13,7 @@ What's new in each version of Commune Sky.
 - Fixed: the warning band read "Thunderstorms(+1)" without a space before the count of further warnings in English and Turkish.
 - Fixed: right after you chose a home, the Home & location widget asked you to set your home until the home's weather arrived. It now says the home's weather is loading, and choosing a home downloads its weather at once.
 - Settings › Home & location: "Save my current location as home" no longer adds a second copy of a place you already saved there; that place becomes home.
+- Fixed: home-screen widgets (clocks, for example) could suddenly turn into the Home & location widget after the app had been used or the phone's time changed. Each widget now keeps its own type.
 
 ## 1.5.2 — October 14, 2026
 

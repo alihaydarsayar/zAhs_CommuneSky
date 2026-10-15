@@ -138,6 +138,12 @@ enum class WidgetKind(
 
     companion object {
         fun fromReceiver(className: String?): WidgetKind? = entries.firstOrNull { it.receiverClass.name == className }
+
+        /** Ana ekrandaki bir widget'ın türü: eklendiği alıcıdan (kimliği bilinmiyorsa null). */
+        fun of(context: android.content.Context, appWidgetId: Int): WidgetKind? =
+            fromReceiver(
+                runCatching { android.appwidget.AppWidgetManager.getInstance(context).getAppWidgetInfo(appWidgetId)?.provider?.className }.getOrNull(),
+            )
     }
 }
 

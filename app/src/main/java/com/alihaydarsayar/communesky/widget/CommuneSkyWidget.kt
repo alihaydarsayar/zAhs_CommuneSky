@@ -23,7 +23,6 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.updateAll
 import androidx.glance.layout.Alignment
 import androidx.glance.text.TextAlign
 import com.alihaydarsayar.communesky.MainActivity
@@ -74,7 +73,10 @@ abstract class CommuneSkyWidget(
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val started = SystemClock.elapsedRealtimeNanos()
-        val configFlow = configFlow(context, id)
+        // Widget'ın türü, ana ekrana eklendiği alıcıdan okunur; bu çizimi hangi sınıfın başlattığına bakılmaz. Böylece
+        // yanlış sınıfla başlayan bir çizim (bkz. [WeatherWidgetUpdater.drawAll]) widget'ı başka türe çeviremez.
+        val kind = realKind(context, id)
+        val configFlow = configFlow(context, id, kind)
         val inputFlow = previewInput?.let { flowOf(it) } ?: WidgetDataLoader(context).input
         // İlk çizim hemen dolu gelsin; sonrası akışlardan.
         val initialConfig = configFlow.first()
@@ -133,7 +135,14 @@ abstract class CommuneSkyWidget(
         WidgetConfigStore.get(context).remove(intArrayOf(appWidgetId))
     }
 
-    private suspend fun configFlow(context: Context, id: GlanceId): Flow<WidgetConfig> {
+    /** Bu widget kimliğinin gerçek türü: eklendiği alıcıdan; önizlemede ve alıcı bilinmiyorsa bu sınıfın türü. */
+    private fun realKind(context: Context, id: GlanceId): WidgetKind {
+        if (previewConfig != null) return kind
+        val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }.getOrNull() ?: return kind
+        return WidgetKind.of(context, appWidgetId) ?: kind
+    }
+
+    private suspend fun configFlow(context: Context, id: GlanceId, kind: WidgetKind): Flow<WidgetConfig> {
         if (previewConfig != null) return flowOf(previewConfig)
         val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }.getOrNull()
             ?: return flowOf(WidgetConfig.default(kind))
@@ -505,14 +514,32 @@ object WeatherWidgetUpdater {
             Log.d(TAG, "İçerik değişmedi; widget'lar yeniden çizilmedi")
             return
         }
+        val drawn = drawAll(context)
+        if (drawn && digest != null) WidgetDigest.save(context, digest) else WidgetDigest.clear(context)
+    }
+
+    /**
+     * Ana ekrandaki bütün widget'ları, kendi türünün widget'ıyla çizer.
+     *
+     * Kimlikler Glance'in "bu sınıfın widget'ları" sorgusundan ([androidx.glance.appwidget.updateAll]) değil, her türün
+     * alıcısından alınır. Release derlemesinde R8 birbirine benzeyen widget sınıflarını tek sınıfta birleştirir; o
+     * zaman Glance her tür için bütün widget'ları döndürüyordu ve süreç yeni başlamışsa (arka plan yenilemesi, saat
+     * değişimi) listenin ilki olan "Ev ve konum" bütün widget'ların çizimini başlatıp onları Ev ve konum widget'ına çeviriyordu.
+     */
+    private suspend fun drawAll(context: Context): Boolean {
+        val manager = android.appwidget.AppWidgetManager.getInstance(context)
+        val glance = GlanceAppWidgetManager(context)
         var drawn = true
         WidgetKind.entries.forEach { kind ->
-            runCatching { kind.widget().updateAll(context) }.onFailure {
-                drawn = false
-                Log.w(TAG, "${kind.name} çizilemedi", it)
+            val widget = kind.widget()
+            for (appWidgetId in manager.getAppWidgetIds(android.content.ComponentName(context, kind.receiverClass))) {
+                runCatching { widget.update(context, glance.getGlanceIdBy(appWidgetId)) }.onFailure {
+                    drawn = false
+                    Log.w(TAG, "${kind.name} #$appWidgetId çizilemedi", it)
+                }
             }
         }
-        if (drawn && digest != null) WidgetDigest.save(context, digest) else WidgetDigest.clear(context)
+        return drawn
     }
 
     /**
