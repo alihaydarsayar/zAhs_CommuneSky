@@ -1,6 +1,8 @@
 package com.alihaydarsayar.communesky.ui.settings
 
+import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,7 +20,9 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -45,6 +50,7 @@ import com.alihaydarsayar.communesky.data.places.PlacesRepository
 import com.alihaydarsayar.communesky.data.settings.SettingsRepository
 import com.alihaydarsayar.communesky.debug.debugSettingsItems
 import com.alihaydarsayar.communesky.model.AppSettings
+import com.alihaydarsayar.communesky.model.NotificationSettings
 import com.alihaydarsayar.communesky.model.TemperatureUnit
 import com.alihaydarsayar.communesky.model.ThemeMode
 import com.alihaydarsayar.communesky.model.WindUnit
@@ -53,9 +59,12 @@ import com.alihaydarsayar.communesky.ui.common.GlassCard
 import com.alihaydarsayar.communesky.ui.common.GlassSegmented
 import com.alihaydarsayar.communesky.ui.common.ScreenTopBar
 import com.alihaydarsayar.communesky.ui.common.labelRes
+import com.alihaydarsayar.communesky.ui.home.color
 import com.alihaydarsayar.communesky.ui.theme.TextPrimary
 import com.alihaydarsayar.communesky.ui.theme.TextSecondary
+import com.alihaydarsayar.communesky.work.MorningSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -68,6 +77,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     placesRepository: PlacesRepository,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     val settings: StateFlow<AppSettings> = settingsRepository.settings
@@ -82,19 +92,12 @@ class SettingsViewModel @Inject constructor(
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settingsRepository.setThemeMode(mode) }
 
-    fun setAlertNotifications(enabled: Boolean) = updateNotifications { it.copy(alerts = enabled) }
-
-    fun setAirQualityNotifications(enabled: Boolean) = updateNotifications { it.copy(airQuality = enabled) }
-
-    /** Sabah özeti: ayarı kaydeder ve alarmı kurar ya da kaldırır. */
-    fun setMorningSummary(context: android.content.Context, enabled: Boolean, minutes: Int) = viewModelScope.launch {
-        val updated = settings.value.notifications.copy(morning = enabled, morningMinutes = minutes)
+    /** Bildirim ayarlarını kaydeder; sabah ve akşam özetinin alarmları yeni ayara göre kurulur ya da kaldırılır. */
+    fun updateNotifications(change: (NotificationSettings) -> NotificationSettings) = viewModelScope.launch {
+        val updated = change(settingsRepository.settings.first().notifications)
         settingsRepository.setNotifications(updated)
-        com.alihaydarsayar.communesky.work.MorningSummary.schedule(context.applicationContext, updated)
+        MorningSummary.schedule(context, updated)
     }
-
-    fun updateNotifications(change: (com.alihaydarsayar.communesky.model.NotificationSettings) -> com.alihaydarsayar.communesky.model.NotificationSettings) =
-        viewModelScope.launch { settingsRepository.setNotifications(change(settingsRepository.settings.first().notifications)) }
 
     fun setWearSensitivity(sensitivity: Sensitivity) = viewModelScope.launch { settingsRepository.setWearSensitivity(sensitivity) }
 
@@ -135,6 +138,7 @@ fun SettingsScreen(
     onManagePlaces: () -> Unit,
     onOpenHomeLocation: () -> Unit,
     onOpenMyWidgets: () -> Unit,
+    onOpenNotifications: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -321,72 +325,48 @@ fun SettingsScreen(
                 }
             }
             item {
+                // Her türün kısa durumu; hepsi Bildirimler sayfasını açar.
+                val n = settings.notifications
+                val off = stringResource(R.string.notifications_off)
+                val formatter = com.alihaydarsayar.communesky.ui.common.rememberTimeFormatter()
+                fun time(minutes: Int) = java.time.LocalTime.of(minutes / 60, minutes % 60).format(formatter)
+                val sound = stringResource(R.string.notifications_sound_on)
+                val silent = stringResource(R.string.notifications_sound_off)
+                val threshold = listOf(R.string.notifications_threshold_yellow, R.string.notifications_threshold_orange, R.string.notifications_threshold_red)
+                val places = listOf(R.string.notifications_places_current, R.string.notifications_places_home, R.string.notifications_places_all)
                 GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.settings_notifications)) {
-                    // Android 13+: bildirim izni yalnızca kullanıcı bir bildirimi açarken istenir.
-                    val askPermission = androidx.activity.compose.rememberLauncherForActivityResult(
-                        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-                    ) { }
-                    fun ensurePermission() {
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-                            !com.alihaydarsayar.communesky.work.AlertNotifier.canNotify(appContext)
-                        ) {
-                            askPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    }
-                    com.alihaydarsayar.communesky.ui.common.GlassSwitchRow(
-                        title = stringResource(R.string.settings_alert_notifications),
-                        checked = settings.notifications.alerts,
-                        onCheckedChange = { on ->
-                            viewModel.setAlertNotifications(on)
-                            if (on) ensurePermission()
-                        },
-                        subtitle = stringResource(R.string.settings_alert_notifications_hint),
+                    NotificationRow(
+                        stringResource(R.string.channel_group_alerts),
+                        if (n.alerts) stringResource(threshold[n.alertThreshold.ordinal]) + " · " + stringResource(places[n.alertPlaces.ordinal]) else off,
+                        onOpenNotifications,
+                        dot = if (n.alerts) n.alertThreshold.lowest.color else null,
                     )
-                    Spacer(Modifier.height(8.dp))
-                    com.alihaydarsayar.communesky.ui.common.GlassSwitchRow(
-                        title = stringResource(R.string.settings_air_notifications),
-                        checked = settings.notifications.airQuality,
-                        onCheckedChange = { on ->
-                            viewModel.setAirQualityNotifications(on)
-                            if (on) ensurePermission()
-                        },
-                        subtitle = stringResource(R.string.settings_air_notifications_hint),
+                    NotificationRow(
+                        stringResource(R.string.settings_morning_summary),
+                        if (n.morning) time(n.morningMinutes) + " · " + (if (n.morningSound) sound else silent) else off,
+                        onOpenNotifications,
                     )
-                    Spacer(Modifier.height(8.dp))
-                    // Sabah özeti: varsayılan kapalı; açılınca saat seçilebilir.
-                    com.alihaydarsayar.communesky.ui.common.GlassSwitchRow(
-                        title = stringResource(R.string.settings_morning_summary),
-                        checked = settings.notifications.morning,
-                        onCheckedChange = { on ->
-                            viewModel.setMorningSummary(appContext, on, settings.notifications.morningMinutes)
-                            if (on) ensurePermission()
-                        },
-                        subtitle = stringResource(R.string.settings_morning_summary_hint),
+                    NotificationRow(
+                        stringResource(R.string.notifications_evening_row),
+                        if (n.evening) time(n.eveningMinutes) + " · " + (if (n.eveningSound) sound else silent) else off,
+                        onOpenNotifications,
                     )
-                    if (settings.notifications.morning) {
-                        val activity = androidx.activity.compose.LocalActivity.current
-                        val time = java.time.LocalTime.of(settings.notifications.morningMinutes / 60, settings.notifications.morningMinutes % 60)
-                        val formatter = com.alihaydarsayar.communesky.ui.common.rememberTimeFormatter()
-                        val is24Hour = com.alihaydarsayar.communesky.widget.WidgetLanguage.is24Hour(appContext)
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.medium)
-                                .clickable {
-                                    android.app.TimePickerDialog(
-                                        activity ?: return@clickable,
-                                        { _, hour, minute -> viewModel.setMorningSummary(appContext, true, hour * 60 + minute) },
-                                        time.hour, time.minute, is24Hour,
-                                    ).show()
-                                }
-                                .padding(vertical = 10.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(stringResource(R.string.settings_morning_summary_time), color = TextPrimary, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                            Text(time.format(formatter), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
-                            Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
-                        }
-                    }
+                    NotificationRow(
+                        stringResource(R.string.channel_group_air),
+                        if (n.airQuality) (if (n.airSound) sound else silent) else off,
+                        onOpenNotifications,
+                    )
+                    NotificationRow(
+                        stringResource(R.string.notifications_quiet),
+                        if (n.quietHours) time(n.quietStart) + "–" + time(n.quietEnd) else off,
+                        onOpenNotifications,
+                    )
+                    Text(
+                        stringResource(R.string.notifications_first_hint),
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp, start = 4.dp),
+                    )
                 }
             }
             item {
@@ -401,6 +381,31 @@ fun SettingsScreen(
             // Yalnız debug sürümünde bir bölüm ekler; release'de boştur ve kodu derlenmez.
             debugSettingsItems()
         }
+    }
+}
+
+/** Ayarlar'daki bildirim satırı: türün adı, kısa durumu ve sağda ok. */
+@Composable
+private fun NotificationRow(title: String, status: String, onClick: () -> Unit, dot: Color? = null) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (dot != null) {
+                    androidx.compose.foundation.layout.Box(Modifier.size(9.dp).clip(CircleShape).background(dot))
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(title, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+            }
+            Text(status, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+        }
+        Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
     }
 }
 

@@ -48,6 +48,7 @@ import kotlinx.serialization.Serializable
 @Serializable private object SettingsRoute
 @Serializable private object HomeLocationRoute
 @Serializable private object MyWidgetsRoute
+@Serializable private object NotificationsRoute
 @Serializable private object TodayRoute
 
 /** Ayrıntı sayfaları; [tab]: açılışta seçili sekme (DetailTab adı). */
@@ -271,7 +272,11 @@ private fun CommuneSkyApp(
                         onManagePlaces = { navController.navigate(PlacesRoute) },
                         onOpenHomeLocation = { navController.navigate(HomeLocationRoute) },
                         onOpenMyWidgets = { navController.navigate(MyWidgetsRoute) },
+                        onOpenNotifications = { navController.navigate(NotificationsRoute) },
                     )
+                }
+                composable<NotificationsRoute> {
+                    com.alihaydarsayar.communesky.ui.settings.NotificationsScreen(onBack = { navController.popBackStack() })
                 }
                 composable<MyWidgetsRoute> {
                     MyWidgetsScreen(onBack = { navController.popBackStack() })
