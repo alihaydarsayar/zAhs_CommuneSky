@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
 
     /** "Bugün için" widget'ına ya da sabah özetine dokunulunca uygulama o bölümle açılır. */
     private val openToday = mutableStateOf(false)
+    private val openDay = mutableStateOf<String?>(null)
 
     /** Bildirime dokunulunca açılacak ayrıntı sekmesi (ör. hava kalitesi). */
     private val openTab = mutableStateOf<String?>(null)
@@ -83,6 +84,7 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             openHomeSettings.value = intent.wantsHomeSettings()
             openToday.value = intent.wantsToday()
+            openDay.value = intent.wantedDay()
             openTab.value = intent.wantedTab()
             intent.selectWidgetPlace()
         }
@@ -99,6 +101,8 @@ class MainActivity : AppCompatActivity() {
                     onHomeSettingsOpened = { openHomeSettings.value = false },
                     openToday = openToday.value,
                     onTodayOpened = { openToday.value = false },
+                    openDay = openDay.value,
+                    onDayOpened = { openDay.value = null },
                     openTab = openTab.value,
                     onTabOpened = { openTab.value = null },
                 )
@@ -110,6 +114,7 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         if (intent.wantsHomeSettings()) openHomeSettings.value = true
         if (intent.wantsToday()) openToday.value = true
+        intent.wantedDay()?.let { openDay.value = it }
         intent.wantedTab()?.let { openTab.value = it }
         intent.selectWidgetPlace()
     }
@@ -127,6 +132,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun Intent?.wantsToday(): Boolean = this?.getBooleanExtra(OpenTodayKey.name, false) == true
 
+    private fun Intent?.wantedDay(): String? = this?.getStringExtra(OpenDayKey.name)
+
     private fun Intent?.wantedTab(): String? =
         if (this?.getBooleanExtra(OpenAirQualityKey.name, false) == true) com.alihaydarsayar.communesky.ui.detail.DetailTab.AirQuality.name else null
 
@@ -136,6 +143,9 @@ class MainActivity : AppCompatActivity() {
 
         /** Widget'tan ya da bildirimden uygulamayı "Bugün için" bölümüyle açmak için. */
         val OpenTodayKey = ActionParameters.Key<Boolean>("open_today")
+
+        /** Bildirimden bir günün sayfasını açmak için ("2026-10-17"). */
+        val OpenDayKey = ActionParameters.Key<String>("open_day")
 
         /** Widget'tan uygulamayı açarken Ev ve konum ayarına gitmek için. */
         val OpenHomeSettingsKey = ActionParameters.Key<Boolean>("open_home_settings")
@@ -154,6 +164,8 @@ private fun CommuneSkyApp(
     onHomeSettingsOpened: () -> Unit,
     openToday: Boolean,
     onTodayOpened: () -> Unit,
+    openDay: String?,
+    onDayOpened: () -> Unit,
     openTab: String?,
     onTabOpened: () -> Unit,
 ) {
@@ -176,6 +188,12 @@ private fun CommuneSkyApp(
         if (openTab != null) {
             navController.navigate(DetailRoute(openTab)) { launchSingleTop = true }
             onTabOpened()
+        }
+    }
+    LaunchedEffect(openDay) {
+        if (openDay != null) {
+            navController.navigate(DayRoute(openDay)) { launchSingleTop = true }
+            onDayOpened()
         }
     }
     LaunchedEffect(openToday) {

@@ -121,7 +121,7 @@ class WeatherUpdater @Inject constructor(
         // Hava kalitesi kötüleştiyse (ve kullanıcı istediyse) bildirim; yer başına günde en çok bir kez.
         com.alihaydarsayar.communesky.work.AirQualityNotifier.check(context, weatherRepository.allWeather.first().values, settings.notifications)
         // Sabah özeti alarmı telefon yeniden başlayınca silinir; burada geri kurulur (aynı alarm, ek uyanma yok).
-        com.alihaydarsayar.communesky.work.MorningSummary.schedule(context, settings.notifications.morning, settings.notifications.morningMinutes)
+        com.alihaydarsayar.communesky.work.MorningSummary.schedule(context, settings.notifications)
     }
 
     private fun fallbackPlace() = Place(DEVICE_PLACE_ID, City.Istanbul, isCurrentLocation = false)

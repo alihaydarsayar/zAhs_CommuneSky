@@ -88,8 +88,9 @@ class SettingsViewModel @Inject constructor(
 
     /** Sabah özeti: ayarı kaydeder ve alarmı kurar ya da kaldırır. */
     fun setMorningSummary(context: android.content.Context, enabled: Boolean, minutes: Int) = viewModelScope.launch {
-        settingsRepository.setNotifications(settings.value.notifications.copy(morning = enabled, morningMinutes = minutes))
-        com.alihaydarsayar.communesky.work.MorningSummary.schedule(context.applicationContext, enabled, minutes)
+        val updated = settings.value.notifications.copy(morning = enabled, morningMinutes = minutes)
+        settingsRepository.setNotifications(updated)
+        com.alihaydarsayar.communesky.work.MorningSummary.schedule(context.applicationContext, updated)
     }
 
     fun updateNotifications(change: (com.alihaydarsayar.communesky.model.NotificationSettings) -> com.alihaydarsayar.communesky.model.NotificationSettings) =

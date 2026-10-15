@@ -22,6 +22,7 @@ What's new in each version of Commune Sky.
 - Notifications are now off until you turn them on, and Commune Sky asks for the notification permission only then. If you already allowed notifications and kept warnings on, that stays as it is.
 - Each kind of notification can come with sound or silently, and quiet hours can silence them all at night (red warnings can still sound). Every kind has its own channels in Android's settings, named in the app's language.
 - Warning notifications show the warning's colour, the place, what is expected and when ("Today 09:00–23:59"), with a Details button. Choose which levels (yellow and up, orange and up, or red only) and which places (where you are, home or all saved places). Warnings for the same place are grouped, a raised warning (yellow to orange to red) notifies again, and the notification disappears when MGM lifts the warning.
+- Morning summary redesigned: the day's range and its main event in the title, morning/noon/evening at a glance, and an optional evening summary about tomorrow.
 
 ## 1.5.1 — October 14, 2026
 

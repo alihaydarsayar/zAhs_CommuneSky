@@ -8,7 +8,6 @@ import com.alihaydarsayar.communesky.model.today.Layer
 import com.alihaydarsayar.communesky.testing.TestForecast
 import com.alihaydarsayar.communesky.testing.TestForecast.hour
 import com.alihaydarsayar.communesky.testing.TestStrings
-import com.alihaydarsayar.communesky.work.MorningSummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -76,8 +75,12 @@ class TipScenarioTest {
         assertEquals(TipStatus.Fair, single.result(UmbrellaTip).status)
         assertEquals("Yanına al: biraz yağış bekleniyor", single.text(UmbrellaTip))
         // Sabah özeti de simgeye bakar.
-        val summary = MorningSummary.text(forecast { hour(it, feels = 15.0, chance = 10, code = if (it in 14..16) RAIN else 1) }, today.atTime(7, 30), 0.0, TestStrings.turkish, { it.roundToInt() }, { it.format(clock) })
-        assertTrue(summary, summary!!.contains("14:00'te yağmur"))
+        val summary = com.alihaydarsayar.communesky.model.today.DailySummary.of(
+            com.alihaydarsayar.communesky.model.today.SummaryKind.Morning,
+            forecast { hour(it, feels = 15.0, chance = 10, code = if (it in 14..16) RAIN else 1) }, emptyList(), today.atTime(7, 30), 0.0,
+            TestStrings.turkish, { it.roundToInt() }, { it.format(clock) },
+        )!!
+        assertEquals("Yağmur 14:00–17:00 arası.", summary.lines.first())
     }
 
     @Test

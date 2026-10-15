@@ -15,7 +15,6 @@ import com.alihaydarsayar.communesky.model.today.WearText
 import com.alihaydarsayar.communesky.testing.TestForecast
 import com.alihaydarsayar.communesky.testing.TestForecast.hour
 import com.alihaydarsayar.communesky.testing.TestStrings
-import com.alihaydarsayar.communesky.work.MorningSummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -50,10 +49,11 @@ class FrenchTextTest {
         val hours = TestForecast.hours(today) { hour(it, feels = 13.0, chance = if (it >= 15) 70 else 10, mm = if (it >= 15) 0.3 else 0.0) }
         val forecast = TestForecast.forecast(hours, listOf(TestForecast.daily(min = 9.0, max = 17.0)))
         val now = today.atTime(7, 30)
-        assertEquals(
-            "Aujourd’hui 9–17°, pluie à 15:00. Mettez un pull ou une veste légère$nbsp; prenez un parapluie.",
-            MorningSummary.text(forecast, now, 0.0, TestStrings.french, { it.roundToInt() }, { it.format(clock) }),
-        )
+        val summary = com.alihaydarsayar.communesky.model.today.DailySummary.of(
+            com.alihaydarsayar.communesky.model.today.SummaryKind.Morning, forecast, emptyList(), now, 0.0, TestStrings.french, { it.roundToInt() }, { it.format(clock) },
+        )!!
+        assertEquals("9–17° · pluie l’après-midi", summary.title)
+        assertEquals("Pluie entre 15:00 et 00:00.", summary.lines.first())
         val tips = TodayAdvice.of(forecast, now).tips.associate { it.tip to it.result.sentence(TestStrings.french, { time -> time.format(clock) }) }
         assertEquals("À prendre absolument$nbsp: 70$nbsp% de risque de pluie", tips[UmbrellaTip])
         assertEquals("Meilleur moment$nbsp: 07:00–09:00", tips[RunTip])

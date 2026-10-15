@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Özet dilimlerinin zemini: açık ve koyu bildirim temasında da hafif görünen yarı saydam gri. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#1F808894" />
+    <corners android:radius="14dp" />
+</shape>
