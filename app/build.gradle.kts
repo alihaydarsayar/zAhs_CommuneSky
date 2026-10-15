@@ -18,8 +18,8 @@ android {
         applicationId = "com.alihaydarsayar.communesky"
         minSdk = 26
         targetSdk = 37
-        versionCode = 9
-        versionName = "1.5.3"
+        versionCode = 10
+        versionName = "1.5.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
