@@ -10,6 +10,7 @@ What's new in each version of Commune Sky.
 - Morning summary redesigned: the day's range and its main event in the title, morning/noon/evening at a glance, and an optional evening summary about tomorrow.
 - New Settings › Notifications page: which warnings and places, sound or silent for each kind, summary times, quiet hours and a link to Android's settings.
 - With notifications off, the first orange or red warning offers to turn on warning notifications right under the warning band.
+- Fixed: the warning band read "Thunderstorms(+1)" without a space before the count of further warnings in English and Turkish.
 
 ## 1.5.2 — October 14, 2026
 
