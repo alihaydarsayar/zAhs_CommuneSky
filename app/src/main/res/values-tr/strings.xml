@@ -622,7 +622,18 @@
     <string name="channel_evening">Akşam özeti</string>
     <string name="channel_air">Hava kalitesi</string>
     <string name="channel_silent">%1$s (sessiz)</string>
-    <string name="alert_notification_title">%1$s: %2$s</string>
+    <string name="alert_notification_title">%1$s · %2$s</string>
+    <string name="alert_raised_red">Uyarı kırmızıya yükseldi · %1$s</string>
+    <string name="alert_raised_orange">Uyarı turuncuya yükseldi · %1$s</string>
+    <string name="alert_raised_steps">%1$s → %2$s</string>
+    <string name="notify_level_yellow">Sarı</string>
+    <string name="notify_level_orange">Turuncu</string>
+    <string name="notify_level_red">Kırmızı</string>
+    <string name="alert_details">Ayrıntılar</string>
+    <plurals name="alert_group_title">
+        <item quantity="one">%1$s · %2$d uyarı</item>
+        <item quantity="other">%1$s · %2$d uyarı</item>
+    </plurals>
     <string name="settings_notifications">Bildirimler</string>
     <string name="settings_alert_notifications">Meteorolojik uyarılar</string>
     <string name="settings_alert_notifications_hint">Yerlerinden biri için turuncu ya da kırmızı uyarı çıkınca bir bildirim. Her uyarı için bir kez.</string>

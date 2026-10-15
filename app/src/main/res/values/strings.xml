@@ -629,7 +629,18 @@
     <string name="channel_evening">Evening summary</string>
     <string name="channel_air">Air quality</string>
     <string name="channel_silent">%1$s (silent)</string>
-    <string name="alert_notification_title">%1$s: %2$s</string>
+    <string name="alert_notification_title">%1$s · %2$s</string>
+    <string name="alert_raised_red">Warning raised to red · %1$s</string>
+    <string name="alert_raised_orange">Warning raised to orange · %1$s</string>
+    <string name="alert_raised_steps">%1$s → %2$s</string>
+    <string name="notify_level_yellow">Yellow</string>
+    <string name="notify_level_orange">Orange</string>
+    <string name="notify_level_red">Red</string>
+    <string name="alert_details">Details</string>
+    <plurals name="alert_group_title">
+        <item quantity="one">%1$s · %2$d warning</item>
+        <item quantity="other">%1$s · %2$d warnings</item>
+    </plurals>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_alert_notifications">Weather warnings</string>
     <string name="settings_alert_notifications_hint">A notification when an orange or red warning is issued for one of your places. Once per warning.</string>

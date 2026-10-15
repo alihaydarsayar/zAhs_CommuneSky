@@ -627,7 +627,19 @@
     <string name="channel_evening">Résumé du soir</string>
     <string name="channel_air">Qualité de l’air</string>
     <string name="channel_silent">%1$s (silencieuses)</string>
-    <string name="alert_notification_title">%1$s : %2$s</string>
+    <string name="alert_notification_title">%1$s · %2$s</string>
+    <string name="alert_raised_red">Alerte relevée au rouge · %1$s</string>
+    <string name="alert_raised_orange">Alerte relevée à l’orange · %1$s</string>
+    <string name="alert_raised_steps">%1$s → %2$s</string>
+    <string name="notify_level_yellow">Jaune</string>
+    <string name="notify_level_orange">Orange</string>
+    <string name="notify_level_red">Rouge</string>
+    <string name="alert_details">Détails</string>
+    <plurals name="alert_group_title">
+        <item quantity="one">%1$s · %2$d alerte</item>
+        <item quantity="many">%1$s · %2$d alertes</item>
+        <item quantity="other">%1$s · %2$d alertes</item>
+    </plurals>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_alert_notifications">Alertes météo</string>
     <string name="settings_alert_notifications_hint">Une notification quand une vigilance orange ou rouge est émise pour l’un de vos lieux. Une seule fois par alerte.</string>

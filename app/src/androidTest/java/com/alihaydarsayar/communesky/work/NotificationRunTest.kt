@@ -39,7 +39,7 @@ class NotificationRunTest {
             end = now.plusHours(6).toString(),
             source = "MGM",
         )
-        AlertNotifier.check(context, listOf(snapshot.copy(alerts = listOf(alert))), input.settings.notifications.alerts)
+        AlertNotifier.check(context, listOf(snapshot.copy(alerts = listOf(alert))), input.settings.notifications, input.home?.snapshot?.placeId)
     }
 
     @Test
