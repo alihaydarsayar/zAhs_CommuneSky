@@ -2,6 +2,8 @@
 
 What's new in each version of Commune Sky.
 
+## 1.5.5 — in testing
+
 ## 1.5.4 — in testing
 
 - Fixed: home-screen widgets (clocks, for example) could suddenly turn into the Home & location widget after the app had been used or the phone's time changed. Each widget now keeps its own type.
