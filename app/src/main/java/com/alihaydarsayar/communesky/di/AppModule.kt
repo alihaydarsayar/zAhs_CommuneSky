@@ -69,6 +69,8 @@ object AppModule {
                     .build(),
             )
         }
+        // Yalnız debug sürümünde sahte ağ arızası ekler; release'de boştur.
+        .apply { com.alihaydarsayar.communesky.debug.DebugNetwork.install(this) }
         .build()
 
     @Provides

@@ -2,6 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>
+        <!-- Yalnız debug sürümünde: adb ile sahte ağ arızası (bkz. DebugNetwork). Release'de yoktur. -->
+        <receiver
+            android:name=".debug.NetworkFaultReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.alihaydarsayar.communesky.debug.FAULT" />
+            </intent-filter>
+        </receiver>
         <!-- Yalnız debug sürümünde: doğruluk kayıtlarını (CSV) paylaş menüsüne vermek için. Release'de yoktur. -->
         <provider
             android:name="androidx.core.content.FileProvider"
