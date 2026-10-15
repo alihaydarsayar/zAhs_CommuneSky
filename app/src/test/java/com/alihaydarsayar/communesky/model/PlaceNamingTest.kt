@@ -33,6 +33,18 @@ class PlaceNamingTest {
     }
 
     @Test
+    fun `outside Türkiye the town wins over the county or department`() {
+        // İngiltere: ilçe değil şehir adı ("Merseyside" bir kontluktur). Fransa: "Hauts-de-Seine" bir departmandır.
+        assertEquals(PlaceName("Liverpool", null), PlaceNaming.fromAddress(null, "Liverpool", "Merseyside", "England", precise = true, countryCode = "GB"))
+        assertEquals(PlaceName("Nanterre", null), PlaceNaming.fromAddress(null, "Nanterre", "Hauts-de-Seine", "Île-de-France", precise = true, countryCode = "FR"))
+        // Şehir adı verilmediyse kontluk/departman, o da yoksa bölge.
+        assertEquals(PlaceName("Merseyside", null), PlaceNaming.fromAddress(null, null, "Merseyside", "England", precise = true, countryCode = "GB"))
+        assertEquals(PlaceName("England", null), PlaceNaming.fromAddress(null, null, null, "England", precise = true, countryCode = "GB"))
+        // Türkiye: ilçe (subAdminArea) önce, il adı değil.
+        assertEquals(PlaceName("Beşiktaş", null), PlaceNaming.fromAddress(null, "İstanbul", "Beşiktaş", "İstanbul", precise = true, countryCode = "TR"))
+    }
+
+    @Test
     fun `neighbourhood equal to the district is not repeated`() {
         assertEquals(PlaceName("Tuzla", null), PlaceNaming.fromAddress("Tuzla", "Tuzla", "Tuzla", "İstanbul", precise = true))
     }

@@ -24,8 +24,12 @@ object PlaceNaming {
         subAdminArea: String?,
         adminArea: String?,
         precise: Boolean,
+        countryCode: String? = null,
     ): PlaceName {
-        val district = listOf(subAdminArea, locality).firstOrNull { !it.isNullOrBlank() }?.trim()
+        // Türkiye'de ilçe subAdminArea'dır; başka ülkelerde subAdminArea kontluk ya da departmandır ("Merseyside",
+        // "Hauts-de-Seine") ve yerin adı locality'dir ("Liverpool", "Nanterre").
+        val order = if (countryCode == null || countryCode.equals("TR", ignoreCase = true)) listOf(subAdminArea, locality) else listOf(locality, subAdminArea)
+        val district = order.firstOrNull { !it.isNullOrBlank() }?.trim()
             ?: adminArea?.trim()?.takeIf { it.isNotEmpty() }
         val neighbourhood = subLocality?.let(::cleanNeighbourhood)?.takeIf { it.isNotEmpty() }
         return if (precise && neighbourhood != null && !neighbourhood.equals(district, ignoreCase = true)) {

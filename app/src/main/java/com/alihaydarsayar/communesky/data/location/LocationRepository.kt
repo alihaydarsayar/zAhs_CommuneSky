@@ -68,6 +68,7 @@ class LocationRepository @Inject constructor(
             subAdminArea = address?.subAdminArea,
             adminArea = address?.adminArea,
             precise = precise,
+            countryCode = address?.countryCode,
         )
         return DeviceLocation(
             city = City(
