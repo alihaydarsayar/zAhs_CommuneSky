@@ -59,7 +59,10 @@ class CommuneSkyApp : Application(), Configuration.Provider {
             settingsRepository.migrateNotifications(
                 permitted = com.alihaydarsayar.communesky.work.AlertNotifier.canNotify(this@CommuneSkyApp),
                 freshInstall = info.firstInstallTime == info.lastUpdateTime,
+                // Eski tek kanallar silinir; yerlerine her tür için sesli ve sessiz kanal kurulur.
+                blocked = com.alihaydarsayar.communesky.work.NotificationChannels.removeLegacy(this@CommuneSkyApp),
             )
+            com.alihaydarsayar.communesky.work.NotificationChannels.ensure(this@CommuneSkyApp)
         }
         // Saat biçimi tercihi ilk ekrandan önce arka planda okunur; ana iş parçacığı diski beklemesin.
         appScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.alihaydarsayar.communesky.widget.WidgetLanguage.warmUp(this@CommuneSkyApp) }

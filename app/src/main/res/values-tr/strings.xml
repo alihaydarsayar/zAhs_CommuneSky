@@ -612,6 +612,16 @@
     <string name="alert_dialog_title">Meteorolojik uyarılar</string>
     <string name="alert_source">Kaynak: %1$s</string>
     <string name="alert_channel">Meteorolojik uyarılar</string>
+    <string name="channel_group_alerts">Meteorolojik uyarılar</string>
+    <string name="channel_group_summaries">Özetler</string>
+    <string name="channel_group_air">Hava kalitesi</string>
+    <string name="channel_red">Kırmızı uyarılar</string>
+    <string name="channel_orange">Turuncu uyarılar</string>
+    <string name="channel_yellow">Sarı uyarılar</string>
+    <string name="channel_morning">Sabah özeti</string>
+    <string name="channel_evening">Akşam özeti</string>
+    <string name="channel_air">Hava kalitesi</string>
+    <string name="channel_silent">%1$s (sessiz)</string>
     <string name="alert_notification_title">%1$s: %2$s</string>
     <string name="settings_notifications">Bildirimler</string>
     <string name="settings_alert_notifications">Meteorolojik uyarılar</string>

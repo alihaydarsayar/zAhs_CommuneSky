@@ -93,10 +93,14 @@ class SettingsRepository @Inject constructor(
      * 1.5.2'deki bir kerelik geçiş: bildirimler artık varsayılan kapalı (bkz. NotificationMigration). Yeni
      * kurulumda ve izni olmayan güncellemelerde uyarılar kapanır.
      */
-    suspend fun migrateNotifications(permitted: Boolean, freshInstall: Boolean) {
+    suspend fun migrateNotifications(permitted: Boolean, freshInstall: Boolean, blocked: com.alihaydarsayar.communesky.work.NotificationChannels.LegacyBlocked) {
         dataStore.edit {
             if (it[NOTIFICATIONS_MIGRATED] == true) return@edit
-            it[ALERT_NOTIFICATIONS] = com.alihaydarsayar.communesky.model.NotificationMigration.alertsAfterUpdate(it[ALERT_NOTIFICATIONS], permitted, freshInstall)
+            it[ALERT_NOTIFICATIONS] = com.alihaydarsayar.communesky.model.NotificationMigration.alertsAfterUpdate(it[ALERT_NOTIFICATIONS], permitted, freshInstall) &&
+                !blocked.alerts
+            // Eski kanalı Android'de kapatan kullanıcı o türü istemiyor demektir.
+            if (blocked.morning) it[MORNING_SUMMARY] = false
+            if (blocked.airQuality) it[AIR_NOTIFICATIONS] = false
             it[NOTIFICATIONS_MIGRATED] = true
         }
     }

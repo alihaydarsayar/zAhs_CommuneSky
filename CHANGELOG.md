@@ -20,6 +20,7 @@ What's new in each version of Commune Sky.
 - Faster start on a busy phone: the clock format setting and the widget diagnostics no longer read or write storage while the screen or a widget is being drawn.
 - Fixed: "Couldn't update" could appear when your location changed during a refresh and the earlier refresh was simply replaced. Real network and server errors are still shown.
 - Notifications are now off until you turn them on, and Commune Sky asks for the notification permission only then. If you already allowed notifications and kept warnings on, that stays as it is.
+- Each kind of notification can come with sound or silently, and quiet hours can silence them all at night (red warnings can still sound). Every kind has its own channels in Android's settings, named in the app's language.
 
 ## 1.5.1 — October 14, 2026
 

@@ -1,7 +1,6 @@
 package com.alihaydarsayar.communesky.work
 
 import android.app.AlarmManager
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -57,7 +56,6 @@ object MorningSummary {
     private const val RAIN_CHANCE = 30
     private const val RAIN_LIKELY = 50
 
-    private const val CHANNEL = "morning_summary"
     private const val NOTIFICATION_ID = 7301
     private const val PREFS = "morning_summary"
     private const val KEY_LAST_DAY = "last_day"
@@ -149,9 +147,9 @@ object MorningSummary {
             { unit.fromCelsius(it).roundToInt() }, { it.format(clock) },
         ) ?: return
         val manager = app.getSystemService(NotificationManager::class.java) ?: return
-        manager.createNotificationChannel(
-            NotificationChannel(CHANNEL, localized.getString(R.string.summary_channel), NotificationManager.IMPORTANCE_DEFAULT),
-        )
+        NotificationChannels.ensure(app)
+        val clockNow = java.time.LocalTime.now()
+        val channel = NotificationRouting.channel(NotificationKind.Morning, settings.notifications, clockNow.hour * 60 + clockNow.minute)
         val open = PendingIntent.getActivity(
             app, NOTIFICATION_ID,
             Intent(app, MainActivity::class.java)
@@ -160,7 +158,7 @@ object MorningSummary {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val notification = NotificationCompat.Builder(app, CHANNEL)
+        val notification = NotificationCompat.Builder(app, channel)
             .setSmallIcon(R.drawable.ic_wl_partly_cloudy_day)
             .setContentTitle(snapshot.displayName(localized))
             .setContentText(text)

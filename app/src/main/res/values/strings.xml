@@ -619,6 +619,16 @@
     <string name="alert_dialog_title">Weather warnings</string>
     <string name="alert_source">Source: %1$s</string>
     <string name="alert_channel">Weather warnings</string>
+    <string name="channel_group_alerts">Weather warnings</string>
+    <string name="channel_group_summaries">Summaries</string>
+    <string name="channel_group_air">Air quality</string>
+    <string name="channel_red">Red warnings</string>
+    <string name="channel_orange">Orange warnings</string>
+    <string name="channel_yellow">Yellow warnings</string>
+    <string name="channel_morning">Morning summary</string>
+    <string name="channel_evening">Evening summary</string>
+    <string name="channel_air">Air quality</string>
+    <string name="channel_silent">%1$s (silent)</string>
     <string name="alert_notification_title">%1$s: %2$s</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_alert_notifications">Weather warnings</string>

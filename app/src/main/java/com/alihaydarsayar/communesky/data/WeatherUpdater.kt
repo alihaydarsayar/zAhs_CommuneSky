@@ -117,7 +117,7 @@ class WeatherUpdater @Inject constructor(
         val settings = settingsRepository.settings.first()
         com.alihaydarsayar.communesky.work.AlertNotifier.check(context, weatherRepository.allWeather.first().values, settings.notifications.alerts)
         // Hava kalitesi kötüleştiyse (ve kullanıcı istediyse) bildirim; yer başına günde en çok bir kez.
-        com.alihaydarsayar.communesky.work.AirQualityNotifier.check(context, weatherRepository.allWeather.first().values, settings.notifications.airQuality)
+        com.alihaydarsayar.communesky.work.AirQualityNotifier.check(context, weatherRepository.allWeather.first().values, settings.notifications)
         // Sabah özeti alarmı telefon yeniden başlayınca silinir; burada geri kurulur (aynı alarm, ek uyanma yok).
         com.alihaydarsayar.communesky.work.MorningSummary.schedule(context, settings.notifications.morning, settings.notifications.morningMinutes)
     }
