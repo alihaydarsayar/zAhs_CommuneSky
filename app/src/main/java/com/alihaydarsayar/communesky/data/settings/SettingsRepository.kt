@@ -90,7 +90,7 @@ class SettingsRepository @Inject constructor(
     }
 
     /**
-     * 1.5.2'deki bir kerelik geçiş: bildirimler artık varsayılan kapalı (bkz. NotificationMigration). Yeni
+     * 1.5.3'teki bir kerelik geçiş: bildirimler artık varsayılan kapalı (bkz. NotificationMigration). Yeni
      * kurulumda ve izni olmayan güncellemelerde uyarılar kapanır.
      */
     suspend fun migrateNotifications(permitted: Boolean, freshInstall: Boolean, blocked: com.alihaydarsayar.communesky.work.NotificationChannels.LegacyBlocked) {
@@ -191,7 +191,7 @@ class SettingsRepository @Inject constructor(
         val QUIET_END = intPreferencesKey("quiet_end")
         val QUIET_RED_SOUNDS = booleanPreferencesKey("quiet_red_sounds")
         val PROMPT_DISMISSED = booleanPreferencesKey("notification_prompt_dismissed")
-        val NOTIFICATIONS_MIGRATED = booleanPreferencesKey("notifications_migrated_152")
+        val NOTIFICATIONS_MIGRATED = booleanPreferencesKey("notifications_migrated_153")
         const val DAY_MINUTES = 24 * 60
         val WEAR_FEEDBACK = doublePreferencesKey("wear_feedback")
     }

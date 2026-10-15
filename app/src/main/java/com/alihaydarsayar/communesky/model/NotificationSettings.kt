@@ -50,7 +50,7 @@ data class NotificationSettings(
 }
 
 /**
- * 1.5.2'de bildirimler varsayılan kapalı oldu. Önceki sürümlerde uyarı bildirimi varsayılan açıktı: güncelleyen
+ * 1.5.3'te bildirimler varsayılan kapalı oldu. Önceki sürümlerde uyarı bildirimi varsayılan açıktı: güncelleyen
  * kullanıcıda, bildirim izni verilmiş ve uyarılar açıksa ayar korunur; izin hiç verilmediyse kapanır. Yeni
  * kurulumda hep kapalıdır. Saf; test edilir.
  */

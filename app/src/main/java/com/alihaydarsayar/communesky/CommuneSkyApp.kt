@@ -53,7 +53,7 @@ class CommuneSkyApp : Application(), Configuration.Provider {
                 android.os.StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build(),
             )
         }
-        // 1.5.2: bildirimler varsayılan kapalı. Güncelleyen ve izni olan kullanıcının uyarı ayarı korunur (bir kez).
+        // 1.5.3: bildirimler varsayılan kapalı. Güncelleyen ve izni olan kullanıcının uyarı ayarı korunur (bir kez).
         appScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val info = packageManager.getPackageInfo(packageName, 0)
             settingsRepository.migrateNotifications(
