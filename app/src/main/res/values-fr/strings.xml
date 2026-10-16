@@ -617,7 +617,6 @@
     <string name="alert_open">Lire l’alerte</string>
     <string name="alert_dialog_title">Alertes météo</string>
     <string name="alert_source">Source : %1$s</string>
-    <string name="alert_channel">Alertes météo</string>
     <string name="channel_group_alerts">Alertes météo</string>
     <string name="channel_group_summaries">Résumés</string>
     <string name="channel_group_air">Qualité de l’air</string>
@@ -798,12 +797,6 @@
     <string name="tip_short_umbrella_must">À prendre</string>
     <string name="tip_short_sunscreen_good">Conseillée</string>
     <string name="tip_short_sunscreen_must">Nécessaire</string>
-    <string name="summary_range">Aujourd’hui %1$d–%2$d°</string>
-    <string name="summary_rain">pluie %1$s</string>
-    <string name="summary_snow">neige %1$s</string>
-    <string name="summary_with">%1$s, %2$s</string>
-    <string name="summary_sentences">%1$s. %2$s</string>
-    <string name="summary_channel">Résumé du matin</string>
     <string name="summary_title">%1$d–%2$d° · %3$s</string>
     <string name="summary_title_tomorrow">Demain %1$d–%2$d° · %3$s</string>
     <string name="summary_today_colder">%1$d° plus froid qu’aujourd’hui</string>

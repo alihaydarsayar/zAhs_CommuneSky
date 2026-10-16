@@ -619,7 +619,6 @@
     <string name="alert_open">Read the warning</string>
     <string name="alert_dialog_title">Weather warnings</string>
     <string name="alert_source">Source: %1$s</string>
-    <string name="alert_channel">Weather warnings</string>
     <string name="channel_group_alerts">Weather warnings</string>
     <string name="channel_group_summaries">Summaries</string>
     <string name="channel_group_air">Air quality</string>
@@ -799,12 +798,6 @@
     <string name="tip_short_umbrella_must">Must take</string>
     <string name="tip_short_sunscreen_good">Good idea</string>
     <string name="tip_short_sunscreen_must">Needed</string>
-    <string name="summary_range">Today %1$d–%2$d°</string>
-    <string name="summary_rain">rain %1$s</string>
-    <string name="summary_snow">snow %1$s</string>
-    <string name="summary_with">%1$s, %2$s</string>
-    <string name="summary_sentences">%1$s. %2$s</string>
-    <string name="summary_channel">Morning summary</string>
     <string name="summary_title">%1$d–%2$d° · %3$s</string>
     <string name="summary_title_tomorrow">Tomorrow %1$d–%2$d° · %3$s</string>
     <string name="summary_today_colder">%1$d° colder than today</string>
