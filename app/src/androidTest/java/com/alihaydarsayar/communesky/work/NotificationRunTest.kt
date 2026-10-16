@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 
 /**
  * Elle deneme yardımcısı: uyarı ve hava kalitesi bildirimlerini, gerçek bir uyarı ya da kötü hava beklemeden
- * bir kez tetikler. Bildirimi gönderen kod uygulamanınkidir; yalnızca veri uydurulur (ilk kayıtlı yere turuncu
+ * bir kez tetikler. Bildirimi gönderen kod uygulamanınkidir; yalnızca veri uydurulur (ilk kayıtlı yere (yoksa bulunduğum yere) turuncu
  * bir uyarı ya da kötü hava kalitesi eklenir). Ayarlar'daki anahtar kapalıysa ya da bildirim izni yoksa hiçbir
  * şey gönderilmez: "kapalıyken gelmemeli" de böyle denenir.
  */
@@ -28,7 +28,7 @@ class NotificationRunTest {
     @Test
     fun alert() = runBlocking {
         val input = WidgetDataLoader(context).input.first()
-        val snapshot = input.weather.values.first { !it.isCurrentLocation }
+        val snapshot = (input.weather.values.firstOrNull { !it.isCurrentLocation } ?: input.weather.values.first())
         val now = snapshot.forecast.localNow().withSecond(0).withNano(0)
         val alert = WeatherAlert(
             id = "deneme-${System.currentTimeMillis()}",
@@ -45,7 +45,7 @@ class NotificationRunTest {
     @Test
     fun airQuality() = runBlocking {
         val input = WidgetDataLoader(context).input.first()
-        val snapshot = input.weather.values.first { !it.isCurrentLocation }
+        val snapshot = (input.weather.values.firstOrNull { !it.isCurrentLocation } ?: input.weather.values.first())
         val hour = snapshot.forecast.localNow().withMinute(0).withSecond(0).withNano(0)
         // Bugün gönderildiyse yeniden gönderebilmek için kayıt silinir.
         context.getSharedPreferences("air_quality_notifications", Context.MODE_PRIVATE).edit().clear().apply()
