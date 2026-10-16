@@ -28,6 +28,7 @@ What's new in each version of Commune Sky.
 - Fixed: widgets on the home screen now switch to the new language (and 12/24-hour clock) right away when you change it in Settings, instead of staying in the old language until their next full redraw.
 - Fixed: a wallpaper, theme or text-size change right after the app was used could be missed by the widgets that were still drawing; they now always redraw.
 - Settings: with a very large text or display size the options of a choice (language, wind speed, clock format) are shown one under the other instead of being cut to "Tür…" or "km/…".
+Notification category names in Android settings now follow the app language right away.
 
 ## 1.5.2 — October 14, 2026
 

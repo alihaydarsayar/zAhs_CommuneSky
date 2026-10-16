@@ -126,6 +126,8 @@ enum class AppLanguage(val tag: String) {
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.tag))
             com.alihaydarsayar.communesky.widget.WidgetLanguage.remember(app, language.tag)
             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
+                // Bildirim kanallarının adları Android ayarlarında da yeni dilde görünsün.
+                com.alihaydarsayar.communesky.work.NotificationChannels.ensure(app)
                 com.alihaydarsayar.communesky.widget.WeatherWidgetUpdater.updateAll(app)
             }
         }
