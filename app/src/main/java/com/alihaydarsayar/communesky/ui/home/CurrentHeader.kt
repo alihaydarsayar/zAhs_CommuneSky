@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.ui.home
 
+import com.alihaydarsayar.communesky.ui.common.touchTarget
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -202,8 +203,10 @@ private fun LocationChip(status: LocationStatus, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.16f))
             .clickable(onClick = onClick)
+            .touchTarget()
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.16f))
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,

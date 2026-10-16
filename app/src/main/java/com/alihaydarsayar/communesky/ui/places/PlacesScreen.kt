@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.ui.places
 
+import com.alihaydarsayar.communesky.ui.common.touchTarget
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
@@ -271,9 +272,10 @@ private fun SearchField(
         if (query.isNotEmpty()) {
             Box(
                 Modifier
-                    .size(40.dp)
                     .clip(CircleShape)
-                    .clickable(role = Role.Button) { onQueryChange("") },
+                    .clickable(role = Role.Button) { onQueryChange("") }
+                    .touchTarget()
+                    .size(40.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(

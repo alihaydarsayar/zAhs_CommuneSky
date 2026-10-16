@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.ui.settings
 
+import com.alihaydarsayar.communesky.ui.common.touchTarget
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -207,10 +208,12 @@ fun HomeLocationScreen(
                             style = MaterialTheme.typography.labelLarge,
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
                                 .clickable(role = Role.Button) {
                                     if (state.places.isEmpty()) onManagePlaces() else choosingHome = true
                                 }
+                                .touchTarget()
+                                .clip(CircleShape)
+                                .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                         )
                     }

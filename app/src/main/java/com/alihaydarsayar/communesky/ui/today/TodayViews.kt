@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.ui.today
 
+import com.alihaydarsayar.communesky.ui.common.touchTarget
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -91,6 +92,7 @@ fun TodayCard(advice: TodayAdvice, onFeedback: (Boolean) -> Unit, onSeeAll: () -
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
                 .clickable(role = Role.Button, onClick = onSeeAll)
+                .touchTarget()
                 .padding(top = 12.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

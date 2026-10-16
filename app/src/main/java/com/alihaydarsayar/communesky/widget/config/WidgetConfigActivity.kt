@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.widget.config
 
+import com.alihaydarsayar.communesky.ui.common.touchTarget
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.graphics.Color as AndroidColor
@@ -594,7 +595,7 @@ private fun PreviewStage(
 @Composable
 private fun Arrow(symbol: String, description: String, color: Color, enabled: Boolean, onClick: () -> Unit) {
     Box(
-        Modifier.size(48.dp, 32.dp).clip(CircleShape).clickable(enabled = enabled, role = Role.Button, onClick = onClick).semantics { contentDescription = description },
+        Modifier.clip(CircleShape).clickable(enabled = enabled, role = Role.Button, onClick = onClick).touchTarget().size(48.dp, 32.dp).semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
         Text(symbol, color = color.copy(alpha = if (enabled) 0.8f else 0.25f), style = MaterialTheme.typography.titleMedium)

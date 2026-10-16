@@ -12,6 +12,7 @@ What's new in each version of Commune Sky.
 - Settings: with a very large text or display size the options of a choice (language, wind speed, clock format) are shown one under the other instead of being cut to "Tür…" or "km/…".
 - Notification category names in Android settings now follow the app language right away.
 - Warnings now end by the warned place's clock, not the phone's, when the phone is in another time zone.
+- Small buttons and links (the home screen's list and settings buttons, option pills, the clear-search cross, tab chips and the like) now have at least a 44 dp touch area, without looking any different.
 
 ## 1.5.4 — in testing
 

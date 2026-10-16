@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.ui.home
 
+import com.alihaydarsayar.communesky.ui.common.touchTarget
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -617,6 +618,7 @@ private fun Attribution() {
             .fillMaxWidth()
             .clip(CircleShape)
             .clickable { uriHandler.openUri("https://open-meteo.com/") }
+            .touchTarget()
             .padding(vertical = 12.dp),
     )
 }

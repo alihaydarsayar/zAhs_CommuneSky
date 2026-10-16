@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.ui.detail
 
+import com.alihaydarsayar.communesky.ui.common.touchTarget
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -248,9 +249,11 @@ internal fun TabChip(text: String, selected: Boolean, onClick: () -> Unit) {
         style = MaterialTheme.typography.labelLarge,
         modifier = Modifier
             .clip(CircleShape)
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            .touchTarget()
+            .clip(CircleShape)
             .background(if (selected) Color.White else Color.White.copy(alpha = 0.08f))
             .border(1.dp, Color.White.copy(alpha = 0.12f), CircleShape)
-            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
     )
 }

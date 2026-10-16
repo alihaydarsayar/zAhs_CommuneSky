@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
@@ -63,11 +64,13 @@ fun GlassIconButton(
     val isLight = LocalSkyIsLight.current
     Box(
         modifier = modifier
+            .clip(CircleShape)
+            .clickable(onClick = onClick, role = Role.Button)
+            .touchTarget()
             .size(size.dp)
             .clip(CircleShape)
             .background(if (isLight) Color(0xFF0A1B36).copy(alpha = 0.17f) else Color.White.copy(alpha = 0.10f))
-            .border(1.dp, Color.White.copy(alpha = 0.16f), CircleShape)
-            .clickable(onClick = onClick, role = Role.Button),
+            .border(1.dp, Color.White.copy(alpha = 0.16f), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -115,6 +118,21 @@ object SegmentedLayout {
     }
 }
 
+/** Dokunma alanının en küçük kenarı (dp). */
+const val MIN_TOUCH_DP = 44
+
+/**
+ * Öğenin dokunulabilir kutusunu en az [MIN_TOUCH_DP] dp yapar; içerik ortada kalır. Arka plan, çerçeve ve boyut bu
+ * değiştiriciden SONRA yazılır (görünen şekil küçük kalır); `clickable` ondan ÖNCE yazılır (kutunun tamamı dokunulur).
+ */
+fun Modifier.touchTarget(): Modifier = this.layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val min = MIN_TOUCH_DP.dp.roundToPx()
+    val width = maxOf(placeable.width, min).coerceAtMost(constraints.maxWidth.coerceAtLeast(placeable.width))
+    val height = maxOf(placeable.height, min).coerceAtMost(constraints.maxHeight.coerceAtLeast(placeable.height))
+    layout(width, height) { placeable.placeRelative((width - placeable.width) / 2, (height - placeable.height) / 2) }
+}
+
 /**
  * Cam görünümlü seçim düğmeleri (°C | °F gibi). Seçili olan beyaz bir hapla vurgulanır.
  * Ekran okuyucular bunu bir seçim grubu olarak tanır. Yazı boyutu ve ekran boyutu çok büyükken seçenekler yan yana
@@ -143,7 +161,8 @@ fun GlassSegmented(
                 .clip(shape)
                 .background(Color.White.copy(alpha = 0.08f))
                 .border(1.dp, Color.White.copy(alpha = 0.12f), shape)
-                .padding(4.dp)
+                // Dikey boşluk seçeneklerin dokunma alanının içinde (44 dp'lik kutu, 40 dp'lik hap).
+                .padding(horizontal = 4.dp, vertical = 2.dp)
                 .selectableGroup()
             if (oneRow) {
                 Row(frame, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -152,7 +171,7 @@ fun GlassSegmented(
                     }
                 }
             } else {
-                Column(frame, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(frame) {
                     options.forEachIndexed { index, label ->
                         SegmentOption(label, index == selectedIndex, { onSelect(index) }, Modifier.fillMaxWidth())
                     }
@@ -168,10 +187,12 @@ private fun SegmentOption(label: String, selected: Boolean, onClick: () -> Unit,
     val textColor by animateColorAsState(if (selected) Color(0xFF14284A) else TextSecondary, label = "segmentText")
     Box(
         modifier = modifier
+            .clip(CircleShape)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .touchTarget()
             .height(40.dp)
             .clip(CircleShape)
-            .background(fill)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
+            .background(fill),
         contentAlignment = Alignment.Center,
     ) {
         Text(

@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.ui.home
 
+import com.alihaydarsayar.communesky.ui.common.touchTarget
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -84,6 +85,7 @@ fun SourceLine(weather: WeatherSnapshot, modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .clip(CircleShape)
             .clickable(role = Role.Button, onClickLabel = stringResource(R.string.source_info_title)) { showInfo = true }
+            .touchTarget()
             .padding(vertical = 10.dp, horizontal = 12.dp),
     )
     // Öğrenen düzeltme uygulanıyorsa küçük bir not: şu anki (gündüz ya da gece) düzeltme.
