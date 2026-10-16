@@ -36,6 +36,7 @@ import java.util.Locale
  */
 @OptIn(ExperimentalGlanceApi::class)
 @RunWith(AndroidJUnit4::class)
+@com.alihaydarsayar.communesky.SlowAudit
 class WidgetSizeAuditTest {
 
     private val target = InstrumentationRegistry.getInstrumentation().targetContext

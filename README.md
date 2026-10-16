@@ -61,6 +61,19 @@ To build a release:
 ./gradlew :app:assembleRelease
 ```
 
+## Testing
+
+```bash
+./gradlew :app:testDebugUnitTest          # unit tests (JVM)
+./gradlew :app:connectedDebugAndroidTest  # on-device tests (needs a device or emulator)
+```
+
+`WidgetSizeAuditTest` renders every widget style at many launcher sizes and takes about 20 minutes, so the default on-device run skips it (it is marked `@SlowAudit`). Run it on its own with:
+
+```bash
+./gradlew :app:connectedDebugAndroidTest -PslowAudit -Pandroid.testInstrumentationRunnerArguments.class=com.alihaydarsayar.communesky.widget.WidgetSizeAuditTest
+```
+
 ## Tech stack
 
 Kotlin · Jetpack Compose · Material 3 · MVVM · Hilt · Retrofit + kotlinx.serialization · Room · DataStore · WorkManager · Jetpack Glance · Navigation Compose · Fused Location Provider · Baseline Profiles

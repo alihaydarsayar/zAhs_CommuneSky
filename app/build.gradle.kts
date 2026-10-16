@@ -22,6 +22,8 @@ android {
         versionName = "1.5.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Uzun denetim testleri (@SlowAudit) varsayılan çalıştırmada atlanır; -PslowAudit ile çalışır.
+        if (!project.hasProperty("slowAudit")) testInstrumentationRunnerArguments["notAnnotation"] = "com.alihaydarsayar.communesky.SlowAudit"
     }
 
     buildTypes {
