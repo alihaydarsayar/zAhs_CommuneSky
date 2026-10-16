@@ -4,6 +4,14 @@ What's new in each version of Commune Sky.
 
 ## 1.5.5 — in testing
 
+- Faster first screen on a busy phone: the app language and clock format are no longer read from storage while the first screen is being drawn.
+- Fixed: a short loss of connection no longer drops the station reading that is only minutes old; the temperature and the station line stay until the reading is really out of date, instead of jumping to the forecast.
+- Fixed: outside Türkiye, "My location" is named after the town (for example Liverpool) instead of the county or department (Merseyside, Hauts-de-Seine).
+- Fixed: widgets on the home screen now switch to the new language (and 12/24-hour clock) right away when you change it in Settings, instead of staying in the old language until their next full redraw.
+- Fixed: a wallpaper, theme or text-size change right after the app was used could be missed by the widgets that were still drawing; they now always redraw.
+- Settings: with a very large text or display size the options of a choice (language, wind speed, clock format) are shown one under the other instead of being cut to "Tür…" or "km/…".
+- Notification category names in Android settings now follow the app language right away.
+
 ## 1.5.4 — in testing
 
 - Fixed: home-screen widgets (clocks, for example) could suddenly turn into the Home & location widget after the app had been used or the phone's time changed. Each widget now keeps its own type.
@@ -22,13 +30,6 @@ What's new in each version of Commune Sky.
 - Fixed: the warning band read "Thunderstorms(+1)" without a space before the count of further warnings in English and Turkish.
 - Fixed: right after you chose a home, the Home & location widget asked you to set your home until the home's weather arrived. It now says the home's weather is loading, and choosing a home downloads its weather at once.
 - Settings › Home & location: "Save my current location as home" no longer adds a second copy of a place you already saved there; that place becomes home.
-- Faster first screen on a busy phone: the app language and clock format are no longer read from storage while the first screen is being drawn.
-- Fixed: a short loss of connection no longer drops the station reading that is only minutes old; the temperature and the station line stay until the reading is really out of date, instead of jumping to the forecast.
-- Fixed: outside Türkiye, "My location" is named after the town (for example Liverpool) instead of the county or department (Merseyside, Hauts-de-Seine).
-- Fixed: widgets on the home screen now switch to the new language (and 12/24-hour clock) right away when you change it in Settings, instead of staying in the old language until their next full redraw.
-- Fixed: a wallpaper, theme or text-size change right after the app was used could be missed by the widgets that were still drawing; they now always redraw.
-- Settings: with a very large text or display size the options of a choice (language, wind speed, clock format) are shown one under the other instead of being cut to "Tür…" or "km/…".
-Notification category names in Android settings now follow the app language right away.
 
 ## 1.5.2 — October 14, 2026
 
