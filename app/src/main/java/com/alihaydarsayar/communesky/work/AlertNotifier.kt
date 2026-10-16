@@ -53,7 +53,8 @@ object AlertNotifier {
     }
 
     /** Bir yer ve o yerde geçerli uyarılar. */
-    data class PlaceAlerts(val placeId: Long, val isCurrentLocation: Boolean, val alerts: List<WeatherAlert>)
+    /** [now]: yerin kendi saati (uyarı saatleri yerin saatiyle yazılır); yoksa plan'a verilen saat kullanılır. */
+    data class PlaceAlerts(val placeId: Long, val isCurrentLocation: Boolean, val alerts: List<WeatherAlert>, val now: LocalDateTime? = null)
 
     /** Gönderilecek bildirim; [raisedFrom] doluysa uyarı bu seviyeden yükseltildi. */
     data class Post(val placeId: Long, val alert: WeatherAlert, val raisedFrom: AlertLevel?)
@@ -81,7 +82,7 @@ object AlertNotifier {
         if (!settings.alerts) return Plan(emptyList(), posted, emptyList())
         val wanted = wantedPlaces(places, settings.alertPlaces, homeId).flatMap { place ->
             place.alerts
-                .filter { settings.alertThreshold.includes(it.level) && it.endsAt.isAfter(now) }
+                .filter { settings.alertThreshold.includes(it.level) && it.endsAt.isAfter(place.now ?: now) }
                 // Aynı uyarının birden çok rengi aynı anda listedeyse en ağırı.
                 .groupBy(::key).map { (_, same) -> same.maxBy { it.level } }
                 .map { place.placeId to it }
@@ -122,7 +123,7 @@ object AlertNotifier {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val posted = prefs.getStringSet(KEY_POSTED, emptySet()).orEmpty().mapNotNull(Posted::decode)
-        val places = weather.map { PlaceAlerts(it.placeId, it.isCurrentLocation, it.alerts) }
+        val places = weather.map { PlaceAlerts(it.placeId, it.isCurrentLocation, it.alerts, it.forecast.localNow()) }
         val allowed = canNotify(context)
         // İzin yokken gelen uyarılar "gösterildi" sayılmaz: izin verilince bildirilir.
         val plan = plan(places, settings.copy(alerts = settings.alerts && allowed), homeId, posted, LocalDateTime.now())

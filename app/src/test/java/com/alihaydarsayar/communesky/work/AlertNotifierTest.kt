@@ -114,4 +114,16 @@ class AlertNotifierTest {
         assertEquals(posted, Posted.decode(posted.encode()))
         assertNull(Posted.decode("bozuk"))
     }
+
+    @Test
+    fun `a warning ends by the place's clock, not the phone's`() {
+        // Telefon Londra saatinde 07:30 (Beşiktaş'ta 09:30); uyarı Türkiye saatiyle 09:00–09:15.
+        val phone = LocalDateTime.of(2026, 10, 12, 7, 30)
+        val besiktasNow = LocalDateTime.of(2026, 10, 12, 9, 30)
+        val over = alert(1, AlertLevel.Orange, begin = "2026-10-12T09:00", end = "2026-10-12T09:15")
+        val local = PlaceAlerts(5, false, listOf(over), besiktasNow)
+        assertTrue(AlertNotifier.plan(listOf(local), on, null, emptyList(), phone).post.isEmpty())
+        // Aynı uyarı yerin saati verilmezse telefonun saatine göre hâlâ sürüyor sayılırdı.
+        assertEquals(1, AlertNotifier.plan(listOf(besiktas(over)), on, null, emptyList(), phone).post.size)
+    }
 }

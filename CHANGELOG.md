@@ -11,6 +11,7 @@ What's new in each version of Commune Sky.
 - Fixed: a wallpaper, theme or text-size change right after the app was used could be missed by the widgets that were still drawing; they now always redraw.
 - Settings: with a very large text or display size the options of a choice (language, wind speed, clock format) are shown one under the other instead of being cut to "Tür…" or "km/…".
 - Notification category names in Android settings now follow the app language right away.
+- Warnings now end by the warned place's clock, not the phone's, when the phone is in another time zone.
 
 ## 1.5.4 — in testing
 
