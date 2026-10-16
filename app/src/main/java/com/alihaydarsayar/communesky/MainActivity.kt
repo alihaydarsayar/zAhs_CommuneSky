@@ -158,6 +158,24 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
+/**
+ * Ekran geçişleri: yeni ekran sağdan kayarak ve belirerek gelir, eskisi hızla silinip biraz sola kayar (ekranlar aynı
+ * gökyüzünün üstünde saydam olduğu için iki ekranın yazısı üst üste uzun süre görünmez). Geri dönüşte tersi;
+ * sistemin geri hareketinde (öngörülü geri) bu hareket parmağı izler.
+ */
+private object ScreenMotion {
+    private const val SLIDE_MS = 320
+    private fun <T> slide() = androidx.compose.animation.core.tween<T>(SLIDE_MS, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+    private fun <T> fadeIn() = androidx.compose.animation.core.tween<T>(220, delayMillis = 70)
+
+    val enter = androidx.compose.animation.slideInHorizontally(slide()) { it / 4 } + androidx.compose.animation.fadeIn(fadeIn())
+    val exit = androidx.compose.animation.slideOutHorizontally(slide()) { -it / 8 } +
+        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(110))
+    val popEnter = androidx.compose.animation.slideInHorizontally(slide()) { -it / 8 } + androidx.compose.animation.fadeIn(fadeIn())
+    val popExit = androidx.compose.animation.slideOutHorizontally(slide()) { it / 4 } +
+        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(160))
+}
+
 @Composable
 private fun CommuneSkyApp(
     viewModel: HomeViewModel,
@@ -217,7 +235,14 @@ private fun CommuneSkyApp(
     ) {
         Box(Modifier.fillMaxSize()) {
             SkyBackground(scene, Modifier.fillMaxSize(), moon)
-            NavHost(navController, startDestination = HomeRoute) {
+            NavHost(
+                navController,
+                startDestination = HomeRoute,
+                enterTransition = { ScreenMotion.enter },
+                exitTransition = { ScreenMotion.exit },
+                popEnterTransition = { ScreenMotion.popEnter },
+                popExitTransition = { ScreenMotion.popExit },
+            ) {
                 composable<HomeRoute> {
                     HomeScreen(
                         viewModel = viewModel,
