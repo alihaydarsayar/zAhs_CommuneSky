@@ -2,7 +2,7 @@
 
 What's new in each version of Commune Sky.
 
-## 1.5.5 — in testing
+## 1.5.5 — October 24, 2026
 
 - Faster first screen on a busy phone: the app language and clock format are no longer read from storage while the first screen is being drawn.
 - Fixed: a short loss of connection no longer drops the station reading that is only minutes old; the temperature and the station line stay until the reading is really out of date, instead of jumping to the forecast.
