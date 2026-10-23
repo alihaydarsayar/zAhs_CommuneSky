@@ -14,6 +14,7 @@ import android.graphics.Shader
 import android.util.LruCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.max
@@ -275,10 +276,14 @@ object WidgetBitmaps {
     /** Işınsal saatin bir çizgisi (dp): dış uç kenara yakın, iç uç merkeze doğru. */
     data class RadialLine(val outerX: Float, val outerY: Float, val innerX: Float, val innerY: Float)
 
+    /** Köşelere doğru eğik giden çizgi, kenara dik derinliği korumak için en çok bu kadar uzar (kat). */
+    const val RADIAL_MAX_STRETCH = 1.6f
+
     /**
-     * 60 ışınsal çizgi: her biri merkezden çıkan ışın üzerinde, hepsi [length] boyunda ve widget
-     * kenarından [inset] kadar içeride (köşeler [corner] yarıçapıyla yuvarlak). i. çizgi i. saniyenin
-     * açısındadır (saat 12'den başlar, saat yönünde 6°). Saf hesap; test edilir.
+     * 60 ışınsal çizgi: her biri merkezden çıkan ışın üzerinde ve widget kenarından [inset] kadar içeride
+     * (köşeler [corner] yarıçapıyla yuvarlak). i. çizgi i. saniyenin açısındadır (saat 12'den başlar, saat
+     * yönünde 6°). Çizgilerin kenara DİK derinliği [length]'tir: ışın kenara eğik düşüyorsa çizgi o kadar uzar
+     * (en çok [RADIAL_MAX_STRETCH] kat), böylece ortadaki çizgiler köşelerdekilerden uzun görünmez. Saf hesap; test edilir.
      */
     fun radialLines(widthDp: Float, heightDp: Float, corner: Float, inset: Float = RADIAL_INSET, length: Float = RADIAL_LENGTH): List<RadialLine> {
         val cx = widthDp / 2f
@@ -304,13 +309,31 @@ object WidgetBitmaps {
                 val mid = (lo + hi) / 2f
                 if (inside(cx + dx * mid, cy + dy * mid)) lo = mid else hi = mid
             }
-            val inner = max(0f, lo - length)
-            RadialLine(cx + dx * lo, cy + dy * lo, cx + dx * inner, cy + dy * inner)
+            val hitX = cx + dx * lo
+            val hitY = cy + dy * lo
+            // Kenarın iç normali: köşe yayında yayın merkezine doğru, düz kenarda en yakın kenara dik.
+            val coreX = hitX.coerceIn(left + r, right - r)
+            val coreY = hitY.coerceIn(top + r, bottom - r)
+            var nx = coreX - hitX
+            var ny = coreY - hitY
+            if (hypot(nx, ny) < 0.001f) {
+                val toLeft = hitX - left
+                val toRight = right - hitX
+                val toTop = hitY - top
+                val toBottom = bottom - hitY
+                val nearest = min(min(toLeft, toRight), min(toTop, toBottom))
+                nx = if (nearest == toLeft) 1f else if (nearest == toRight) -1f else 0f
+                ny = if (nearest == toTop) 1f else if (nearest == toBottom) -1f else 0f
+            }
+            val across = abs(dx * nx + dy * ny) / hypot(nx, ny).coerceAtLeast(0.001f)
+            val reach = min(length / across.coerceAtLeast(0.001f), length * RADIAL_MAX_STRETCH)
+            val inner = max(0f, lo - reach)
+            RadialLine(hitX, hitY, cx + dx * inner, cy + dy * inner)
         }
     }
 
     const val RADIAL_INSET = 6f
-    const val RADIAL_LENGTH = 14f
+    const val RADIAL_LENGTH = 12f
     const val RADIAL_STROKE = 1.5f
 
     private var lastCover: Pair<String, RadialCover?>? = null

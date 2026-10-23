@@ -437,11 +437,11 @@ fun VDivider(modifier: GlanceModifier = GlanceModifier.fillMaxHeight(), width: D
 
 /** Yuvarlak hap: "Tuzla Merkez'desin · 3 km · hava aynı". */
 @Composable
-fun Pill(modifier: GlanceModifier = GlanceModifier, color: Color? = null, content: @Composable () -> Unit) {
+fun Pill(modifier: GlanceModifier = GlanceModifier, color: Color? = null, horizontal: Float = 12f, vertical: Float = 6f, content: @Composable () -> Unit) {
     Row(
         modifier = modifier
             .rounded(color ?: LocalWidgetTheme.current.colors.pill, 999.dp)
-            .padding(start = 12.sd, end = 12.sd, top = 6.sd, bottom = 6.sd),
+            .padding(start = horizontal.sd, end = horizontal.sd, top = vertical.sd, bottom = vertical.sd),
         verticalAlignment = Alignment.CenterVertically,
     ) { content() }
 }

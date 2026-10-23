@@ -13,19 +13,24 @@ import kotlin.math.hypot
 class WidgetGeometryTest {
 
     @Test
-    fun `sixty lines of equal length point at the centre`() {
+    fun `sixty lines of equal depth point at the centre`() {
         val w = 340f
         val h = 150f
         val lines = WidgetBitmaps.radialLines(w, h, corner = 28f)
         assertEquals(60, lines.size)
         lines.forEachIndexed { i, line ->
-            assertEquals("çizgi $i boyu", WidgetBitmaps.RADIAL_LENGTH, hypot(line.outerX - line.innerX, line.outerY - line.innerY), 0.05f)
+            // Çizgi en az kenara dik derinlik kadar, en çok 1,6 katı uzunluktadır (eğik düşen çizgi uzar).
+            val length = hypot(line.outerX - line.innerX, line.outerY - line.innerY)
+            assertTrue("çizgi $i boyu $length", length >= WidgetBitmaps.RADIAL_LENGTH - 0.05f && length <= WidgetBitmaps.RADIAL_LENGTH * WidgetBitmaps.RADIAL_MAX_STRETCH + 0.05f)
             // i. çizgi i. saniyenin açısında: saat 12'den başlar, saat yönünde 6°.
             val angle = (Math.toDegrees(atan2((line.outerX - w / 2).toDouble(), -(line.outerY - h / 2).toDouble())) + 360) % 360
             assertEquals("çizgi $i açısı", i * 6.0, if (i == 0 && angle > 359) angle - 360 else angle, 0.05)
             // Hiçbir çizgi kenara 6 dp'den fazla yaklaşmaz.
             assertTrue(line.outerX >= 5.9f && line.outerX <= w - 5.9f && line.outerY >= 5.9f && line.outerY <= h - 5.9f)
         }
+        // Kenara dik inen çizgiler tam [RADIAL_LENGTH] derinliğinde.
+        assertEquals(WidgetBitmaps.RADIAL_LENGTH, lines[0].innerY - lines[0].outerY, 0.1f)
+        assertEquals(WidgetBitmaps.RADIAL_LENGTH, lines[30].outerY - lines[30].innerY, 0.1f)
         // Üstteki ve yandaki çizgiler kenardan tam 6 dp içeride.
         assertEquals(6f, lines[0].outerY, 0.05f)
         assertEquals(w - 6f, lines[15].outerX, 0.05f)

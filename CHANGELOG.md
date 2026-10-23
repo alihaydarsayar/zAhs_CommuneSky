@@ -14,6 +14,7 @@ What's new in each version of Commune Sky.
 - Warnings now end by the warned place's clock, not the phone's, when the phone is in another time zone.
 - Small buttons and links (the home screen's list and settings buttons, option pills, the clear-search cross, tab chips and the like) now have at least a 44 dp touch area, without looking any different.
 - Moving between screens (Settings, Places, details) is smoother: the new screen slides in and the old one fades away quickly, and the back gesture now shows the previous screen as you swipe.
+- Digital radial clock widget: the clock now sits exactly in the middle of the widget (the colon is centred), with the date on the left and the weather on the right at the same width, the weather pill is smaller, the date no longer gets cut at the edge, and the tick marks around the edge are shorter and the same length all the way round.
 
 ## 1.5.4 — in testing
 

@@ -188,7 +188,12 @@ private fun radialStrips(context: Context, w: Float, h: Float, color: Color): Re
         strip(R.id.strip_right, R.id.clock_right, w - inset - band, inset + band, band, h - 2 * (inset + band))
     }
 
-/** Işınsal saatin içeriği: gün, saat : dakika, hava. Hepsi dikeyde tam ortalı. */
+/**
+ * Işınsal saatin içeriği: gün, saat : dakika, hava. Saat widget'ın hem yatayda hem dikeyde tam ortasındadır.
+ * Gün solda, hava sağda durur ve ikisi AYNI genişliktedir; böylece iki nokta tam ortada kalır. Widget daracıksa
+ * (rakamlar yan sütunlar yüzünden belirgin küçülecekse) yan sütunlar kalkar, yalnız saat ortada durur.
+ * Widget gereğinden yüksekse boşluk eşit olarak üstte ve altta kalır (yüksekliği ana ekranda küçültmek serbesttir).
+ */
 /**
  * [hollowGround]: zemin tek renk ve tam doluysa o renk. O zaman dakika "içi boş" çizilir: ince rakamın
  * çevresinde kaydırılmış kopyaları düz, keskin bir çerçeve oluşturur (dakika renginde), ortadaki kopya
@@ -200,33 +205,77 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     val size = LocalSize.current
-    val w = size.width.value
-    val h = size.height.value
-    val ring = WidgetBitmaps.RADIAL_INSET + WidgetBitmaps.RADIAL_LENGTH + 2f
     val showWeather = theme.shows(WidgetContent.Weather)
-    val showDay = w >= 290f
-    val dayWidth = if (showDay) 36f else 0f
-    // Büyük yazı boyutunda hava sütunu da genişler (hap kesilmesin).
-    val weatherWidth = if (showWeather) (if (w >= 380f) 96f else 72f) * (theme.style.textSize.scale * theme.fontScaleDp).coerceAtLeast(1f) else 0f
-    // Rakamlar hem genişliğe hem yüksekliğe sığar: "17:22" ≈ 2,45 em; rakamın kendisi 0,71 em yüksek.
-    // Rakamlar yatayda sıkıştırılır (RADIAL_SCALE_X): tasarımdaki gibi dar ve uzun, daha büyük.
-    // Kalan genişliğe %10 pay bırakılır: sistem yazı tipinin rakamları tahminden biraz geniş olabilir (bazı telefonlarda
-    // içerik halkanın kenar boşluğunda kesiliyordu). Ölçü tam doldurulunca en küçük fark bile gün adını ve hapı keser.
-    val digitsDp = min((w - 2 * ring - dayWidth - weatherWidth - 8f) / 2.2f, (h - 2 * ring) / 0.76f).coerceIn(28f, 150f)
+    val textScale = (theme.style.textSize.scale * theme.fontScaleDp).coerceAtLeast(1f)
+    val plan = RadialLayout.plan(size.width.value, size.height.value, textScale)
+    val digitsDp = plan.digitsDp
     val digits = dpToBase(digitsDp, theme, context)
-    val current = data.snapshot.forecast.current
     Row(
-        GlanceModifier.fillMaxSize().padding(horizontal = ring.dp),
+        GlanceModifier.fillMaxSize().padding(horizontal = RadialLayout.RING.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (showDay) {
-            Column(GlanceModifier.width(dayWidth.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                WClock(ClockPart.Date, 13f, weight = WWeight.Bold, color = theme.colors.accent, dateSkeleton = "EEE", uppercase = true, contentAlignment = Alignment.Center)
-                WClock(ClockPart.Date, 26f, color = theme.colors.text, dateSkeleton = "d", contentAlignment = Alignment.Center, font = WFont.Digits)
+        if (plan.sides) {
+            Column(GlanceModifier.width(plan.sideWidth.dp), horizontalAlignment = Alignment.CenterHorizontally) { RadialDate() }
+            HSpace(4.dp)
+        }
+        RadialDigits(digits, digitsDp, hollowGround)
+        if (plan.sides) {
+            HSpace(4.dp)
+            Column(GlanceModifier.width(plan.sideWidth.dp).clickableApp(), horizontalAlignment = Alignment.CenterHorizontally) {
+                if (showWeather) RadialWeather(data, plan.sideWidth, plan.sideWidth + 8f)
             }
         }
-        HSpace(4.dp)
+    }
+}
+
+/** Gün: iki satır (GÜN / sayı), ortalı. */
+@Composable
+private fun RadialDate() {
+    val theme = LocalWidgetTheme.current
+    WClock(ClockPart.Date, 13f, weight = WWeight.Bold, color = theme.colors.accent, dateSkeleton = "EEE", uppercase = true, contentAlignment = Alignment.Center)
+    WClock(ClockPart.Date, 24f, color = theme.colors.text, dateSkeleton = "d", contentAlignment = Alignment.Center, font = WFont.Digits)
+}
+
+/**
+ * Hava: küçük hap (ikon ve sıcaklık) ve yanında ya da altında yer adı. Tarihle aynı ölçekte: hap 4+4 dp dolgulu,
+ * yazılar 15 ve 10 sp.
+ */
+@Composable
+private fun RadialWeather(data: WidgetPlaceData, maxWidth: Float, textWidth: Float) {
+    val context = LocalContext.current
+    val theme = LocalWidgetTheme.current
+    val current = data.snapshot.forecast.current
+    // Hava hapı: koyu zeminde açık hap ve koyu yazı (rengi ayarlanabilir).
+    val pill = theme.style.pillColor?.let { Color(it) } ?: theme.colors.text
+    val onPill = if (pill.luminance() > 0.45f) WidgetInk.Dark else WidgetInk.Light
+    val name = if (theme.shows(WidgetContent.PlaceName)) data.snapshot.displayName(context) else null
+    val condition = if (theme.shows(WidgetContent.Condition)) context.getString(weatherDescriptionRes(current.weatherCode)) else null
+    // "Beşiktaş · Açık"; sığmazsa yalnız yer, o da sığmazsa yalnız durum. Yazı kesilmez.
+    val text = listOfNotNull(listOfNotNull(name, condition).joinToString(" · ").ifEmpty { null }, name, condition)
+        .firstOrNull { estimateWidthDp(it, 10f, theme) <= textWidth }
+    @Composable
+    fun weatherPill() = Pill(color = pill, horizontal = 9f, vertical = 4f) {
+        WithColors(theme.colors.copy(shadow = false, text = onPill)) {
+            WeatherIconTinted(current.condition, !current.isDay, 14.dp, if (pill.luminance() > 0.45f) VividOnLight.Sun else null)
+            HSpace(3.dp)
+            val temperature = temp(current.temperature)
+            WText(temperature, min(15f, fitWidth(temperature, 15f, maxWidth - 18f - 14f - 3f - 4f, theme)), weight = WWeight.Bold)
+        }
+    }
+    weatherPill()
+    if (text != null) {
+        VSpace(3.dp)
+        WText(text, 10f, color = theme.colors.secondary, align = TextAlign.Center)
+    }
+}
+
+/** Saat, iki nokta ve dakika (dakika içi boş çizilebilir). */
+@Composable
+private fun RadialDigits(digits: Float, digitsDp: Float, hollowGround: Color?) {
+    val context = LocalContext.current
+    val theme = LocalWidgetTheme.current
+    Row(verticalAlignment = Alignment.CenterVertically) {
         WClock(ClockPart.Hours, digits, color = theme.hourColor, font = WFont.Digits, scaleX = RADIAL_SCALE_X)
         HSpace((digitsDp * 0.04f).dp)
         ClockColon(digits * 1.15f, theme.hourColor)
@@ -240,48 +289,62 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
                 else -> R.layout.wc_hollow_5
             }
             Box {
-              AndroidRemoteViews(
-                RemoteViews(context.packageName, hollowLayout).apply {
-                    for (id in HOLLOW_FRAME_IDS) setTextColor(id, theme.minuteColor.toArgb())
-                    for (id in HOLLOW_FRAME_IDS + R.id.clock) {
-                        setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, theme.sp(digits).value)
-                        setFloat(id, "setTextScaleX", RADIAL_SCALE_X)
-                        setCharSequence(id, "setFormat12Hour", "mm")
-                        setCharSequence(id, "setFormat24Hour", "mm")
-                    }
-                    setTextColor(R.id.clock, hollowGround.toArgb())
-                    setOnClickPendingIntent(R.id.clock, clockAppIntent(context))
-                },
-              )
+                AndroidRemoteViews(
+                    RemoteViews(context.packageName, hollowLayout).apply {
+                        for (id in HOLLOW_FRAME_IDS) setTextColor(id, theme.minuteColor.toArgb())
+                        for (id in HOLLOW_FRAME_IDS + R.id.clock) {
+                            setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, theme.sp(digits).value)
+                            setFloat(id, "setTextScaleX", RADIAL_SCALE_X)
+                            setCharSequence(id, "setFormat12Hour", "mm")
+                            setCharSequence(id, "setFormat24Hour", "mm")
+                        }
+                        setTextColor(R.id.clock, hollowGround.toArgb())
+                        setOnClickPendingIntent(R.id.clock, clockAppIntent(context))
+                    },
+                )
             }
         } else {
             WClock(ClockPart.Minutes, digits, color = theme.minuteColor, font = if (theme.clockFont == ClockFont.DigitsOutline) WFont.Outline else WFont.Digits, scaleX = RADIAL_SCALE_X)
         }
-        HSpace(4.dp)
-        if (showWeather) {
-            Column(GlanceModifier.width(weatherWidth.dp).clickableApp(), horizontalAlignment = Alignment.CenterHorizontally) {
-                // Hava hapı: koyu zeminde açık hap ve koyu yazı (rengi ayarlanabilir).
-                val pill = theme.style.pillColor?.let { Color(it) } ?: theme.colors.text
-                val onPill = if (pill.luminance() > 0.45f) WidgetInk.Dark else WidgetInk.Light
-                Pill(color = pill) {
-                    WithColors(theme.colors.copy(shadow = false, text = onPill)) {
-                        WeatherIconTinted(current.condition, !current.isDay, 16.dp, if (pill.luminance() > 0.45f) VividOnLight.Sun else null)
-                        HSpace(4.dp)
-                        val temperature = temp(current.temperature)
-                        WText(temperature, min(17f, fitWidth(temperature, 17f, weatherWidth - 24f - 16f - 4f - 4f, theme)), weight = WWeight.Bold)
-                    }
-                }
-                val name = if (theme.shows(WidgetContent.PlaceName)) data.snapshot.displayName(context) else null
-                val condition = if (theme.shows(WidgetContent.Condition)) context.getString(weatherDescriptionRes(current.weatherCode)) else null
-                // "Beşiktaş · Açık"; sığmazsa yalnız yer, o da sığmazsa yalnız durum. Yazı kesilmez.
-                val text = listOfNotNull(listOfNotNull(name, condition).joinToString(" · ").ifEmpty { null }, name, condition)
-                    .firstOrNull { estimateWidthDp(it, 11f, theme) <= weatherWidth + 8f }
-                if (text != null) {
-                    VSpace(4.dp)
-                    WText(text, 11f, color = theme.colors.secondary, align = TextAlign.Center)
-                }
-            }
-        }
+    }
+}
+
+/**
+ * Işınsal saatin yerleşim kararı (saf hesap; test edilir). Ölçüler dp.
+ * Rakam boyu ([Plan.digitsDp]) hem genişliğe hem yüksekliğe sığar; "17:22" ≈ 2,2 em genişliğinde (yatayda sıkıştırılmış).
+ * Kalan genişliğe pay bırakılır: sistem yazı tipinin rakamları tahminden biraz geniş olabilir; ölçü tam doldurulunca
+ * en küçük fark bile günü ve hapı keser.
+ */
+object RadialLayout {
+    /** Çizgi halkasının kalınlığı: kenardan içeri boşluk + çizgi derinliği + pay. */
+    val RING: Float get() = WidgetBitmaps.RADIAL_INSET + WidgetBitmaps.RADIAL_LENGTH + 2f
+
+    /** Rakamla çizgiler arasında dikeyde ek nefes payı. */
+    private const val BREATH = 4f
+    private const val EMS = 2.2f
+
+    /** Rakam kutusunun yüksekliği (em); gövde yazı tipinin satır yüksekliği rakamın kendisinden büyüktür. */
+    private const val BOX = 1.12f
+    private const val MIN_DIGITS = 24f
+    private const val MAX_DIGITS = 150f
+    private const val MIN_SIDE = 58f
+
+    /** [sides]: gün ve hava yan sütunları var mı; [sideWidth]: ikisinin ortak genişliği. */
+    data class Plan(val sides: Boolean, val digitsDp: Float, val sideWidth: Float)
+
+    fun plan(w: Float, h: Float, textScale: Float): Plan {
+        val ring = RING
+        val roomy = (if (w >= 380f) 72f else 64f) * textScale
+        val heightFit = (h - 2 * (ring + BREATH)) / BOX
+        val alone = min((w - 2 * ring - 8f) / EMS, heightFit)
+        // Yan sütunlar aynı genişlikte (iki nokta tam ortada). Alçak widget'ta daralır (en az hap kadar) ki rakamlar
+        // yüksekliğe kadar büyüyebilsin.
+        val needed = (w - 2 * ring - 8f - EMS * heightFit) / 2f
+        val sideWidth = needed.coerceIn(MIN_SIDE * textScale, roomy)
+        val withSides = min((w - 2 * ring - 2 * sideWidth - 8f) / EMS, heightFit)
+        // Yan sütunlar rakamları yarıdan çok küçültecekse kalkar.
+        val sides = withSides >= 0.45f * alone
+        return Plan(sides, (if (sides) withSides else alone).coerceIn(MIN_DIGITS, MAX_DIGITS), sideWidth)
     }
 }
 
