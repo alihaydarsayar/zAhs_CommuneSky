@@ -45,7 +45,7 @@ class RadialLayoutTest {
     fun `the two side columns share one width so the colon stays in the middle`() {
         for ((w, h) in sizes) {
             val p = plan(w, h)
-            if (p.sides) assertTrue("$w x $h", p.sideWidth in 58f..72f)
+            if (p.sides) assertTrue("$w x $h", p.sideWidth in 50f..62f)
         }
         assertEquals(plan(391f, 168f).sideWidth, plan(391f, 168f).sideWidth, 0f)
     }

@@ -253,20 +253,20 @@ private fun RadialWeather(data: WidgetPlaceData, maxWidth: Float, textWidth: Flo
     val condition = if (theme.shows(WidgetContent.Condition)) context.getString(weatherDescriptionRes(current.weatherCode)) else null
     // "Beşiktaş · Açık"; sığmazsa yalnız yer, o da sığmazsa yalnız durum. Yazı kesilmez.
     val text = listOfNotNull(listOfNotNull(name, condition).joinToString(" · ").ifEmpty { null }, name, condition)
-        .firstOrNull { estimateWidthDp(it, 10f, theme) <= textWidth }
+        .firstOrNull { estimateWidthDp(it, 9f, theme) <= textWidth }
     @Composable
-    fun weatherPill() = Pill(color = pill, horizontal = 9f, vertical = 4f) {
+    fun weatherPill() = Pill(color = pill, horizontal = 7f, vertical = 3f) {
         WithColors(theme.colors.copy(shadow = false, text = onPill)) {
-            WeatherIconTinted(current.condition, !current.isDay, 14.dp, if (pill.luminance() > 0.45f) VividOnLight.Sun else null)
+            WeatherIconTinted(current.condition, !current.isDay, 12.dp, if (pill.luminance() > 0.45f) VividOnLight.Sun else null)
             HSpace(3.dp)
             val temperature = temp(current.temperature)
-            WText(temperature, min(15f, fitWidth(temperature, 15f, maxWidth - 18f - 14f - 3f - 4f, theme)), weight = WWeight.Bold)
+            WText(temperature, min(13f, fitWidth(temperature, 13f, maxWidth - 14f - 12f - 3f - 4f, theme)), weight = WWeight.Bold)
         }
     }
     weatherPill()
     if (text != null) {
         VSpace(3.dp)
-        WText(text, 10f, color = theme.colors.secondary, align = TextAlign.Center)
+        WText(text, 9f, color = theme.colors.secondary, align = TextAlign.Center)
     }
 }
 
@@ -327,14 +327,14 @@ object RadialLayout {
     private const val BOX = 1.12f
     private const val MIN_DIGITS = 24f
     private const val MAX_DIGITS = 150f
-    private const val MIN_SIDE = 58f
+    private const val MIN_SIDE = 50f
 
     /** [sides]: gün ve hava yan sütunları var mı; [sideWidth]: ikisinin ortak genişliği. */
     data class Plan(val sides: Boolean, val digitsDp: Float, val sideWidth: Float)
 
     fun plan(w: Float, h: Float, textScale: Float): Plan {
         val ring = RING
-        val roomy = (if (w >= 380f) 72f else 64f) * textScale
+        val roomy = (if (w >= 380f) 62f else 56f) * textScale
         val heightFit = (h - 2 * (ring + BREATH)) / BOX
         val alone = min((w - 2 * ring - 8f) / EMS, heightFit)
         // Yan sütunlar aynı genişlikte (iki nokta tam ortada). Alçak widget'ta daralır (en az hap kadar) ki rakamlar
