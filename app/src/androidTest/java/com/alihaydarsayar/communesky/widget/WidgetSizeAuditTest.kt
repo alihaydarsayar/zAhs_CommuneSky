@@ -45,7 +45,7 @@ class WidgetSizeAuditTest {
     private val sizes = listOf(
         DpSize(245.dp, 105.dp), DpSize(250.dp, 110.dp), DpSize(300.dp, 200.dp), DpSize(320.dp, 110.dp),
         DpSize(400.dp, 90.dp), DpSize(110.dp, 40.dp), DpSize(180.dp, 180.dp), DpSize(530.dp, 530.dp),
-        DpSize(391.dp, 168.dp), DpSize(390.dp, 210.dp), DpSize(313.dp, 210.dp), DpSize(230.dp, 100.dp), DpSize(313.dp, 140.dp),
+        DpSize(391.dp, 168.dp), DpSize(390.dp, 210.dp), DpSize(313.dp, 210.dp), DpSize(230.dp, 100.dp), DpSize(313.dp, 140.dp), DpSize(340.dp, 95.dp), DpSize(560.dp, 320.dp),
     )
 
     private data class Result(val cut: List<String>, val fillWidth: Int, val fillHeight: Int)

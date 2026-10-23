@@ -29,6 +29,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.fillMaxHeight
@@ -207,7 +208,7 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
     val size = LocalSize.current
     val showWeather = theme.shows(WidgetContent.Weather)
     val textScale = (theme.style.textSize.scale * theme.fontScaleDp).coerceAtLeast(1f)
-    val plan = RadialLayout.plan(size.width.value, size.height.value, textScale)
+    val plan = RadialLayout.plan(size.width.value, size.height.value, textScale, if (showWeather) RadialWeatherText.textNeed(data) else 0f)
     val digitsDp = plan.digitsDp
     val digits = dpToBase(digitsDp, theme, context)
     Row(
@@ -216,14 +217,15 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (plan.sides) {
-            Column(GlanceModifier.width(plan.sideWidth.dp), horizontalAlignment = Alignment.CenterHorizontally) { RadialDate() }
-            HSpace(4.dp)
+            Column(GlanceModifier.width(plan.sideWidth.dp), horizontalAlignment = Alignment.CenterHorizontally) { RadialDate(plan.scale) }
+            // Artan genişlik iki yana eşit paylaşılır: gün ve hava kenara yakın, saat tam ortada.
+            Spacer(GlanceModifier.defaultWeight())
         }
-        RadialDigits(digits, digitsDp, hollowGround)
+        RadialDigits(digits, digitsDp, plan.scaleX, hollowGround)
         if (plan.sides) {
-            HSpace(4.dp)
+            Spacer(GlanceModifier.defaultWeight())
             Column(GlanceModifier.width(plan.sideWidth.dp).clickableApp(), horizontalAlignment = Alignment.CenterHorizontally) {
-                if (showWeather) RadialWeather(data, plan.sideWidth, plan.sideWidth + 8f)
+                if (showWeather) RadialWeather(data, plan.sideWidth, plan.sideWidth, plan.scale, extraLine = size.height.value >= 118f)
             }
         }
     }
@@ -231,10 +233,10 @@ private fun RadialContent(data: WidgetPlaceData, hollowGround: Color? = null) {
 
 /** Gün: iki satır (GÜN / sayı), ortalı. */
 @Composable
-private fun RadialDate() {
+private fun RadialDate(scale: Float) {
     val theme = LocalWidgetTheme.current
-    WClock(ClockPart.Date, 13f, weight = WWeight.Bold, color = theme.colors.accent, dateSkeleton = "EEE", uppercase = true, contentAlignment = Alignment.Center)
-    WClock(ClockPart.Date, 24f, color = theme.colors.text, dateSkeleton = "d", contentAlignment = Alignment.Center, font = WFont.Digits)
+    WClock(ClockPart.Date, 13f * scale, weight = WWeight.Bold, color = theme.colors.accent, dateSkeleton = "EEE", uppercase = true, contentAlignment = Alignment.Center)
+    WClock(ClockPart.Date, 24f * scale, color = theme.colors.text, dateSkeleton = "d", contentAlignment = Alignment.Center, font = WFont.Digits)
 }
 
 /**
@@ -242,41 +244,71 @@ private fun RadialDate() {
  * yazılar 15 ve 10 sp.
  */
 @Composable
-private fun RadialWeather(data: WidgetPlaceData, maxWidth: Float, textWidth: Float) {
+private fun RadialWeather(data: WidgetPlaceData, maxWidth: Float, textWidth: Float, scale: Float, extraLine: Boolean) {
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     val current = data.snapshot.forecast.current
     // Hava hapı: koyu zeminde açık hap ve koyu yazı (rengi ayarlanabilir).
     val pill = theme.style.pillColor?.let { Color(it) } ?: theme.colors.text
-    val onPill = if (pill.luminance() > 0.45f) WidgetInk.Dark else WidgetInk.Light
+    // Hap saydam ya da yarı saydamsa yazı, hapın değil widget'ın zeminine göre okunur (aksi halde koyu zeminde koyu yazı).
+    val solidPill = pill.alpha >= 0.5f
+    val onPill = when {
+        !solidPill -> theme.colors.text
+        pill.luminance() > 0.45f -> WidgetInk.Dark
+        else -> WidgetInk.Light
+    }
+    val lightPill = solidPill && pill.luminance() > 0.45f
     val name = if (theme.shows(WidgetContent.PlaceName)) data.snapshot.displayName(context) else null
     val condition = if (theme.shows(WidgetContent.Condition)) context.getString(weatherDescriptionRes(current.weatherCode)) else null
     // "Beşiktaş · Açık"; sığmazsa yalnız yer, o da sığmazsa yalnız durum. Yazı kesilmez.
     val text = listOfNotNull(listOfNotNull(name, condition).joinToString(" · ").ifEmpty { null }, name, condition)
-        .firstOrNull { estimateWidthDp(it, 9f, theme) <= textWidth }
+        .firstOrNull { estimateWidthDp(it, 9f * scale, theme) <= textWidth }
     @Composable
-    fun weatherPill() = Pill(color = pill, horizontal = 7f, vertical = 3f) {
+    fun weatherPill() = Pill(color = pill, horizontal = 7f * scale, vertical = 3f * scale) {
         WithColors(theme.colors.copy(shadow = false, text = onPill)) {
-            WeatherIconTinted(current.condition, !current.isDay, 12.dp, if (pill.luminance() > 0.45f) VividOnLight.Sun else null)
-            HSpace(3.dp)
+            WeatherIconTinted(current.condition, !current.isDay, (12f * scale).dp, if (lightPill) VividOnLight.Sun else null)
+            HSpace((3f * scale).dp)
             val temperature = temp(current.temperature)
-            WText(temperature, min(13f, fitWidth(temperature, 13f, maxWidth - 14f - 12f - 3f - 4f, theme)), weight = WWeight.Bold)
+            WText(temperature, min(13f * scale, fitWidth(temperature, 13f * scale, maxWidth - (14f + 12f + 3f) * scale - 4f, theme)), weight = WWeight.Bold)
         }
     }
     weatherPill()
     if (text != null) {
-        VSpace(3.dp)
-        WText(text, 9f, color = theme.colors.secondary, align = TextAlign.Center)
+        VSpace((3f * scale).dp)
+        WText(text, 9f * scale, color = theme.colors.secondary, align = TextAlign.Center)
+    }
+    // "Y 17° · D 9°": ayarlarda açıksa ve yükseklik yetiyorsa.
+    val today = data.snapshot.forecast.today(data.snapshot.forecast.localNow())
+    if (extraLine && theme.shows(WidgetContent.HighLow) && today != null) {
+        val range = highLowShort(today.maxTemperature, today.minTemperature)
+        if (estimateWidthDp(range, 9f * scale, theme) <= textWidth) {
+            VSpace((2f * scale).dp)
+            WText(range, 9f * scale, color = theme.colors.secondary, align = TextAlign.Center)
+        }
+    }
+}
+
+/** Hava sütununun yazı ihtiyacı (bkz. [RadialLayout.plan]). */
+private object RadialWeatherText {
+    @Composable
+    fun textNeed(data: WidgetPlaceData): Float {
+        val context = LocalContext.current
+        val theme = LocalWidgetTheme.current
+        val current = data.snapshot.forecast.current
+        val name = if (theme.shows(WidgetContent.PlaceName)) data.snapshot.displayName(context) else null
+        val condition = if (theme.shows(WidgetContent.Condition)) context.getString(weatherDescriptionRes(current.weatherCode)) else null
+        val full = listOfNotNull(name, condition).joinToString(" · ")
+        return if (full.isEmpty()) 0f else estimateWidthDp(full, 9f, theme)
     }
 }
 
 /** Saat, iki nokta ve dakika (dakika içi boş çizilebilir). */
 @Composable
-private fun RadialDigits(digits: Float, digitsDp: Float, hollowGround: Color?) {
+private fun RadialDigits(digits: Float, digitsDp: Float, scaleX: Float, hollowGround: Color?) {
     val context = LocalContext.current
     val theme = LocalWidgetTheme.current
     Row(verticalAlignment = Alignment.CenterVertically) {
-        WClock(ClockPart.Hours, digits, color = theme.hourColor, font = WFont.Digits, scaleX = RADIAL_SCALE_X)
+        WClock(ClockPart.Hours, digits, color = theme.hourColor, font = WFont.Digits, scaleX = scaleX)
         HSpace((digitsDp * 0.04f).dp)
         ClockColon(digits * 1.15f, theme.hourColor)
         HSpace((digitsDp * 0.04f).dp)
@@ -294,7 +326,7 @@ private fun RadialDigits(digits: Float, digitsDp: Float, hollowGround: Color?) {
                         for (id in HOLLOW_FRAME_IDS) setTextColor(id, theme.minuteColor.toArgb())
                         for (id in HOLLOW_FRAME_IDS + R.id.clock) {
                             setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, theme.sp(digits).value)
-                            setFloat(id, "setTextScaleX", RADIAL_SCALE_X)
+                            setFloat(id, "setTextScaleX", scaleX)
                             setCharSequence(id, "setFormat12Hour", "mm")
                             setCharSequence(id, "setFormat24Hour", "mm")
                         }
@@ -304,7 +336,7 @@ private fun RadialDigits(digits: Float, digitsDp: Float, hollowGround: Color?) {
                 )
             }
         } else {
-            WClock(ClockPart.Minutes, digits, color = theme.minuteColor, font = if (theme.clockFont == ClockFont.DigitsOutline) WFont.Outline else WFont.Digits, scaleX = RADIAL_SCALE_X)
+            WClock(ClockPart.Minutes, digits, color = theme.minuteColor, font = if (theme.clockFont == ClockFont.DigitsOutline) WFont.Outline else WFont.Digits, scaleX = scaleX)
         }
     }
 }
@@ -320,7 +352,7 @@ object RadialLayout {
     val RING: Float get() = WidgetBitmaps.RADIAL_INSET + WidgetBitmaps.RADIAL_LENGTH + 2f
 
     /** Rakamla çizgiler arasında dikeyde ek nefes payı. */
-    private const val BREATH = 4f
+    private const val BREATH = 2f
     private const val EMS = 2.2f
 
     /** Rakam kutusunun yüksekliği (em); gövde yazı tipinin satır yüksekliği rakamın kendisinden büyüktür. */
@@ -329,10 +361,24 @@ object RadialLayout {
     private const val MAX_DIGITS = 150f
     private const val MIN_SIDE = 50f
 
-    /** [sides]: gün ve hava yan sütunları var mı; [sideWidth]: ikisinin ortak genişliği. */
-    data class Plan(val sides: Boolean, val digitsDp: Float, val sideWidth: Float)
+    /** Gün ve hava bu rakam boyundan sonra rakamla birlikte büyür. */
+    private const val BASE_DIGITS = 56f
+    private const val MAX_SCALE = 1.8f
 
-    fun plan(w: Float, h: Float, textScale: Float): Plan {
+    /** [sides]: gün ve hava yan sütunları var mı; [sideWidth]: ikisinin ortak genişliği. */
+    /**
+     * [scaleX]: rakamların yatay sıkıştırması; geniş ama alçak widget'ta rakamlar yükseklikle sınırlı kalır, artan genişlik
+     * rakamları biraz genişleterek kullanılır (en çok [MAX_SCALE_X]) ki iki yanda büyük boşluk kalmasın.
+     */
+    data class Plan(val sides: Boolean, val digitsDp: Float, val sideWidth: Float, val scale: Float = 1f, val scaleX: Float = BASE_SCALE_X)
+
+    private const val BASE_SCALE_X = 0.8f
+    private const val MAX_SCALE_X = 1.1f
+
+    private fun stretch(room: Float, digits: Float): Float = (BASE_SCALE_X * room / (EMS * digits)).coerceIn(BASE_SCALE_X, MAX_SCALE_X)
+
+    /** [textNeed]: hava sütunundaki yazının (yer adı · durum) 9 sp'deki genişliği; yer varsa sütun o kadar genişler. */
+    fun plan(w: Float, h: Float, textScale: Float, textNeed: Float = 0f): Plan {
         val ring = RING
         val roomy = (if (w >= 380f) 62f else 56f) * textScale
         val heightFit = (h - 2 * (ring + BREATH)) / BOX
@@ -344,7 +390,20 @@ object RadialLayout {
         val withSides = min((w - 2 * ring - 2 * sideWidth - 8f) / EMS, heightFit)
         // Yan sütunlar rakamları yarıdan çok küçültecekse kalkar.
         val sides = withSides >= 0.45f * alone
-        return Plan(sides, (if (sides) withSides else alone).coerceIn(MIN_DIGITS, MAX_DIGITS), sideWidth)
+        val digits = (if (sides) withSides else alone).coerceIn(MIN_DIGITS, MAX_DIGITS)
+        if (!sides) return Plan(false, digits, sideWidth, scaleX = stretch(w - 2 * ring - 8f - 24f, digits))
+        // Rakamlar büyüdükçe gün ve hava da büyür (en çok 1,8 kat); genişlik rakamların payını yemez.
+        val spare = ((w - 2 * ring - 8f - EMS * digits) / 2f).coerceAtLeast(sideWidth)
+        val scale = (digits / BASE_DIGITS).coerceIn(1f, MAX_SCALE).coerceAtMost(spare / sideWidth)
+        // Önce rakamlar genişler (alçak widget'ta), sonra artan yer varsa yan sütunlar yazıya yetecek kadar genişler
+        // (iki sütun hep aynı genişlikte kalır).
+        val base = sideWidth * scale
+        val scaleX = stretch(w - 2 * ring - 8f - 2 * base - 24f, digits)
+        val digitsWidth = EMS * digits * (scaleX / BASE_SCALE_X)
+        val leftover = ((w - 2 * ring - 8f - 24f - digitsWidth - 2 * base) / 2f).coerceAtLeast(0f)
+        val want = (textNeed * scale + 4f - base).coerceAtLeast(0f)
+        val side = base + minOf(leftover, want)
+        return Plan(true, digits, side, scale, scaleX)
     }
 }
 

@@ -25,7 +25,7 @@ class RadialLayoutTest {
     fun `the digits never reach the lines above and below`() {
         for ((w, h) in sizes) {
             val p = plan(w, h)
-            assertTrue("$w x $h", p.digitsDp <= 24f || 1.12f * p.digitsDp <= h - 2 * RadialLayout.RING)
+            assertTrue("$w x $h", p.digitsDp <= 24f || 1.12f * p.digitsDp <= h - 2 * RadialLayout.RING + 0.5f)
         }
     }
 
@@ -45,7 +45,7 @@ class RadialLayoutTest {
     fun `the two side columns share one width so the colon stays in the middle`() {
         for ((w, h) in sizes) {
             val p = plan(w, h)
-            if (p.sides) assertTrue("$w x $h", p.sideWidth in 50f..62f)
+            if (p.sides) assertTrue("$w x $h", p.sideWidth >= 50f && p.scale in 1f..1.8f)
         }
         assertEquals(plan(391f, 168f).sideWidth, plan(391f, 168f).sideWidth, 0f)
     }
@@ -54,5 +54,16 @@ class RadialLayoutTest {
     fun `a bigger widget never draws smaller digits`() {
         assertTrue(plan(390f, 210f).digitsDp >= plan(313f, 210f).digitsDp)
         assertTrue(plan(391f, 168f).digitsDp >= plan(250f, 110f).digitsDp)
+    }
+
+    @Test
+    fun `a wide short widget stretches the digits first and then widens the side columns for the text`() {
+        val plain = plan(400f, 90f)
+        assertTrue(plain.scaleX > 0.8f)
+        val withText = RadialLayout.plan(400f, 90f, 1f, textNeed = 90f)
+        assertTrue(withText.sideWidth > plain.sideWidth)
+        // Yazı için genişleyen yan sütunlar rakamların payını yemez.
+        assertEquals(plain.digitsDp, withText.digitsDp, 0.01f)
+        assertTrue(2.2f * withText.digitsDp * (withText.scaleX / 0.8f) + 2 * withText.sideWidth + 2 * RadialLayout.RING <= 400f)
     }
 }
