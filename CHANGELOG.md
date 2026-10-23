@@ -2,7 +2,11 @@
 
 What's new in each version of Commune Sky.
 
-## 1.5.5 — October 24, 2026
+## 1.5.6 — October 24, 2026
+
+- Digital radial clock widget: the clock sits exactly in the middle of the widget (the colon is centred), with the date on the left and the weather on the right at the same width; on wide widgets they sit near the edges and grow with the clock, on wide but low widgets the digits widen to use the room; the weather pill is smaller, the date no longer gets cut at the edge, the tick marks around the edge are shorter and the same length all the way round, the place name, conditions and high/low you switch on show when there is room, and a transparent weather pill no longer hides its text.
+
+## 1.5.5 — October 16, 2026
 
 - Faster first screen on a busy phone: the app language and clock format are no longer read from storage while the first screen is being drawn.
 - Fixed: a short loss of connection no longer drops the station reading that is only minutes old; the temperature and the station line stay until the reading is really out of date, instead of jumping to the forecast.
@@ -14,8 +18,6 @@ What's new in each version of Commune Sky.
 - Warnings now end by the warned place's clock, not the phone's, when the phone is in another time zone.
 - Small buttons and links (the home screen's list and settings buttons, option pills, the clear-search cross, tab chips and the like) now have at least a 44 dp touch area, without looking any different.
 - Moving between screens (Settings, Places, details) is smoother: the new screen slides in and the old one fades away quickly, and the back gesture now shows the previous screen as you swipe.
-- Digital radial clock widget: the clock now sits exactly in the middle of the widget (the colon is centred), with the date on the left and the weather on the right at the same width, the weather pill is smaller, the date no longer gets cut at the edge, and the tick marks around the edge are shorter and the same length all the way round.
-- Digital radial clock widget: on wide widgets the date and the weather now sit at the edges with the clock in the middle, and they grow with the clock; on wide but low widgets the digits widen to use the room; the place name, conditions and high/low you switch on now show when there is room, and a transparent weather pill no longer hides its text.
 
 ## 1.5.4 — in testing
 
