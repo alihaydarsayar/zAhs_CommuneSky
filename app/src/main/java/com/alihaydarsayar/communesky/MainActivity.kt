@@ -159,21 +159,25 @@ class MainActivity : AppCompatActivity() {
 }
 
 /**
- * Ekran geçişleri: yeni ekran sağdan kayarak ve belirerek gelir, eskisi hızla silinip biraz sola kayar (ekranlar aynı
- * gökyüzünün üstünde saydam olduğu için iki ekranın yazısı üst üste uzun süre görünmez). Geri dönüşte tersi;
- * öngörülü geri kapalıdır: bazı üreticilerin ana ekranlarında sistemin geri animasyonu ekranı küçültüp takılı bırakıyordu.
+ * Ekran geçişleri ("içinden geçerek solma"): ekranlar aynı gökyüzünün üstünde saydam olduğu için eski ve yeni ekranın
+ * yazısı birbirine karışmasın diye önce eski ekran hızla solar (ve hafif küçülüp kayar), yeni ekran biraz sonra,
+ * hafif büyüyüp kayarak belirir. Geri dönüşte tersi; sistemin geri hareketinde (öngörülü geri) aynı hareket parmağı
+ * izler: giden ekran küçülür ve solar, önceki ekran arkadan belirir.
  */
 private object ScreenMotion {
-    private const val SLIDE_MS = 280
-    private fun <T> slide() = androidx.compose.animation.core.tween<T>(SLIDE_MS, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-    private fun <T> fadeIn() = androidx.compose.animation.core.tween<T>(220, delayMillis = 70)
+    private const val MOVE_MS = 320
+    private fun <T> move() = androidx.compose.animation.core.tween<T>(MOVE_MS, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+    private fun <T> appear() = androidx.compose.animation.core.tween<T>(200, delayMillis = 120, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+    private fun <T> vanish(ms: Int) = androidx.compose.animation.core.tween<T>(ms, easing = androidx.compose.animation.core.LinearEasing)
 
-    val enter = androidx.compose.animation.slideInHorizontally(slide()) { it / 4 } + androidx.compose.animation.fadeIn(fadeIn())
-    val exit = androidx.compose.animation.slideOutHorizontally(slide()) { -it / 8 } +
-        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(110))
-    val popEnter = androidx.compose.animation.slideInHorizontally(slide()) { -it / 8 } + androidx.compose.animation.fadeIn(fadeIn())
-    val popExit = androidx.compose.animation.slideOutHorizontally(slide()) { it / 4 } +
-        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(160))
+    val enter = androidx.compose.animation.slideInHorizontally(move()) { it / 12 } +
+        androidx.compose.animation.scaleIn(move(), initialScale = 0.96f) + androidx.compose.animation.fadeIn(appear())
+    val exit = androidx.compose.animation.slideOutHorizontally(move()) { -it / 16 } +
+        androidx.compose.animation.scaleOut(move(), targetScale = 0.98f) + androidx.compose.animation.fadeOut(vanish(140))
+    val popEnter = androidx.compose.animation.slideInHorizontally(move()) { -it / 16 } +
+        androidx.compose.animation.scaleIn(move(), initialScale = 0.98f) + androidx.compose.animation.fadeIn(appear())
+    val popExit = androidx.compose.animation.slideOutHorizontally(move()) { it / 12 } +
+        androidx.compose.animation.scaleOut(move(), targetScale = 0.94f) + androidx.compose.animation.fadeOut(vanish(160))
 }
 
 @Composable

@@ -34,7 +34,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:enableOnBackInvokedCallback="false"
+        android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.CommuneSky">
         <!-- Performans ölçüm araçlarının (Macrobenchmark) release sürümünü profilleyebilmesi için. -->
         <profileable android:shell="true" tools:targetApi="29" />
