@@ -161,10 +161,10 @@ class MainActivity : AppCompatActivity() {
 /**
  * Ekran geçişleri: yeni ekran sağdan kayarak ve belirerek gelir, eskisi hızla silinip biraz sola kayar (ekranlar aynı
  * gökyüzünün üstünde saydam olduğu için iki ekranın yazısı üst üste uzun süre görünmez). Geri dönüşte tersi;
- * sistemin geri hareketinde (öngörülü geri) bu hareket parmağı izler.
+ * öngörülü geri kapalıdır: bazı üreticilerin ana ekranlarında sistemin geri animasyonu ekranı küçültüp takılı bırakıyordu.
  */
 private object ScreenMotion {
-    private const val SLIDE_MS = 320
+    private const val SLIDE_MS = 280
     private fun <T> slide() = androidx.compose.animation.core.tween<T>(SLIDE_MS, easing = androidx.compose.animation.core.FastOutSlowInEasing)
     private fun <T> fadeIn() = androidx.compose.animation.core.tween<T>(220, delayMillis = 70)
 
