@@ -93,14 +93,22 @@ object WidgetVariants {
 /**
  * Tanılama: ana ekrandaki widget'ların launcher'dan gelen ölçüleri, kayıtlı stilleri ve son çizimleri. Yalnız
  * sayılar ve stil adları; yer adı, konum ya da hava verisi yazılmaz. Ayarlar › Widget'larım'dan panoya kopyalanır;
- * bir widget yanlış boyutta ya da yanlış stille göründüğünde nedenini bulmak içindir. Hiçbir yere gönderilmez.
+ * bir widget yanlış boyutta ya da yanlış stille göründüğünde nedenini bulmak içindir. Hiçbir yere gönderilmez ve diske yazılmaz: son çizimler yalnız bellekte durur.
  */
 object WidgetDiagnostics {
-    private const val PREFS = "widget_diagnostics"
-    private const val KEY_DRAWS = "draws"
+    /** 1.5.7'ye kadar son çizimler cihaza yazılıyordu; o dosya silinir (bkz. [purgeStored]). */
+    private const val LEGACY_PREFS = "widget_diagnostics"
     private const val MAX_DRAWS = 60
 
-    /** Bir çizimi kaydeder: hangi widget, hangi stil, launcher'ın verdiği ölçü ve yerleşimde kullanılan ölçü. */
+    /** Son çizimler yalnız bellekte tutulur (diske yazılmaz); uygulama kapanınca kaybolur. */
+    private val draws = ArrayDeque<String>()
+
+    /** Eski sürümlerin diske yazdığı çizim kaydını siler. */
+    fun purgeStored(context: Context) {
+        runCatching { context.applicationContext.deleteSharedPreferences(LEGACY_PREFS) }
+    }
+
+    /** Bir çizimi bellekte kaydeder: hangi widget, hangi stil, launcher'ın verdiği ölçü ve yerleşimde kullanılan ölçü. */
     fun drawn(context: Context, appWidgetId: Int?, kind: WidgetKind, style: WidgetStyleId, variant: DpSize, layout: DpSize, compact: Boolean) {
         if (appWidgetId == null) return
         val line = "%tT #%d %s/%s cizim=%.0fx%.0f yerlesim=%.0fx%.0f%s %s".format(
@@ -108,22 +116,14 @@ object WidgetDiagnostics {
             variant.width.value, variant.height.value, layout.width.value, layout.height.value,
             if (compact) " yedek" else "", if (WidgetVariants.isLandscapeNow(context)) "yatay" else "dikey",
         )
-        // Kayıt çizimi bekletmez: tercih dosyası arka planda okunup yazılır (çizim ana iş parçacığında olabilir).
-        val app = context.applicationContext
-        writer.execute {
-            val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val lines = prefs.getString(KEY_DRAWS, "").orEmpty().lines().filter { it.isNotBlank() }
-            // Aynı çizim art arda tekrarlanırsa (ör. her güncellemede) liste dolmasın.
-            // Listede her farklı çizimin yalnız en son zamanı kalır.
-            val content = line.substringAfter(' ')
-            if (lines.lastOrNull()?.substringAfter(' ') == content) return@execute
-            prefs.edit().putString(KEY_DRAWS, (lines.filterNot { it.substringAfter(' ') == content } + line).takeLast(MAX_DRAWS).joinToString("\n")).apply()
+        // Listede her farklı çizimin yalnız en son zamanı kalır; aynı çizim art arda tekrarlanırsa liste dolmaz.
+        val content = line.substringAfter(' ')
+        synchronized(draws) {
+            if (draws.lastOrNull()?.substringAfter(' ') == content) return
+            draws.removeAll { it.substringAfter(' ') == content }
+            draws.addLast(line)
+            while (draws.size > MAX_DRAWS) draws.removeFirst()
         }
-    }
-
-    /** Kayıtlar sırayla, tek bir arka plan iş parçacığında yazılır. */
-    private val writer = java.util.concurrent.Executors.newSingleThreadExecutor { runnable ->
-        Thread(runnable, "WidgetDiagnostics").apply { isDaemon = true }
     }
 
     suspend fun report(context: Context): String = buildString {
@@ -157,7 +157,7 @@ object WidgetDiagnostics {
             }
         }
         appendLine("son cizimler:")
-        append(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_DRAWS, "").orEmpty())
+        append(synchronized(draws) { draws.joinToString("\n") })
     }
 
     private fun launchers(context: Context): String = runCatching {

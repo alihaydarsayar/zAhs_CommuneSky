@@ -2,6 +2,10 @@
 
 What's new in each version of Commune Sky.
 
+## 1.5.8 — October 25, 2026
+
+- Privacy: the app no longer keeps a log of widget drawings on your phone for troubleshooting (it is deleted when you update). The troubleshooting report under Settings › My widgets is now built on the spot and stores nothing.
+
 ## 1.5.7 — October 24, 2026
 
 - Screen transitions redesigned: the old screen fades and shrinks slightly while the new one slides and fades in just after it, so the two screens no longer show through each other; going back does the reverse, and the system back gesture previews it again as you swipe, without the two screens showing on top of each other.
