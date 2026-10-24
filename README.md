@@ -69,24 +69,91 @@ The background is not a picture. It is drawn on your phone and follows the weath
 
 ## Widgets
 
-Ten widgets with 39 styles. Each widget has its own place, background, transparency, colours, corners and text size, with a live preview while you set it up. A "Home & location" widget knows whether you are home, nearby or away, worked out on your phone.
+Ten widgets with 39 styles. Each widget has its own place, background, transparency, colours, corners and text size, with a live preview while you set it up. Every picture below is a real widget drawn by the app at its own size, with example weather for Beşiktaş, London and Paris, on the same calm wallpaper.
 
 <p align="center">
-  <img src="docs/screenshots/widgets.jpg" alt="Clocks, home and location, hourly curve, weekly range bars, current weather, places, rain in the next two hours, details and today widgets">
+  <img src="docs/screenshots/widgets.jpg" alt="Twelve widgets: a radial digital clock, the SS analog clock, a plain analog clock, home and location while away, an hourly curve, weekly range bars, a small classic widget, a stacked text widget, three places side by side, rain bars, detail tiles and the For today card">
 </p>
 
-| Widget | What it shows |
-|---|---|
-| **Clock** | 14 styles: a digital radial clock with a lit seconds ring, analog dials, a bold clock, a clock with the weather and more. Tapping the clock opens your clock app. |
-| **Home & location** | Your home and where you are now, side by side when you are away. |
-| **Hourly** | A temperature curve, icons or a single row. |
-| **Weekly** | Range bars, columns or a list. |
-| **Now** | Small current-weather widgets, from classic to minimal. |
-| **Text** | One line or one number for a narrow spot. |
-| **Places** | Your saved places in columns or a list. |
-| **Rain** | Rain (or snow) in the next two hours, as bars or a sentence. |
-| **Details** | Feels like, humidity, wind, UV, pressure and visibility, or the sun's path. |
-| **Today** | What to wear and the everyday tips. |
+### Clock
+
+14 styles: a digital radial clock with a lit seconds ring, four analog dials, clocks with the weather, the sun or your places, and plain large type. Tapping the clock opens your clock app.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/clock.png" alt="The 14 clock styles: Radial digital, Clock and weather, Large, Side by side, One line, At a glance, Clock and places, Clock and sun, Card, Bold, Analog plain, Analog field, Analog weather ring and SS">
+</p>
+
+### Home & location
+
+3 styles, each in three situations: at home, near home and away (home and where you are, side by side). Whether you are home, nearby or away is worked out on your phone.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/home-location.png" alt="Home and location in three styles, each at home, near home and away: Smart, Single row and List">
+</p>
+
+### Hourly
+
+3 styles: a temperature curve with rain bars, icons, or a single row.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/hourly.png" alt="The 3 hourly styles: Curve, Icons and Single row">
+</p>
+
+### Weekly
+
+3 styles: range bars, columns or a list.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/weekly.png" alt="The 3 weekly styles: Range bars, Columns and List">
+</p>
+
+### Small
+
+4 styles for a small spot, from classic to minimal, plus a What to wear widget.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/small.png" alt="The 4 small styles: Classic, Centered, Minimal and What to wear">
+</p>
+
+### Text
+
+4 styles: one line or one number for a narrow spot, and a What to wear sentence.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/text.png" alt="The 4 text styles: Stacked, One line, Temperature and What to wear">
+</p>
+
+### My places
+
+2 styles: your saved places side by side or as a list.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/places.png" alt="The 2 places styles: Side by side and List">
+</p>
+
+### Rain
+
+2 styles: rain (or snow) in the next two hours, as bars or a sentence.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/precipitation.png" alt="The 2 rain styles: Bars and Sentence">
+</p>
+
+### Details
+
+3 styles: feels like, humidity, wind, UV, pressure and visibility as tiles or a list, or the sun's path.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/details.png" alt="The 3 details styles: Tiles, Sunrise and sunset, and List">
+</p>
+
+### For today
+
+What to wear and the everyday tips at a glance.
+
+<p align="center">
+  <img src="docs/screenshots/widgets/today.png" alt="The For today card">
+</p>
 
 ## Notifications
 
