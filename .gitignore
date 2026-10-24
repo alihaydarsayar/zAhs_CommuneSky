@@ -25,3 +25,8 @@ keystore.properties
 /app/.idea
 # Local notes - never commit
 *.local.md
+
+# Built bundles: build them locally, never commit
+/app/release/
+*.aab
+*.apk
