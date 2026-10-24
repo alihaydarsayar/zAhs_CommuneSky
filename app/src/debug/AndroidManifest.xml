@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Yalnız debug sürümünde: görsel çekimleri için nötr duvar kâğıdı koyan yardımcı test (ReadmeWallpaperTest). -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+
     <application>
         <!-- Yalnız debug sürümünde: adb ile sahte ağ arızası (bkz. DebugNetwork). Release'de yoktur. -->
         <receiver

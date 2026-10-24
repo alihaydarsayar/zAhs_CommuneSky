@@ -66,10 +66,10 @@ class ReadmeWidgetShotsTest {
         Shot(WidgetStyleId.HomeList, Set.Day, "fog", State.Nearby, suffix = "nearby", look = PAPER),
         Shot(WidgetStyleId.HomeList, Set.Day, "clear", State.Away, mapOf("london" to "heavy_rain"), suffix = "away"),
         // Saat
-        Shot(WidgetStyleId.ClockRadial, Set.Night, "clear"),
+        Shot(WidgetStyleId.ClockRadial, Set.Night, "clear_w"),
         Shot(WidgetStyleId.ClockAnalog, Set.Day, "clear"),
         Shot(WidgetStyleId.ClockField, Set.Day, "mostly_clear"),
-        Shot(WidgetStyleId.ClockRing, Set.Night, "mostly_clear"),
+        Shot(WidgetStyleId.ClockRing, Set.Night, "mostly_clear_w"),
         Shot(WidgetStyleId.ClockSS, Set.Day, "partly_cloudy"),
         Shot(WidgetStyleId.ClockWeather, Set.Day, "overcast", look = SKY),
         Shot(WidgetStyleId.ClockBig, Set.Day, "hot"),
@@ -82,7 +82,7 @@ class ReadmeWidgetShotsTest {
         Shot(WidgetStyleId.ClockCard, Set.Night, "freezing", look = PAPER),
         // Saatlik, haftalık
         Shot(WidgetStyleId.HourlyCurve, Set.Day, "rain", look = SKY),
-        Shot(WidgetStyleId.HourlyIcons, Set.Night, "partly_cloudy"),
+        Shot(WidgetStyleId.HourlyIcons, Set.Night, "partly_cloudy_w"),
         Shot(WidgetStyleId.HourlyRow, Set.Day, "storm", look = GLASS),
         Shot(WidgetStyleId.WeeklyBars, Set.Night, "freezing"),
         Shot(WidgetStyleId.WeeklyColumns, Set.Day, "mostly_clear", look = SKY),

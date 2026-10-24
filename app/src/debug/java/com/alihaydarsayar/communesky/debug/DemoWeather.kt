@@ -97,7 +97,19 @@ object DemoWeather {
         Sky("windy", 2, 21.0, 13.0, 55, 62.0, 310, 5.0, 1000.0, 30000.0, 45, 25, 30, 50, week(2, 1, 3, 61, 2, 1, 0), spread(21.0, 0.0, -1.0, -3.0, -2.0, 0.0, 1.0, 2.0), spread(13.0, 0.0, -1.0, -2.0, -1.0, 0.0, 0.0, 1.0)),
         Sky("hot", 0, 39.0, 27.0, 28, 10.0, 200, 11.0, 1011.0, 24000.0, 0, 0, 0, 0, week(0, 0, 0, 1, 0, 0, 1), spread(39.0, 0.0, 1.0, 2.0, 0.0, -1.0, 1.0, 2.0), spread(27.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)),
         Sky("freezing", 0, -4.0, -11.0, 62, 8.0, 20, 1.0, 1034.0, 30000.0, 5, 0, 0, 5, week(0, 0, 1, 2, 71, 3, 0), spread(-4.0, 0.0, 1.0, 2.0, 1.0, 0.0, -1.0, -2.0), spread(-11.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, -1.0)),
-    ).associateBy { it.key }
+        // Kış (Aralık) için sakin gökyüzleri: aynı hava, kış sıcaklıkları.
+        Sky("clear_w", 0, 6.0, -1.0, 62, 8.0, 20, 1.0, 1030.0, 30000.0, 5, 0, 0, 5, week(0, 0, 1, 2, 3, 0, 0), spread(6.0, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0, 2.0), spread(-1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0)),
+        Sky("mostly_clear_w", 1, 7.0, 1.0, 66, 10.0, 340, 1.0, 1027.0, 28000.0, 20, 15, 5, 25, week(1, 0, 2, 3, 2, 1, 0), spread(7.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 1.0), spread(1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0)),
+        Sky("partly_cloudy_w", 2, 8.0, 3.0, 72, 12.0, 300, 1.0, 1022.0, 22000.0, 55, 30, 40, 40, week(2, 3, 2, 61, 3, 2, 1), spread(8.0, 0.0, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0), spread(3.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0)),
+    ).map { sky -> summerFloor(sky) }.associateBy { it.key }
+
+    /** Yaz gökyüzlerinde en düşük sıcaklık 18°'nin altına inmesin: haftalık çubuklar turuncu tonlarda kalsın (yeşilimsi olmasın). */
+    private fun summerFloor(sky: Sky): Sky {
+        if (sky.key.endsWith("_w") || sky.key in setOf("snow", "sleet", "freezing")) return sky
+        val low = minOf(sky.tMin, sky.weekMin.min())
+        val delta = (18.0 - low).coerceAtLeast(0.0)
+        return if (delta == 0.0) sky else sky.copy(tMax = sky.tMax + delta, tMin = sky.tMin + delta, weekMax = sky.weekMax.map { it + delta }, weekMin = sky.weekMin.map { it + delta })
+    }
 
     private val WET = setOf(51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99)
     private val SNOW = setOf(71, 73, 75, 77, 85, 86)
@@ -211,6 +223,12 @@ object DemoWeather {
             }.let { (it * 10).roundToInt() / 10.0 }
         }
 
+        // Rüzgâr gün içinde dalgalanır (grafik düz çizgi olmasın); şimdi ([now]) tam [Sky.windKmh] olur.
+        fun wind(time: LocalDateTime): Double {
+            val phase = { t: LocalDateTime -> kotlin.math.sin((t.dayOfYear * 24 + t.hour) / 3.7) * 0.28 + kotlin.math.sin((t.dayOfYear * 24 + t.hour) / 1.3) * 0.08 }
+            return ((sky.windKmh * (1 + phase(time) - phase(now))).coerceAtLeast(1.0) * 10).roundToInt() / 10.0
+        }
+
         fun dew(t: Double) = ((t - (100 - sky.humidity) / 5.0) * 10).roundToInt() / 10.0
 
         val start = today.atStartOfDay()
@@ -235,8 +253,8 @@ object DemoWeather {
             apparentTemperature = hours.map { apparent(temp(it)) },
             humidity = hours.map { sky.humidity.toDouble() },
             dewPoint = hours.map { dew(temp(it)) },
-            windSpeed = hours.map { sky.windKmh },
-            windGust = hours.map { sky.windKmh * 1.6 },
+            windSpeed = hours.map { wind(it) },
+            windGust = hours.map { wind(it) * 1.6 },
             windDirection = hours.map { sky.windDir.toDouble() },
             uvIndex = hours.indices.map { uv(hours[it], codes[it]) },
             visibility = hours.map { sky.visibilityM },
@@ -256,8 +274,9 @@ object DemoWeather {
             sunshineDuration = sky.week.mapIndexed { i, c -> (sun[i].second - sun[i].first) * 60.0 * (if (c in setOf(0, 1)) 0.9 else if (c == 2) 0.5 else 0.05) },
             daylightDuration = sun.map { (it.second - it.first) * 60.0 },
             precipitationSum = sky.week.map { rainMm(it) * (if (isWet(it) || isSnow(it)) 8 else 0) },
-            windSpeedMax = sky.week.map { sky.windKmh * 1.2 },
-            windGustMax = sky.week.map { sky.windKmh * 1.8 },
+            // Günlük en yüksek rüzgâr her gün aynı olmasın.
+            windSpeedMax = sky.week.indices.map { ((sky.windKmh * 1.2 * listOf(1.0, 0.85, 1.1, 0.7, 0.9, 1.15, 0.8)[it]) * 10).roundToInt() / 10.0 },
+            windGustMax = sky.week.indices.map { ((sky.windKmh * 1.8 * listOf(1.0, 0.85, 1.1, 0.7, 0.9, 1.15, 0.8)[it]) * 10).roundToInt() / 10.0 },
             apparentMax = sky.weekMax.map { apparent(it) },
             apparentMin = sky.weekMin.map { apparent(it) },
             humidityMean = sky.week.map { sky.humidity.toDouble() },
@@ -371,6 +390,8 @@ object DemoWeather {
         val db = point.database()
         val json = point.json()
         db.clearAllTables()
+        // Yerlerin kimliği her seferinde 1'den başlasın (görseller "open_place 1" ile açılır).
+        db.openHelper.writableDatabase.execSQL("DELETE FROM sqlite_sequence")
         var order = 0
         for (entry in entries) {
             val zone = ZoneId.of(entry.place.zone)
@@ -435,14 +456,15 @@ object DemoWeather {
 /** adb ile örnek veriyi yazar (bkz. [DemoWeather]). */
 class DemoReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val place = DemoWeather.place(intent.getStringExtra("place") ?: "besiktas")
+        // "name": yerin görünen adı (dile göre, örn. Londra); verilmezse varsayılan.
+        val place = DemoWeather.place(intent.getStringExtra("place") ?: "besiktas").let { base -> intent.getStringExtra("name")?.let { base.copy(name = it) } ?: base }
         val sky = DemoWeather.SKIES.getValue(intent.getStringExtra("sky") ?: "clear")
         val role = when (intent.getStringExtra("role")) {
             "home" -> DemoWeather.Role.Home
             "saved" -> DemoWeather.Role.Saved
             else -> DemoWeather.Role.Device
         }
-        val aqi = if (intent.hasExtra("air")) intent.getIntExtra("air", 28) else 28
+        val aqi = if (intent.hasExtra("air")) intent.getIntExtra("air", 28).takeIf { it >= 0 } else 28
         val alert = intent.getStringExtra("alert") == "yellow"
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
