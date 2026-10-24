@@ -19,6 +19,8 @@ import java.net.UnknownHostException
  *       --es mode offline|slow|cut|bad|error|none [--es host mgm|open-meteo|aviationweather|photon|all] [--ei ms 12000]
  */
 object DebugNetwork {
+    const val DEMO_OFFLINE_FLAG = "/data/local/tmp/communesky_demo_offline"
+
     enum class Mode { None, Offline, Slow, Cut, Bad, Error }
 
     @Volatile var mode: Mode = Mode.None
@@ -30,6 +32,19 @@ object DebugNetwork {
     fun install(builder: OkHttpClient.Builder) {
         builder.addInterceptor { chain ->
             val request = chain.request()
+            // Örnek veri görselleri için (bkz. DemoWeather): bu dosya varken internet hiç yokmuş gibi davranılır; uygulama
+            // yeniden başlasa da sürer (mode yalnız bellekte durur). Dosyayı `adb shell rm` ile silmek eski haline getirir.
+            val demo = java.io.File(DEMO_OFFLINE_FLAG)
+            if (demo.exists()) {
+                // Tahmin istekleri aynı örnek veriyle yanıtlanır (yenileme "başarılı" olur, ekranda hata notu çıkmaz); diğerleri başarısız olur.
+                DemoWeather.respond(request.url, demo.readText())?.let { body ->
+                    return@addInterceptor Response.Builder()
+                        .request(request).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                        .body(body.toResponseBody("application/json".toMediaType()))
+                        .build()
+                }
+                throw UnknownHostException("debug: örnek veri, internet yok (${request.url.host})")
+            }
             if (mode == Mode.None || !matches(request.url.toString())) return@addInterceptor chain.proceed(request)
             when (mode) {
                 Mode.Offline -> throw UnknownHostException("debug: internet yok (${request.url.host})")

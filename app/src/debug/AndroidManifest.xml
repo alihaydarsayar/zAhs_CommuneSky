@@ -10,6 +10,14 @@
                 <action android:name="com.alihaydarsayar.communesky.debug.FAULT" />
             </intent-filter>
         </receiver>
+        <!-- Yalnız debug sürümünde: README ve mağaza görselleri için örnek hava durumu (bkz. DemoWeather). Release'de yoktur. -->
+        <receiver
+            android:name=".debug.DemoReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.alihaydarsayar.communesky.debug.DEMO" />
+            </intent-filter>
+        </receiver>
         <!-- Yalnız debug sürümünde: doğruluk kayıtlarını (CSV) paylaş menüsüne vermek için. Release'de yoktur. -->
         <provider
             android:name="androidx.core.content.FileProvider"
