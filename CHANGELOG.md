@@ -5,7 +5,6 @@ What's new in each version of Commune Sky.
 ## 1.5.6 — October 24, 2026
 
 - Digital radial clock widget: the clock sits exactly in the middle of the widget (the colon is centred), with the date on the left and the weather on the right at the same width; on wide widgets they sit near the edges and grow with the clock, on wide but low widgets the digits widen to use the room; the weather pill is smaller, the date no longer gets cut at the edge, the tick marks around the edge are shorter and the same length all the way round, the place name, conditions and high/low you switch on show when there is room, and a transparent weather pill no longer hides its text.
-
 - Moving between screens is smooth again: pressing back from Settings and other screens no longer shrinks the screen and leaves it hanging; screens now slide and fade in and out.
 
 ## 1.5.5 — October 16, 2026
