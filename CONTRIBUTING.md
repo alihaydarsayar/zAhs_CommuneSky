@@ -13,7 +13,7 @@ Thanks for helping. A few rules keep the app honest, the store listing correct a
 
 ## Ways to help
 
-- **Report a bug** with the [bug report form](https://github.com/alihaydarsayar/zAhs_CommuneSky/issues/new?template=bug_report.md). Screenshots help most; for a widget problem, add the report from **Settings › My widgets › Copy widget diagnostics** (it contains only sizes and style names — no place or weather data — and is built on the spot, nothing is stored).
+- **Report a bug** with the [bug report form](https://github.com/alihaydarsayar/zAhs_CommuneSky/issues/new?template=bug_report.md). Screenshots help most; for a widget problem, say which widget and style, its size and your launcher.
 - **Suggest an idea** with the [feature request form](https://github.com/alihaydarsayar/zAhs_CommuneSky/issues/new?template=feature_request.md).
 - **Translate or fix wording.** The app is in English, Turkish and French.
 - **Send a pull request.** For anything bigger than a small fix, open an issue first so we can agree on the direction.

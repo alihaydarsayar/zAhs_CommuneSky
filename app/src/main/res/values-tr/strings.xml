@@ -979,9 +979,6 @@
     <string name="moon_thirty_days">30 gün</string>
     <string name="what_moon">Ay kendi başına parlamaz; güneşin aydınlattığı yarısını görürüz. Dünya\'nın çevresinde yaklaşık 29 buçuk günde dönerken o aydınlık yarının önce daha çoğunu, sonra daha azını görürüz: görünmeyen yeni aydan ilk dördüne, dolunaya ve yeniden başa. Ay her gün yaklaşık 50 dakika daha geç doğar. Dolunay sıralarında bütün gece gökyüzündedir ve ışığı sönük yıldızları gizler; yeni ay sıralarında gökyüzü en karanlık hâlindedir. Bu sayfadaki her şey telefonunda hesaplanır.</string>
     <string name="today_short">Bugün</string>
-    <string name="widget_diagnostics_copy">Tanılama bilgisini kopyala</string>
-    <string name="widget_diagnostics_hint">Bir widget ana ekranda yanlış görünürse buraya dokun ve kopyalanan metni geliştiriciye gönder. Yalnız ölçüler ve stil adları vardır: yer ya da konum yoktur. Uygulama hiçbir şey göndermez.</string>
-    <string name="widget_diagnostics_copied">Kopyalandı. Geliştiriciye yazacağın mesaja yapıştır.</string>
     <string name="tip_umbrella_now">Mutlaka al: şu an yağıyor</string>
     <string name="tip_umbrella_thunder">Mutlaka al: gök gürültülü sağanak bekleniyor</string>
     <string name="tip_stargazing_rain">Bu gece yağış bekleniyor</string>

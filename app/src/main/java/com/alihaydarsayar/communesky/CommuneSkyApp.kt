@@ -65,7 +65,7 @@ class CommuneSkyApp : Application(), Configuration.Provider {
             com.alihaydarsayar.communesky.work.NotificationChannels.ensure(this@CommuneSkyApp)
         }
         // Eski sürümlerin tanılama için diske yazdığı widget çizim kaydı artık tutulmaz.
-        appScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.alihaydarsayar.communesky.widget.WidgetDiagnostics.purgeStored(this@CommuneSkyApp) }
+        appScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.alihaydarsayar.communesky.widget.LegacyDiagnostics.purgeStored(this@CommuneSkyApp) }
         // Saat biçimi tercihi ilk ekrandan önce arka planda okunur; ana iş parçacığı diski beklemesin.
         appScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.alihaydarsayar.communesky.widget.WidgetLanguage.warmUp(this@CommuneSkyApp) }
         // Birim, Ev ya da kayıtlı yerler değişince widget'lar hemen yeni hale geçsin

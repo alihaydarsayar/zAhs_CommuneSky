@@ -90,79 +90,11 @@ object WidgetVariants {
     fun isLandscapeNow(context: Context): Boolean = context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 }
 
-/**
- * Tanılama: ana ekrandaki widget'ların launcher'dan gelen ölçüleri, kayıtlı stilleri ve son çizimleri. Yalnız
- * sayılar ve stil adları; yer adı, konum ya da hava verisi yazılmaz. Ayarlar › Widget'larım'dan panoya kopyalanır;
- * bir widget yanlış boyutta ya da yanlış stille göründüğünde nedenini bulmak içindir. Hiçbir yere gönderilmez ve diske yazılmaz: son çizimler yalnız bellekte durur.
- */
-object WidgetDiagnostics {
-    /** 1.5.7'ye kadar son çizimler cihaza yazılıyordu; o dosya silinir (bkz. [purgeStored]). */
+/** 1.5.7'ye kadar uygulama widget çizim kaydını cihaza yazıyordu; o dosya artık silinir. */
+object LegacyDiagnostics {
     private const val LEGACY_PREFS = "widget_diagnostics"
-    private const val MAX_DRAWS = 60
 
-    /** Son çizimler yalnız bellekte tutulur (diske yazılmaz); uygulama kapanınca kaybolur. */
-    private val draws = ArrayDeque<String>()
-
-    /** Eski sürümlerin diske yazdığı çizim kaydını siler. */
     fun purgeStored(context: Context) {
         runCatching { context.applicationContext.deleteSharedPreferences(LEGACY_PREFS) }
     }
-
-    /** Bir çizimi bellekte kaydeder: hangi widget, hangi stil, launcher'ın verdiği ölçü ve yerleşimde kullanılan ölçü. */
-    fun drawn(context: Context, appWidgetId: Int?, kind: WidgetKind, style: WidgetStyleId, variant: DpSize, layout: DpSize, compact: Boolean) {
-        if (appWidgetId == null) return
-        val line = "%tT #%d %s/%s cizim=%.0fx%.0f yerlesim=%.0fx%.0f%s %s".format(
-            java.util.Locale.ROOT, java.util.Date(), appWidgetId, kind.name, style.name,
-            variant.width.value, variant.height.value, layout.width.value, layout.height.value,
-            if (compact) " yedek" else "", if (WidgetVariants.isLandscapeNow(context)) "yatay" else "dikey",
-        )
-        // Listede her farklı çizimin yalnız en son zamanı kalır; aynı çizim art arda tekrarlanırsa liste dolmaz.
-        val content = line.substringAfter(' ')
-        synchronized(draws) {
-            if (draws.lastOrNull()?.substringAfter(' ') == content) return
-            draws.removeAll { it.substringAfter(' ') == content }
-            draws.addLast(line)
-            while (draws.size > MAX_DRAWS) draws.removeFirst()
-        }
-    }
-
-    suspend fun report(context: Context): String = buildString {
-        val manager = AppWidgetManager.getInstance(context)
-        val store = WidgetConfigStore.get(context)
-        val metrics = context.resources.displayMetrics
-        val configuration = context.resources.configuration
-        val version = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull()
-        appendLine("Commune Sky $version · Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}) · ${Build.MANUFACTURER} ${Build.MODEL}")
-        appendLine(
-            "ekran=${configuration.screenWidthDp}x${configuration.screenHeightDp}dp yogunluk=${metrics.density} yazi=${configuration.fontScale} " +
-                "yon=${if (WidgetVariants.isLandscapeNow(context)) "yatay" else "dikey"} en_kisa_kenar=${configuration.smallestScreenWidthDp}dp ana_ekran=${launchers(context)}",
-        )
-        for (kind in WidgetKind.entries) {
-            for (id in manager.getAppWidgetIds(android.content.ComponentName(context, kind.receiverClass))) {
-                val options = manager.getAppWidgetOptions(id)
-                fun int(key: String) = if (options.containsKey(key)) options.getInt(key).toString() else "-"
-                val sizes = if (Build.VERSION.SDK_INT >= 31) {
-                    @Suppress("DEPRECATION")
-                    options.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
-                        ?.joinToString(" ") { "%.0fx%.0f".format(java.util.Locale.ROOT, it.width, it.height) } ?: "-"
-                } else {
-                    "-"
-                }
-                val style = store.get(id, kind).style.styleId(kind).name
-                appendLine(
-                    "#$id ${kind.name}/$style kayit=${store.recordKind(id)} " +
-                        "minW=${int(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)} maxW=${int(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)} " +
-                        "minH=${int(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)} maxH=${int(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)} olculer=[$sizes]",
-                )
-            }
-        }
-        appendLine("son cizimler:")
-        append(synchronized(draws) { draws.joinToString("\n") })
-    }
-
-    private fun launchers(context: Context): String = runCatching {
-        val home = android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_HOME)
-        context.packageManager.queryIntentActivities(home, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
-            .map { it.activityInfo.packageName }.filter { it != "com.android.settings" }.distinct().joinToString("+")
-    }.getOrNull()?.ifEmpty { null } ?: "?"
 }

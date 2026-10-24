@@ -384,7 +384,6 @@ fun WidgetRoot(kind: WidgetKind, config: WidgetConfig, input: WidgetInput, wallp
     val variant = LocalSize.current
     val real = WidgetScale.real(styleId, WidgetVariants.layoutSize(variant, LocalWidgetBounds.current, WidgetVariants.isPortrait(context)))
     val grow = WidgetScale.grow(styleId, real)
-    WidgetDiagnostics.drawn(context, LocalAppWidgetId.current, kind, styleId, variant, real, WidgetScale.compact(styleId, real))
     // Işınsal saatin resimleri launcher'ın sınırını aşacak kadar büyükse (çok büyük widget) widget boş kalmasın:
     // sade yedek düzen çizilir.
     val tooHeavy = styleId == WidgetStyleId.ClockRadial && run {

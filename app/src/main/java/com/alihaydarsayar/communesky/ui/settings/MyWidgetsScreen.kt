@@ -111,7 +111,6 @@ fun MyWidgetsScreen(onBack: () -> Unit) {
                     )
                 }
             }
-            item(key = "diagnostics") { DiagnosticsRow() }
             items(current.widgets, key = { it.id }) { widget ->
                 GlassCard(
                     Modifier
@@ -141,37 +140,6 @@ fun MyWidgetsScreen(onBack: () -> Unit) {
                 }
             }
         }
-    }
-}
-
-/**
- * Tanılama bilgisini panoya kopyalar: launcher'ın bildirdiği widget ölçüleri, kayıtlı stiller ve son çizimler.
- * Yalnız sayılar ve stil adları; yer adı ya da konum içermez ve hiçbir yere gönderilmez.
- */
-@Composable
-private fun DiagnosticsRow() {
-    val context = LocalContext.current
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var copied by remember { mutableStateOf(false) }
-    GlassCard(
-        Modifier
-            .fillMaxWidth()
-            .clickable(role = Role.Button) {
-                scope.launch {
-                    val report = com.alihaydarsayar.communesky.widget.WidgetDiagnostics.report(context.applicationContext)
-                    val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
-                    clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Commune Sky widgets", report))
-                    copied = true
-                }
-            },
-    ) {
-        Text(stringResource(R.string.widget_diagnostics_copy), color = TextPrimary, style = MaterialTheme.typography.titleSmall)
-        Spacer(Modifier.size(4.dp))
-        Text(
-            stringResource(if (copied) R.string.widget_diagnostics_copied else R.string.widget_diagnostics_hint),
-            color = TextSecondary,
-            style = MaterialTheme.typography.bodySmall,
-        )
     }
 }
 

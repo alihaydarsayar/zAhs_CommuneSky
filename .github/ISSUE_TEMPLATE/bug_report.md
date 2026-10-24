@@ -22,6 +22,6 @@ A short description, and a screenshot or screen recording if you can.
 - Home screen app (launcher), if it is about a widget:
 
 **Widget problem?**
-Open Settings › My widgets › *Copy widget diagnostics* and paste the text here. It holds only sizes and style names — no places, no location.
+Tell us which widget and style, its size on the home screen, and your launcher (home screen app). A screenshot of the widget helps most.
 
 Please do not post your exact location.

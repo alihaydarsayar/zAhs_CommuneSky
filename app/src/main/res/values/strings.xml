@@ -986,9 +986,6 @@
     <string name="moon_thirty_days">30 days</string>
     <string name="what_moon">The moon does not shine by itself; we see the half that the sun lights up. As it circles the Earth in about 29 and a half days, we see more and then less of that lit half: from the new moon, which is invisible, through the first quarter to the full moon and back. The moon rises about 50 minutes later each day. Around the full moon it is up all night and its light hides faint stars; around the new moon the sky is at its darkest. Everything on this page is calculated on your phone.</string>
     <string name="today_short">Today</string>
-    <string name="widget_diagnostics_copy">Copy widget diagnostics</string>
-    <string name="widget_diagnostics_hint">If a widget looks wrong on your home screen, tap here and send the copied text to the developer. It holds only sizes and style names: no places, no location. Nothing is sent by the app.</string>
-    <string name="widget_diagnostics_copied">Copied. Paste it into a message to the developer.</string>
     <string name="tip_umbrella_now">Take one for sure: it is raining now</string>
     <string name="tip_umbrella_thunder">Take one for sure: thunderstorms are expected</string>
     <string name="tip_stargazing_rain">Rain is expected tonight</string>
