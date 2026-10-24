@@ -1,36 +1,49 @@
 # Changelog
 
-What's new in each version of Commune Sky.
+What's new in each version of Commune Sky, newest first. Dates are the day a version was uploaded to Google Play; "in testing" means it only reached testers.
 
 ## 1.5.8 — October 25, 2026
 
-- Privacy: the app no longer keeps a log of widget drawings on your phone for troubleshooting (it is deleted when you update). The troubleshooting report under Settings › My widgets is now built on the spot and stores nothing.
+### Privacy
+
+- The app no longer keeps a log of widget drawings on your phone for troubleshooting (it is deleted when you update). The troubleshooting report under Settings › My widgets is now built on the spot and stores nothing.
 
 ## 1.5.7 — October 24, 2026
+
+### Improved
 
 - Screen transitions redesigned: the old screen fades and shrinks slightly while the new one slides and fades in just after it, so the two screens no longer show through each other; going back does the reverse, and the system back gesture previews it again as you swipe, without the two screens showing on top of each other.
 
 ## 1.5.6 — October 24, 2026
+
+### Improved
 
 - Digital radial clock widget: the clock sits exactly in the middle of the widget (the colon is centred), with the date on the left and the weather on the right at the same width; on wide widgets they sit near the edges and grow with the clock, on wide but low widgets the digits widen to use the room; the weather pill is smaller, the date no longer gets cut at the edge, the tick marks around the edge are shorter and the same length all the way round, the place name, conditions and high/low you switch on show when there is room, and a transparent weather pill no longer hides its text.
 - Moving between screens is smooth again: pressing back from Settings and other screens no longer shrinks the screen and leaves it hanging; screens now slide and fade in and out.
 
 ## 1.5.5 — October 16, 2026
 
+### Improved
+
 - Faster first screen on a busy phone: the app language and clock format are no longer read from storage while the first screen is being drawn.
-- Fixed: a short loss of connection no longer drops the station reading that is only minutes old; the temperature and the station line stay until the reading is really out of date, instead of jumping to the forecast.
-- Fixed: outside Türkiye, "My location" is named after the town (for example Liverpool) instead of the county or department (Merseyside, Hauts-de-Seine).
-- Fixed: widgets on the home screen now switch to the new language (and 12/24-hour clock) right away when you change it in Settings, instead of staying in the old language until their next full redraw.
-- Fixed: a wallpaper, theme or text-size change right after the app was used could be missed by the widgets that were still drawing; they now always redraw.
 - Settings: with a very large text or display size the options of a choice (language, wind speed, clock format) are shown one under the other instead of being cut to "Tür…" or "km/…".
-- Notification category names in Android settings now follow the app language right away.
-- Warnings now end by the warned place's clock, not the phone's, when the phone is in another time zone.
 - Small buttons and links (the home screen's list and settings buttons, option pills, the clear-search cross, tab chips and the like) now have at least a 44 dp touch area, without looking any different.
 - Moving between screens (Settings, Places, details) is smoother: the new screen slides in and the old one fades away quickly, and the back gesture now shows the previous screen as you swipe.
 
+### Fixed
+
+- A short loss of connection no longer drops the station reading that is only minutes old; the temperature and the station line stay until the reading is really out of date, instead of jumping to the forecast.
+- Outside Türkiye, "My location" is named after the town (for example Liverpool) instead of the county or department (Merseyside, Hauts-de-Seine).
+- Widgets on the home screen now switch to the new language (and 12/24-hour clock) right away when you change it in Settings, instead of staying in the old language until their next full redraw.
+- A wallpaper, theme or text-size change right after the app was used could be missed by the widgets that were still drawing; they now always redraw.
+- Notification category names in Android settings now follow the app language right away.
+- Warnings now end by the warned place's clock, not the phone's, when the phone is in another time zone.
+
 ## 1.5.4 — in testing
 
-- Fixed: home-screen widgets (clocks, for example) could suddenly turn into the Home & location widget after the app had been used or the phone's time changed. Each widget now keeps its own type.
+### Fixed
+
+- Home-screen widgets (clocks, for example) could suddenly turn into the Home & location widget after the app had been used or the phone's time changed. Each widget now keeps its own type.
 - Tapping a clock widget now finds the phone's clock app on more phones (some clock apps do not answer Android's standard "show alarms" request); if none is found it still opens Commune Sky.
 - Widgets: the dark "Night" look and the "Black" swatch in the colour picker are now truly black instead of a very dark grey.
 - Widgets: the radial clock and the text lines in other widgets now leave a little more room, so on phones with a slightly wider system font nothing is cut off at the edge (the day name, the weather pill, high and low).
