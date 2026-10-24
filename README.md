@@ -1,37 +1,101 @@
-# Commune Sky
+<h1 align="center">Commune Sky</h1>
 
-**The sky belongs to everyone.** Commune Sky is a fast, beautiful, ad-free weather app for Android. No accounts, no trackers, no ads — just the weather, drawn with care.
+<p align="center">
+  <b>The sky belongs to everyone.</b><br>
+  A fast, beautiful, ad-free weather app for Android.<br>
+  No accounts, no trackers, no ads — just the weather, drawn with care.
+</p>
+
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.alihaydarsayar.communesky"><img alt="Get it on Google Play" src="https://img.shields.io/badge/Google%20Play-Commune%20Sky-3DDC84?logo=googleplay&logoColor=white"></a>
+  <a href="LICENSE"><img alt="License: GPL v3" src="https://img.shields.io/badge/license-GPL--3.0-blue"></a>
+  <img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white">
+  <img alt="Kotlin and Jetpack Compose" src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white">
+  <img alt="Languages: English, Turkish, French" src="https://img.shields.io/badge/languages-EN%20%C2%B7%20TR%20%C2%B7%20FR-lightgrey">
+</p>
+
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#widgets">Widgets</a> ·
+  <a href="#notifications">Notifications</a> ·
+  <a href="#privacy">Privacy</a> ·
+  <a href="#building">Building</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="README.tr.md">Türkçe</a>
+</p>
 
 > *Commune* — a community that shares what it has, and *to commune* — to feel close to something larger than yourself. Both fit the sky.
 
-<!-- Screenshots: add images to docs/screenshots/ and uncomment
 <p align="center">
-  <img src="docs/screenshots/home.png" width="260">
-  <img src="docs/screenshots/forecast.png" width="260">
-  <img src="docs/screenshots/widget.png" width="260">
+  <img src="docs/screenshots/home.jpg" width="24%" alt="Home screen at night">
+  <img src="docs/screenshots/hourly.jpg" width="24%" alt="Hourly forecast and air quality">
+  <img src="docs/screenshots/today.jpg" width="24%" alt="What to wear and everyday tips">
+  <img src="docs/screenshots/details.jpg" width="24%" alt="Detail tiles: wind, humidity, feels like">
 </p>
--->
+
+## A sky that lives
+
+The background is not a picture. It is drawn on your phone and follows the weather and the time of day: sun rays, a moon with its real phase, stars, drifting clouds, rain, snow, fog and lightning, with sunrise and sunset colours in between.
+
+<p align="center">
+  <img src="docs/screenshots/skies.jpg" alt="Clear day, sunset, cloudy, rain, storm, snow, fog, crescent and full moon, rainy night, snowy night, cloudy night">
+</p>
 
 ## Features
 
-- **A living sky** — an animated background that follows the weather and the time of day: sun, moon and stars, drifting clouds, rain, snow, fog and lightning, with sunrise and sunset colours.
-- **Hourly and 7-day forecast** — a temperature curve for the next 24 hours, temperature-coloured daily range bars, and precipitation chance on every row.
-- **Details at a glance** — feels-like, humidity, wind with compass, UV index, sun path, visibility, pressure, precipitation and cloud cover.
-- **For today** — what to wear in the morning, at midday and in the evening, worked out on your phone from the feels-like temperature, rain, wind and UV, and adapting to you; everyday tips (umbrella, sunscreen, drying laundry, the best two hours for a run, car wash, stargazing); how today compares with yesterday; an optional morning summary notification.
-- **Detail pages** — tap a tile for today's chart hour by hour, a comparison with yesterday, the week ahead and a plain explanation: feels like, wind, humidity, UV, visibility, pressure, cloud, precipitation and the sun.
-- **Air quality and the moon** — the European air quality index with pollutants and health advice (CAMS), and a moon page calculated on your phone: phase, moonrise and moonset, the next full and new moon.
-- **National forecasts and warnings** — in Türkiye, forecasts, weather warnings and seasonal normals from MGM; in France and the United Kingdom, the Météo-France and Met Office models. The app measures how accurate each source is at your place and picks the closest one by itself.
-- **Honest skies** — clear/cloudy conditions are recomputed from sunshine duration and cloud layers, so thin high cirrus doesn't turn a sunny day "overcast".
-- **Offline-first** — the last forecast appears instantly from the local cache, then refreshes in the background. Pull to refresh any time.
-- **Your places** — search any city, district or neighbourhood worldwide, save it, drag to reorder and mark one as Home. Swipe between places on the home screen.
-- **Checked against real measurements** — current conditions are compared with the nearest weather station (MGM in Türkiye, airport reports elsewhere). In Türkiye the current temperature is worked out from the MGM stations and airports within 25 km; elsewhere a nearby station sets the current temperature and sky, and a farther one warns about storms on the way.
-- **Home screen widgets** — ten widgets with more than 30 styles (clocks, hourly curve, weekly range bars, rain in the next two hours, details and more). A "Home & location" widget knows whether you are home, nearby or away, worked out on your phone. Each widget has its own place, background, transparency, colors, corners and text size, with a live preview when you add it.
-- **Your location, if you want it** — approximate location shows your district; optional precise location shows your neighbourhood and picks the closest station. Without permission it shows your saved places, or Istanbul.
-- **Units and theme** — °C or °F, four wind units, light or dark.
-- **English, Turkish and French**, with per-app language support.
-- **Fast** — R8-optimised release build, Baseline Profiles for quick start-up, and Compose stability tuning for smooth animations.
+| | |
+|---|---|
+| **Hourly and 7-day forecast** | A temperature curve for the next 24 hours, temperature-coloured daily range bars, and precipitation chance on every row. |
+| **Details at a glance** | Feels-like, humidity, wind with compass, UV index, sun path, visibility, pressure, precipitation and cloud cover. Tap a tile for today's chart hour by hour, a comparison with yesterday, the week ahead and a plain explanation. |
+| **For today** | What to wear in the morning, at midday and in the evening, worked out on your phone from the feels-like temperature, rain, wind and UV, and adapting to you. Everyday tips: umbrella, sunscreen, drying laundry, the best two hours for a run, car wash, stargazing. How today compares with yesterday. |
+| **Air quality and the moon** | The European air quality index with pollutants and health advice (CAMS), and a moon page calculated on your phone: phase, moonrise and moonset, the next full and new moon. |
+| **National forecasts and warnings** | In Türkiye: forecasts, weather warnings and seasonal normals from MGM. In France and the United Kingdom: the Météo-France and Met Office models. The app measures how accurate each source is at your place and picks the closest one by itself. |
+| **Honest skies** | Clear and cloudy conditions are recomputed from sunshine duration and cloud layers, so thin high cirrus doesn't turn a sunny day "overcast". |
+| **Checked against real measurements** | Current conditions are compared with the nearest weather station (MGM in Türkiye, airport reports elsewhere). In Türkiye the current temperature is worked out from the MGM stations and airports within 25 km; elsewhere a nearby station sets the current temperature and sky, and a farther one warns about storms on the way. |
+| **Offline-first** | The last forecast appears instantly from the local cache, then refreshes in the background. Pull to refresh any time. A short loss of connection never throws away a recent reading. |
+| **Your places** | Search any city, district or neighbourhood worldwide, save it, drag to reorder and mark one as Home. Swipe between places on the home screen. |
+| **Your location, if you want it** | Approximate location shows your district; optional precise location shows your neighbourhood and picks the closest station. Without permission it shows your saved places, or Istanbul. |
+| **Units, theme, language** | °C or °F, four wind units, 12 or 24-hour clock, light or dark. English, Turkish and French, with per-app language support. |
+| **Smooth and accessible** | Screen transitions that fade through the sky, the system back gesture preview, 44 dp touch targets, large text and display sizes, TalkBack labels. |
+| **Fast** | R8-optimised release build, Baseline Profiles for quick start-up, and Compose stability tuning for smooth animations. |
 
-See the [changelog](CHANGELOG.md) for what's new in each version. Contributors: please read [CONTRIBUTING.md](CONTRIBUTING.md).
+<p align="center">
+  <img src="docs/screenshots/week.jpg" width="24%" alt="7-day forecast with range bars">
+  <img src="docs/screenshots/wear.jpg" width="24%" alt="Wear suggestion and everyday tips">
+  <img src="docs/screenshots/settings.jpg" width="24%" alt="Settings">
+  <img src="docs/screenshots/notifications.jpg" width="24%" alt="Notification settings">
+</p>
+
+## Widgets
+
+Ten widgets with 39 styles. Each widget has its own place, background, transparency, colours, corners and text size, with a live preview while you set it up. A "Home & location" widget knows whether you are home, nearby or away, worked out on your phone.
+
+<p align="center">
+  <img src="docs/screenshots/widgets.jpg" alt="Clocks, home and location, hourly curve, weekly range bars, current weather, places, rain in the next two hours, details and today widgets">
+</p>
+
+| Widget | What it shows |
+|---|---|
+| **Clock** | 14 styles: a digital radial clock with a lit seconds ring, analog dials, a bold clock, a clock with the weather and more. Tapping the clock opens your clock app. |
+| **Home & location** | Your home and where you are now, side by side when you are away. |
+| **Hourly** | A temperature curve, icons or a single row. |
+| **Weekly** | Range bars, columns or a list. |
+| **Now** | Small current-weather widgets, from classic to minimal. |
+| **Text** | One line or one number for a narrow spot. |
+| **Places** | Your saved places in columns or a list. |
+| **Rain** | Rain (or snow) in the next two hours, as bars or a sentence. |
+| **Details** | Feels like, humidity, wind, UV, pressure and visibility, or the sun's path. |
+| **Today** | What to wear and the everyday tips. |
+
+## Notifications
+
+Off until you turn them on; the app asks for the notification permission only then.
+
+- **Weather warnings** from MGM — with the warning's colour, the place, what is expected and when, and a *Details* button. Choose which levels (yellow and up, orange and up, red only) and which places (where you are, home or all saved places). A raised warning notifies again and the notification goes away when the warning is lifted.
+- **Morning summary** — the day's range and its main event, morning / noon / evening at a glance, plus an optional evening summary about tomorrow.
+- **Air quality** — when the air turns poor at one of your places, at most once a day.
+- **Quiet hours** — silence everything at night (red warnings can still sound). Every kind of notification has its own sound and silent channels in Android's settings, named in the app's language.
 
 ## Privacy
 
@@ -43,7 +107,7 @@ Commune Sky has no ads, no analytics and no accounts, and the developer never re
 - **NOAA Aviation Weather Center** (airport reports, everywhere): an area of about 50 km around the place
 - **Android Geocoder** (district and neighbourhood names, and searches as a last resort): your coordinates; the search text
 
-Forecasts, saved places, measurements and settings are stored only on your device. The full policy, in English and Turkish, is at [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/).
+Forecasts, saved places, measurements and settings are stored only on your device; nothing is kept for troubleshooting. The full policy, in English and Turkish, is at [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/).
 
 ## Building
 
@@ -58,21 +122,25 @@ Open the folder in Android Studio, let Gradle sync, then press **Run**. No API k
 To build a release:
 
 ```bash
-./gradlew :app:assembleRelease
+./gradlew :app:assembleRelease   # APK
+./gradlew :app:bundleRelease     # AAB for Google Play (needs your own signing key)
 ```
 
-## Testing
+### Testing
 
 ```bash
 ./gradlew :app:testDebugUnitTest          # unit tests (JVM)
+./gradlew :app:lintDebug                  # lint
 ./gradlew :app:connectedDebugAndroidTest  # on-device tests (needs a device or emulator)
 ```
 
-`WidgetSizeAuditTest` renders every widget style at many launcher sizes and takes about 20 minutes, so the default on-device run skips it (it is marked `@SlowAudit`). Run it on its own with:
+`WidgetSizeAuditTest` renders every widget style at many launcher sizes and takes about 40 minutes, so the default on-device run skips it (it is marked `@SlowAudit`). Run it on its own with:
 
 ```bash
 ./gradlew :app:connectedDebugAndroidTest -PslowAudit -Pandroid.testInstrumentationRunnerArguments.class=com.alihaydarsayar.communesky.widget.WidgetSizeAuditTest
 ```
+
+The debug build also has helpers that are not compiled into release builds: a fake network failure, fake weather warnings and a button to send the summaries at once. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Tech stack
 
@@ -86,7 +154,7 @@ Kotlin · Jetpack Compose · Material 3 · MVVM · Hilt · Retrofit + kotlinx.se
 - In France, [Météo-France](https://meteofrance.com/) models (AROME, ARPEGE; [Etalab Open Licence 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/)); in the United Kingdom and Ireland, [Met Office](https://www.metoffice.gov.uk/) models (UKV, global; © Crown copyright, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)); both through Open-Meteo.
 - Air quality from the [Copernicus Atmosphere Monitoring Service (CAMS)](https://atmosphere.copernicus.eu/) through the [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - Airport reports (METAR) from the [NOAA Aviation Weather Center](https://aviationweather.gov/).
-- Place search by [Photon](https://photon.komoot.io/) (komoot), using data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, and [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api) (GeoNames).
+- Place search by [Photon](https://photon.komoot.io/) (komoot), using data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, and [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api).
 - [Outfit](https://github.com/Outfitio/Outfit-Fonts) typeface, licensed under the [SIL Open Font License 1.1](third_party/Outfit-OFL.txt).
 - Clock digits derived from Bebas Neue (SIL Open Font License 1.1), see [third_party/BebasNeue-OFL.txt](third_party/BebasNeue-OFL.txt).
 
