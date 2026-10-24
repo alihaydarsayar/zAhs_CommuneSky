@@ -4,7 +4,7 @@ What's new in each version of Commune Sky.
 
 ## 1.5.7 — October 24, 2026
 
-- Screen transitions redesigned: the old screen fades and shrinks slightly while the new one slides and fades in just after it, so the two screens no longer show through each other; going back does the reverse, and the system back gesture previews it again as you swipe.
+- Screen transitions redesigned: the old screen fades and shrinks slightly while the new one slides and fades in just after it, so the two screens no longer show through each other; going back does the reverse, and the system back gesture previews it again as you swipe, without the two screens showing on top of each other.
 
 ## 1.5.6 — October 24, 2026
 

@@ -178,6 +178,12 @@ private object ScreenMotion {
         androidx.compose.animation.scaleIn(move(), initialScale = 0.98f) + androidx.compose.animation.fadeIn(appear())
     val popExit = androidx.compose.animation.slideOutHorizontally(move()) { it / 12 } +
         androidx.compose.animation.scaleOut(move(), targetScale = 0.94f) + androidx.compose.animation.fadeOut(vanish(160))
+
+    // Sistemin geri hareketi (parmakla): giden ekran küçülüp erkenden solar; önceki ekran ancak hareketin sonuna doğru
+    // belirir. Böylece hareket ortasında iki saydam ekran üst üste görünmez.
+    val predictiveExit = androidx.compose.animation.scaleOut(move(), targetScale = 0.92f) + androidx.compose.animation.fadeOut(vanish(150))
+    val predictiveEnter = androidx.compose.animation.scaleIn(move(), initialScale = 0.98f) +
+        androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(120, delayMillis = 200, easing = androidx.compose.animation.core.LinearOutSlowInEasing))
 }
 
 @Composable
@@ -246,6 +252,8 @@ private fun CommuneSkyApp(
                 exitTransition = { ScreenMotion.exit },
                 popEnterTransition = { ScreenMotion.popEnter },
                 popExitTransition = { ScreenMotion.popExit },
+                predictivePopEnterTransition = { ScreenMotion.predictiveEnter },
+                predictivePopExitTransition = { ScreenMotion.predictiveExit },
             ) {
                 composable<HomeRoute> {
                     HomeScreen(
