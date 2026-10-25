@@ -2,7 +2,7 @@
 
 What's new in each version of Commune Sky, newest first. Dates are the day a version was uploaded to Google Play; "in testing" means it only reached testers.
 
-## 1.5.9 — October 25, 2026
+## 1.5.8 — October 25, 2026
 
 ### Privacy
 
