@@ -2,11 +2,17 @@
 
 What's new in each version of Commune Sky, newest first. Dates are the day a version was uploaded to Google Play; "in testing" means it only reached testers.
 
-## 1.5.8 — October 25, 2026
+## 1.5.9 — October 25, 2026
 
 ### Privacy
 
-- The app no longer keeps a log of widget drawings on your phone (it is deleted when you update), and the "Copy widget diagnostics" card under Settings › My widgets is gone.
+- Removed the "Copy widget diagnostics" card from Settings › My widgets and the code behind it, so the app has no troubleshooting report at all any more.
+
+## 1.5.8 — October 24, 2026
+
+### Privacy
+
+- The app no longer keeps a log of widget drawings on your phone (it is deleted when you update). The troubleshooting report under Settings › My widgets is now built on the spot and stores nothing.
 
 ## 1.5.7 — October 24, 2026
 
