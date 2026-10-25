@@ -28,8 +28,8 @@ import java.io.File
 /**
  * Elle çalıştırılan yardımcı: README'deki widget görselleri. Her stil, kendi tasarım boyutunda ve örnek veriyle
  * (yalnız Beşiktaş, Londra, Paris) çizilir; duvar kâğıdı hepsinde aynı nötr koyu mavi-gri gradyandır. Telefonun
- * saati önce ayarlanır (design/store/araclar/demo.sh): `-e set day` (24 Haziran 19:03, İstanbul) ya da `-e set night`
- * (24 Aralık 19:03). Görüntüler Android/data/…/files/readme-widgets/<tür>/<stil>.png altına yazılır.
+ * saati önce ayarlanır (design/store/araclar/demo.sh): `-e set day` (21 Temmuz 19:03, İstanbul) ya da `-e set night`
+ * (23 Ocak 19:03). Görüntüler Android/data/…/files/readme-widgets/<tür>/<stil>.png altına yazılır.
  */
 @OptIn(ExperimentalGlanceApi::class)
 @RunWith(AndroidJUnit4::class)
