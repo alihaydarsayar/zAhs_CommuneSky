@@ -159,6 +159,10 @@ What to wear and the everyday tips at a glance.
 
 Off until you turn them on; the app asks for the notification permission only then.
 
+<p align="center">
+  <img src="docs/screenshots/notification-shade.jpg" width="60%" alt="Commune Sky notifications in the shade: air quality, tomorrow's summary, today's summary and a warning raised from orange to red">
+</p>
+
 - **Weather warnings** from MGM — with the warning's colour, the place, what is expected and when, and a *Details* button. Choose which levels (yellow and up, orange and up, red only) and which places (where you are, home or all saved places). A raised warning notifies again and the notification goes away when the warning is lifted.
 - **Morning summary** — the day's range and its main event, morning / noon / evening at a glance, plus an optional evening summary about tomorrow.
 - **Air quality** — when the air turns poor at one of your places, at most once a day.
