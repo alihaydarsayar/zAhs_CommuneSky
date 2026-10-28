@@ -101,7 +101,8 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permitted = AlertNotifier.canNotify(context)
         // İzin bir kez daha sorulamıyorsa (iki kez reddedildiyse) Android'in ayarları açılır.
-        val canAskAgain = activity?.shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) == true
+        val canAskAgain = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            activity?.shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) == true
         if (!granted && !canAskAgain) context.startActivity(NotificationChannels.settingsIntent(context))
     }
     fun requestPermission() {

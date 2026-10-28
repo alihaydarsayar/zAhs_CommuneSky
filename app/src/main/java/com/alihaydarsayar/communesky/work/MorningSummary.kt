@@ -111,6 +111,8 @@ object MorningSummary {
      * Doze'da da çalışan alarm. Tam zamanlı alarm için ek izin istenmez: Android 12+ ta izin verilmemişse (varsayılan)
      * zamanı biraz oynayabilen setAndAllowWhileIdle kullanılır; bildirim akışı bozulmaz.
      */
+    // Tam zamanlı yol yalnız Android 11 ve altında ya da canScheduleExactAlarms() true iken çalışır; izin bildirilmez.
+    @android.annotation.SuppressLint("MissingPermission")
     private fun setAlarm(alarms: AlarmManager, at: Long, intent: PendingIntent) {
         val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || runCatching { alarms.canScheduleExactAlarms() }.getOrDefault(false)
         runCatching {
@@ -313,7 +315,12 @@ object MorningSummary {
  * kurar (Android bunları siler ya da kaydırır) ve kaçan özet varsa gönderir.
  */
 class SummaryRescheduleReceiver : BroadcastReceiver() {
+    private companion object {
+        val ACTIONS = setOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED, Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED)
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action !in ACTIONS) return
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {

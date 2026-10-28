@@ -25,7 +25,7 @@ class RoomObservationStore @Inject constructor(
     private val candidatesSerializer = ListSerializer(MgmCandidate.serializer())
 
     override val appVersion: Int by lazy {
-        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode.toInt() }.getOrDefault(0)
+        runCatching { androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0)).toInt() }.getOrDefault(0)
     }
 
     override fun observeAll(): Flow<Map<Long, Observation>> = dao.observeAll()
