@@ -2,6 +2,18 @@
 
 What's new in each version of Commune Sky, newest first. Dates are the day a version was uploaded to Google Play; "in testing" means it only reached testers.
 
+## 1.5.10 — in testing
+
+### Fixed
+
+- Morning and evening summaries could fail to arrive on phones that stop apps in the background (for example Xiaomi). The alarm now also works in battery saving mode, is set again whenever the app opens, the phone restarts, the app updates or the clock or time zone changes, and if it still misses, the hourly update sends the summary within three hours of the chosen time. A summary built from old data now says when the weather was last updated.
+- The nearby weather stations could stay stuck on a short or outdated list (for example 3 stations 12 km away instead of 18 close by). The list is now looked up again every day and after each update, and an incomplete answer from the weather service no longer replaces a good list.
+- The summary title and its clothing advice no longer disagree about rain (a 40% chance is now neither "rain" nor "umbrella"), and rain right now brings the umbrella into the morning summary.
+
+### Improved
+
+- Settings › Notifications warns when a notification channel is turned off or Android restricts the app in the background, opens the right Android setting, shows short tips for Xiaomi, Samsung, Honor/Huawei and OPPO/Realme phones, and has a "Send test notification" button.
+
 ## 1.5.9 — October 25, 2026
 
 ### Privacy

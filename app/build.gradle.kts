@@ -18,8 +18,8 @@ android {
         applicationId = "com.alihaydarsayar.communesky"
         minSdk = 26
         targetSdk = 37
-        versionCode = 15
-        versionName = "1.5.9"
+        versionCode = 16
+        versionName = "1.5.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Uzun denetim testleri (@SlowAudit) varsayılan çalıştırmada atlanır; -PslowAudit ile çalışır.
