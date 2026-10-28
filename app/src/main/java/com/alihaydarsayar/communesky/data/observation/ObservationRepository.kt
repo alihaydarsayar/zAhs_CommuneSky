@@ -44,6 +44,12 @@ data class MgmStationInfo(
     val queryLatitude: Double,
     val queryLongitude: Double,
     val candidates: List<MgmCandidate>,
+    /** Listenin bulunduğu an; 0: bilinmiyor (eski kayıt). Liste en çok [ObservationRepository.STATION_LIST_MAX_AGE_MS] kadar yaşar. */
+    val resolvedAtMillis: Long = 0,
+    /** Listeyi bulan uygulamanın sürüm kodu; 0: bilinmiyor. Sürüm değişince liste yeniden bulunur. */
+    val appVersion: Int = 0,
+    /** Liste MGM'nin bütün Türkiye listesinden mi çıkarıldı? Yalnız yerin kendi ilinden çıkarılan liste eksik olabilir. */
+    val complete: Boolean = true,
 )
 
 /** Ölçümlerin cihazda saklandığı yer. Testlerde bellek içi sahtesi kullanılır. */
@@ -55,6 +61,9 @@ interface ObservationStore {
     suspend fun station(placeId: Long): MgmStationInfo?
     suspend fun saveStation(placeId: Long, station: MgmStationInfo)
 
+    /** Çalışan uygulamanın sürüm kodu; saklanan istasyon listeleri bununla damgalanır. */
+    val appVersion: Int
+
     /** MGM'nin bütün istasyonlarının listesi: bütün yerler için tek ortak kopya, diskte. */
     suspend fun stationDirectory(): StationDirectory?
     suspend fun saveStationDirectory(directory: StationDirectory)
@@ -62,15 +71,16 @@ interface ObservationStore {
 
 /** MGM'nin istasyon listesi ve indirildiği an. */
 @Serializable
-data class StationDirectory(val fetchedAtMillis: Long, val stations: List<MgmStationDto>)
+data class StationDirectory(val fetchedAtMillis: Long, val stations: List<MgmStationDto>, val appVersion: Int = 0)
 
 /**
  * Anlık durum için istasyon ölçümleri.
  *
  * Adaylar:
- * - MGM istasyonları (sadece Türkiye'deki yerler): yere en yakın birkaç istasyon, en yakından
- *   uzağa sırayla sorulur; sıcaklık ölçen ve 30 dakikadan taze ilk ölçüm alınır. İstasyonlar yer
- *   başına bir kez bulunup saklanır.
+ * - MGM istasyonları (sadece Türkiye'deki yerler): yere 25 km'den yakın istasyonlar, en yakından
+ *   uzağa; 30 dakikadan taze ölçümler ağı kurar. İstasyonlar yer başına bulunup saklanır; liste en çok
+ *   24 saat ve aynı uygulama sürümü boyunca kullanılır, sonra yeniden bulunur. Yeniden bulma başarısız ya da
+ *   eksik kalırsa eski iyi liste korunur.
  * - Yakındaki havalimanları (METAR, NOAA Aviation Weather Center): sadece taze olanlar.
  * Bunlar arasından önce mesafeye, sonra tazeliğe göre en iyisi seçilir (bkz. ObservationPolicy).
  * Hiçbiri yoksa ölçüm kullanılmaz; ekran Open-Meteo tahminiyle devam eder (hata gösterilmez).
@@ -217,24 +227,22 @@ class ObservationRepository @Inject constructor(
 
     /**
      * Adayların son ölçümleri (istasyon numarası → ölçüm). Önce ilin bütün ölçümleri tek istekte alınır; aynı
-     * ildeki yerler bu cevabı 3 dakika boyunca paylaşır. İl isteği cevap vermezse adaylar tek tek, aynı anda
-     * sorulur (yer başına en çok 6 istek).
+     * ildeki yerler bu cevabı 3 dakika boyunca paylaşır. İl isteği cevap vermezse ya da cevap, yere en yakın
+     * adayları içermiyorsa (kısmi cevap) o adaylar tek tek, aynı anda sorulur (yer başına en çok 6 istek).
      */
     private suspend fun latestReadings(place: Place, candidates: List<MgmCandidate>): Map<Int, MgmObservationDto> = coroutineScope {
         val result = mutableMapOf<Int, MgmObservationDto>()
-        val missing = mutableListOf<MgmCandidate>()
-        for ((plate, group) in candidates.groupBy { it.provincePlate }) {
-            val province = plate?.takeIf { it != UNKNOWN_PLATE }?.let { provinceLatest(it) }
-            if (province == null) {
-                missing += group
-            } else {
-                group.forEach { candidate -> province[candidate.id]?.let { result[candidate.id] = it } }
-            }
+        val provinces = candidates.mapNotNull { it.provincePlate }.filter { it != UNKNOWN_PLATE }.distinct()
+            .associateWith { provinceLatest(it) }
+        for (candidate in candidates) {
+            val reading = candidate.provincePlate?.let { provinces[it] }?.get(candidate.id)
+            if (reading != null) result[candidate.id] = reading
         }
+        // Yere en yakın adaylardan il cevabında bulunmayanlar (il isteği hiç cevap vermediyse hepsi) tek tek sorulur.
+        val missing = candidates.take(StationNetwork.MAX_SINGLE_REQUESTS).filter { it.id !in result }
         if (missing.isNotEmpty()) {
-            val asked = missing.take(StationNetwork.MAX_SINGLE_REQUESTS)
-            log(place, "MGM il ölçümleri alınamadı; ${asked.size} istasyon tek tek soruluyor")
-            asked.map { candidate -> async { candidate.id to attempt("MGM ${candidate.id}") { mgmApi.get().latest(candidate.id).firstOrNull() } } }
+            log(place, "MGM il ölçümlerinde ${missing.size} yakın istasyon yok; tek tek soruluyor")
+            missing.map { candidate -> async { candidate.id to attempt("MGM ${candidate.id}") { mgmApi.get().latest(candidate.id).firstOrNull() } } }
                 .awaitAll()
                 .forEach { (id, dto) -> if (dto != null) result[id] = dto }
         }
@@ -242,15 +250,18 @@ class ObservationRepository @Inject constructor(
     }
 
     /**
-     * MGM'nin bütün istasyonları: diskteki ortak kopya ayda bir yenilenir; bütün yerler onu kullanır. Yenilenemezse
+     * MGM'nin bütün istasyonları: diskteki ortak kopya haftada bir ve uygulama güncellenince yenilenir; bütün yerler onu kullanır. Yenilenemezse
      * eski kopya kullanılır; hiç yoksa null.
      */
     private suspend fun allStations(): List<MgmStationDto>? = directoryMutex.withLock {
         val saved = store.stationDirectory()
-        if (saved != null && clock() - saved.fetchedAtMillis < DIRECTORY_MAX_AGE_MS) return@withLock saved.stations
-        val fresh = attempt("MGM istasyonları") { mgmApi.get().allStations() }?.takeIf { it.isNotEmpty() }
+        val age = clock() - (saved?.fetchedAtMillis ?: 0)
+        if (saved != null && saved.appVersion == store.appVersion && age in 0 until DIRECTORY_MAX_AGE_MS) return@withLock saved.stations
+        // Eksik gelen bir liste (ör. yarım kalmış cevap) iyi kopyayı ezmez: belirgin biçimde kısalmışsa atılır.
+        val fresh = attempt("MGM istasyonları") { mgmApi.get().allStations() }
+            ?.takeIf { it.isNotEmpty() && (saved == null || it.size >= saved.stations.size * DIRECTORY_MIN_SHARE) }
             ?: return@withLock saved?.stations
-        store.saveStationDirectory(StationDirectory(clock(), fresh))
+        store.saveStationDirectory(StationDirectory(clock(), fresh, store.appVersion))
         fresh
     }
 
@@ -287,17 +298,42 @@ class ObservationRepository @Inject constructor(
     }
 
     /**
-     * Yerin MGM istasyonları: kayıtlıysa onları kullanır; yoksa (ya da "Bulunduğum yer" 2 km'den
-     * fazla değiştiyse) bulur. Bulamazsa hiçbir şey saklamaz; bir sonraki yenilemede tekrar dener.
+     * Yerin MGM istasyonları. Kayıtlı liste, yer 2 km'den fazla oynamadıysa, 24 saatten ve aynı uygulama sürümünden
+     * eskimediyse ve MGM'nin bütün istasyon listesinden çıkarıldıysa kullanılır; yoksa yeniden bulunur.
+     * Yeniden bulma başarısız olursa ya da eksik (yalnız yerin kendi ili) kalırsa elimizdeki liste korunur: kısmi
+     * bir cevap iyi listeyi ezmez. Hiç liste yoksa ve bulunamazsa null; bir sonraki yenilemede tekrar denenir.
      */
     private suspend fun mgmStations(place: Place): MgmStationInfo? {
         val lat = place.city.latitude
         val lon = place.city.longitude
-        store.station(place.id)?.let { saved ->
+        val saved = store.station(place.id)?.takeIf { it.candidates.isNotEmpty() }
+        val now = clock()
+        if (saved != null) {
             val moved = GeoDistance.kilometers(saved.queryLatitude, saved.queryLongitude, lat, lon)
-            // Plakası olmayan kayıt eski sürümdendir (en çok 3 istasyon, 15 km): ağ için yeniden bulunur.
-            if (moved < STATION_REUSE_KM && saved.candidates.isNotEmpty() && saved.candidates.all { it.provincePlate != null }) return saved
+            val reusable = moved < STATION_REUSE_KM &&
+                // Plakası olmayan kayıt eski sürümdendir (en çok 3 istasyon, 15 km): ağ için yeniden bulunur.
+                saved.candidates.all { it.provincePlate != null } &&
+                saved.appVersion == store.appVersion &&
+                now - saved.resolvedAtMillis in 0 until (if (saved.complete) STATION_LIST_MAX_AGE_MS else INCOMPLETE_LIST_RETRY_MS)
+            if (reusable) return saved
         }
+        // Yer çok oynadıysa eski liste bu yerin değildir; yoksa kötü bir yeniden bulma onu geri getirir.
+        val fallback = saved?.takeIf { GeoDistance.kilometers(it.queryLatitude, it.queryLongitude, lat, lon) < STATION_REUSE_KM }
+        val found = discoverStations(place)
+        // Eski liste, yalnız kendisi eksiksizse ve yeni bulunan eksikse tercih edilir; eski sürümün listesi (plakasız) değil.
+        val keepOld = fallback != null && fallback.complete && fallback.candidates.all { it.provincePlate != null }
+        if (found == null || (!found.complete && keepOld)) {
+            if (fallback != null) log(place, "MGM istasyonları yenilenemedi; kayıtlı liste (${fallback.candidates.size} istasyon) kullanılıyor")
+            return fallback
+        }
+        store.saveStation(place.id, found)
+        return found
+    }
+
+    /** Yerin istasyonlarını MGM'den bulur; bulunamazsa null. [MgmStationInfo.complete] false ise liste yalnız yerin kendi ilinden. */
+    private suspend fun discoverStations(place: Place): MgmStationInfo? {
+        val lat = place.city.latitude
+        val lon = place.city.longitude
         val center = attempt("MGM merkez") {
             mgmApi.get().center(CoordinatePrivacy.round(lat), CoordinatePrivacy.round(lon))
         }
@@ -311,8 +347,9 @@ class ObservationRepository @Inject constructor(
                 "resmi istasyon ${center.observationStationId}",
         )
         // Bütün Türkiye'nin istasyon listesi (il plakalarıyla): il sınırına yakın yerlerde komşu ilin istasyonları da
-        // aday olur. Alınamazsa yalnız yerin kendi ili.
-        val province = allStations()
+        // aday olur. Alınamazsa yalnız yerin kendi ili; bu liste eksik sayılır ve saklanmaz.
+        val everything = allStations()
+        val province = everything
             ?: center.il?.let { il -> attempt("MGM il istasyonları") { mgmApi.get().stationsInProvince(il) } }.orEmpty()
         val official = center.observationStationId?.let { id ->
             province.firstOrNull { it.id == id } ?: attempt("MGM istasyon") { mgmApi.get().station(id).firstOrNull() }
@@ -328,9 +365,7 @@ class ObservationRepository @Inject constructor(
                 "${it.name} %.1f km".format(Locale.ROOT, GeoDistance.kilometers(it.latitude, it.longitude, lat, lon))
             },
         )
-        val info = MgmStationInfo(lat, lon, candidates)
-        store.saveStation(place.id, info)
-        return info
+        return MgmStationInfo(lat, lon, candidates, resolvedAtMillis = clock(), appVersion = store.appVersion, complete = everything != null)
     }
 
     // --- METAR ---
@@ -403,8 +438,17 @@ class ObservationRepository @Inject constructor(
         const val CANDIDATE_KM = StationNetwork.RADIUS_KM
 
 
-        /** İstasyon listesi en çok bu kadar eskiyebilir (30 gün). */
-        const val DIRECTORY_MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
+        /** Bir yerin istasyon listesi en çok bu kadar eskiyebilir (24 saat); sonra yeniden bulunur. */
+        const val STATION_LIST_MAX_AGE_MS = 24L * 60 * 60 * 1000
+
+        /** Yalnız yerin kendi ilinden çıkarılmış (eksik olabilen) liste bu süre sonra yeniden bulunur. */
+        const val INCOMPLETE_LIST_RETRY_MS = 15L * 60 * 1000
+
+        /** MGM'nin bütün istasyonlarının ortak kopyası en çok bu kadar eskiyebilir (7 gün). */
+        const val DIRECTORY_MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000
+
+        /** Yeni indirilen istasyon listesi eskisinin bu oranından kısaysa eksik sayılır ve atılır. */
+        const val DIRECTORY_MIN_SHARE = 0.7
 
         /** İlin plakası öğrenilemedi: ölçümler istasyon istasyon sorulur. */
         const val UNKNOWN_PLATE = 0

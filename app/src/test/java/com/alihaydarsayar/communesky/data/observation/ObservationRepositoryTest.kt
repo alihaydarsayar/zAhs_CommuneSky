@@ -104,6 +104,7 @@ class ObservationRepositoryTest {
     }
 
     private class MemoryStore : ObservationStore {
+        override var appVersion = 15
         val observations = MutableStateFlow<Map<Long, Observation>>(emptyMap())
         val requested = mutableMapOf<Long, Long>()
         val stations = mutableMapOf<Long, MgmStationInfo>()
@@ -405,7 +406,7 @@ class ObservationRepositoryTest {
     }
 
     @Test
-    fun `the station list is fetched once for all places and kept for a month`() = runTest {
+    fun `the station list is fetched once for all places and kept for a week`() = runTest {
         istanbulWorks()
         mgm.allStationsAnswer = { istanbulStations }
         val sisli = Place(6, City("Şişli", 41.0602, 28.9877), isCurrentLocation = false)
@@ -419,8 +420,8 @@ class ObservationRepositoryTest {
         repository.refresh(listOf(third))
         assertEquals(1, mgm.allStationsCalls)
 
-        // Bir ay sonra yeni bir yerin istasyonları bulunurken liste yenilenir; yenilenemezse eskisi kullanılır.
-        clockMillis += 31L * 24 * 60 * 60 * 1000
+        // Sekiz gün sonra yeni bir yerin istasyonları bulunurken liste yenilenir; yenilenemezse eskisi kullanılır.
+        clockMillis += 8L * 24 * 60 * 60 * 1000
         mgm.allStationsAnswer = { throw IOException() }
         val fourth = Place(9, City("Örnek 2", 41.06, 29.03), isCurrentLocation = false)
         repository.refresh(listOf(fourth))
@@ -486,6 +487,142 @@ class ObservationRepositoryTest {
         repository.refresh(listOf(besiktas))
         assertEquals(1, mgm.centerCalls)
         assertEquals(3, store.station(5)!!.candidates.size)
+    }
+
+    // --- 1.5.10: istasyon listesinin bayatlamaması ---
+
+    private val hour = 60L * 60 * 1000
+
+    /** Beşiktaş'ın yakın üç istasyonu ve 15–20 km'de iki istasyon daha (aynı il). */
+    private val kartal1 = MgmStationDto(17065, "KARTAL", 40.9 + 0.0, 29.1, 20.0, provincePlate = 34)
+    private val kartal2 = MgmStationDto(17066, "AYDOS DAĞI", 40.93, 29.17, 200.0, provincePlate = 34)
+
+    private fun wideIstanbulWorks() {
+        istanbulWorks()
+        mgm.allStationsAnswer = { istanbulStations + kartal1 + kartal2 }
+        // Ölçümler her zaman "5 dakika önce": testler saati ilerletir.
+        fun fresh(id: Int, temperature: Double) = mgmObservation(id = id, time = Instant.ofEpochMilli(clockMillis - 5 * 60_000).toString(), temperature = temperature)
+        mgm.latestAnswer = { id -> listOf(fresh(id, 17.0)) }
+        mgm.provinceLatestAnswer = { listOf(fresh(18100, 17.0), fresh(17448, 17.4), fresh(17063, 16.2), fresh(17065, 17.1), fresh(17066, 16.0)) }
+    }
+
+    @Test
+    fun `a partial province answer without the nearest stations asks them one by one`() = runTest {
+        wideIstanbulWorks()
+        // İl cevabı yalnız uzaktaki üç istasyonu içeriyor (yakın üçü eksik): eskiden "3 istasyon, en yakını 7 km" çıkardı.
+        mgm.provinceLatestAnswer = {
+            listOf(
+                mgmObservation(id = 17063, temperature = 16.2),
+                mgmObservation(id = 17065, temperature = 17.1),
+                mgmObservation(id = 17066, temperature = 16.0),
+            )
+        }
+        repository.refresh(listOf(besiktas))
+
+        val obs = store.get(5)!!
+        assertEquals(setOf(18100, 17448), mgm.latestCalls.toSet())
+        assertEquals(5, obs.network.size)
+        assertEquals("Beşiktaş", obs.stationName)
+    }
+
+    @Test
+    fun `the saved station list is looked up again after 24 hours`() = runTest {
+        wideIstanbulWorks()
+        repository.refresh(listOf(besiktas))
+        clockMillis += 23 * hour
+        repository.refresh(listOf(besiktas))
+        assertEquals(1, mgm.centerCalls)
+
+        clockMillis += 2 * hour
+        repository.refresh(listOf(besiktas))
+        assertEquals(2, mgm.centerCalls)
+        assertEquals(clockMillis, store.station(5)!!.resolvedAtMillis)
+    }
+
+    @Test
+    fun `an app update makes the saved station list be looked up again`() = runTest {
+        wideIstanbulWorks()
+        repository.refresh(listOf(besiktas))
+        clockMillis += 5 * 60 * 1000
+        store.appVersion = 16
+        repository.refresh(listOf(besiktas))
+        assertEquals(2, mgm.centerCalls)
+        assertEquals(16, store.station(5)!!.appVersion)
+        // Güncellemeden sonra bütün Türkiye listesi de yeniden indirilir.
+        assertEquals(2, mgm.allStationsCalls)
+    }
+
+    @Test
+    fun `a list saved without a time or version is looked up again`() = runTest {
+        wideIstanbulWorks()
+        store.stations[5] = MgmStationInfo(
+            besiktas.city.latitude, besiktas.city.longitude,
+            listOf(MgmCandidate(18100, "Beşiktaş", 41.039166, 28.989994, 3.0, provincePlate = 34)),
+        )
+        repository.refresh(listOf(besiktas))
+        assertEquals(1, mgm.centerCalls)
+        assertEquals(5, store.station(5)!!.candidates.size)
+    }
+
+    @Test
+    fun `a failed lookup keeps the good saved list instead of dropping to nothing`() = runTest {
+        wideIstanbulWorks()
+        repository.refresh(listOf(besiktas))
+        clockMillis += 25 * hour
+        mgm.centerAnswer = { throw IOException() }
+        repository.refresh(listOf(besiktas))
+
+        assertEquals(2, mgm.centerCalls)
+        assertEquals(5, store.get(5)!!.network.size)
+        assertEquals(5, store.station(5)!!.candidates.size)
+    }
+
+    @Test
+    fun `a lookup that only has the home province does not replace a complete list`() = runTest {
+        wideIstanbulWorks()
+        repository.refresh(listOf(besiktas))
+        val before = store.station(5)!!
+        clockMillis += 25 * hour
+        store.directory = null
+        mgm.allStationsAnswer = { throw IOException() }
+        mgm.provinceAnswer = { listOf(istanbulStations.first()) }
+        repository.refresh(listOf(besiktas))
+
+        assertEquals(before, store.station(5))
+        assertEquals(5, store.get(5)!!.network.size)
+    }
+
+    @Test
+    fun `a list built only from the home province is not trusted and is retried`() = runTest {
+        istanbulWorks()
+        mgm.allStationsAnswer = { throw IOException() }
+        mgm.latestAnswer = { id -> listOf(mgmObservation(id = id, temperature = 17.0)) }
+        repository.refresh(listOf(besiktas))
+        assertFalse(store.station(5)!!.complete)
+
+        // Eksik liste 15 dakika sonra yeniden aranır; bu kez tam liste gelir ve kayıt tamamlanır.
+        clockMillis += 4 * 60 * 1000
+        repository.refresh(listOf(besiktas))
+        assertEquals(1, mgm.centerCalls)
+        clockMillis += 12 * 60 * 1000
+        mgm.allStationsAnswer = { istanbulStations + kartal1 + kartal2 }
+        repository.refresh(listOf(besiktas))
+        assertEquals(2, mgm.centerCalls)
+        assertTrue(store.station(5)!!.complete)
+        assertEquals(5, store.station(5)!!.candidates.size)
+    }
+
+    @Test
+    fun `a truncated station directory does not replace the good copy`() = runTest {
+        wideIstanbulWorks()
+        repository.refresh(listOf(besiktas))
+        assertEquals(5, store.directory!!.stations.size)
+
+        clockMillis += 8L * 24 * hour
+        mgm.allStationsAnswer = { listOf(istanbulStations.first()) }
+        repository.refresh(listOf(besiktas))
+        assertEquals(5, store.directory!!.stations.size)
+        assertEquals(5, store.station(5)!!.candidates.size)
     }
 
     @Test

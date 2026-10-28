@@ -13,6 +13,7 @@ import androidx.room.RoomDatabase
  * 4 (1.2): yere en yakın MGM istasyonları listesi ve "Bulunduğum yer" için ilçe adı.
  * 5 (1.5): yer başına ek veriler (ulusal servisin tahmini, uyarılar, öteki modeller).
  * 6 (1.5): doğruluk kaydı (kaydedilen tahminler ve ölçümler).
+ * 7 (1.5.10): istasyon listesine uygulama sürümü ve "eksiksiz" işareti (liste sürüm değişince yeniden bulunur).
  * Geçişleri Room şema dosyalarından üretir (app/schemas).
  */
 @Database(
@@ -25,13 +26,14 @@ import androidx.room.RoomDatabase
         com.alihaydarsayar.communesky.data.accuracy.ForecastRecordEntity::class,
         com.alihaydarsayar.communesky.data.accuracy.ObservedRecordEntity::class,
     ],
-    version = 6,
+    version = 7,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6),
+        AutoMigration(from = 6, to = 7),
     ],
 )
 abstract class WeatherDatabase : RoomDatabase() {

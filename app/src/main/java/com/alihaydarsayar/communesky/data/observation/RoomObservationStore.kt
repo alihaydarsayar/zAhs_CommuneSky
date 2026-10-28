@@ -24,6 +24,10 @@ class RoomObservationStore @Inject constructor(
 
     private val candidatesSerializer = ListSerializer(MgmCandidate.serializer())
 
+    override val appVersion: Int by lazy {
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode.toInt() }.getOrDefault(0)
+    }
+
     override fun observeAll(): Flow<Map<Long, Observation>> = dao.observeAll()
         .map { list -> list.mapNotNull { e -> e.decode()?.let { e.placeId to it } }.toMap() }
         .distinctUntilChanged()
@@ -47,7 +51,10 @@ class RoomObservationStore @Inject constructor(
         val candidates = entity.candidatesJson
             ?.let { runCatching { json.decodeFromString(candidatesSerializer, it) }.getOrNull() }
             .orEmpty()
-        MgmStationInfo(entity.queryLatitude, entity.queryLongitude, candidates)
+        MgmStationInfo(
+            entity.queryLatitude, entity.queryLongitude, candidates,
+            resolvedAtMillis = entity.resolvedAtMillis, appVersion = entity.appVersion, complete = entity.complete,
+        )
     }
 
     override suspend fun saveStation(placeId: Long, station: MgmStationInfo) {
@@ -62,7 +69,9 @@ class RoomObservationStore @Inject constructor(
                 latitude = first?.latitude,
                 longitude = first?.longitude,
                 elevation = first?.elevation,
-                resolvedAtMillis = System.currentTimeMillis(),
+                resolvedAtMillis = station.resolvedAtMillis,
+                appVersion = station.appVersion,
+                complete = station.complete,
                 candidatesJson = json.encodeToString(candidatesSerializer, station.candidates),
             ),
         )

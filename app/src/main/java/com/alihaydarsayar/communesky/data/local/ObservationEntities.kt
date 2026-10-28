@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -37,6 +38,10 @@ data class MgmStationEntity(
     val resolvedAtMillis: Long,
     /** Yere en yakın istasyonlar (en yakından uzağa), JSON. Ölçüm alırken sırayla denenir. */
     val candidatesJson: String? = null,
+    /** Listeyi bulan uygulamanın sürüm kodu; sürüm değişince liste yeniden bulunur. */
+    @ColumnInfo(defaultValue = "0") val appVersion: Int = 0,
+    /** Liste MGM'nin bütün istasyon listesinden mi çıkarıldı (false: yalnız yerin ili, eksik olabilir). */
+    @ColumnInfo(defaultValue = "1") val complete: Boolean = true,
 )
 
 @Dao
