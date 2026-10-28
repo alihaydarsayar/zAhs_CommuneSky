@@ -157,4 +157,41 @@ class MorningSummaryTest {
         assertEquals(com.alihaydarsayar.communesky.R.string.summary_when_night, at(23, 23))
         assertEquals(com.alihaydarsayar.communesky.R.string.summary_when_all_day, at(7, 19))
     }
+
+    // --- Başlık ile giyim önerisi çelişmez (1.5.10)
+
+    @Test
+    fun `a 40 percent chance is neither a rain event nor an umbrella`() {
+        val text = summary(each = { hour(it, feels = 13.0, chance = if (it in 14..17) 40 else 10) })!!
+        assertTrue(text.title, text.event !is SummaryEvent.Precipitation)
+        assertTrue(text.body, !text.body.contains("şemsiye"))
+    }
+
+    @Test
+    fun `a 41 percent chance is both a rain event and an umbrella`() {
+        val text = summary(each = { hour(it, feels = 13.0, chance = if (it in 14..17) 41 else 10) })!!
+        assertTrue(text.title, text.event is SummaryEvent.Precipitation)
+        assertTrue(text.body, text.body.contains("şemsiye"))
+    }
+
+    @Test
+    fun `rain right now puts the umbrella in the morning summary even when the hours look dry`() {
+        val dry: (Int) -> HourlyForecast = { hour(it, feels = 13.0, chance = 10) }
+        val forecast = TestForecast.forecast(
+            TestForecast.hours(today, dry) + TestForecast.hours(tomorrow, dry),
+            listOf(TestForecast.daily(yesterday), TestForecast.daily(today, min = 12.0, max = 19.0), TestForecast.daily(tomorrow)),
+        )
+        fun body(wetNow: Boolean) = DailySummary.of(
+            SummaryKind.Morning, forecast, emptyList(), morning, 0.0, TestStrings.turkish, { it.roundToInt() }, { it.format(clock) }, wetNow,
+        )!!.body
+        assertTrue(!body(false).contains("şemsiye"))
+        assertTrue(body(true).contains("şemsiye"))
+    }
+
+    @Test
+    fun `no sunscreen at night in the evening summary of a dark winter day`() {
+        // Yarın UV hiç yükselmiyor: ne güneş kremi ne gözlük.
+        val text = summary(kind = SummaryKind.Evening, tomorrowEach = { hour(it, feels = 5.0, uv = 0.0) })!!
+        assertTrue(text.body, !text.body.contains("güneş kremi") && !text.body.contains("gözlük"))
+    }
 }

@@ -51,8 +51,8 @@ data class SummaryText(
  */
 object DailySummary {
 
-    /** "Yağış var" sayılan ihtimal. */
-    const val RAIN_CHANCE = 40
+    /** "Yağış var" sayılan ihtimal (bunun üstü); giyim önerisindeki şemsiye eşiğiyle aynıdır, ikisi çelişmez. */
+    const val RAIN_CHANCE = Clothing.UMBRELLA_CHANCE
     const val STRONG_GUST = 50.0
     const val BIG_CHANGE = 5
     const val HIGH_UV = 8.0
@@ -131,7 +131,7 @@ object DailySummary {
         if (thunder.isNotEmpty()) {
             return SummaryEvent.Thunder(thunder.first().time, thunder.last().time.plusHours(1), hours.maxOf { it.precipitationProbability })
         }
-        val wet = hours.filter { it.showsPrecipitation || it.precipitationProbability >= RAIN_CHANCE }
+        val wet = hours.filter { it.showsPrecipitation || it.precipitationProbability > RAIN_CHANCE }
         if (wet.isNotEmpty()) {
             val type = when {
                 wet.any { it.condition == WeatherCondition.Snow } -> SummaryEvent.Precipitation.Kind.Snow
