@@ -985,4 +985,19 @@
     <string name="tip_stargazing_rain">Bu gece yağış bekleniyor</string>
     <string name="precipitation_possible">Yağış ihtimali var; miktar çok az.</string>
     <string name="status_precipitation_possible">Yağış olabilir</string>
+
+    <!-- Bildirim güvenilirliği (Ayarlar › Bildirimler) -->
+    <string name="notif_health_title">Bildirimler gelmeyebilir</string>
+    <string name="notif_health_channel">Kullandığın bir bildirim kanalı Android’de kapalı.</string>
+    <string name="notif_health_background">Android bu uygulamayı arka planda kısıtlıyor; özetler geç gelebilir ya da hiç gelmeyebilir.</string>
+    <string name="notif_health_open">Aç</string>
+    <string name="notif_test_title">Bildirimleri dene</string>
+    <string name="notif_test_hint">Özet bildirimlerinle aynı kanalda bir örnek bildirim gösterir. Hiçbir yere veri gönderilmez.</string>
+    <string name="notif_test_button">Test bildirimi gönder</string>
+    <string name="notif_test_notification_title">Deneme: bildirimler çalışıyor</string>
+    <string name="notif_test_notification_text">Özetlerin böyle gelecek.</string>
+    <string name="notif_tip_xiaomi">Xiaomi, Redmi, POCO: Otomatik başlat’ı aç, Pil tasarrufu’nu “Kısıtlama yok” yap ve uygulamayı son uygulamalarda kilitle.</string>
+    <string name="notif_tip_samsung">Samsung: Ayarlar › Pil › Arka plan kullanım sınırları: Commune Sky’ı “Uyumayan uygulamalar”a ekle ve “Kullanılmayan uygulamaları uyku moduna al”ı kapat.</string>
+    <string name="notif_tip_huawei">Honor, Huawei: Ayarlar › Pil › Uygulama başlatma: Commune Sky için “Elle yönet”i seç; otomatik başlatma, ikincil başlatma ve arka planda çalışmaya izin ver.</string>
+    <string name="notif_tip_oppo">OPPO, Realme: Ayarlar › Pil › Uygulama pil yönetimi: Commune Sky için arka planda çalışmaya ve otomatik başlatmaya izin ver, uygulamayı son uygulamalarda kilitle.</string>
 </resources>

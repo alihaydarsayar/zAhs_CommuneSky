@@ -992,4 +992,19 @@
     <string name="tip_stargazing_rain">Rain is expected tonight</string>
     <string name="precipitation_possible">Rain is possible; very little is expected.</string>
     <string name="status_precipitation_possible">Rain is possible</string>
+
+    <!-- Notification reliability (Settings › Notifications) -->
+    <string name="notif_health_title">Notifications may not arrive</string>
+    <string name="notif_health_channel">A notification channel you use is turned off in Android.</string>
+    <string name="notif_health_background">Android restricts this app in the background, so summaries can be late or missing.</string>
+    <string name="notif_health_open">Open</string>
+    <string name="notif_test_title">Check notifications</string>
+    <string name="notif_test_hint">Shows a sample notification on the same channel as your summaries. Nothing is sent anywhere.</string>
+    <string name="notif_test_button">Send test notification</string>
+    <string name="notif_test_notification_title">Test: notifications work</string>
+    <string name="notif_test_notification_text">This is how your summaries will arrive.</string>
+    <string name="notif_tip_xiaomi">Xiaomi, Redmi, POCO: turn on Autostart, set Battery saver to “No restrictions” and lock the app in the recent apps.</string>
+    <string name="notif_tip_samsung">Samsung: Settings › Battery › Background usage limits: add Commune Sky to “Never sleeping apps” and turn off “Put unused apps to sleep”.</string>
+    <string name="notif_tip_huawei">Honor, Huawei: Settings › Battery › App launch: choose “Manage manually” for Commune Sky and allow auto-launch, secondary launch and running in the background.</string>
+    <string name="notif_tip_oppo">OPPO, Realme: Settings › Battery › App battery management: allow background activity and auto-start for Commune Sky, and lock the app in the recent apps.</string>
 </resources>

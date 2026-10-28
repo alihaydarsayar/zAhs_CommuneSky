@@ -70,6 +70,9 @@ import com.alihaydarsayar.communesky.ui.theme.TextSecondary
 import com.alihaydarsayar.communesky.ui.today.GlassPill
 import com.alihaydarsayar.communesky.widget.WidgetLanguage
 import com.alihaydarsayar.communesky.work.AlertNotifier
+import com.alihaydarsayar.communesky.work.Maker
+import com.alihaydarsayar.communesky.work.NotificationHealth
+import com.alihaydarsayar.communesky.work.NotificationIssues
 import com.alihaydarsayar.communesky.work.NotificationChannels
 import java.time.LocalTime
 
@@ -87,10 +90,14 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
 
     // İzin Android ayarlarında değişebilir; ekrana her dönüşte yeniden bakılır.
     var permitted by remember { mutableStateOf(AlertNotifier.canNotify(context)) }
-    LifecycleResumeEffect(Unit) {
+    // Kanal ve arka plan kısıtı da Android ayarlarında değişir: ekrana her dönüşte ve ayar değişince yeniden bakılır.
+    var issues by remember { mutableStateOf(NotificationIssues()) }
+    LifecycleResumeEffect(notifications) {
         permitted = AlertNotifier.canNotify(context)
+        issues = NotificationHealth.issues(context, notifications)
         onPauseOrDispose { }
     }
+    val maker = remember { Maker.of(Build.MANUFACTURER.orEmpty(), Build.BRAND.orEmpty()) }
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permitted = AlertNotifier.canNotify(context)
         // İzin bir kez daha sorulamıyorsa (iki kez reddedildiyse) Android'in ayarları açılır.
@@ -141,6 +148,24 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                             }
                             GlassPill(stringResource(R.string.notifications_permission_allow)) { requestPermission() }
                         }
+                    }
+                }
+            }
+            if (issues.any) {
+                item {
+                    GlassCard(Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.notif_health_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                        issues.blockedChannel?.let { channel ->
+                            HealthRow(stringResource(R.string.notif_health_channel), stringResource(R.string.notif_health_open)) {
+                                context.startActivity(NotificationHealth.channelSettingsIntent(context, channel))
+                            }
+                        }
+                        if (issues.backgroundRestricted) {
+                            HealthRow(stringResource(R.string.notif_health_background), stringResource(R.string.notif_health_open)) {
+                                context.startActivity(NotificationHealth.appDetailsIntent(context))
+                            }
+                        }
+                        maker.tip?.let { Hint(stringResource(it)) }
                     }
                 }
             }
@@ -256,6 +281,22 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                 }
             }
             item {
+                GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.notif_test_title)) {
+                    Text(stringResource(R.string.notif_test_hint), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                    // Özetlerle aynı kanaldan örnek bildirim; izin yoksa önce izin istenir. Hiçbir veri gönderilmez.
+                    Spacer(Modifier.height(10.dp))
+                    GlassPill(stringResource(R.string.notif_test_button)) {
+                        if (NotificationHealth.sendTest(context, notifications)) {
+                            issues = NotificationHealth.issues(context, notifications)
+                        } else {
+                            requestPermission()
+                        }
+                    }
+                    // Hiçbir sorun algılanmasa da bazı üreticiler uygulamayı arka planda kapatır; yönlendirme yalnız onlarda.
+                    if (!issues.any && notifications.anyOn) maker.tip?.let { Hint(stringResource(it)) }
+                }
+            }
+            item {
                 GlassCard(Modifier.fillMaxWidth()) {
                     Row(
                         Modifier
@@ -274,6 +315,15 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                 }
             }
         }
+    }
+}
+
+/** Uyarı kartındaki bir satır: durum ve tek dokunuşla ilgili Android ayarını açan düğme. */
+@Composable
+private fun HealthRow(text: String, action: String, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(text, color = TextSecondary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f).padding(end = 12.dp))
+        GlassPill(action, onClick = onClick)
     }
 }
 

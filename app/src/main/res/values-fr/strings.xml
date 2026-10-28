@@ -992,4 +992,19 @@
     <string name="tip_stargazing_rain">De la pluie est attendue cette nuit</string>
     <string name="precipitation_possible">Pluie possible, en très faible quantité.</string>
     <string name="status_precipitation_possible">Pluie possible</string>
+
+    <!-- Fiabilité des notifications (Réglages › Notifications) -->
+    <string name="notif_health_title">Les notifications risquent de ne pas arriver</string>
+    <string name="notif_health_channel">Un canal de notification que vous utilisez est désactivé dans Android.</string>
+    <string name="notif_health_background">Android limite cette application en arrière-plan : les résumés peuvent arriver en retard ou pas du tout.</string>
+    <string name="notif_health_open">Ouvrir</string>
+    <string name="notif_test_title">Tester les notifications</string>
+    <string name="notif_test_hint">Affiche une notification d’exemple sur le même canal que vos résumés. Rien n’est envoyé.</string>
+    <string name="notif_test_button">Envoyer une notification de test</string>
+    <string name="notif_test_notification_title">Test : les notifications fonctionnent</string>
+    <string name="notif_test_notification_text">Voici comment arriveront vos résumés.</string>
+    <string name="notif_tip_xiaomi">Xiaomi, Redmi, POCO : activez le démarrage automatique, réglez l’économiseur de batterie sur « Aucune restriction » et verrouillez l’application dans les applications récentes.</string>
+    <string name="notif_tip_samsung">Samsung : Réglages › Batterie › Limites d’utilisation en arrière-plan : ajoutez Commune Sky aux « Applications jamais en veille » et désactivez « Mettre en veille les applications inutilisées ».</string>
+    <string name="notif_tip_huawei">Honor, Huawei : Réglages › Batterie › Lancement des applications : choisissez « Gérer manuellement » pour Commune Sky et autorisez le lancement automatique, secondaire et l’exécution en arrière-plan.</string>
+    <string name="notif_tip_oppo">OPPO, Realme : Réglages › Batterie › Gestion de la batterie des applications : autorisez l’activité en arrière-plan et le démarrage automatique pour Commune Sky, et verrouillez l’application dans les applications récentes.</string>
 </resources>
