@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Bildirimler (meteorolojik uyarı, sabah özeti); izin yalnızca kullanıcı bir bildirimi açarken istenir. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Sabah ve akşam özeti alarmları telefon yeniden başlayınca silinir; bu izinle açılışta geri kurulur. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!--
         Yaklaşık konum yeterli; hassas konum isteğe bağlı (Android 12+ kullanıcı "Yaklaşık"ı seçebilir).
         Hassas konum sadece cihazda, mahalle adı ve en yakın istasyon için kullanılır; dışarıya giden
@@ -75,10 +77,21 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
-        <!-- Sabah özeti bildirimi: günde bir, gevşek pencereli alarm (kesin alarm izni yok). -->
+        <!-- Sabah ve akşam özeti bildirimi: günde bir, Doze'da da çalışan alarm (kesin alarm izni yok). -->
         <receiver
             android:name=".work.MorningSummaryReceiver"
             android:exported="false" />
+        <!-- Özet alarmlarını telefon yeniden başlayınca, uygulama güncellenince ve saat ya da saat dilimi değişince yeniden kurar. -->
+        <receiver
+            android:name=".work.SummaryRescheduleReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
         <receiver
             android:name=".widget.ClockWidgetReceiver"
             android:exported="true"

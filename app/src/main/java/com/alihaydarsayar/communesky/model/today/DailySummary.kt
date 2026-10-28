@@ -69,6 +69,8 @@ object DailySummary {
         strings: Strings,
         degrees: (Double) -> Int,
         clock: (LocalDateTime) -> String,
+        /** Şu an yağıyor (taze anlık hava): şemsiye önerisine girer, ana ekrandaki öneriyle aynı. */
+        wetNow: Boolean = false,
     ): SummaryText? {
         val date = if (kind == SummaryKind.Morning) now.toLocalDate() else now.toLocalDate().plusDays(1)
         val day = forecast.daily.firstOrNull { it.date == date } ?: return null
@@ -84,7 +86,7 @@ object DailySummary {
             if (kind == SummaryKind.Morning) R.string.summary_title else R.string.summary_title_tomorrow,
             degrees(day.minTemperature), degrees(day.maxTemperature), phrase(event, strings, kind),
         )
-        val wear = Clothing.advise(Clothing.parts(forecast, date), wearShift, fromHour = if (kind == SummaryKind.Morning) now.hour else 0)
+        val wear = Clothing.advise(Clothing.parts(forecast, date), wearShift, fromHour = if (kind == SummaryKind.Morning) now.hour else 0, wetNow = wetNow)
             ?.let { WearText.sentence(it, strings, degrees) }
         val difference = change?.takeIf { abs(it) >= 1 }?.let {
             when {

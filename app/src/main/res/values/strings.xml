@@ -803,6 +803,7 @@
     <string name="summary_today_colder">%1$d° colder than today</string>
     <string name="summary_today_warmer">%1$d° warmer than today</string>
     <string name="summary_no_advice">Tap for the details.</string>
+    <string name="summary_cached_at">Weather as of %1$s (no newer data).</string>
     <string name="summary_window">%1$s between %2$s and %3$s.</string>
     <string name="summary_kind_thunder">thunderstorms</string>
     <string name="summary_kind_rain">rain</string>

@@ -157,15 +157,4 @@ class MorningSummaryTest {
         assertEquals(com.alihaydarsayar.communesky.R.string.summary_when_night, at(23, 23))
         assertEquals(com.alihaydarsayar.communesky.R.string.summary_when_all_day, at(7, 19))
     }
-
-    @Test
-    fun `the alarm window starts fifteen minutes before the chosen time`() {
-        val minutes = MorningSummary.DEFAULT_MINUTES
-        assertEquals(today.atTime(7, 15), MorningSummary.nextWindowStart(today.atTime(6, 0), minutes))
-        // Pencere başladıktan sonra (alarm çaldığında) bir sonraki alarm yarın içindir: günde bir uyanma.
-        assertEquals(today.plusDays(1).atTime(7, 15), MorningSummary.nextWindowStart(today.atTime(7, 15), minutes))
-        assertEquals(today.plusDays(1).atTime(7, 15), MorningSummary.nextWindowStart(today.atTime(23, 0), minutes))
-        // Akşam özeti 21:00.
-        assertEquals(today.atTime(20, 45), MorningSummary.nextWindowStart(today.atTime(12, 0), MorningSummary.DEFAULT_EVENING_MINUTES))
-    }
 }

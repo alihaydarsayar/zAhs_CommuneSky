@@ -13,6 +13,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -63,6 +64,9 @@ class CommuneSkyApp : Application(), Configuration.Provider {
                 blocked = com.alihaydarsayar.communesky.work.NotificationChannels.removeLegacy(this@CommuneSkyApp),
             )
             com.alihaydarsayar.communesky.work.NotificationChannels.ensure(this@CommuneSkyApp)
+            // Uygulama her açıldığında özet alarmları yeniden kurulur: Android alarmları "durdurmada" ya da üretici
+            // temizliğinde siler; uygulama açılınca geri gelirler.
+            com.alihaydarsayar.communesky.work.MorningSummary.schedule(this@CommuneSkyApp, settingsRepository.settings.first().notifications)
         }
         // Eski sürümlerin tanılama için diske yazdığı widget çizim kaydı artık tutulmaz.
         appScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.alihaydarsayar.communesky.widget.LegacyDiagnostics.purgeStored(this@CommuneSkyApp) }

@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import android.view.View
@@ -18,32 +19,44 @@ import com.alihaydarsayar.communesky.model.today.AndroidStrings
 import com.alihaydarsayar.communesky.model.today.DailySummary
 import com.alihaydarsayar.communesky.model.today.SummaryKind
 import com.alihaydarsayar.communesky.model.today.SummaryText
+import com.alihaydarsayar.communesky.model.WeatherSnapshot
 import com.alihaydarsayar.communesky.model.today.WearText
 import com.alihaydarsayar.communesky.ui.common.iconRes
 import com.alihaydarsayar.communesky.ui.home.nameRes
 import com.alihaydarsayar.communesky.widget.WidgetDataLoader
+import com.alihaydarsayar.communesky.widget.WidgetEntryPoint
+import com.alihaydarsayar.communesky.widget.WidgetInput
 import com.alihaydarsayar.communesky.widget.WidgetLanguage
 import com.alihaydarsayar.communesky.widget.displayName
 import com.alihaydarsayar.communesky.widget.timeFormatter
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import kotlin.math.roundToInt
 
 /**
  * Sabah özeti (bugün) ve akşam özeti (yarın): günde birer bildirim. İkisi de varsayılan kapalı. Metin telefondaki
- * önbellekten kurulur; bildirim için internete çıkılmaz (bkz. DailySummary).
+ * önbellekten kurulur; bildirim için ek bir sunucu ya da veri gönderimi yoktur (bkz. DailySummary).
  *
- * Zamanlama gevşek bir penceredir ([AlarmManager.setWindow], seçilen saatin ±15 dakikası): kesin alarm ve ek
- * izin yoktur, her özet için günde bir uyanma olur.
+ * Katmanlı zamanlama (bkz. SummarySchedule):
+ * 1. AlarmManager, Doze'da da çalışan alarm: tam zamanlı alarm izni varsa (Android 11 ve altında her zaman)
+ *    setExactAndAllowWhileIdle, yoksa setAndAllowWhileIdle; birkaç dakika sapma olabilir. Alarm uygulama
+ *    açılınca, ayar değişince, telefon yeniden başlayınca, uygulama güncellenince ve saat ya da saat dilimi
+ *    değişince yeniden kurulur ([SummaryRescheduleReceiver]).
+ * 2. Yedek: saatlik arka plan işi, bugünün özeti gönderilmediyse ve seçilen saatten sonra en çok 3 saat geçtiyse
+ *    gönderir ([catchUp]); pencere geçtiyse o günün özetini atlar.
+ * Günde bir kez gönderim, "son gönderilen gün" kaydıyla garanti edilir (cihazda, bildirim tekrarını önleyen kısa kayıt).
  */
 object MorningSummary {
 
@@ -51,34 +64,36 @@ object MorningSummary {
     const val DEFAULT_MINUTES = 7 * 60 + 30
     const val DEFAULT_EVENING_MINUTES = 21 * 60
 
-    /** Pencere, seçilen saatten bu kadar önce başlar ve bu kadar sonra biter. */
-    const val SLACK_MINUTES = 15L
-
-    /** Önbellek bundan eskiyse özet gönderilmez (yanlış bilgi vermektense susar). */
-    private val MAX_AGE: Duration = Duration.ofHours(8)
-
     private const val PREFS = "morning_summary"
     private const val EXTRA_KIND = "summary_kind"
+    private const val REFRESH_TIMEOUT_MS = 20_000L
+
+    /** Anlık hava (yağıyor mu) yalnız bu kadar tazeyse sabah özetinin şemsiye önerisine girer. */
+    private val WET_NOW_MAX_AGE: Duration = Duration.ofHours(1)
+
+    /** Alarm ile yedek yol aynı anda çalışırsa özet iki kez gitmesin. */
+    private val lock = Mutex()
 
     private fun notificationId(kind: SummaryKind) = if (kind == SummaryKind.Morning) 7301 else 7302
     private fun lastDayKey(kind: SummaryKind) = if (kind == SummaryKind.Morning) "last_day" else "last_day_evening"
 
-    /**
-     * Bir sonraki pencerenin başlangıcı. Bugünün penceresi başladıysa (ya da geçtiyse) yarınki. Saf mantık;
-     * test edilir.
-     */
-    fun nextWindowStart(now: LocalDateTime, minutes: Int): LocalDateTime {
-        val today = now.toLocalDate().atStartOfDay().plusMinutes(minutes.toLong()).minusMinutes(SLACK_MINUTES)
-        return if (now.isBefore(today)) today else today.plusDays(1)
-    }
+    /** Özetin en son gönderildiği günün tarihi (cihazın tarihi); hiç gönderilmediyse null. */
+    private fun sentOn(context: Context, kind: SummaryKind): LocalDate? =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(lastDayKey(kind), null)
+            ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
+    private fun enabled(settings: NotificationSettings, kind: SummaryKind) =
+        if (kind == SummaryKind.Morning) settings.morning else settings.evening
+
+    private fun minutes(settings: NotificationSettings, kind: SummaryKind) =
+        if (kind == SummaryKind.Morning) settings.morningMinutes else settings.eveningMinutes
 
     /** Ayara göre iki özetin alarmlarını kurar ya da kaldırır. Uygulama açılınca, ayar değişince ve saatlik işte çağrılır. */
-    fun schedule(context: Context, settings: NotificationSettings, now: LocalDateTime = LocalDateTime.now()) {
-        schedule(context, SummaryKind.Morning, settings.morning, settings.morningMinutes, now)
-        schedule(context, SummaryKind.Evening, settings.evening, settings.eveningMinutes, now)
+    fun schedule(context: Context, settings: NotificationSettings, now: ZonedDateTime = ZonedDateTime.now()) {
+        for (kind in SummaryKind.entries) schedule(context, kind, enabled(settings, kind), minutes(settings, kind), now)
     }
 
-    private fun schedule(context: Context, kind: SummaryKind, enabled: Boolean, minutes: Int, now: LocalDateTime) {
+    private fun schedule(context: Context, kind: SummaryKind, enabled: Boolean, minutes: Int, now: ZonedDateTime) {
         val alarms = context.getSystemService(AlarmManager::class.java) ?: return
         val intent = PendingIntent.getBroadcast(
             context, kind.ordinal, Intent(context, MorningSummaryReceiver::class.java).putExtra(EXTRA_KIND, kind.name),
@@ -88,32 +103,105 @@ object MorningSummary {
             alarms.cancel(intent)
             return
         }
-        val start = nextWindowStart(now, minutes).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        runCatching { alarms.setWindow(AlarmManager.RTC_WAKEUP, start, 2 * SLACK_MINUTES * 60_000, intent) }
+        val at = SummarySchedule.nextTrigger(now, minutes, sentOn(context, kind)).toInstant().toEpochMilli()
+        setAlarm(alarms, at, intent)
     }
 
-    /** Alarm çaldı: bugün gönderilmediyse özeti gönder, sonraki alarmı kur. */
-    suspend fun onAlarm(context: Context, kind: SummaryKind = SummaryKind.Morning, force: Boolean = false) {
+    /**
+     * Doze'da da çalışan alarm. Tam zamanlı alarm için ek izin istenmez: Android 12+ ta izin verilmemişse (varsayılan)
+     * zamanı biraz oynayabilen setAndAllowWhileIdle kullanılır; bildirim akışı bozulmaz.
+     */
+    private fun setAlarm(alarms: AlarmManager, at: Long, intent: PendingIntent) {
+        val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || runCatching { alarms.canScheduleExactAlarms() }.getOrDefault(false)
+        runCatching {
+            if (exact) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, intent)
+            else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, intent)
+        }.onFailure {
+            // İzin sonradan geri alınmış olabilir: izinsiz yola düşülür.
+            runCatching { alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, intent) }
+        }
+    }
+
+    private suspend fun load(context: Context): WidgetInput? = withTimeoutOrNull(5_000) { WidgetDataLoader(context).input.first() }
+
+    /** Özetin yeri: Ev; yoksa bulunduğun yer; o da yoksa ilk kayıtlı yer. */
+    private fun pick(input: WidgetInput): WeatherSnapshot? = input.home?.snapshot ?: input.device ?: input.weather.values.firstOrNull()
+
+    /**
+     * Telefon yeniden başladı, uygulama güncellendi ya da saat/saat dilimi değişti: alarmlar yeniden kurulur ve
+     * kaçan bir özet varsa (pencere içindeyse) gönderilir.
+     */
+    suspend fun restore(context: Context) {
         val app = context.applicationContext
-        val input = withTimeoutOrNull(5_000) { WidgetDataLoader(app).input.first() } ?: return
+        load(app)?.let { schedule(app, it.settings.notifications) }
+        catchUp(app)
+    }
+
+    /** Alarm çaldı: bugün gönderilmediyse özeti gönder, sonraki alarmı kur. Önbellek eskiyse önce yenilemeyi dener. */
+    suspend fun onAlarm(context: Context, kind: SummaryKind = SummaryKind.Morning, force: Boolean = false) = lock.withLock {
+        val app = context.applicationContext
+        var input = load(app) ?: return@withLock
+        schedule(app, input.settings.notifications)
+        val snapshot = pick(input)
+        if (snapshot != null && Duration.between(snapshot.fetchedAt, Instant.now()) > SummarySchedule.FRESH) {
+            // Saatlik iş çalışmamış (süreç öldürülmüş, pil tasarrufu): özet için tahmin burada yenilenir.
+            val refreshed = withTimeoutOrNull(REFRESH_TIMEOUT_MS) {
+                runCatching { EntryPointAccessors.fromApplication(app, WidgetEntryPoint::class.java).weatherUpdater().refreshForSummary() }.isSuccess
+            }
+            if (refreshed == true) input = load(app) ?: input
+        }
+        deliver(app, input, kind, force)
+    }
+
+    /**
+     * Yedek yol (saatlik işin sonunda ve yeniden başlatma olaylarında): bugünün özeti gönderilmediyse ve seçilen
+     * saatten sonra en çok [SummarySchedule.CATCH_UP] geçtiyse gönderir.
+     */
+    suspend fun catchUp(context: Context) = lock.withLock {
+        val app = context.applicationContext
+        val input = load(app) ?: return@withLock
+        val now = ZonedDateTime.now()
+        for (kind in SummaryKind.entries) {
+            val settings = input.settings.notifications
+            if (enabled(settings, kind) && SummarySchedule.shouldCatchUp(now, minutes(settings, kind), sentOn(app, kind))) {
+                deliver(app, input, kind, force = false)
+            }
+        }
+    }
+
+    private fun deliver(app: Context, input: WidgetInput, kind: SummaryKind, force: Boolean) {
         val settings = input.settings
-        schedule(app, settings.notifications)
-        val enabled = if (kind == SummaryKind.Morning) settings.notifications.morning else settings.notifications.evening
-        if (!(enabled || force) || !AlertNotifier.canNotify(app)) return
-        val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val today = LocalDate.now().toString()
-        if (!force && prefs.getString(lastDayKey(kind), null) == today) return
-        // Özetin yeri: Ev; yoksa bulunduğun yer; o da yoksa ilk kayıtlı yer.
-        val snapshot = input.home?.snapshot ?: input.device ?: input.weather.values.firstOrNull() ?: return
-        if (Duration.between(snapshot.fetchedAt, Instant.now()) > MAX_AGE) return
+        if (!AlertNotifier.canNotify(app)) return
+        val today = LocalDate.now()
+        val snapshot = pick(input)
+        val age = snapshot?.let { Duration.between(it.fetchedAt, Instant.now()) }
+        val verdict = SummarySchedule.verdict(enabled(settings.notifications, kind), sentOn(app, kind), today, age, force)
+        if (verdict == SummarySchedule.Verdict.Skip || snapshot == null) return
         // Bildirim, uygulamanın diliyle yazılır.
         val localized = WidgetLanguage.context(app)
         val clock = timeFormatter(localized)
         val unit = settings.temperatureUnit
-        val text = DailySummary.of(
+        // Şu an yağıyorsa (taze önbellekte) sabah özetinin önerisine de şemsiye girer; ana ekrandaki öneriyle aynı kural.
+        val wetNow = kind == SummaryKind.Morning && age != null && age <= WET_NOW_MAX_AGE && snapshot.forecast.current.condition.let {
+            it.isWet || it == WeatherCondition.Snow
+        }
+        var text = DailySummary.of(
             kind, snapshot.forecast, snapshot.alerts, snapshot.forecast.localNow(), settings.wear.shift, AndroidStrings(localized),
-            { unit.fromCelsius(it).roundToInt() }, { it.format(clock) },
+            { unit.fromCelsius(it).roundToInt() }, { it.format(clock) }, wetNow,
         ) ?: return
+        if (verdict == SummarySchedule.Verdict.SendCached) {
+            // Eski veriden kurulan özet bunu söyler; yanlış bir özet gibi görünmesin.
+            val fetched = snapshot.fetchedAt.atOffset(ZoneOffset.ofTotalSeconds(snapshot.forecast.utcOffsetSeconds)).toLocalDateTime()
+            text = text.copy(lines = text.lines.take(3) + localized.getString(R.string.summary_cached_at, fetched.format(clock)))
+        }
+        notify(app, input, snapshot, kind, text, today)
+    }
+
+    private fun notify(app: Context, input: WidgetInput, snapshot: WeatherSnapshot, kind: SummaryKind, text: SummaryText, today: LocalDate) {
+        val settings = input.settings
+        val localized = WidgetLanguage.context(app)
+        val unit = settings.temperatureUnit
+        val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val place = snapshot.displayName(localized)
         val warning = text.warning?.let { alert ->
             listOf(
@@ -151,7 +239,7 @@ object MorningSummary {
             builder.addAction(0, localized.getString(R.string.summary_action_tomorrow), dayPage)
         }
         runCatching { manager.notify(notificationId(kind), builder.build()) }
-            .onSuccess { prefs.edit().putString(lastDayKey(kind), today).apply() }
+            .onSuccess { prefs.edit().putString(lastDayKey(kind), today.toString()).apply() }
     }
 
     private fun open(context: Context, placeId: Long, requestCode: Int, extra: (Intent) -> Intent): PendingIntent = PendingIntent.getActivity(
@@ -218,6 +306,23 @@ object MorningSummary {
     /** Alarmın hangi özet için olduğu. */
     fun kindOf(intent: Intent): SummaryKind =
         SummaryKind.entries.firstOrNull { it.name == intent.getStringExtra(EXTRA_KIND) } ?: SummaryKind.Morning
+}
+
+/**
+ * Telefon yeniden başlayınca, uygulama güncellenince ve saat ya da saat dilimi değişince özet alarmlarını yeniden
+ * kurar (Android bunları siler ya da kaydırır) ve kaçan özet varsa gönderir.
+ */
+class SummaryRescheduleReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                MorningSummary.restore(context)
+            } finally {
+                pending.finish()
+            }
+        }
+    }
 }
 
 /** Sabah ve akşam özeti alarmlarını alır; işi bitince kapanır. */

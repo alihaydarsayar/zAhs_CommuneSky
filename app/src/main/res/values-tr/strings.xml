@@ -796,6 +796,7 @@
     <string name="summary_today_colder">Bugünden %1$d° daha soğuk</string>
     <string name="summary_today_warmer">Bugünden %1$d° daha sıcak</string>
     <string name="summary_no_advice">Ayrıntılar için dokun.</string>
+    <string name="summary_cached_at">Hava durumu %1$s itibarıyla (daha yeni veri yok).</string>
     <string name="summary_window">%1$s %2$s–%3$s arası.</string>
     <string name="summary_kind_thunder">gök gürültülü sağanak</string>
     <string name="summary_kind_rain">yağmur</string>

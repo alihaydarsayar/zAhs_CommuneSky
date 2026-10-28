@@ -802,6 +802,7 @@
     <string name="summary_today_colder">%1$d° plus froid qu’aujourd’hui</string>
     <string name="summary_today_warmer">%1$d° plus chaud qu’aujourd’hui</string>
     <string name="summary_no_advice">Touchez pour les détails.</string>
+    <string name="summary_cached_at">Météo de %1$s (pas de données plus récentes).</string>
     <string name="summary_window">%1$s entre %2$s et %3$s.</string>
     <string name="summary_kind_thunder">orages</string>
     <string name="summary_kind_rain">pluie</string>

@@ -102,10 +102,7 @@ class WeatherUpdater @Inject constructor(
      */
     suspend fun refreshInBackground() {
         val saved = placesRepository.all()
-        val showsDevice = PlaceSelection.showsDevicePage(locationRepository.hasPermission(), saved.size)
-        val device = if (showsDevice) weatherRepository.devicePlace() ?: fallbackPlace() else null
-        if (device == null) forgetDevicePlace()
-        val places = listOfNotNull(device) + saved.map { it.toPlace() }
+        val places = backgroundPlaces(saved)
         refresh(places)
         refreshObservations()
         // Doğruluk kaydı: adayların tahminleri ve o saatin ölçümü; günde bir karne, hakem ve düzeltme.
@@ -120,8 +117,21 @@ class WeatherUpdater @Inject constructor(
         )
         // Hava kalitesi kötüleştiyse (ve kullanıcı istediyse) bildirim; yer başına günde en çok bir kez.
         com.alihaydarsayar.communesky.work.AirQualityNotifier.check(context, weatherRepository.allWeather.first().values, settings.notifications)
-        // Sabah özeti alarmı telefon yeniden başlayınca silinir; burada geri kurulur (aynı alarm, ek uyanma yok).
+        // Özet alarmları burada da geri kurulur (aynı alarmlar, ek uyanma yok). Alarm hiç çalmadıysa (süreç öldürüldü,
+        // alarm silindi) bugünün özeti yedek olarak, seçilen saatten sonra kısa bir süre içinde buradan gider.
         com.alihaydarsayar.communesky.work.MorningSummary.schedule(context, settings.notifications)
+        com.alihaydarsayar.communesky.work.MorningSummary.catchUp(context)
+    }
+
+    /** Sabah ya da akşam özeti için tahmini yeniler (ölçüm, doğruluk kaydı ve bildirim kontrolü yok). Ağ hatasında istisna fırlatır. */
+    suspend fun refreshForSummary() = refresh(backgroundPlaces(placesRepository.all()))
+
+    /** Arka planda yenilenecek yerler: son bilinen cihaz konumu (gösteriliyorsa) ve kayıtlı yerler. */
+    private suspend fun backgroundPlaces(saved: List<SavedPlace>): List<Place> {
+        val showsDevice = PlaceSelection.showsDevicePage(locationRepository.hasPermission(), saved.size)
+        val device = if (showsDevice) weatherRepository.devicePlace() ?: fallbackPlace() else null
+        if (device == null) forgetDevicePlace()
+        return listOfNotNull(device) + saved.map { it.toPlace() }
     }
 
     private fun fallbackPlace() = Place(DEVICE_PLACE_ID, City.Istanbul, isCurrentLocation = false)
