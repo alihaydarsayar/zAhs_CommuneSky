@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.glance.action.ActionParameters
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
@@ -118,6 +120,15 @@ class MainActivity : AppCompatActivity() {
         intent.wantedDay()?.let { openDay.value = it }
         intent.wantedTab()?.let { openTab.value = it }
         intent.selectWidgetPlace()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Uygulama öne gelince özet alarmları yeniden kurulur; bugünün özeti gönderilmediyse ve seçilen saatin üzerinden
+        // çok geçmediyse (pencere içindeyse) hemen gönderilir. Alarm ve saatlik iş çalışmasa da bu yol açıktır.
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            com.alihaydarsayar.communesky.work.MorningSummary.restore(applicationContext)
+        }
     }
 
     /** Widget'ta havaya dokunulunca uygulama o widget'ın yeriyle açılır. */

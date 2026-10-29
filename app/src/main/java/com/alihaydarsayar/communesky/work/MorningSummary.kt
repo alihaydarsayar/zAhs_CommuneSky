@@ -93,6 +93,22 @@ object MorningSummary {
         for (kind in SummaryKind.entries) schedule(context, kind, enabled(settings, kind), minutes(settings, kind), now)
     }
 
+    /**
+     * Kullanıcı bildirim ayarını değiştirdi. Bir özeti açtıysa ya da saatini değiştirdiyse ve seçtiği saat bugün
+     * çoktan geçtiyse bugünün özeti atlanır (ilk özet yarın gelir); yedek yol az önce seçilen geçmiş saat için
+     * beklenmedik bir bildirim göndermesin. Sonra alarmlar yeni ayara göre kurulur.
+     */
+    fun onSettingsChanged(context: Context, old: NotificationSettings, new: NotificationSettings, now: ZonedDateTime = ZonedDateTime.now()) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        for (kind in SummaryKind.entries) {
+            val changed = enabled(new, kind) && (!enabled(old, kind) || minutes(old, kind) != minutes(new, kind))
+            if (changed && sentOn(context, kind) != now.toLocalDate() && SummarySchedule.passedToday(now, minutes(new, kind))) {
+                prefs.edit().putString(lastDayKey(kind), now.toLocalDate().toString()).apply()
+            }
+        }
+        schedule(context, new, now)
+    }
+
     private fun schedule(context: Context, kind: SummaryKind, enabled: Boolean, minutes: Int, now: ZonedDateTime) {
         val alarms = context.getSystemService(AlarmManager::class.java) ?: return
         val intent = PendingIntent.getBroadcast(

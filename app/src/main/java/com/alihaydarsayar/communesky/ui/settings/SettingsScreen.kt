@@ -94,9 +94,10 @@ class SettingsViewModel @Inject constructor(
 
     /** Bildirim ayarlarını kaydeder; sabah ve akşam özetinin alarmları yeni ayara göre kurulur ya da kaldırılır. */
     fun updateNotifications(change: (NotificationSettings) -> NotificationSettings) = viewModelScope.launch {
-        val updated = change(settingsRepository.settings.first().notifications)
+        val old = settingsRepository.settings.first().notifications
+        val updated = change(old)
         settingsRepository.setNotifications(updated)
-        MorningSummary.schedule(context, updated)
+        MorningSummary.onSettingsChanged(context, old, updated)
     }
 
     fun setWearSensitivity(sensitivity: Sensitivity) = viewModelScope.launch { settingsRepository.setWearSensitivity(sensitivity) }

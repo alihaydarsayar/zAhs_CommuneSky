@@ -65,8 +65,9 @@ class CommuneSkyApp : Application(), Configuration.Provider {
             )
             com.alihaydarsayar.communesky.work.NotificationChannels.ensure(this@CommuneSkyApp)
             // Uygulama her açıldığında özet alarmları yeniden kurulur: Android alarmları "durdurmada" ya da üretici
-            // temizliğinde siler; uygulama açılınca geri gelirler.
-            com.alihaydarsayar.communesky.work.MorningSummary.schedule(this@CommuneSkyApp, settingsRepository.settings.first().notifications)
+            // temizliğinde siler; uygulama açılınca geri gelirler. Bugünün özeti gönderilmediyse ve seçilen saatin
+            // üzerinden çok geçmediyse (pencere içinde) hemen gönderilir.
+            com.alihaydarsayar.communesky.work.MorningSummary.restore(this@CommuneSkyApp)
         }
         // Eski sürümlerin tanılama için diske yazdığı widget çizim kaydı artık tutulmaz.
         appScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.alihaydarsayar.communesky.widget.LegacyDiagnostics.purgeStored(this@CommuneSkyApp) }

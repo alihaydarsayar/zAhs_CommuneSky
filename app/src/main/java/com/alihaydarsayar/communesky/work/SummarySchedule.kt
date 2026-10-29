@@ -18,6 +18,12 @@ object SummarySchedule {
     /** Seçilen saatten sonra yedek yolun hâlâ göndereceği süre. */
     val CATCH_UP: Duration = Duration.ofHours(3)
 
+    /**
+     * Yedek yol seçilen saatten bu kadar sonra devreye girer: alarm (en çok birkaç dakika sapar) önce çalışsın, önbelleği
+     * yenileyip özeti kendisi göndersin; yedek yalnız alarm gelmediyse göndersin.
+     */
+    val CATCH_UP_GRACE: Duration = Duration.ofMinutes(15)
+
     /** Özet bundan eski bir önbellekten kurulursa bildirimde önbelleğin saati belirtilir. */
     val FRESH: Duration = Duration.ofHours(3)
 
@@ -38,16 +44,22 @@ object SummarySchedule {
     }
 
     /**
-     * Yedek yol şimdi göndermeli mi: bugünün saati geçti, bugün gönderilmedi ve pencere ([CATCH_UP], en çok gün
-     * sonuna kadar) içindeyiz.
+     * Yedek yol şimdi göndermeli mi: bugünün saatinden [CATCH_UP_GRACE] geçti, bugün gönderilmedi ve pencere
+     * ([CATCH_UP] sonuna kadar, en çok gün sonuna) içindeyiz.
      */
     fun shouldCatchUp(now: ZonedDateTime, minutes: Int, sentOn: LocalDate?): Boolean {
         val today = now.toLocalDate()
         if (sentOn == today) return false
         val target = target(today, minutes, now.zone)
         val end = minOf(target.plus(CATCH_UP), today.plusDays(1).atStartOfDay(now.zone))
-        return !now.isBefore(target) && now.isBefore(end)
+        return !now.isBefore(target.plus(CATCH_UP_GRACE)) && now.isBefore(end)
     }
+
+    /**
+     * Kullanıcı özeti açtı ya da saatini değiştirdi ve seçtiği saat bugün çoktan geçti mi? O zaman bugünün özeti
+     * atlanır (ilk özet yarın gelir): ayar ekranından çıkınca kimse beklemediği bir bildirim almasın.
+     */
+    fun passedToday(now: ZonedDateTime, minutes: Int): Boolean = !now.isBefore(target(now.toLocalDate(), minutes, now.zone))
 
     /** Önbelleğin yaşına göre özetin ne olacağı. */
     enum class Verdict { Send, SendCached, Skip }

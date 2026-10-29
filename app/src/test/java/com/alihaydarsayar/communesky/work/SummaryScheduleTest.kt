@@ -82,7 +82,7 @@ class SummaryScheduleTest {
 
     @Test
     fun `the backup sends a missed summary inside the window`() {
-        assertTrue(SummarySchedule.shouldCatchUp(at(7, 31), morning, sentOn = null))
+        assertTrue(SummarySchedule.shouldCatchUp(at(7, 45), morning, sentOn = null))
         assertTrue(SummarySchedule.shouldCatchUp(at(10, 29), morning, sentOn = day.minusDays(1)))
     }
 
@@ -90,6 +90,7 @@ class SummaryScheduleTest {
     fun `the backup does not send before the time, after the window or twice a day`() {
         assertFalse(SummarySchedule.shouldCatchUp(at(7, 29), morning, null))
         assertFalse(SummarySchedule.shouldCatchUp(at(10, 30), morning, null))
+        assertFalse(SummarySchedule.shouldCatchUp(at(10, 31), morning, null))
         assertFalse(SummarySchedule.shouldCatchUp(at(14, 0), morning, null))
         assertFalse(SummarySchedule.shouldCatchUp(at(8, 0), morning, sentOn = day))
     }
@@ -170,5 +171,36 @@ class SummaryScheduleTest {
             val skipped = SummarySchedule.verdict(true, null, day, age) == Verdict.Skip
             assertEquals("age=$age", skipped, SummarySchedule.skipOutcome(true, null, day, age) != null)
         }
+    }
+
+    @Test
+    fun `the backup leaves the first fifteen minutes to the alarm`() {
+        assertFalse(SummarySchedule.shouldCatchUp(at(7, 30), morning, null))
+        assertFalse(SummarySchedule.shouldCatchUp(at(7, 44), morning, null))
+        assertTrue(SummarySchedule.shouldCatchUp(at(7, 45), morning, null))
+    }
+
+    @Test
+    fun `the window is three hours after the chosen time, start and end inclusive of the start`() {
+        // Pencere [saat + 15 dk, saat + 3 sa): sınırlar.
+        assertTrue(SummarySchedule.shouldCatchUp(at(10, 29), morning, null))
+        assertFalse(SummarySchedule.shouldCatchUp(at(10, 30), morning, null))
+    }
+
+    @Test
+    fun `a time chosen after it has passed today skips today, a later time does not`() {
+        assertTrue(SummarySchedule.passedToday(at(8, 0), morning))
+        assertTrue(SummarySchedule.passedToday(at(7, 30), morning))
+        assertFalse(SummarySchedule.passedToday(at(7, 29), morning))
+        assertFalse(SummarySchedule.passedToday(at(0, 5), morning))
+    }
+
+    @Test
+    fun `a time that is only minutes away is still today`() {
+        val now = at(20, 55)
+        assertFalse(SummarySchedule.passedToday(now, evening))
+        assertEquals(at(21, 0), SummarySchedule.nextTrigger(now, evening, null))
+        // Geçmiş saat seçilirse ilk özet yarın.
+        assertEquals(at(21, 0, day.plusDays(1)), SummarySchedule.nextTrigger(at(21, 5), evening, day))
     }
 }
