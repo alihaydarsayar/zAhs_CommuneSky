@@ -77,4 +77,18 @@ class NotificationRoutingTest {
         val active = NotificationKind.entries.flatMap { listOf(it.soundChannel, it.silentChannel) }.toSet()
         assertTrue(NotificationKind.entries.mapNotNull { it.retiredSilentChannel }.none { it in active })
     }
+
+    @Test
+    fun `quiet hours never skip a summary, they only move it to the silent channel`() {
+        val quiet = NotificationSettings(morning = true, morningSound = true, evening = true, eveningSound = true, quietHours = true, quietStart = 23 * 60, quietEnd = 7 * 60)
+        // Sabah özeti 07:00: sessiz saatler 07:00'de biter, sesli kanal; bir dakika önce sessiz kanal. İkisi de bir kanaldır, atlama yok.
+        assertEquals("summary_morning_sound", NotificationRouting.channel(NotificationKind.Morning, quiet, 7 * 60))
+        assertEquals("summary_morning_quiet", NotificationRouting.channel(NotificationKind.Morning, quiet, 6 * 60 + 59))
+        // Akşam özeti 18:00 sessiz saatlerin dışında; 23:30'a kaydırılırsa sessiz kanal.
+        assertEquals("summary_evening_sound", NotificationRouting.channel(NotificationKind.Evening, quiet, 18 * 60))
+        assertEquals("summary_evening_quiet", NotificationRouting.channel(NotificationKind.Evening, quiet, 23 * 60 + 30))
+        // Sessiz saatler kapalıyken (varsayılan) hiçbir saat etkilenmez.
+        assertEquals("summary_morning_sound", NotificationRouting.channel(NotificationKind.Morning, quiet.copy(quietHours = false), 3 * 60))
+        assertEquals(false, NotificationSettings().quietHours)
+    }
 }
