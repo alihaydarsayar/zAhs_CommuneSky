@@ -76,6 +76,7 @@ import com.alihaydarsayar.communesky.work.AttemptOutcome
 import com.alihaydarsayar.communesky.work.Maker
 import com.alihaydarsayar.communesky.work.NotificationHealth
 import com.alihaydarsayar.communesky.work.NotificationIssues
+import com.alihaydarsayar.communesky.work.NotificationStatus
 import com.alihaydarsayar.communesky.work.NotificationChannels
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -96,12 +97,15 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
     var permitted by remember { mutableStateOf(AlertNotifier.canNotify(context)) }
     // Kanal ve arka plan kısıtı da Android ayarlarında değişir: ekrana her dönüşte ve ayar değişince yeniden bakılır.
     var issues by remember { mutableStateOf(NotificationIssues()) }
+    var status by remember { mutableStateOf<NotificationStatus?>(null) }
     LifecycleResumeEffect(notifications) {
         permitted = AlertNotifier.canNotify(context)
         issues = NotificationHealth.issues(context, notifications)
+        status = NotificationStatus.read(context, notifications)
         onPauseOrDispose { }
     }
     var testOutcome by remember { mutableStateOf<AttemptOutcome?>(null) }
+    var copied by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val maker = remember { Maker.of(Build.MANUFACTURER.orEmpty(), Build.BRAND.orEmpty()) }
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -169,7 +173,7 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                         }
                         if (issues.backgroundRestricted) {
                             HealthRow(stringResource(R.string.notif_health_background), stringResource(R.string.notif_health_open)) {
-                                context.startActivity(NotificationHealth.appDetailsIntent(context))
+                                NotificationHealth.startBackgroundSettings(context, maker)
                             }
                         }
                         maker.tip?.let { Hint(stringResource(it)) }
@@ -184,6 +188,7 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                         onCheckedChange = { on -> change(on) { it.copy(alerts = on) } },
                         subtitle = stringResource(R.string.settings_alert_notifications_hint),
                     )
+                    Hint(stringResource(R.string.notifications_alert_scope))
                     if (notifications.alerts) {
                         Spacer(Modifier.height(8.dp))
                         Label(stringResource(R.string.notifications_which_alerts))
@@ -233,7 +238,9 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                         TimeRow(stringResource(R.string.settings_morning_summary_time), notifications.morningMinutes) {
                             pickTime(notifications.morningMinutes) { minutes -> change { it.copy(morningMinutes = minutes) } }
                         }
+                        Hint(stringResource(R.string.notifications_time_approx))
                         SoundRow(notifications.morningSound) { on -> change { it.copy(morningSound = on) } }
+                        Hint(stringResource(R.string.notifications_summary_silent_hint))
                     }
                     HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color.White.copy(alpha = 0.1f))
                     GlassSwitchRow(
@@ -246,7 +253,9 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                         TimeRow(stringResource(R.string.settings_morning_summary_time), notifications.eveningMinutes) {
                             pickTime(notifications.eveningMinutes) { minutes -> change { it.copy(eveningMinutes = minutes) } }
                         }
+                        Hint(stringResource(R.string.notifications_time_approx))
                         SoundRow(notifications.eveningSound) { on -> change { it.copy(eveningSound = on) } }
+                        Hint(stringResource(R.string.notifications_summary_silent_hint))
                     }
                 }
             }
@@ -278,12 +287,29 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                         TimeRow(stringResource(R.string.notifications_quiet_end), notifications.quietEnd) {
                             pickTime(notifications.quietEnd) { minutes -> change { it.copy(quietEnd = minutes) } }
                         }
+                        Hint(stringResource(R.string.notifications_quiet_summaries))
                         GlassSwitchRow(
                             title = stringResource(R.string.notifications_quiet_red),
                             checked = notifications.quietRedSounds,
                             onCheckedChange = { on -> change { it.copy(quietRedSounds = on) } },
                             subtitle = stringResource(R.string.notifications_quiet_red_hint),
                         )
+                    }
+                }
+            }
+            status?.let { current ->
+                item {
+                    GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.status_title)) {
+                        current.rows(context).forEach { (label, value) -> StatusRow(label, value) }
+                        Hint(stringResource(R.string.status_copy_hint))
+                        Spacer(Modifier.height(10.dp))
+                        GlassPill(stringResource(R.string.status_copy)) {
+                            // Yalnız bu durum metni panoya kopyalanır; hiçbir yere gönderilmez.
+                            val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+                            clipboard?.setPrimaryClip(android.content.ClipData.newPlainText(context.getString(R.string.status_title), current.copyText(context)))
+                            copied = true
+                        }
+                        if (copied) Hint(stringResource(R.string.status_copied))
                     }
                 }
             }
@@ -298,6 +324,7 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                             testOutcome = result
                             permitted = AlertNotifier.canNotify(context)
                             issues = NotificationHealth.issues(context, notifications)
+                            status = NotificationStatus.read(context, notifications)
                             when (result) {
                                 AttemptOutcome.NoPermission -> requestPermission()
                                 AttemptOutcome.AppOff -> context.startActivity(NotificationChannels.settingsIntent(context))
@@ -332,6 +359,15 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                 }
             }
         }
+    }
+}
+
+/** Durum kartında bir satır: etiket ve değer. */
+@Composable
+private fun StatusRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.Top) {
+        Text(label, color = TextSecondary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(0.45f).padding(end = 8.dp))
+        Text(value, color = TextPrimary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(0.55f))
     }
 }
 

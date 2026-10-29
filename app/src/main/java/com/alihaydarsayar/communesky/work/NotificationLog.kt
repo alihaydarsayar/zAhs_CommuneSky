@@ -111,6 +111,10 @@ object AttemptLog {
         Attempt(at, kind, outcome, detail)
     }
 
+    /** Kullanıcının henüz kapatmadığı en son "kaçırıldı" kaydı ([dismissedAt]: kartın en son kapatıldığı an). */
+    fun pendingMissed(entries: List<Attempt>, dismissedAt: Instant?): Attempt? =
+        entries.filter { it.outcome == AttemptOutcome.Missed && (dismissedAt == null || it.at.isAfter(dismissedAt)) }.maxByOrNull { it.at }
+
     /** En son başarıyla gönderilen özet (test hariç). */
     fun lastSent(entries: List<Attempt>): Attempt? = entries.filter { it.kind != AttemptKind.Test && it.outcome.delivered }.maxByOrNull { it.at }
 
@@ -144,6 +148,15 @@ class NotificationLog(context: Context) {
     fun record(kind: AttemptKind, outcome: AttemptOutcome, now: Instant = Instant.now(), detail: String? = null) {
         val updated = AttemptLog.add(AttemptLog.decode(prefs.getString(KEY, null)), Attempt(now, kind, outcome, detail), now)
         prefs.edit().putString(KEY, AttemptLog.encode(updated)).apply()
+    }
+
+    /** Henüz kapatılmamış "kaçırıldı" kaydı (uygulama açılınca kart olarak gösterilir). */
+    fun pendingMissed(now: Instant = Instant.now()): Attempt? =
+        AttemptLog.pendingMissed(entries(now), prefs.getLong("missed_dismissed", 0L).takeIf { it > 0 }?.let(Instant::ofEpochMilli))
+
+    /** Kullanıcı "kaçırıldı" kartını kapattı: o ana kadarki kayıtlar bir daha gösterilmez. */
+    fun dismissMissed(now: Instant = Instant.now()) {
+        prefs.edit().putLong("missed_dismissed", now.toEpochMilli()).apply()
     }
 
     /** Bir özet türü için en son planlanan zaman (alarmın kurulduğu hedef); yoksa ya da 7 günden eskiyse null. */

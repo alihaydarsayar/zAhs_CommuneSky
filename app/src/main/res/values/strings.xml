@@ -1006,7 +1006,7 @@
     <string name="notif_tip_xiaomi">Xiaomi, Redmi, POCO: turn on Autostart, set Battery saver to “No restrictions” and lock the app in the recent apps.</string>
     <string name="notif_tip_samsung">Samsung: Settings › Battery › Background usage limits: add Commune Sky to “Never sleeping apps” and turn off “Put unused apps to sleep”.</string>
     <string name="notif_tip_huawei">Honor, Huawei: Settings › Battery › App launch: choose “Manage manually” for Commune Sky and allow auto-launch, secondary launch and running in the background.</string>
-    <string name="notif_tip_oppo">OPPO, Realme: Settings › Battery › App battery management: allow background activity and auto-start for Commune Sky, and lock the app in the recent apps.</string>
+    <string name="notif_tip_oppo">OPPO, Realme, Vivo: Settings › Battery › App battery management: allow background activity and auto-start for Commune Sky, and lock the app in the recent apps.</string>
 
     <!-- Result of a notification attempt (test button and status) -->
     <string name="attempt_sent">Sent</string>
@@ -1036,4 +1036,38 @@
     <string name="summary_nodata_body">There is no weather data yet. Tap to open.</string>
     <string name="summary_failed_title">Summary could not be prepared</string>
     <string name="summary_failed_body">Tap to open.</string>
+
+    <!-- Notification status (Settings › Notifications) -->
+    <string name="status_title">Notification status</string>
+    <string name="status_permission">Notification permission</string>
+    <string name="status_app">Notifications for this app</string>
+    <string name="status_on">On</string>
+    <string name="status_off">Off</string>
+    <string name="status_importance_none">Off</string>
+    <string name="status_importance_low">Low</string>
+    <string name="status_importance_default">Default</string>
+    <string name="status_importance_high">High</string>
+    <string name="status_channel_missing">Not created yet</string>
+    <string name="status_battery">Battery restriction</string>
+    <string name="status_restricted">Restricted</string>
+    <string name="status_unrestricted">None</string>
+    <string name="status_zone">Phone time zone</string>
+    <string name="status_next">Next: %1$s</string>
+    <string name="status_summary_off">off</string>
+    <string name="status_alarm_set">%1$s · alarm set</string>
+    <string name="status_alarm_not_set">alarm not set</string>
+    <string name="status_alarm_not_set_at">%1$s · alarm NOT set (opens with the app)</string>
+    <string name="status_last_sent">Last summary sent</string>
+    <string name="status_last_test">Last test</string>
+    <string name="status_none">—</string>
+    <string name="status_app_info">App</string>
+    <string name="status_copy">Copy status</string>
+    <string name="status_copied">Copied</string>
+    <string name="status_copy_hint">Copies only this text: no location, place names or weather data. Nothing is sent anywhere.</string>
+    <string name="missed_title">Your %1$s did not arrive</string>
+    <string name="missed_text">The phone’s background settings may be blocking the app.</string>
+    <string name="notifications_time_approx">About this time (a few minutes of drift is normal)</string>
+    <string name="notifications_summary_silent_hint">A summary set to silent still appears in the notification shade, only without sound or vibration.</string>
+    <string name="notifications_alert_scope">Only for places in Türkiye (MGM alerts)</string>
+    <string name="notifications_quiet_summaries">Summaries are never skipped in quiet hours; they arrive silently.</string>
 </resources>

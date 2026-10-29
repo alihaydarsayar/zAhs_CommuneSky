@@ -126,4 +126,18 @@ class AttemptLogTest {
         assertTrue(!MissedCheck.missed(late, AttemptKind.Evening, emptyList(), null, Instant.parse("2026-10-29T19:59:00Z"), baku))
         assertTrue(MissedCheck.missed(late, AttemptKind.Evening, emptyList(), null, Instant.parse("2026-10-29T20:00:00Z"), baku))
     }
+
+    // --- "Kaçırıldı" kartı: kapatılana kadar görünür (1.5.11)
+
+    @Test
+    fun `a missed summary is pending until the card is dismissed`() {
+        val missed = Attempt(ago(10), AttemptKind.Morning, AttemptOutcome.Missed, "1788000000000")
+        val entries = listOf(missed, attempt(1, AttemptKind.Evening, AttemptOutcome.Sent))
+        assertEquals(missed, AttemptLog.pendingMissed(entries, null))
+        // Kapatma anından önceki kayıt bir daha gösterilmez; sonrakiler gösterilir.
+        assertNull(AttemptLog.pendingMissed(entries, ago(5)))
+        val later = Attempt(ago(2), AttemptKind.Evening, AttemptOutcome.Missed, "1788000000001")
+        assertEquals(later, AttemptLog.pendingMissed(entries + later, ago(5)))
+        assertNull(AttemptLog.pendingMissed(listOf(attempt(1, AttemptKind.Morning, AttemptOutcome.Sent)), null))
+    }
 }

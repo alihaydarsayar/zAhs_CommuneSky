@@ -39,7 +39,7 @@ enum class Maker(@param:StringRes val tip: Int?) {
                 listOf("xiaomi", "redmi", "poco").any { it in name } -> Xiaomi
                 "samsung" in name -> Samsung
                 listOf("huawei", "honor").any { it in name } -> Huawei
-                listOf("oppo", "realme", "oneplus").any { it in name } -> Oppo
+                listOf("oppo", "realme", "oneplus", "vivo", "iqoo").any { it in name } -> Oppo
                 else -> Other
             }
         }
@@ -69,20 +69,22 @@ object NotificationHealth {
      * [importance] bir kanalın önemini verir (kanal yoksa null). Saf; test edilir.
      */
     fun blockedKinds(settings: NotificationSettings, importance: (String) -> Int?): List<NotificationKind> {
-        val wanted = buildList {
-            if (settings.alerts) {
-                add(NotificationKind.RedAlert)
-                if (settings.alertThreshold != AlertThreshold.Red) add(NotificationKind.OrangeAlert)
-                if (settings.alertThreshold == AlertThreshold.Yellow) add(NotificationKind.YellowAlert)
-            }
-            if (settings.morning) add(NotificationKind.Morning)
-            if (settings.evening) add(NotificationKind.Evening)
-            if (settings.airQuality) add(NotificationKind.AirQuality)
-        }
-        return wanted.filter { kind ->
+        return wantedKinds(settings).filter { kind ->
             val channel = if (NotificationRouting.wantsSound(kind, settings)) kind.soundChannel else kind.silentChannel
             importance(channel) == NotificationManager.IMPORTANCE_NONE
         }
+    }
+
+    /** Kullanıcının açtığı bildirim türleri (hangi kanalların önemli olduğu). Saf; test edilir. */
+    fun wantedKinds(settings: NotificationSettings): List<NotificationKind> = buildList {
+        if (settings.alerts) {
+            add(NotificationKind.RedAlert)
+            if (settings.alertThreshold != AlertThreshold.Red) add(NotificationKind.OrangeAlert)
+            if (settings.alertThreshold == AlertThreshold.Yellow) add(NotificationKind.YellowAlert)
+        }
+        if (settings.morning) add(NotificationKind.Morning)
+        if (settings.evening) add(NotificationKind.Evening)
+        if (settings.airQuality) add(NotificationKind.AirQuality)
     }
 
     fun issues(context: Context, settings: NotificationSettings): NotificationIssues {
@@ -105,6 +107,19 @@ object NotificationHealth {
             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
             .putExtra(Settings.EXTRA_CHANNEL_ID, channelId)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    /**
+     * Arka plan ayarlarının olduğu yer. Xiaomi'de otomatik başlatma sayfası denenir (cihaza göre yoksa [startBackgroundSettings]
+     * uygulama bilgi sayfasına düşer). Dışarıya bağlantı yoktur.
+     */
+    fun autostartIntent(): Intent = Intent().setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    /** Üreticiye özel sayfa açılamazsa uygulamanın Android bilgi sayfasını açar. */
+    fun startBackgroundSettings(context: Context, maker: Maker) {
+        if (maker == Maker.Xiaomi && runCatching { context.startActivity(autostartIntent()) }.isSuccess) return
+        context.startActivity(appDetailsIntent(context))
+    }
 
     /** Uygulamanın Android bilgi sayfası: pil ve arka plan ayarlarına buradan gidilir. */
     fun appDetailsIntent(context: Context): Intent =

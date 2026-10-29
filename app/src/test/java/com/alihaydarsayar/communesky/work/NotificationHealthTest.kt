@@ -5,6 +5,7 @@ import com.alihaydarsayar.communesky.model.NotificationSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlinx.coroutines.runBlocking
 import java.time.LocalTime
@@ -96,5 +97,31 @@ class NotificationHealthTest {
         // Sessiz saatlerde sesli seçim bile sessiz kanala gider; gerçek özet de öyle.
         val quiet = NotificationSettings(morningSound = true, quietHours = true, quietStart = 23 * 60, quietEnd = 7 * 60)
         assertEquals(NotificationKind.Morning.silentChannel, NotificationHealth.testChannel(quiet, LocalTime.of(23, 30)))
+    }
+
+    @Test
+    fun `Vivo and iQOO phones get the OPPO and Realme guidance`() {
+        assertEquals(Maker.Oppo, Maker.of("vivo", "vivo"))
+        assertEquals(Maker.Oppo, Maker.of("vivo", "iQOO"))
+        assertEquals(Maker.Oppo, Maker.of("OnePlus", "OnePlus"))
+    }
+
+    @Test
+    fun `the wanted kinds follow what the user switched on`() {
+        assertEquals(emptyList<NotificationKind>(), NotificationHealth.wantedKinds(NotificationSettings()))
+        val all = NotificationSettings(alerts = true, morning = true, evening = true, airQuality = true, alertThreshold = com.alihaydarsayar.communesky.model.AlertThreshold.Yellow)
+        assertEquals(
+            listOf(NotificationKind.RedAlert, NotificationKind.OrangeAlert, NotificationKind.YellowAlert, NotificationKind.Morning, NotificationKind.Evening, NotificationKind.AirQuality),
+            NotificationHealth.wantedKinds(all),
+        )
+    }
+
+    @Test
+    fun `the status that can be copied holds no place, location, weather or widget field`() {
+        // Durumu kopyala yalnız bildirim durumunu içerir: yeni bir alan eklenirse bu koruma haber verir.
+        val names = NotificationStatus::class.java.declaredFields.map { it.name.lowercase() }
+        val forbidden = listOf("place", "location", "latitude", "longitude", "lat", "lon", "city", "weather", "forecast", "widget", "snapshot")
+        assertTrue(names.toString(), names.none { name -> forbidden.any { name == it || name.contains(it) } })
+        assertTrue(names.containsAll(listOf("permission", "appenabled", "channels", "backgroundrestricted", "zone", "planned", "attempts")))
     }
 }

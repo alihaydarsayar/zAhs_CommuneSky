@@ -1006,7 +1006,7 @@
     <string name="notif_tip_xiaomi">Xiaomi, Redmi, POCO : activez le démarrage automatique, réglez l’économiseur de batterie sur « Aucune restriction » et verrouillez l’application dans les applications récentes.</string>
     <string name="notif_tip_samsung">Samsung : Réglages › Batterie › Limites d’utilisation en arrière-plan : ajoutez Commune Sky aux « Applications jamais en veille » et désactivez « Mettre en veille les applications inutilisées ».</string>
     <string name="notif_tip_huawei">Honor, Huawei : Réglages › Batterie › Lancement des applications : choisissez « Gérer manuellement » pour Commune Sky et autorisez le lancement automatique, secondaire et l’exécution en arrière-plan.</string>
-    <string name="notif_tip_oppo">OPPO, Realme : Réglages › Batterie › Gestion de la batterie des applications : autorisez l’activité en arrière-plan et le démarrage automatique pour Commune Sky, et verrouillez l’application dans les applications récentes.</string>
+    <string name="notif_tip_oppo">OPPO, Realme, Vivo : Réglages › Batterie › Gestion de la batterie des applications : autorisez l’activité en arrière-plan et le démarrage automatique pour Commune Sky, et verrouillez l’application dans les applications récentes.</string>
 
     <!-- Résultat d’un essai de notification (bouton de test et état) -->
     <string name="attempt_sent">Envoyée</string>
@@ -1036,4 +1036,38 @@
     <string name="summary_nodata_body">Il n’y a pas encore de données météo. Touchez pour ouvrir.</string>
     <string name="summary_failed_title">Résumé impossible à préparer</string>
     <string name="summary_failed_body">Touchez pour ouvrir.</string>
+
+    <!-- État des notifications (Réglages › Notifications) -->
+    <string name="status_title">État des notifications</string>
+    <string name="status_permission">Autorisation de notification</string>
+    <string name="status_app">Notifications de l’application</string>
+    <string name="status_on">Activées</string>
+    <string name="status_off">Désactivées</string>
+    <string name="status_importance_none">Désactivé</string>
+    <string name="status_importance_low">Faible</string>
+    <string name="status_importance_default">Par défaut</string>
+    <string name="status_importance_high">Élevée</string>
+    <string name="status_channel_missing">Pas encore créé</string>
+    <string name="status_battery">Restriction de batterie</string>
+    <string name="status_restricted">Restreinte</string>
+    <string name="status_unrestricted">Aucune</string>
+    <string name="status_zone">Fuseau horaire du téléphone</string>
+    <string name="status_next">Prochain : %1$s</string>
+    <string name="status_summary_off">désactivé</string>
+    <string name="status_alarm_set">%1$s · alarme programmée</string>
+    <string name="status_alarm_not_set">alarme non programmée</string>
+    <string name="status_alarm_not_set_at">%1$s · alarme NON programmée (reprogrammée à l’ouverture)</string>
+    <string name="status_last_sent">Dernier résumé envoyé</string>
+    <string name="status_last_test">Dernier test</string>
+    <string name="status_none">—</string>
+    <string name="status_app_info">Application</string>
+    <string name="status_copy">Copier l’état</string>
+    <string name="status_copied">Copié</string>
+    <string name="status_copy_hint">Ne copie que ce texte : ni position, ni nom de lieu, ni données météo. Rien n’est envoyé.</string>
+    <string name="missed_title">%1$s n’est pas arrivé</string>
+    <string name="missed_text">Les réglages d’arrière-plan du téléphone bloquent peut-être l’application.</string>
+    <string name="notifications_time_approx">À peu près à cette heure (quelques minutes d’écart possibles)</string>
+    <string name="notifications_summary_silent_hint">Un résumé réglé en silencieux apparaît quand même dans le volet des notifications, sans son ni vibration.</string>
+    <string name="notifications_alert_scope">Uniquement pour les lieux en Türkiye (alertes MGM)</string>
+    <string name="notifications_quiet_summaries">Les résumés ne sont jamais ignorés pendant les heures calmes ; ils arrivent sans son.</string>
 </resources>

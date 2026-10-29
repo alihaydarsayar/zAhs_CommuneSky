@@ -169,8 +169,11 @@ fun HomeScreen(
     }
 
     // Uygulamaya geri dönülünce: veri eskidiyse ya da izin Ayarlar'dan verildiyse yenile.
+    // Kaçırılan özet (alarm tetiklenmedi) varsa uygulama açılınca bir kart gösterilir; kapatılabilir.
+    var missedSummary by remember { mutableStateOf<com.alihaydarsayar.communesky.work.Attempt?>(null) }
     LifecycleResumeEffect(viewModel) {
         viewModel.onResume()
+        missedSummary = com.alihaydarsayar.communesky.work.NotificationLog(context).pendingMissed()
         onPauseOrDispose { }
     }
 
@@ -188,10 +191,15 @@ fun HomeScreen(
             }
         }
     }
-    val actions = remember(viewModel, onOpenToday, onOpenDetail, onOpenTab, onOpenDay, offerAlerts) {
+    val actions = remember(viewModel, onOpenToday, onOpenDetail, onOpenTab, onOpenDay, offerAlerts, missedSummary) {
         HomeActions(
             onWearFeedback = viewModel::addWearFeedback, onOpenToday = onOpenToday, onOpenDetail = onOpenDetail, onOpenTab = onOpenTab, onOpenDay = onOpenDay,
             offerAlertNotifications = offerAlerts, onNotificationPrompt = onNotificationPrompt,
+            missedSummary = missedSummary,
+            onDismissMissed = {
+                com.alihaydarsayar.communesky.work.NotificationLog(context).dismissMissed()
+                missedSummary = null
+            },
         )
     }
     androidx.compose.runtime.CompositionLocalProvider(LocalHomeActions provides actions) {
@@ -233,6 +241,9 @@ class HomeActions(
     val offerAlertNotifications: Boolean = false,
     /** Önerinin cevabı: true "Aç", false "✕". */
     val onNotificationPrompt: (Boolean) -> Unit = {},
+    /** Gelmeyen (alarmı tetiklenmeyen) son özet; kart için. */
+    val missedSummary: com.alihaydarsayar.communesky.work.Attempt? = null,
+    val onDismissMissed: () -> Unit = {},
 )
 
 val LocalHomeActions = androidx.compose.runtime.staticCompositionLocalOf { HomeActions() }
@@ -443,6 +454,7 @@ private fun ForecastList(
     val density = LocalDensity.current
 
     val insets = WindowInsets.safeDrawing.asPaddingValues()
+    val homeActions = LocalHomeActions.current
     // Küçük üst çubuk görünürken solma alanı onun altına kadar uzar; kartlar çubuğun arkasında karışmaz.
     val compactBarVisible by remember { derivedStateOf { listState.isCompactBarVisible() } }
     val fadeHeight by animateDpAsState(if (compactBarVisible) 84.dp else 52.dp, label = "topFade")
@@ -513,6 +525,10 @@ private fun ForecastList(
                     if (normal != null && today != null) SeasonalNormalLine(normal.difference(today.maxTemperature))
                 }
             }
+        }
+        // Bir özet gelmediyse (alarm tetiklenmedi) nedenini ve ilgili telefon ayarını gösteren kapatılabilir kart.
+        homeActions.missedSummary?.let { missed ->
+            item(key = "missedSummary") { com.alihaydarsayar.communesky.ui.settings.MissedSummaryCard(missed, homeActions.onDismissMissed) }
         }
         // Meteorolojik uyarı varsa renkli şerit.
         if (weather.alerts.isNotEmpty()) item(key = "alerts") { AlertBanner(weather.alerts, now.toLocalDate()) }

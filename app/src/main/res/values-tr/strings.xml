@@ -999,7 +999,7 @@
     <string name="notif_tip_xiaomi">Xiaomi, Redmi, POCO: Otomatik başlat’ı aç, Pil tasarrufu’nu “Kısıtlama yok” yap ve uygulamayı son uygulamalarda kilitle.</string>
     <string name="notif_tip_samsung">Samsung: Ayarlar › Pil › Arka plan kullanım sınırları: Commune Sky’ı “Uyumayan uygulamalar”a ekle ve “Kullanılmayan uygulamaları uyku moduna al”ı kapat.</string>
     <string name="notif_tip_huawei">Honor, Huawei: Ayarlar › Pil › Uygulama başlatma: Commune Sky için “Elle yönet”i seç; otomatik başlatma, ikincil başlatma ve arka planda çalışmaya izin ver.</string>
-    <string name="notif_tip_oppo">OPPO, Realme: Ayarlar › Pil › Uygulama pil yönetimi: Commune Sky için arka planda çalışmaya ve otomatik başlatmaya izin ver, uygulamayı son uygulamalarda kilitle.</string>
+    <string name="notif_tip_oppo">OPPO, Realme, Vivo: Ayarlar › Pil › Uygulama pil yönetimi: Commune Sky için arka planda çalışmaya ve otomatik başlatmaya izin ver, uygulamayı son uygulamalarda kilitle.</string>
 
     <!-- Bildirim denemesinin sonucu (test düğmesi ve durum) -->
     <string name="attempt_sent">Gönderildi</string>
@@ -1029,4 +1029,38 @@
     <string name="summary_nodata_body">Henüz hava verisi yok. Açmak için dokun.</string>
     <string name="summary_failed_title">Özet hazırlanamadı</string>
     <string name="summary_failed_body">Açmak için dokun.</string>
+
+    <!-- Bildirim durumu (Ayarlar › Bildirimler) -->
+    <string name="status_title">Bildirim durumu</string>
+    <string name="status_permission">Bildirim izni</string>
+    <string name="status_app">Bu uygulamanın bildirimleri</string>
+    <string name="status_on">Açık</string>
+    <string name="status_off">Kapalı</string>
+    <string name="status_importance_none">Kapalı</string>
+    <string name="status_importance_low">Düşük</string>
+    <string name="status_importance_default">Varsayılan</string>
+    <string name="status_importance_high">Yüksek</string>
+    <string name="status_channel_missing">Henüz kurulmadı</string>
+    <string name="status_battery">Pil kısıtlaması</string>
+    <string name="status_restricted">Kısıtlı</string>
+    <string name="status_unrestricted">Yok</string>
+    <string name="status_zone">Telefonun saat dilimi</string>
+    <string name="status_next">Sıradaki: %1$s</string>
+    <string name="status_summary_off">kapalı</string>
+    <string name="status_alarm_set">%1$s · alarm kurulu</string>
+    <string name="status_alarm_not_set">alarm kurulu değil</string>
+    <string name="status_alarm_not_set_at">%1$s · alarm kurulu DEĞİL (uygulama açılınca kurulur)</string>
+    <string name="status_last_sent">Son gönderilen özet</string>
+    <string name="status_last_test">Son deneme</string>
+    <string name="status_none">—</string>
+    <string name="status_app_info">Uygulama</string>
+    <string name="status_copy">Durumu kopyala</string>
+    <string name="status_copied">Kopyalandı</string>
+    <string name="status_copy_hint">Yalnız bu metni kopyalar: konum, yer adı ya da hava verisi yoktur. Hiçbir yere gönderilmez.</string>
+    <string name="missed_title">%1$s gelmedi</string>
+    <string name="missed_text">Telefonun arka plan ayarı uygulamayı engelliyor olabilir.</string>
+    <string name="notifications_time_approx">Yaklaşık bu saatte (birkaç dakika sapabilir)</string>
+    <string name="notifications_summary_silent_hint">Sessiz seçilen özet de bildirim gölgesinde görünür; yalnız ses ve titreşim olmaz.</string>
+    <string name="notifications_alert_scope">Yalnız Türkiye’deki yerler için (MGM uyarıları)</string>
+    <string name="notifications_quiet_summaries">Sessiz saatlerde özetler atlanmaz; sessiz gelir.</string>
 </resources>
