@@ -112,4 +112,25 @@ object SummarySchedule {
         cacheAge > MAX_CACHE_AGE -> AttemptOutcome.DataTooOld
         else -> null
     }
+
+    /** Bir alarm ya da yedek turunda yapılacak iş. */
+    enum class Action { Full, FullOldData, StaleNotice, NoDataNotice, Nothing }
+
+    /**
+     * Önbelleğin yaşına göre ne yapılacağı. [verdict] ile aynı kurallar; fark: veri 24 saatten eskiyse (ya da hiç yoksa)
+     * özet sessizce atlanmaz, günde en çok bir kez "güncel hava alınamadı" bildirimi gönderilir ([noticeOn]: bildirimin
+     * son gönderildiği gün). Özet kapalıysa ya da bugün gönderildiyse yapılacak bir şey yoktur.
+     */
+    fun action(enabled: Boolean, sentOn: LocalDate?, noticeOn: LocalDate?, today: LocalDate, cacheAge: Duration?, force: Boolean = false): Action =
+        when (verdict(enabled, sentOn, today, cacheAge, force)) {
+            Verdict.Send -> Action.Full
+            Verdict.SendCached -> Action.FullOldData
+            Verdict.Skip -> when {
+                !enabled && !force -> Action.Nothing
+                !force && sentOn == today -> Action.Nothing
+                noticeOn == today && !force -> Action.Nothing
+                cacheAge == null -> Action.NoDataNotice
+                else -> Action.StaleNotice
+            }
+        }
 }

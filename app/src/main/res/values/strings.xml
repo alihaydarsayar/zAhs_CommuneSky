@@ -1029,4 +1029,11 @@
     <string name="attempt_stale_notice">Current weather could not be fetched; a notice was sent instead</string>
     <string name="attempt_error">Error: %1$s</string>
     <string name="attempt_missed">Missed: the alarm did not fire</string>
+
+    <!-- Summary notices when the weather is too old or the summary cannot be prepared -->
+    <string name="summary_stale_title">Current weather unavailable</string>
+    <string name="summary_stale_body">Could not get current weather. Last known: %1$s. Tap to open.</string>
+    <string name="summary_nodata_body">There is no weather data yet. Tap to open.</string>
+    <string name="summary_failed_title">Summary could not be prepared</string>
+    <string name="summary_failed_body">Tap to open.</string>
 </resources>

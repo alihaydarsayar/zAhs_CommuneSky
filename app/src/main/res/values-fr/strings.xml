@@ -1029,4 +1029,11 @@
     <string name="attempt_stale_notice">La météo actuelle n’a pas pu être récupérée ; un avis a été envoyé à la place</string>
     <string name="attempt_error">Erreur : %1$s</string>
     <string name="attempt_missed">Manqué : l’alarme ne s’est pas déclenchée</string>
+
+    <!-- Avis quand la météo est trop ancienne ou que le résumé ne peut pas être préparé -->
+    <string name="summary_stale_title">Météo actuelle indisponible</string>
+    <string name="summary_stale_body">Impossible d’obtenir la météo actuelle. Dernière connue : %1$s. Touchez pour ouvrir.</string>
+    <string name="summary_nodata_body">Il n’y a pas encore de données météo. Touchez pour ouvrir.</string>
+    <string name="summary_failed_title">Résumé impossible à préparer</string>
+    <string name="summary_failed_body">Touchez pour ouvrir.</string>
 </resources>

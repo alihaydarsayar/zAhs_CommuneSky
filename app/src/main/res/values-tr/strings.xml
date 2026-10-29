@@ -1022,4 +1022,11 @@
     <string name="attempt_stale_notice">Güncel hava alınamadı; yerine bilgi bildirimi gönderildi</string>
     <string name="attempt_error">Hata: %1$s</string>
     <string name="attempt_missed">Kaçırıldı: alarm tetiklenmedi</string>
+
+    <!-- Hava verisi çok eskiyse ya da özet hazırlanamazsa gösterilen bildirimler -->
+    <string name="summary_stale_title">Güncel hava alınamadı</string>
+    <string name="summary_stale_body">Güncel hava alınamadı. Son bilinen: %1$s. Açmak için dokun.</string>
+    <string name="summary_nodata_body">Henüz hava verisi yok. Açmak için dokun.</string>
+    <string name="summary_failed_title">Özet hazırlanamadı</string>
+    <string name="summary_failed_body">Açmak için dokun.</string>
 </resources>

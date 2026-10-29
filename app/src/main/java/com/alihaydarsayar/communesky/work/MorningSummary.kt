@@ -17,6 +17,8 @@ import com.alihaydarsayar.communesky.model.AlertLevel
 import com.alihaydarsayar.communesky.model.NotificationSettings
 import com.alihaydarsayar.communesky.model.WeatherCondition
 import com.alihaydarsayar.communesky.model.today.AndroidStrings
+import com.alihaydarsayar.communesky.model.today.BuiltSummary
+import com.alihaydarsayar.communesky.model.today.SummaryBuilder
 import com.alihaydarsayar.communesky.model.today.DailySummary
 import com.alihaydarsayar.communesky.model.today.SummaryKind
 import com.alihaydarsayar.communesky.model.today.SummaryText
@@ -199,64 +201,168 @@ object MorningSummary {
         }
     }
 
+    /** Bir bildirimin ("güncel hava alınamadı", "özet hazırlanamadı") son gönderildiği gün. */
+    private fun noticeOn(context: Context, kind: SummaryKind): LocalDate? =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("notice_${lastDayKey(kind)}", null)
+            ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
+    private fun channelFor(kind: SummaryKind, settings: NotificationSettings): String {
+        val time = LocalTime.now()
+        return NotificationRouting.channel(
+            if (kind == SummaryKind.Morning) NotificationKind.Morning else NotificationKind.Evening, settings, time.hour * 60 + time.minute,
+        )
+    }
+
+    /**
+     * Özeti gönderir. Hiçbir koşulda sessiz değildir: her tur kayda bir sonuç yazar (gönderildi, atlandı ve nedeni,
+     * hata ve istisna sınıf adı). Özet kurulamazsa basit özet, o da olmazsa tek satırlık bir bildirim gider.
+     */
     private suspend fun deliver(app: Context, input: WidgetInput, kind: SummaryKind, force: Boolean) {
+        try {
+            deliverChecked(app, input, kind, force)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            NotificationLog(app).record(attemptKind(kind), AttemptOutcome.Error, detail = Attempt.nameOf(e))
+            runCatching { unavailableNotice(app, input, kind) }
+        }
+    }
+
+    private suspend fun deliverChecked(app: Context, input: WidgetInput, kind: SummaryKind, force: Boolean) {
         val settings = input.settings
         val log = NotificationLog(app)
-        val attemptKind = if (kind == SummaryKind.Morning) AttemptKind.Morning else AttemptKind.Evening
+        val attemptKind = attemptKind(kind)
         val today = LocalDate.now()
         val snapshot = pick(input)
         val age = snapshot?.let { Duration.between(it.fetchedAt, Instant.now()) }
         val on = enabled(settings.notifications, kind)
-        val verdict = SummarySchedule.verdict(on, sentOn(app, kind), today, age, force)
-        if (verdict == SummarySchedule.Verdict.Skip || snapshot == null) {
-            // Kapalı ya da bugün gönderilmiş: söylenecek bir şey yok. Veri yok ya da çok eski: kayda yazılır.
-            SummarySchedule.skipOutcome(on, sentOn(app, kind), today, age, force)?.let { log.record(attemptKind, it) }
-            return
-        }
-        // Engel varsa (izin, uygulamanın bildirimleri, kanal) özet kurulmaz; gün "gönderildi" sayılmaz, yedek yol pencere içinde yeniden dener.
+        val action = SummarySchedule.action(on, sentOn(app, kind), noticeOn(app, kind), today, age, force)
+        // Kapalı, bugün gönderilmiş ya da bildirimi bugün zaten gitmiş: söylenecek yeni bir şey yok.
+        if (action == SummarySchedule.Action.Nothing) return
+        // Engel varsa (izin, uygulamanın bildirimleri, kanal) hiçbir şey kurulmaz; gün "gönderildi" sayılmaz, yedek yol
+        // pencere içinde yeniden dener.
         NotificationChannels.ensure(app)
-        val time = LocalTime.now()
-        val channel = NotificationRouting.channel(
-            if (kind == SummaryKind.Morning) NotificationKind.Morning else NotificationKind.Evening, settings.notifications, time.hour * 60 + time.minute,
-        )
+        val channel = channelFor(kind, settings.notifications)
         NotificationHealth.blocker(app, channel)?.let {
             log.record(attemptKind, it)
             return
         }
-        // Bildirim, uygulamanın diliyle yazılır.
         val localized = WidgetLanguage.context(app)
+        if (action == SummarySchedule.Action.StaleNotice || action == SummarySchedule.Action.NoDataNotice || snapshot == null) {
+            staleNotice(app, kind, channel, localized, snapshot)
+            return
+        }
         val clock = timeFormatter(localized)
         val unit = settings.temperatureUnit
+        // Özet telefonun gününü anlatır (yer farklı saat diliminde olabilir).
+        val now = SummarySchedule.summaryNow(snapshot.forecast.localNow(), today)
         // Şu an yağıyorsa (taze önbellekte) sabah özetinin önerisine de şemsiye girer; ana ekrandaki öneriyle aynı kural.
         val wetNow = kind == SummaryKind.Morning && age != null && age <= WET_NOW_MAX_AGE && snapshot.forecast.current.condition.let {
             it.isWet || it == WeatherCondition.Snow
         }
-        var text = DailySummary.of(
-            kind, snapshot.forecast, snapshot.alerts, SummarySchedule.summaryNow(snapshot.forecast.localNow(), today), settings.wear.shift, AndroidStrings(localized),
+        val built = SummaryBuilder.build(
+            kind, snapshot.forecast, snapshot.alerts, now, settings.wear.shift, AndroidStrings(localized),
             { unit.fromCelsius(it).roundToInt() }, { it.format(clock) }, wetNow,
         )
-        if (text == null) {
-            log.record(attemptKind, AttemptOutcome.NoData)
-            return
+        val old = action == SummarySchedule.Action.FullOldData
+        when (built) {
+            is BuiltSummary.Full -> {
+                var text = built.text
+                if (old) {
+                    // Eski veriden kurulan özet bunu söyler; yanlış bir özet gibi görünmesin.
+                    val fetched = snapshot.fetchedAt.atOffset(ZoneOffset.ofTotalSeconds(snapshot.forecast.utcOffsetSeconds)).toLocalDateTime()
+                    text = text.copy(lines = text.lines.take(3) + localized.getString(R.string.summary_cached_at, fetched.format(clock)))
+                }
+                notify(app, input, snapshot, kind, text, today, channel, old)
+            }
+            is BuiltSummary.Basic -> {
+                // Tam özet kurulamadı: basit özet gider, hata kayda yazılır.
+                val posted = postPlain(app, kind, channel, snapshot.placeId, built.title, built.body)
+                if (posted.delivered) markSent(app, kind, today)
+                log.record(attemptKind, posted, detail = built.error?.let(Attempt::nameOf))
+            }
+            is BuiltSummary.Unavailable -> {
+                // Günün verisi tahminde yok: nedeni yazılır. Bir istisna varsa üst katman hata olarak kaydeder.
+                built.error?.let { throw it }
+                log.record(attemptKind, AttemptOutcome.NoData)
+            }
         }
-        val old = verdict == SummarySchedule.Verdict.SendCached
-        if (old) {
-            // Eski veriden kurulan özet bunu söyler; yanlış bir özet gibi görünmesin.
-            val fetched = snapshot.fetchedAt.atOffset(ZoneOffset.ofTotalSeconds(snapshot.forecast.utcOffsetSeconds)).toLocalDateTime()
-            text = text.copy(lines = text.lines.take(3) + localized.getString(R.string.summary_cached_at, fetched.format(clock)))
-        }
-        val outcome = notify(app, input, snapshot, kind, text, today, channel, old)
-        log.record(attemptKind, outcome)
     }
 
-    /** Özeti gösterir ve bildirimin gerçekten listede olduğunu doğrular; başarıyla gönderildiyse günü "gönderildi" diye işaretler. */
+    private fun markSent(app: Context, kind: SummaryKind, today: LocalDate) {
+        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(lastDayKey(kind), today.toString()).apply()
+    }
+
+    private fun markNotice(app: Context, kind: SummaryKind, today: LocalDate) {
+        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("notice_${lastDayKey(kind)}", today.toString()).apply()
+    }
+
+    /**
+     * Veri 24 saatten eski (ya da hiç yok) ve yenilenemedi: yanlış bir özet yerine "güncel hava alınamadı" der.
+     * Son bilinen verinin zamanı yazılır. Günde en çok bir kez; gerçek özet sonra gelirse aynı bildirimin yerine geçer.
+     */
+    private suspend fun staleNotice(app: Context, kind: SummaryKind, channel: String, localized: Context, snapshot: WeatherSnapshot?) {
+        val body = if (snapshot == null) {
+            localized.getString(R.string.summary_nodata_body)
+        } else {
+            val at = snapshot.fetchedAt.atZone(java.time.ZoneId.systemDefault())
+            val format = java.time.format.DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.SHORT)
+                .withLocale(localized.resources.configuration.locales[0])
+            localized.getString(R.string.summary_stale_body, at.format(format))
+        }
+        val outcome = postPlain(app, kind, channel, snapshot?.placeId, localized.getString(R.string.summary_stale_title), body)
+        if (outcome.delivered) {
+            markNotice(app, kind, LocalDate.now())
+            NotificationLog(app).record(attemptKind(kind), AttemptOutcome.StaleNotice)
+        } else {
+            NotificationLog(app).record(attemptKind(kind), outcome)
+        }
+    }
+
+    /** Beklenmeyen hata: günde en çok bir kez "özet hazırlanamadı" der (özet gitmediyse). */
+    private suspend fun unavailableNotice(app: Context, input: WidgetInput, kind: SummaryKind) {
+        val today = LocalDate.now()
+        if (sentOn(app, kind) == today || noticeOn(app, kind) == today || !enabled(input.settings.notifications, kind)) return
+        val localized = WidgetLanguage.context(app)
+        NotificationChannels.ensure(app)
+        val channel = channelFor(kind, input.settings.notifications)
+        if (NotificationHealth.blocker(app, channel) != null) return
+        val outcome = postPlain(
+            app, kind, channel, pick(input)?.placeId, localized.getString(R.string.summary_failed_title), localized.getString(R.string.summary_failed_body),
+        )
+        if (outcome.delivered) markNotice(app, kind, today)
+    }
+
+    /** Düz (özel görünümsüz) bildirim: yedek özet ve bilgi bildirimleri. Bildirimin listede görüldüğünü doğrular. */
+    private suspend fun postPlain(app: Context, kind: SummaryKind, channel: String, placeId: Long?, title: String, body: String): AttemptOutcome {
+        val manager = app.getSystemService(NotificationManager::class.java) ?: return AttemptOutcome.Failed
+        val id = notificationId(kind)
+        val page = open(app, placeId ?: -1L, kind.ordinal * 10 + 3) { it }
+        val notification = NotificationCompat.Builder(app, channel)
+            .setSmallIcon(if (kind == SummaryKind.Morning) R.drawable.ic_wl_partly_cloudy_day else R.drawable.ic_wl_partly_cloudy_night)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(page)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .build()
+        val shown = NotificationHealth.outcome(
+            blocker = null, oldData = false,
+            post = { runCatching { manager.notify(id, notification) }.isSuccess },
+            shown = { NotificationHealth.awaitShown(app, id) },
+        )
+        // Düz bildirim bir yedek özet sayılır (Fallback); çağıran bilgi bildirimi ise kendi sonucunu yazar.
+        return if (shown == AttemptOutcome.Sent) AttemptOutcome.Fallback else shown
+    }
+
+    /** Özeti gösterir ve bildirimin gerçekten listede olduğunu doğrular; başarıyla gönderildiyse günü "gönderildi" diye işaretler. Sonucu kayda yazar. */
     private suspend fun notify(
         app: Context, input: WidgetInput, snapshot: WeatherSnapshot, kind: SummaryKind, text: SummaryText, today: LocalDate, channel: String, oldData: Boolean,
-    ): AttemptOutcome {
+    ) {
         val settings = input.settings
         val localized = WidgetLanguage.context(app)
         val unit = settings.temperatureUnit
-        val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val place = snapshot.displayName(localized)
         val warning = text.warning?.let { alert ->
             listOf(
@@ -265,23 +371,36 @@ object MorningSummary {
                 AlertNotifier.period(localized, alert, snapshot.forecast.localNow().toLocalDate()),
             ).filter { it.isNotBlank() }.joinToString(" · ")
         }
-        val manager = app.getSystemService(NotificationManager::class.java) ?: return AttemptOutcome.Failed
+        val log = NotificationLog(app)
+        val manager = app.getSystemService(NotificationManager::class.java)
+        if (manager == null) {
+            log.record(attemptKind(kind), AttemptOutcome.Failed)
+            return
+        }
         val label = localized.getString(if (kind == SummaryKind.Morning) R.string.channel_morning else R.string.channel_evening)
         val dayPage = open(app, snapshot.placeId, kind.ordinal * 10 + 1) { it.putExtra(MainActivity.OpenDayKey.name, text.date.toString()) }
         val wearPage = open(app, snapshot.placeId, kind.ordinal * 10 + 2) { it.putExtra(MainActivity.OpenTodayKey.name, true) }
-        val builder = NotificationCompat.Builder(app, channel)
+        fun base() = NotificationCompat.Builder(app, channel)
             .setSmallIcon(if (kind == SummaryKind.Morning) R.drawable.ic_wl_partly_cloudy_day else R.drawable.ic_wl_partly_cloudy_night)
             .setSubText("$label · $place")
             .setContentTitle(text.title)
             // Kapalı görünümde öneri; uyarı açık görünümde kendi renkli satırında.
             .setContentText(text.body)
-            // Günün simgesi kapalı görünümün içinde: büyük simge (setLargeIcon) açık görünümü daraltıyordu.
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(collapsed(app, text))
-            .setCustomBigContentView(expanded(app, localized, text, warning, unit))
             .setContentIntent(if (kind == SummaryKind.Morning) wearPage else dayPage)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
+        var viewError: Throwable? = null
+        val builder = try {
+            base()
+                // Günün simgesi kapalı görünümün içinde: büyük simge (setLargeIcon) açık görünümü daraltıyordu.
+                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+                .setCustomContentView(collapsed(app, text))
+                .setCustomBigContentView(expanded(app, localized, text, warning, unit))
+        } catch (e: Throwable) {
+            // Özel görünüm kurulamadı: aynı metin düz bildirim olarak gider; hata kayda yazılır.
+            viewError = e
+            base().setStyle(NotificationCompat.BigTextStyle().bigText((listOf(text.body) + text.lines).joinToString("\n")))
+        }
         if (kind == SummaryKind.Morning) {
             builder.addAction(0, localized.getString(R.string.summary_action_hours), dayPage)
             builder.addAction(0, localized.getString(R.string.summary_action_wear), wearPage)
@@ -296,8 +415,12 @@ object MorningSummary {
             shown = { NotificationHealth.awaitShown(app, id) },
         )
         // Gönderildi (ya da en azından Android kabul etti): gün tamam. Reddedildiyse yedek yol pencere içinde yeniden dener.
-        if (outcome.delivered) prefs.edit().putString(lastDayKey(kind), today.toString()).apply()
-        return outcome
+        if (outcome.delivered) markSent(app, kind, today)
+        if (viewError != null && outcome.delivered) {
+            log.record(attemptKind(kind), AttemptOutcome.Fallback, detail = Attempt.nameOf(viewError))
+        } else {
+            log.record(attemptKind(kind), outcome)
+        }
     }
 
     private fun open(context: Context, placeId: Long, requestCode: Int, extra: (Intent) -> Intent): PendingIntent = PendingIntent.getActivity(

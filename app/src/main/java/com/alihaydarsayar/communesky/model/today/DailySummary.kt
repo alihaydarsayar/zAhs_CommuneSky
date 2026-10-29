@@ -203,6 +203,9 @@ object DailySummary {
 
     private fun capital(text: String, strings: Strings) = text.replaceFirstChar { it.titlecase(strings.locale) }
 
+    /** Genel durumun kısa adı ("açık", "parçalı bulutlu"...), küçük harfle. */
+    fun skyPhrase(code: Int, strings: Strings): String = strings.get(skyName(code)).lowercase(strings.locale)
+
     private fun skyName(code: Int): Int = when (WeatherCondition.fromCode(code)) {
         WeatherCondition.Clear -> R.string.weather_clear
         WeatherCondition.PartlyCloudy -> R.string.weather_partly_cloudy
