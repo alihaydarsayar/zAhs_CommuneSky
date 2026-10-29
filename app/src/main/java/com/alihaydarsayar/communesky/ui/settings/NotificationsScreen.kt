@@ -40,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,10 +71,13 @@ import com.alihaydarsayar.communesky.ui.theme.TextSecondary
 import com.alihaydarsayar.communesky.ui.today.GlassPill
 import com.alihaydarsayar.communesky.widget.WidgetLanguage
 import com.alihaydarsayar.communesky.work.AlertNotifier
+import com.alihaydarsayar.communesky.work.AttemptKind
+import com.alihaydarsayar.communesky.work.AttemptOutcome
 import com.alihaydarsayar.communesky.work.Maker
 import com.alihaydarsayar.communesky.work.NotificationHealth
 import com.alihaydarsayar.communesky.work.NotificationIssues
 import com.alihaydarsayar.communesky.work.NotificationChannels
+import kotlinx.coroutines.launch
 import java.time.LocalTime
 
 /**
@@ -97,6 +101,8 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
         issues = NotificationHealth.issues(context, notifications)
         onPauseOrDispose { }
     }
+    var testOutcome by remember { mutableStateOf<AttemptOutcome?>(null) }
+    val scope = rememberCoroutineScope()
     val maker = remember { Maker.of(Build.MANUFACTURER.orEmpty(), Build.BRAND.orEmpty()) }
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permitted = AlertNotifier.canNotify(context)
@@ -284,15 +290,25 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
             item {
                 GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.notif_test_title)) {
                     Text(stringResource(R.string.notif_test_hint), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
-                    // Özetlerle aynı kanaldan örnek bildirim; izin yoksa önce izin istenir. Hiçbir veri gönderilmez.
+                    // Özetlerle aynı kanaldan örnek bildirim. Gönderilemezse nedeni yazılır ve ilgili ayar açılır.
                     Spacer(Modifier.height(10.dp))
                     GlassPill(stringResource(R.string.notif_test_button)) {
-                        if (NotificationHealth.sendTest(context, notifications)) {
+                        scope.launch {
+                            val result = NotificationHealth.sendTest(context, notifications)
+                            testOutcome = result
+                            permitted = AlertNotifier.canNotify(context)
                             issues = NotificationHealth.issues(context, notifications)
-                        } else {
-                            requestPermission()
+                            when (result) {
+                                AttemptOutcome.NoPermission -> requestPermission()
+                                AttemptOutcome.AppOff -> context.startActivity(NotificationChannels.settingsIntent(context))
+                                AttemptOutcome.ChannelOff -> context.startActivity(
+                                    NotificationHealth.channelSettingsIntent(context, NotificationHealth.testChannel(notifications)),
+                                )
+                                else -> Unit
+                            }
                         }
                     }
+                    testOutcome?.let { Hint(AttemptText.of(context, AttemptKind.Test, it)) }
                     // Hiçbir sorun algılanmasa da bazı üreticiler uygulamayı arka planda kapatır; yönlendirme yalnız onlarda.
                     if (!issues.any && notifications.anyOn) maker.tip?.let { Hint(stringResource(it)) }
                 }

@@ -1007,4 +1007,18 @@
     <string name="notif_tip_samsung">Samsung : Réglages › Batterie › Limites d’utilisation en arrière-plan : ajoutez Commune Sky aux « Applications jamais en veille » et désactivez « Mettre en veille les applications inutilisées ».</string>
     <string name="notif_tip_huawei">Honor, Huawei : Réglages › Batterie › Lancement des applications : choisissez « Gérer manuellement » pour Commune Sky et autorisez le lancement automatique, secondaire et l’exécution en arrière-plan.</string>
     <string name="notif_tip_oppo">OPPO, Realme : Réglages › Batterie › Gestion de la batterie des applications : autorisez l’activité en arrière-plan et le démarrage automatique pour Commune Sky, et verrouillez l’application dans les applications récentes.</string>
+
+    <!-- Résultat d’un essai de notification (bouton de test et état) -->
+    <string name="attempt_sent">Envoyée</string>
+    <string name="attempt_test_sent">Envoyée. Regardez dans le volet des notifications.</string>
+    <string name="attempt_sent_old">Envoyée avec d’anciennes données</string>
+    <string name="attempt_not_visible">Envoyée, mais absente de la liste des notifications d’Android. Vérifiez les réglages de notification de l’application.</string>
+    <string name="attempt_skipped">Ignorée : %1$s</string>
+    <string name="attempt_not_shown">Non affichée : %1$s</string>
+    <string name="attempt_reason_no_permission">l’autorisation de notification est désactivée</string>
+    <string name="attempt_reason_app_off">les notifications de l’application sont désactivées</string>
+    <string name="attempt_reason_channel_off">le canal de notification est désactivé</string>
+    <string name="attempt_reason_no_data">pas encore de données météo</string>
+    <string name="attempt_reason_data_too_old">les données météo ont plus de 24 heures et n’ont pas pu être actualisées</string>
+    <string name="attempt_reason_failed">Android a refusé la notification</string>
 </resources>

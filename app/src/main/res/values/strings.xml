@@ -1007,4 +1007,18 @@
     <string name="notif_tip_samsung">Samsung: Settings › Battery › Background usage limits: add Commune Sky to “Never sleeping apps” and turn off “Put unused apps to sleep”.</string>
     <string name="notif_tip_huawei">Honor, Huawei: Settings › Battery › App launch: choose “Manage manually” for Commune Sky and allow auto-launch, secondary launch and running in the background.</string>
     <string name="notif_tip_oppo">OPPO, Realme: Settings › Battery › App battery management: allow background activity and auto-start for Commune Sky, and lock the app in the recent apps.</string>
+
+    <!-- Result of a notification attempt (test button and status) -->
+    <string name="attempt_sent">Sent</string>
+    <string name="attempt_test_sent">Sent. Look for it in the notification shade.</string>
+    <string name="attempt_sent_old">Sent with old data</string>
+    <string name="attempt_not_visible">Sent, but it is not in Android’s notification list. Check this app’s notification settings.</string>
+    <string name="attempt_skipped">Skipped: %1$s</string>
+    <string name="attempt_not_shown">Could not show: %1$s</string>
+    <string name="attempt_reason_no_permission">notification permission is off</string>
+    <string name="attempt_reason_app_off">notifications are turned off for this app</string>
+    <string name="attempt_reason_channel_off">the notification channel is turned off</string>
+    <string name="attempt_reason_no_data">no weather data yet</string>
+    <string name="attempt_reason_data_too_old">the weather data is over 24 hours old and could not be updated</string>
+    <string name="attempt_reason_failed">Android refused the notification</string>
 </resources>

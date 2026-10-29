@@ -1,20 +1,25 @@
 package com.alihaydarsayar.communesky.work
 
+import android.Manifest
 import android.app.ActivityManager
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.annotation.StringRes
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.alihaydarsayar.communesky.MainActivity
 import com.alihaydarsayar.communesky.R
 import com.alihaydarsayar.communesky.model.AlertThreshold
 import com.alihaydarsayar.communesky.model.NotificationSettings
 import com.alihaydarsayar.communesky.widget.WidgetLanguage
+import kotlinx.coroutines.delay
 import java.time.LocalTime
 
 /** Telefon üreticisi: bazıları uygulamayı arka planda agresifçe kapatır; ona göre kısa bir yönlendirme gösterilir. */
@@ -53,7 +58,7 @@ data class NotificationIssues(
 
 /**
  * Bildirim güvenilirliği: engelleyen durumları algılar, ilgili Android ayarını açar ve deneme bildirimi gösterir.
- * Bildirim izni ayrı bir uyarıyla (bkz. NotificationsScreen) ele alınır. Veri göndermez.
+ * Veri göndermez.
  */
 object NotificationHealth {
 
@@ -106,17 +111,74 @@ object NotificationHealth {
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
+    /** Android 13 ve üstünde bildirim izni verilmiş mi (eski sürümlerde izin yoktur). */
+    fun permissionGranted(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
     /**
-     * Gerçek özet bildirimiyle aynı kanala (ve aynı sesli/sessiz seçime) bir örnek bildirim gönderir; kanal ve izin
-     * çalışıyor mu görülsün. Hiçbir şey kaydedilmez ya da gönderilmez. İzin yoksa false döner.
+     * Bildirimin gösterilmesini engelleyen durum; engel yoksa null. Sıra: izin, uygulamanın bildirimleri, kanal.
+     * [channelImportance] kanalın önemidir (kanal yoksa null). Saf; test edilir.
      */
-    fun sendTest(context: Context, settings: NotificationSettings): Boolean {
-        if (!AlertNotifier.canNotify(context)) return false
+    fun blocker(permissionGranted: Boolean, appEnabled: Boolean, channelImportance: Int?): AttemptOutcome? = when {
+        !permissionGranted -> AttemptOutcome.NoPermission
+        !appEnabled -> AttemptOutcome.AppOff
+        channelImportance == NotificationManager.IMPORTANCE_NONE -> AttemptOutcome.ChannelOff
+        else -> null
+    }
+
+    /** [channelId] kanalından şu an bildirim gösterilebilir mi; gösterilemiyorsa nedeni. Kanal önceden kurulmuş olmalı. */
+    fun blocker(context: Context, channelId: String): AttemptOutcome? = blocker(
+        permissionGranted(context),
+        NotificationManagerCompat.from(context).areNotificationsEnabled(),
+        context.getSystemService(NotificationManager::class.java)?.getNotificationChannel(channelId)?.importance,
+    )
+
+    /**
+     * Bir bildirim denemesinin sonucu: engel varsa o; gönderilemediyse [AttemptOutcome.Failed]; gönderildi ama listede
+     * görünmediyse [AttemptOutcome.NotVisible]; yoksa gönderildi. Sessizce başarılı sayılmaz. Saf; test edilir.
+     */
+    suspend fun outcome(blocker: AttemptOutcome?, oldData: Boolean, post: () -> Boolean, shown: suspend () -> Boolean): AttemptOutcome = when {
+        blocker != null -> blocker
+        !post() -> AttemptOutcome.Failed
+        !shown() -> AttemptOutcome.NotVisible
+        oldData -> AttemptOutcome.SentOldData
+        else -> AttemptOutcome.Sent
+    }
+
+    /**
+     * [id] numaralı bildirimin Android'in etkin bildirim listesinde göründüğünü doğrular. Bildirimi sistem kısa bir
+     * gecikmeyle işler; bu yüzden birkaç kez bakılır.
+     */
+    suspend fun awaitShown(context: Context, id: Int, polls: Int = 10, gapMillis: Long = 150): Boolean {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return false
+        repeat(polls) {
+            if (runCatching { manager.activeNotifications.any { it.id == id } }.getOrDefault(false)) return true
+            delay(gapMillis)
+        }
+        return false
+    }
+
+    /**
+     * Gerçek özet bildirimiyle aynı kanala (ve aynı sesli/sessiz seçime) bir örnek bildirim gönderir ve sonucu
+     * doğrular: izin, uygulama bildirimleri ve kanal denetlenir, gönderildikten sonra bildirimin gerçekten listede
+     * olduğuna bakılır. Sonuç kayda yazılır; hiçbir şey bir yere gönderilmez.
+     */
+    /** Deneme bildiriminin kanalı: sabah özetinin şu an gideceği kanal. */
+    fun testChannel(settings: NotificationSettings, time: LocalTime = LocalTime.now()): String =
+        NotificationRouting.channel(NotificationKind.Morning, settings, time.hour * 60 + time.minute)
+
+    suspend fun sendTest(context: Context, settings: NotificationSettings): AttemptOutcome {
+        val result = runCatching { post(context, settings) }.getOrDefault(AttemptOutcome.Failed)
+        NotificationLog(context).record(AttemptKind.Test, result)
+        return result
+    }
+
+    private suspend fun post(context: Context, settings: NotificationSettings): AttemptOutcome {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return AttemptOutcome.Failed
         val localized = WidgetLanguage.context(context)
         NotificationChannels.ensure(context)
-        val time = LocalTime.now()
-        val channel = NotificationRouting.channel(NotificationKind.Morning, settings, time.hour * 60 + time.minute)
+        val channel = testChannel(settings)
         val open = PendingIntent.getActivity(
             context, TEST_ID, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
@@ -131,6 +193,11 @@ object NotificationHealth {
             .setContentIntent(open)
             .setAutoCancel(true)
             .build()
-        return runCatching { manager.notify(TEST_ID, notification) }.isSuccess
+        return outcome(
+            blocker = blocker(context, channel),
+            oldData = false,
+            post = { runCatching { manager.notify(TEST_ID, notification) }.isSuccess },
+            shown = { awaitShown(context, TEST_ID) },
+        )
     }
 }

@@ -1000,4 +1000,18 @@
     <string name="notif_tip_samsung">Samsung: Ayarlar › Pil › Arka plan kullanım sınırları: Commune Sky’ı “Uyumayan uygulamalar”a ekle ve “Kullanılmayan uygulamaları uyku moduna al”ı kapat.</string>
     <string name="notif_tip_huawei">Honor, Huawei: Ayarlar › Pil › Uygulama başlatma: Commune Sky için “Elle yönet”i seç; otomatik başlatma, ikincil başlatma ve arka planda çalışmaya izin ver.</string>
     <string name="notif_tip_oppo">OPPO, Realme: Ayarlar › Pil › Uygulama pil yönetimi: Commune Sky için arka planda çalışmaya ve otomatik başlatmaya izin ver, uygulamayı son uygulamalarda kilitle.</string>
+
+    <!-- Bildirim denemesinin sonucu (test düğmesi ve durum) -->
+    <string name="attempt_sent">Gönderildi</string>
+    <string name="attempt_test_sent">Gönderildi, bildirim gölgesine bak.</string>
+    <string name="attempt_sent_old">Eski veriyle gönderildi</string>
+    <string name="attempt_not_visible">Gönderildi ama Android’in bildirim listesinde görünmüyor. Uygulamanın bildirim ayarlarına bak.</string>
+    <string name="attempt_skipped">Atlandı: %1$s</string>
+    <string name="attempt_not_shown">Gösterilemedi: %1$s</string>
+    <string name="attempt_reason_no_permission">bildirim izni kapalı</string>
+    <string name="attempt_reason_app_off">uygulamanın bildirimleri kapalı</string>
+    <string name="attempt_reason_channel_off">bildirim kanalı kapalı</string>
+    <string name="attempt_reason_no_data">henüz hava verisi yok</string>
+    <string name="attempt_reason_data_too_old">hava verisi 24 saatten eski ve yenilenemedi</string>
+    <string name="attempt_reason_failed">Android bildirimi reddetti</string>
 </resources>
