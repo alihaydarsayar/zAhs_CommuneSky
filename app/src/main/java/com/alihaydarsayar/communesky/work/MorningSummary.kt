@@ -69,6 +69,7 @@ object MorningSummary {
 
     private const val PREFS = "morning_summary"
     private const val EXTRA_KIND = "summary_kind"
+    const val EXTRA_TARGET = "summary_target"
 
     /** Anlık hava (yağıyor mu) yalnız bu kadar tazeyse sabah özetinin şemsiye önerisine girer. */
     private val WET_NOW_MAX_AGE: Duration = Duration.ofHours(1)
@@ -111,19 +112,63 @@ object MorningSummary {
         schedule(context, new, now)
     }
 
+    private fun alarmIntent(context: Context, kind: SummaryKind, target: Long, flags: Int = PendingIntent.FLAG_UPDATE_CURRENT): PendingIntent? =
+        PendingIntent.getBroadcast(
+            context, kind.ordinal,
+            Intent(context, MorningSummaryReceiver::class.java).putExtra(EXTRA_KIND, kind.name).putExtra(EXTRA_TARGET, target),
+            flags or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+    private fun exactAllowed(alarms: AlarmManager) =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S || runCatching { alarms.canScheduleExactAlarms() }.getOrDefault(false)
+
     private fun schedule(context: Context, kind: SummaryKind, enabled: Boolean, minutes: Int, now: ZonedDateTime) {
         val alarms = context.getSystemService(AlarmManager::class.java) ?: return
-        val intent = PendingIntent.getBroadcast(
-            context, kind.ordinal, Intent(context, MorningSummaryReceiver::class.java).putExtra(EXTRA_KIND, kind.name),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+        val log = NotificationLog(context)
+        val attempt = attemptKind(kind)
+        // Önce kaçırılmış bir özet var mı bakılır: planlanan zaman aşağıda yenisiyle değişmeden.
+        checkMissed(context, kind, now)
         if (!enabled) {
-            alarms.cancel(intent)
+            alarmIntent(context, kind, 0)?.let {
+                alarms.cancel(it)
+                it.cancel()
+            }
+            log.setPlanned(attempt, null)
             return
         }
-        val at = SummarySchedule.nextTrigger(now, minutes, sentOn(context, kind)).toInstant().toEpochMilli()
-        setAlarm(alarms, at, intent)
+        val target = SummarySchedule.nextTrigger(now, minutes, sentOn(context, kind)).toInstant()
+        // Tam zamanlı alarm izni varsa hedefe, yoksa hedefe adım adım yaklaşan alarma (bkz. SummarySchedule.wakeAt).
+        val wake = if (exactAllowed(alarms)) target else SummarySchedule.wakeAt(now.toInstant(), target)
+        val intent = alarmIntent(context, kind, target.toEpochMilli()) ?: return
+        setAlarm(alarms, wake.toEpochMilli(), intent)
+        log.setPlanned(attempt, target)
     }
+
+    /** Ara alarm çaldı ama hedefe daha var: sıradaki adımı kurar. Ayar okumaz; hızlıdır. */
+    internal fun hop(context: Context, kind: SummaryKind, target: Long) {
+        val alarms = context.getSystemService(AlarmManager::class.java) ?: return
+        val wake = SummarySchedule.wakeAt(java.time.Instant.now(), java.time.Instant.ofEpochMilli(target))
+        val intent = alarmIntent(context, kind, target) ?: return
+        setAlarm(alarms, wake.toEpochMilli(), intent)
+    }
+
+    /**
+     * Planlanan zaman geçti, yedek pencere de bitti ve o türden hiçbir deneme kaydı yok: alarm tetiklenmedi (süreç
+     * öldürüldü, alarm silindi). Kayda "kaçırıldı" yazılır; uygulama açılınca kullanıcıya gösterilir.
+     */
+    private fun checkMissed(context: Context, kind: SummaryKind, now: ZonedDateTime) {
+        val log = NotificationLog(context)
+        val attempt = attemptKind(kind)
+        val instant = now.toInstant()
+        val planned = log.planned(attempt, instant) ?: return
+        if (MissedCheck.missed(planned, attempt, log.entries(instant), sentOn(context, kind), instant, now.zone)) {
+            log.record(attempt, AttemptOutcome.Missed, instant, planned.toEpochMilli().toString())
+        }
+    }
+
+    /** Alarm şu an kurulu mu (Android'in kayıtlı alarm niyeti var mı)? Kapalıysa ya da durdurulduysa false. */
+    fun isScheduled(context: Context, kind: SummaryKind): Boolean =
+        alarmIntent(context, kind, 0, PendingIntent.FLAG_NO_CREATE) != null
 
     /**
      * Doze'da da çalışan alarm. Tam zamanlı alarm için ek izin istenmez: Android 12+ ta izin verilmemişse (varsayılan)
@@ -515,6 +560,12 @@ class SummaryRescheduleReceiver : BroadcastReceiver() {
 class MorningSummaryReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val startedAt = SystemClock.elapsedRealtime()
+        // Ara adım: hedefe daha var, sıradaki alarmı kur ve çık (ağ, ayar ya da bildirim yok).
+        val target = intent.getLongExtra(MorningSummary.EXTRA_TARGET, 0L)
+        if (target > 0 && !SummarySchedule.reached(java.time.Instant.now(), java.time.Instant.ofEpochMilli(target))) {
+            MorningSummary.hop(context, MorningSummary.kindOf(intent), target)
+            return
+        }
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {

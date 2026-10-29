@@ -52,6 +52,27 @@ object SummarySchedule {
     fun summaryNow(placeNow: java.time.LocalDateTime, deviceDate: LocalDate): java.time.LocalDateTime =
         if (placeNow.toLocalDate() == deviceDate) placeNow else deviceDate.atStartOfDay()
 
+    /**
+     * Tam zamanlı alarm izni yokken Android alarmı "yaklaşık" kurar: setAndAllowWhileIdle ile alarm, istenen zamandan
+     * önce asla çalmaz ama zamana kalan sürenin yaklaşık %75'i kadar geç çalabilir (10 saat önceden kurulan alarm
+     * saatlerce kayabilir). Bu yüzden alarm hedefe adım adım yaklaşır: her adım kalan sürenin 4/7'sine kurulur; en kötü
+     * durumda bile hedeften önce çalar ve bir sonraki adımı kurar. Kalan süre [FINAL_HOP] altına inince alarm hedefe
+     * kurulur ve sapma en çok bu sürenin %75'i (yaklaşık 9 dakika) olur.
+     */
+    val FINAL_HOP: Duration = Duration.ofMinutes(12)
+
+    /** Bir ara alarm, hedefe bundan yakın çalarsa özet gönderilir (ara adım değil). */
+    val HOP_TOLERANCE: Duration = Duration.ofSeconds(90)
+
+    /** Sıradaki alarmın kurulacağı an: hedefe kalan sürenin 4/7'si sonra; [FINAL_HOP] içindeyse hedefin kendisi. */
+    fun wakeAt(now: java.time.Instant, target: java.time.Instant): java.time.Instant {
+        val remaining = Duration.between(now, target)
+        return if (remaining <= FINAL_HOP) target else now.plus(remaining.multipliedBy(4).dividedBy(7))
+    }
+
+    /** Alarm bu anda çaldı; hedefe yeterince yaklaşıldı mı (özet gönderilmeli), yoksa yeni bir ara adım mı kurulmalı? */
+    fun reached(now: java.time.Instant, target: java.time.Instant): Boolean = !now.isBefore(target.minus(HOP_TOLERANCE))
+
     /** [date] gününün seçilen saati ([minutes]: gece yarısından itibaren dakika), [zone] saatine göre. */
     fun target(date: LocalDate, minutes: Int, zone: ZoneId): ZonedDateTime =
         ZonedDateTime.of(date, LocalTime.of(minutes / 60, minutes % 60), zone)

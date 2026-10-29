@@ -264,4 +264,65 @@ class SummaryScheduleTest {
         assertEquals(0L, SummarySchedule.refreshBudgetMs(60_000))
         assertTrue(SummarySchedule.RECEIVER_BUDGET_MS < 10_000)
     }
+
+    // --- Alarm penceresi: hedefe adım adım yaklaşan alarm (1.5.11)
+
+    private val t0 = java.time.Instant.parse("2026-10-29T00:00:00Z")
+
+    /**
+     * Android'in izinsiz (inexact) alarmı: asla erken çalmaz, en geç kurulma anından itibaren kalan sürenin %75'i
+     * kadar sonra çalar. [lateShare] 0 = hemen (en erken), 1 = en geç. Sonuç: özetin gönderildiği an ve kurulan alarm sayısı.
+     */
+    private fun simulate(start: java.time.Instant, target: java.time.Instant, lateShare: Double): Pair<java.time.Instant, Int> {
+        var now = start
+        var alarms = 0
+        while (true) {
+            val wake = SummarySchedule.wakeAt(now, target)
+            alarms++
+            val window = java.time.Duration.between(now, wake).toMillis() * 0.75
+            val fires = wake.plusMillis((window * lateShare).toLong())
+            assertFalse("never earlier than requested", fires.isBefore(wake))
+            now = fires
+            if (SummarySchedule.reached(now, target)) return now to alarms
+            assertTrue("each step moves forward", alarms < 20)
+        }
+    }
+
+    @Test
+    fun `the alarm gets close to the target in a few steps and never overshoots it by more than nine minutes`() {
+        val target = t0.plus(java.time.Duration.ofHours(12))
+        for (share in listOf(0.0, 0.25, 0.5, 0.75, 1.0)) {
+            val (fired, alarms) = simulate(t0, target, share)
+            val late = java.time.Duration.between(target, fired)
+            assertTrue("share=$share late=$late", late <= java.time.Duration.ofMinutes(9) + java.time.Duration.ofSeconds(1))
+            assertTrue("share=$share alarms=$alarms", alarms <= 8)
+        }
+    }
+
+    @Test
+    fun `a target within the last twelve minutes is set directly, a far one is approached`() {
+        val target = t0.plus(java.time.Duration.ofHours(10))
+        assertEquals(target, SummarySchedule.wakeAt(target.minusSeconds(12 * 60), target))
+        assertEquals(target, SummarySchedule.wakeAt(target.minusSeconds(30), target))
+        val far = SummarySchedule.wakeAt(t0, target)
+        assertTrue(far.isAfter(t0) && far.isBefore(target.minus(java.time.Duration.ofHours(3))))
+        // Hedef uzaktayken tek alarm en geç hedefte çalar (4/7 + 0,75 × 4/7 = 1).
+        assertEquals(t0.plus(java.time.Duration.ofHours(10).multipliedBy(4).dividedBy(7)), SummarySchedule.wakeAt(t0, target))
+    }
+
+    @Test
+    fun `an alarm that fires after the target still sends, one far before it only sets the next step`() {
+        val target = t0.plus(java.time.Duration.ofHours(2))
+        assertTrue(SummarySchedule.reached(target, target))
+        assertTrue(SummarySchedule.reached(target.plusSeconds(600), target))
+        assertTrue(SummarySchedule.reached(target.minusSeconds(60), target))
+        assertFalse(SummarySchedule.reached(target.minusSeconds(120), target))
+        assertFalse(SummarySchedule.reached(t0, target))
+    }
+
+    @Test
+    fun `a clock that jumps forward past the target sends instead of stepping again`() {
+        val target = t0.plus(java.time.Duration.ofHours(2))
+        assertTrue(SummarySchedule.reached(t0.plus(java.time.Duration.ofHours(5)), target))
+    }
 }
