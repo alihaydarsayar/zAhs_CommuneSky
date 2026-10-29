@@ -29,7 +29,21 @@ enum class NotificationKind(
     ;
 
     val soundChannel: String get() = "${id}_sound"
-    val silentChannel: String get() = "${id}_silent"
+
+    /**
+     * Sessiz kanal. Özetlerin sessiz kanalı bildirim gölgesinde görünür kalır (önem varsayılan, yalnız ses ve
+     * titreşim kapalı): MIUI/HyperOS gibi arayüzler düşük önemli bildirimleri "sessiz bildirimler" altında toplayıp
+     * gizleyebilir. Önem sonradan değiştirilemediği için yeni kimlik kullanılır; eski "_silent" kanalı silinir.
+     */
+    val silentChannel: String get() = if (visibleWhenSilent) "${id}_quiet" else "${id}_silent"
+
+    /** Sessiz kanalı özetlerden önceki sürümlerde (düşük önem) kurulmuş kimlik; kullanılıyorsa silinir. */
+    val retiredSilentChannel: String? get() = if (visibleWhenSilent) "${id}_silent" else null
+
+    /** Özet bildirimleri sessiz olsa da bildirim gölgesinde görünür. */
+    val visibleWhenSilent: Boolean get() = group == GROUP_SUMMARIES
+
+    val silentImportance: Int get() = if (visibleWhenSilent) NotificationManager.IMPORTANCE_DEFAULT else NotificationManager.IMPORTANCE_LOW
 
     companion object {
         fun of(level: AlertLevel): NotificationKind = when (level) {
@@ -94,12 +108,24 @@ object NotificationChannels {
                 NotificationChannelGroup(GROUP_AIR, localized.getString(R.string.channel_group_air)),
             ),
         )
+        // Düşük önemli eski sessiz özet kanalları silinir; kullanıcının ses/sessiz seçimi ayarlarda durur, yeni kanala uyar.
+        NotificationKind.entries.mapNotNull { it.retiredSilentChannel }.forEach { id ->
+            if (manager.getNotificationChannel(id) != null) runCatching { manager.deleteNotificationChannel(id) }
+        }
         val channels = NotificationKind.entries.flatMap { kind ->
             val name = localized.getString(kind.channelName)
             listOf(
-                NotificationChannel(kind.soundChannel, name, kind.soundImportance).apply { group = kind.group },
-                NotificationChannel(kind.silentChannel, localized.getString(R.string.channel_silent, name), NotificationManager.IMPORTANCE_LOW)
-                    .apply { group = kind.group },
+                NotificationChannel(kind.soundChannel, name, kind.soundImportance).apply {
+                    group = kind.group
+                    description = localized.getString(R.string.channel_sound_description)
+                },
+                NotificationChannel(kind.silentChannel, localized.getString(R.string.channel_silent, name), kind.silentImportance).apply {
+                    group = kind.group
+                    description = localized.getString(R.string.channel_silent_description)
+                    // Önem varsayılan olsa da ses ve titreşim yok: bildirim gölgesinde görünür, çalmaz.
+                    setSound(null, null)
+                    enableVibration(false)
+                },
             )
         }
         manager.createNotificationChannels(channels)

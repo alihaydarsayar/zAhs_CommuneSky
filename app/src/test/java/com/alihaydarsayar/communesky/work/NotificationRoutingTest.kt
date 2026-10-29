@@ -17,8 +17,8 @@ class NotificationRoutingTest {
         assertEquals("alert_red_sound", NotificationRouting.channel(NotificationKind.RedAlert, defaults, noon))
         assertEquals("alert_orange_sound", NotificationRouting.channel(NotificationKind.OrangeAlert, defaults, noon))
         assertEquals("alert_yellow_silent", NotificationRouting.channel(NotificationKind.YellowAlert, defaults, noon))
-        assertEquals("summary_morning_silent", NotificationRouting.channel(NotificationKind.Morning, defaults, noon))
-        assertEquals("summary_evening_silent", NotificationRouting.channel(NotificationKind.Evening, defaults, noon))
+        assertEquals("summary_morning_quiet", NotificationRouting.channel(NotificationKind.Morning, defaults, noon))
+        assertEquals("summary_evening_quiet", NotificationRouting.channel(NotificationKind.Evening, defaults, noon))
         assertEquals("air_quality_v2_silent", NotificationRouting.channel(NotificationKind.AirQuality, defaults, noon))
     }
 
@@ -33,7 +33,7 @@ class NotificationRoutingTest {
     fun `quiet hours silence everything except red when the user wants red to sound`() {
         val quiet = defaults.copy(quietHours = true, morningSound = true)
         assertEquals("alert_orange_silent", NotificationRouting.channel(NotificationKind.OrangeAlert, quiet, midnight))
-        assertEquals("summary_morning_silent", NotificationRouting.channel(NotificationKind.Morning, quiet, midnight))
+        assertEquals("summary_morning_quiet", NotificationRouting.channel(NotificationKind.Morning, quiet, midnight))
         assertEquals("alert_red_sound", NotificationRouting.channel(NotificationKind.RedAlert, quiet, midnight))
         assertEquals("alert_red_silent", NotificationRouting.channel(NotificationKind.RedAlert, quiet.copy(quietRedSounds = false), midnight))
         // Gündüz sessiz saatlerin dışında: seçim geçerli.
@@ -55,5 +55,26 @@ class NotificationRoutingTest {
         val ids = NotificationKind.entries.flatMap { listOf(it.soundChannel, it.silentChannel) }
         assertEquals(ids.size, ids.toSet().size)
         assertFalse(ids.any { it in listOf("weather_alerts", "morning_summary", "air_quality") })
+    }
+
+    @Test
+    fun `silent summaries stay visible in the shade, other silent channels stay low`() {
+        for (kind in listOf(NotificationKind.Morning, NotificationKind.Evening)) {
+            assertTrue(kind.silentImportance >= android.app.NotificationManager.IMPORTANCE_DEFAULT)
+            // Eski düşük önemli kanal başka bir kimlikte: silinir, yenisi kurulur.
+            assertEquals("${kind.id}_silent", kind.retiredSilentChannel)
+            assertFalse(kind.silentChannel == kind.retiredSilentChannel)
+        }
+        for (kind in NotificationKind.entries - listOf(NotificationKind.Morning, NotificationKind.Evening)) {
+            assertEquals(android.app.NotificationManager.IMPORTANCE_LOW, kind.silentImportance)
+            assertEquals(null, kind.retiredSilentChannel)
+            assertEquals("${kind.id}_silent", kind.silentChannel)
+        }
+    }
+
+    @Test
+    fun `a retired channel id is never an active one`() {
+        val active = NotificationKind.entries.flatMap { listOf(it.soundChannel, it.silentChannel) }.toSet()
+        assertTrue(NotificationKind.entries.mapNotNull { it.retiredSilentChannel }.none { it in active })
     }
 }

@@ -1021,4 +1021,7 @@
     <string name="attempt_reason_no_data">pas encore de données météo</string>
     <string name="attempt_reason_data_too_old">les données météo ont plus de 24 heures et n’ont pas pu être actualisées</string>
     <string name="attempt_reason_failed">Android a refusé la notification</string>
+
+    <string name="channel_sound_description">Joue le son de notification.</string>
+    <string name="channel_silent_description">Apparaît dans le volet des notifications, sans son ni vibration.</string>
 </resources>
