@@ -13,7 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** 1.1 → 1.2 veritabanı geçişleri (1 → 2 → 3 → 4) ve kayıtlı yer kuralları. */
+/** Veritabanı geçişleri (1 → 4 ve 6 → 7) ve kayıtlı yer kuralları. */
 @RunWith(AndroidJUnit4::class)
 class DatabaseMigrationTest {
 
@@ -51,6 +51,32 @@ class DatabaseMigrationTest {
         db.close()
     }
 
+    /**
+     * 6 → 7 (1.5.10): MGM istasyon listesine uygulama sürümü ve "tam liste" işareti eklendi. Eski sürümün kaydettiği liste
+     * silinmez; sürümü 0 ve tam sayılır, böylece uygulama onu bir sonraki turda yeniden arar (bkz. ObservationRepository).
+     */
+    @Test
+    fun migration6To7KeepsTheSavedStationsAndMarksThemAsFromAnOldVersion() {
+        helper.createDatabase(TEST_DB_6, 6).use { db ->
+            db.execSQL(
+                "INSERT INTO mgm_stations (placeId, queryLatitude, queryLongitude, stationId, name, latitude, longitude, elevation, " +
+                    "resolvedAtMillis, candidatesJson) VALUES (1, 41.04, 29.00, 17061, 'Beşiktaş', 41.04, 29.01, 12.0, 1700000000000, '[]')",
+            )
+        }
+        val db = helper.runMigrationsAndValidate(TEST_DB_6, 7, true)
+        db.query("SELECT placeId, name, resolvedAtMillis, candidatesJson, appVersion, complete FROM mgm_stations WHERE placeId = 1").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1L, cursor.getLong(0))
+            assertEquals("Beşiktaş", cursor.getString(1))
+            assertEquals(1700000000000L, cursor.getLong(2))
+            assertEquals("[]", cursor.getString(3))
+            // Eski sürümden kalan kayıt: sürüm 0 (bu sürümle eşleşmez, yeniden aranır), tam liste sayılır.
+            assertEquals(0, cursor.getInt(4))
+            assertEquals(1, cursor.getInt(5))
+        }
+        db.close()
+    }
+
     @Test
     fun atMostOneHomeAndReorderAndUndo() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -84,5 +110,6 @@ class DatabaseMigrationTest {
 
     private companion object {
         const val TEST_DB = "migration-test"
+        const val TEST_DB_6 = "migration-test-6"
     }
 }
