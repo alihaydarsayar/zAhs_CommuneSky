@@ -9,7 +9,7 @@ What's new in each version of Commune Sky, newest first. Dates are the day a ver
 - "Send test notification" now checks the notification permission, the app's notifications and the channel first, opens the right Android setting when one is off, confirms that the notification really appears in Android's list, and says on screen why it could not be shown instead of looking successful.
 - Summaries are never skipped in silence any more. If the weather is more than 24 hours old and cannot be refreshed you get a short "Current weather unavailable" notice (at most once a day); if the full summary cannot be prepared a basic one with the low, high and sky is sent instead.
 - Summaries follow the phone's day and clock, also when the phone is in another time zone than the place (for example a phone on UTC+4 and a place on UTC+3).
-- The alarm for a summary could come up to hours late on Android 12 and later without the exact-alarm permission; it now moves toward the chosen time in small steps and is at most about nine minutes late. No new permission is needed.
+- Without the exact-alarm permission Android may delay the summary alarm by up to about an hour; it now moves toward the chosen time in small steps and is at most about nine minutes late. No new permission is needed.
 - Silent summaries now keep a normal notification importance (still no sound or vibration), so phones such as Xiaomi no longer fold them away under "silent notifications".
 - A summary chosen for a time that has already passed today starts tomorrow instead of sending an unexpected notification, and a missed summary is sent when you open the app if it is still within three hours of the chosen time.
 

@@ -54,10 +54,11 @@ object SummarySchedule {
 
     /**
      * Tam zamanlı alarm izni yokken Android alarmı "yaklaşık" kurar: setAndAllowWhileIdle ile alarm, istenen zamandan
-     * önce asla çalmaz ama zamana kalan sürenin yaklaşık %75'i kadar geç çalabilir (10 saat önceden kurulan alarm
-     * saatlerce kayabilir). Bu yüzden alarm hedefe adım adım yaklaşır: her adım kalan sürenin 4/7'sine kurulur; en kötü
-     * durumda bile hedeften önce çalar ve bir sonraki adımı kurar. Kalan süre [FINAL_HOP] altına inince alarm hedefe
-     * kurulur ve sapma en çok bu sürenin %75'i (yaklaşık 9 dakika) olur.
+     * önce asla çalmaz ama sonra gecikebilir. Gecikme penceresi zamana kalan sürenin yaklaşık %75'i, en çok bir saattir
+     * (Android 13 emülatöründe `dumpsys alarm` ile görüldü: window=+1h). Bu yüzden alarm hedefe adım adım yaklaşır: her
+     * adım kalan sürenin 4/7'sine kurulur; pencere %75 de olsa en kötü durumda bile hedeften önce çalar ve bir sonraki
+     * adımı kurar. Kalan süre [FINAL_HOP] altına inince alarm hedefe kurulur ve sapma en çok bu sürenin %75'i
+     * (yaklaşık 9 dakika) olur; tek bir uzak alarmla bu sapma bir saate çıkabilirdi.
      */
     val FINAL_HOP: Duration = Duration.ofMinutes(12)
 
