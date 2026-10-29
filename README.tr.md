@@ -47,7 +47,7 @@ Arka plan bir resim değil, telefonunda çizilir ve havayı ve günün saatini i
 
 ## Gizlilik
 
-Reklam, analiz ve hesap yoktur; geliştirici konumunu, aramalarını ya da kayıtlı yerlerini hiç almaz. Tahminler, kayıtlı yerler, ölçümler ve ayarlar yalnızca telefonunda saklanır; sorun giderme için hiçbir şey tutulmaz. Tam metin: [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/).
+Reklam, analiz ve hesap yoktur; geliştirici konumunu, aramalarını ya da kayıtlı yerlerini hiç almaz. Tahminler, kayıtlı yerler, ölçümler ve ayarlar yalnızca telefonunda saklanır. Sorun giderme raporu yoktur; tek kayıt, telefonda kalan ve hiçbir yere gönderilmeyen son bildirim sonuçlarının kısa listesidir (en fazla 5 kayıt, 7 gün sonra silinir). Tam metin: [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/).
 
 ## Derleme
 
