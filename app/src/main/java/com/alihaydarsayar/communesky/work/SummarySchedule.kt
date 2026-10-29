@@ -30,6 +30,28 @@ object SummarySchedule {
     /** Önbellek bundan eskiyse özet gönderilmez (yanlış bilgi vermektense susar). */
     val MAX_CACHE_AGE: Duration = Duration.ofHours(24)
 
+    /**
+     * Alarm yayınının (goAsync) toplam süresi: Android ~10 sn sonra alıcıyı ANR sayar. Yükleme, kısa ağ yenilemesi ve
+     * bildirimin listede görünmesini beklemek bu sürenin içinde kalır.
+     */
+    const val RECEIVER_BUDGET_MS = 9_000L
+    const val LOAD_TIMEOUT_MS = 4_000L
+    const val MAX_REFRESH_MS = 3_500L
+
+    /** Bildirimin listede görünmesini beklemek için ayrılan süre ([NotificationHealth.awaitShown]: 10 × 150 ms). */
+    const val VERIFY_MS = 1_500L
+
+    /** Alarm geldiğinden beri [elapsedMs] geçti: ağ yenilemesine kalan süre (0: yenilemeyi atla, eldeki veriyle gönder). */
+    fun refreshBudgetMs(elapsedMs: Long): Long = (RECEIVER_BUDGET_MS - elapsedMs - VERIFY_MS).coerceIn(0L, MAX_REFRESH_MS)
+
+    /**
+     * Özetin "şimdi"si. Tahmin yerin saatindedir ama özetin günü telefonun gününe göre seçilir: özet telefonun saatinde
+     * gelir ve kullanıcı o günü bekler (telefon UTC+4, yer UTC+3 olsa da). Gün tarihi farklıysa (gece yarısı civarı)
+     * bütün gün anlatılır.
+     */
+    fun summaryNow(placeNow: java.time.LocalDateTime, deviceDate: LocalDate): java.time.LocalDateTime =
+        if (placeNow.toLocalDate() == deviceDate) placeNow else deviceDate.atStartOfDay()
+
     /** [date] gününün seçilen saati ([minutes]: gece yarısından itibaren dakika), [zone] saatine göre. */
     fun target(date: LocalDate, minutes: Int, zone: ZoneId): ZonedDateTime =
         ZonedDateTime.of(date, LocalTime.of(minutes / 60, minutes % 60), zone)

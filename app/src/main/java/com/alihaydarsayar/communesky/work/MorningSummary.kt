@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import android.view.View
@@ -66,7 +67,6 @@ object MorningSummary {
 
     private const val PREFS = "morning_summary"
     private const val EXTRA_KIND = "summary_kind"
-    private const val REFRESH_TIMEOUT_MS = 20_000L
 
     /** Anlık hava (yağıyor mu) yalnız bu kadar tazeyse sabah özetinin şemsiye önerisine girer. */
     private val WET_NOW_MAX_AGE: Duration = Duration.ofHours(1)
@@ -140,7 +140,10 @@ object MorningSummary {
         }
     }
 
-    private suspend fun load(context: Context): WidgetInput? = withTimeoutOrNull(5_000) { WidgetDataLoader(context).input.first() }
+    private suspend fun load(context: Context): WidgetInput? =
+        withTimeoutOrNull(SummarySchedule.LOAD_TIMEOUT_MS) { WidgetDataLoader(context).input.first() }
+
+    private fun attemptKind(kind: SummaryKind) = if (kind == SummaryKind.Morning) AttemptKind.Morning else AttemptKind.Evening
 
     /** Özetin yeri: Ev; yoksa bulunduğun yer; o da yoksa ilk kayıtlı yer. */
     private fun pick(input: WidgetInput): WeatherSnapshot? = input.home?.snapshot ?: input.device ?: input.weather.values.firstOrNull()
@@ -156,14 +159,23 @@ object MorningSummary {
     }
 
     /** Alarm çaldı: bugün gönderilmediyse özeti gönder, sonraki alarmı kur. Önbellek eskiyse önce yenilemeyi dener. */
-    suspend fun onAlarm(context: Context, kind: SummaryKind = SummaryKind.Morning, force: Boolean = false) = lock.withLock {
+    suspend fun onAlarm(
+        context: Context, kind: SummaryKind = SummaryKind.Morning, force: Boolean = false, startedAt: Long = SystemClock.elapsedRealtime(),
+    ) = lock.withLock {
         val app = context.applicationContext
-        var input = load(app) ?: return@withLock
+        var input = load(app)
+        if (input == null) {
+            // Ayarlar zamanında okunamadı: sessizce geçilmez; kayda yazılır, yedek yol pencere içinde yeniden dener.
+            NotificationLog(app).record(attemptKind(kind), AttemptOutcome.Error, detail = "LoadTimeout")
+            return@withLock
+        }
         schedule(app, input.settings.notifications)
         val snapshot = pick(input)
         if (snapshot != null && Duration.between(snapshot.fetchedAt, Instant.now()) > SummarySchedule.FRESH) {
-            // Saatlik iş çalışmamış (süreç öldürülmüş, pil tasarrufu): özet için tahmin burada yenilenir.
-            val refreshed = withTimeoutOrNull(REFRESH_TIMEOUT_MS) {
+            // Saatlik iş çalışmamış (süreç öldürülmüş, pil tasarrufu): özet için tahmin burada kısaca yenilenir.
+            // Alıcının toplam süresi sınırlıdır (bkz. SummarySchedule.RECEIVER_BUDGET_MS): ağ beklemesi ona göre kısılır.
+            val budget = SummarySchedule.refreshBudgetMs(SystemClock.elapsedRealtime() - startedAt)
+            val refreshed = if (budget == 0L) null else withTimeoutOrNull(budget) {
                 runCatching { EntryPointAccessors.fromApplication(app, WidgetEntryPoint::class.java).weatherUpdater().refreshForSummary() }.isSuccess
             }
             if (refreshed == true) input = load(app) ?: input
@@ -220,7 +232,7 @@ object MorningSummary {
             it.isWet || it == WeatherCondition.Snow
         }
         var text = DailySummary.of(
-            kind, snapshot.forecast, snapshot.alerts, snapshot.forecast.localNow(), settings.wear.shift, AndroidStrings(localized),
+            kind, snapshot.forecast, snapshot.alerts, SummarySchedule.summaryNow(snapshot.forecast.localNow(), today), settings.wear.shift, AndroidStrings(localized),
             { unit.fromCelsius(it).roundToInt() }, { it.format(clock) }, wetNow,
         )
         if (text == null) {
@@ -379,10 +391,11 @@ class SummaryRescheduleReceiver : BroadcastReceiver() {
 /** Sabah ve akşam özeti alarmlarını alır; işi bitince kapanır. */
 class MorningSummaryReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        val startedAt = SystemClock.elapsedRealtime()
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                MorningSummary.onAlarm(context, MorningSummary.kindOf(intent))
+                MorningSummary.onAlarm(context, MorningSummary.kindOf(intent), startedAt = startedAt)
             } finally {
                 pending.finish()
             }

@@ -203,4 +203,65 @@ class SummaryScheduleTest {
         // Geçmiş saat seçilirse ilk özet yarın.
         assertEquals(at(21, 0, day.plusDays(1)), SummarySchedule.nextTrigger(at(21, 5), evening, day))
     }
+
+    // --- Telefonun saati UTC+4 (Bakü), yer UTC+3 (Beşiktaş): özet telefonun saatine göre (1.5.11)
+
+    private val baku = ZoneId.of("Asia/Baku")
+
+    @Test
+    fun `the trigger, the sent day and the window follow the phone zone, not the place`() {
+        val phone = ZonedDateTime.of(day, LocalTime.of(6, 0), baku)
+        // 07:00 Bakü saati; Beşiktaş'ta o an 06:00 ama özet telefonun 07:00'sinde gelir.
+        assertEquals(ZonedDateTime.of(day, LocalTime.of(7, 0), baku), SummarySchedule.nextTrigger(phone, 7 * 60, null))
+        assertEquals(ZonedDateTime.of(day, LocalTime.of(7, 0), baku).toInstant(), day.atTime(3, 0).toInstant(java.time.ZoneOffset.UTC))
+        // Yedek pencere de telefonun saatinde: 07:15 ile 10:00 arası.
+        assertFalse(SummarySchedule.shouldCatchUp(ZonedDateTime.of(day, LocalTime.of(7, 14), baku), 7 * 60, null))
+        assertTrue(SummarySchedule.shouldCatchUp(ZonedDateTime.of(day, LocalTime.of(7, 15), baku), 7 * 60, null))
+        assertFalse(SummarySchedule.shouldCatchUp(ZonedDateTime.of(day, LocalTime.of(10, 0), baku), 7 * 60, null))
+        // 18:00 akşam özeti.
+        assertEquals(ZonedDateTime.of(day, LocalTime.of(18, 0), baku), SummarySchedule.nextTrigger(ZonedDateTime.of(day, LocalTime.of(17, 0), baku), 18 * 60, null))
+        // Bugün gönderildiyse sıradaki yarın, gün sonu geçişinde de.
+        assertEquals(
+            ZonedDateTime.of(day.plusDays(1), LocalTime.of(7, 0), baku),
+            SummarySchedule.nextTrigger(ZonedDateTime.of(day, LocalTime.of(23, 59), baku), 7 * 60, day),
+        )
+    }
+
+    @Test
+    fun `changing the phone time zone moves the trigger to the same wall clock time in the new zone`() {
+        val istanbulNow = ZonedDateTime.of(day, LocalTime.of(5, 0), istanbul)
+        val inIstanbul = SummarySchedule.nextTrigger(istanbulNow, 7 * 60, null)
+        val inBaku = SummarySchedule.nextTrigger(istanbulNow.withZoneSameInstant(baku), 7 * 60, null)
+        assertEquals(LocalTime.of(7, 0), inIstanbul.toLocalTime())
+        assertEquals(LocalTime.of(7, 0), inBaku.toLocalTime())
+        assertEquals(java.time.Duration.ofHours(1), java.time.Duration.between(inBaku, inIstanbul))
+    }
+
+    @Test
+    fun `the summary describes the phone day, so a phone just past midnight does not describe the place's previous day`() {
+        // Telefon (Bakü) 00:30, yer (Beşiktaş) bir önceki gün 23:30.
+        val placeNow = day.minusDays(1).atTime(23, 30)
+        assertEquals(day.atStartOfDay(), SummarySchedule.summaryNow(placeNow, day))
+        // Aynı gündeyse yerin saati korunur.
+        val same = day.atTime(6, 0)
+        assertEquals(same, SummarySchedule.summaryNow(same, day))
+        // Yer bir gün ileride (Tokyo): telefonun günü anlatılır.
+        assertEquals(day.atStartOfDay(), SummarySchedule.summaryNow(day.plusDays(1).atTime(2, 0), day))
+    }
+
+    // --- Alıcı süre bütçesi: ANR olmasın (1.5.11)
+
+    @Test
+    fun `the network refresh in the alarm receiver always leaves time to post the notification`() {
+        for (elapsed in listOf(0L, 500L, 2_000L, 4_000L, 5_000L, 7_400L)) {
+            val budget = SummarySchedule.refreshBudgetMs(elapsed)
+            assertTrue("elapsed=$elapsed budget=$budget", elapsed + budget + SummarySchedule.VERIFY_MS <= SummarySchedule.RECEIVER_BUDGET_MS)
+            assertTrue(budget <= SummarySchedule.MAX_REFRESH_MS)
+        }
+        assertEquals(SummarySchedule.MAX_REFRESH_MS, SummarySchedule.refreshBudgetMs(0))
+        // Yükleme çok sürdüyse ağ yenilemesi atlanır, eldeki veriyle gönderilir.
+        assertEquals(0L, SummarySchedule.refreshBudgetMs(8_000))
+        assertEquals(0L, SummarySchedule.refreshBudgetMs(60_000))
+        assertTrue(SummarySchedule.RECEIVER_BUDGET_MS < 10_000)
+    }
 }
