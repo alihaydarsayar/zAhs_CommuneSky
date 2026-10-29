@@ -171,14 +171,30 @@ object MorningSummary {
         }
     }
 
-    private fun deliver(app: Context, input: WidgetInput, kind: SummaryKind, force: Boolean) {
+    private suspend fun deliver(app: Context, input: WidgetInput, kind: SummaryKind, force: Boolean) {
         val settings = input.settings
-        if (!AlertNotifier.canNotify(app)) return
+        val log = NotificationLog(app)
+        val attemptKind = if (kind == SummaryKind.Morning) AttemptKind.Morning else AttemptKind.Evening
         val today = LocalDate.now()
         val snapshot = pick(input)
         val age = snapshot?.let { Duration.between(it.fetchedAt, Instant.now()) }
-        val verdict = SummarySchedule.verdict(enabled(settings.notifications, kind), sentOn(app, kind), today, age, force)
-        if (verdict == SummarySchedule.Verdict.Skip || snapshot == null) return
+        val on = enabled(settings.notifications, kind)
+        val verdict = SummarySchedule.verdict(on, sentOn(app, kind), today, age, force)
+        if (verdict == SummarySchedule.Verdict.Skip || snapshot == null) {
+            // Kapalı ya da bugün gönderilmiş: söylenecek bir şey yok. Veri yok ya da çok eski: kayda yazılır.
+            SummarySchedule.skipOutcome(on, sentOn(app, kind), today, age, force)?.let { log.record(attemptKind, it) }
+            return
+        }
+        // Engel varsa (izin, uygulamanın bildirimleri, kanal) özet kurulmaz; gün "gönderildi" sayılmaz, yedek yol pencere içinde yeniden dener.
+        NotificationChannels.ensure(app)
+        val time = LocalTime.now()
+        val channel = NotificationRouting.channel(
+            if (kind == SummaryKind.Morning) NotificationKind.Morning else NotificationKind.Evening, settings.notifications, time.hour * 60 + time.minute,
+        )
+        NotificationHealth.blocker(app, channel)?.let {
+            log.record(attemptKind, it)
+            return
+        }
         // Bildirim, uygulamanın diliyle yazılır.
         val localized = WidgetLanguage.context(app)
         val clock = timeFormatter(localized)
@@ -190,16 +206,25 @@ object MorningSummary {
         var text = DailySummary.of(
             kind, snapshot.forecast, snapshot.alerts, snapshot.forecast.localNow(), settings.wear.shift, AndroidStrings(localized),
             { unit.fromCelsius(it).roundToInt() }, { it.format(clock) }, wetNow,
-        ) ?: return
-        if (verdict == SummarySchedule.Verdict.SendCached) {
+        )
+        if (text == null) {
+            log.record(attemptKind, AttemptOutcome.NoData)
+            return
+        }
+        val old = verdict == SummarySchedule.Verdict.SendCached
+        if (old) {
             // Eski veriden kurulan özet bunu söyler; yanlış bir özet gibi görünmesin.
             val fetched = snapshot.fetchedAt.atOffset(ZoneOffset.ofTotalSeconds(snapshot.forecast.utcOffsetSeconds)).toLocalDateTime()
             text = text.copy(lines = text.lines.take(3) + localized.getString(R.string.summary_cached_at, fetched.format(clock)))
         }
-        notify(app, input, snapshot, kind, text, today)
+        val outcome = notify(app, input, snapshot, kind, text, today, channel, old)
+        log.record(attemptKind, outcome)
     }
 
-    private fun notify(app: Context, input: WidgetInput, snapshot: WeatherSnapshot, kind: SummaryKind, text: SummaryText, today: LocalDate) {
+    /** Özeti gösterir ve bildirimin gerçekten listede olduğunu doğrular; başarıyla gönderildiyse günü "gönderildi" diye işaretler. */
+    private suspend fun notify(
+        app: Context, input: WidgetInput, snapshot: WeatherSnapshot, kind: SummaryKind, text: SummaryText, today: LocalDate, channel: String, oldData: Boolean,
+    ): AttemptOutcome {
         val settings = input.settings
         val localized = WidgetLanguage.context(app)
         val unit = settings.temperatureUnit
@@ -212,12 +237,7 @@ object MorningSummary {
                 AlertNotifier.period(localized, alert, snapshot.forecast.localNow().toLocalDate()),
             ).filter { it.isNotBlank() }.joinToString(" · ")
         }
-        val manager = app.getSystemService(NotificationManager::class.java) ?: return
-        NotificationChannels.ensure(app)
-        val time = LocalTime.now()
-        val channel = NotificationRouting.channel(
-            if (kind == SummaryKind.Morning) NotificationKind.Morning else NotificationKind.Evening, settings.notifications, time.hour * 60 + time.minute,
-        )
+        val manager = app.getSystemService(NotificationManager::class.java) ?: return AttemptOutcome.Failed
         val label = localized.getString(if (kind == SummaryKind.Morning) R.string.channel_morning else R.string.channel_evening)
         val dayPage = open(app, snapshot.placeId, kind.ordinal * 10 + 1) { it.putExtra(MainActivity.OpenDayKey.name, text.date.toString()) }
         val wearPage = open(app, snapshot.placeId, kind.ordinal * 10 + 2) { it.putExtra(MainActivity.OpenTodayKey.name, true) }
@@ -240,8 +260,16 @@ object MorningSummary {
         } else {
             builder.addAction(0, localized.getString(R.string.summary_action_tomorrow), dayPage)
         }
-        runCatching { manager.notify(notificationId(kind), builder.build()) }
-            .onSuccess { prefs.edit().putString(lastDayKey(kind), today.toString()).apply() }
+        val id = notificationId(kind)
+        val outcome = NotificationHealth.outcome(
+            blocker = null,
+            oldData = oldData,
+            post = { runCatching { manager.notify(id, builder.build()) }.isSuccess },
+            shown = { NotificationHealth.awaitShown(app, id) },
+        )
+        // Gönderildi (ya da en azından Android kabul etti): gün tamam. Reddedildiyse yedek yol pencere içinde yeniden dener.
+        if (outcome.delivered) prefs.edit().putString(lastDayKey(kind), today.toString()).apply()
+        return outcome
     }
 
     private fun open(context: Context, placeId: Long, requestCode: Int, extra: (Intent) -> Intent): PendingIntent = PendingIntent.getActivity(

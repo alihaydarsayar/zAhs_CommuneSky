@@ -145,4 +145,30 @@ class SummaryScheduleTest {
         assertEquals(NotificationKind.Morning.silentChannel, NotificationRouting.channel(NotificationKind.Morning, settings, 7 * 60 + 30))
         assertEquals(NotificationKind.Morning.soundChannel, NotificationRouting.channel(NotificationKind.Morning, settings, 9 * 60))
     }
+
+    // --- Atlanan özetin nedeni kayda yazılır (1.5.11)
+
+    @Test
+    fun `a skipped summary names its reason, a quiet skip leaves no record`() {
+        val clean = Duration.ofMinutes(10)
+        // Kapalı ya da bugün zaten gönderilmiş: kayıt yok.
+        assertEquals(null, SummarySchedule.skipOutcome(false, null, day, clean))
+        assertEquals(null, SummarySchedule.skipOutcome(true, day, day, clean))
+        // Veri yok ya da 24 saatten eski: neden yazılır.
+        assertEquals(AttemptOutcome.NoData, SummarySchedule.skipOutcome(true, null, day, null))
+        assertEquals(AttemptOutcome.DataTooOld, SummarySchedule.skipOutcome(true, null, day, Duration.ofHours(25)))
+        // Eski ama 24 saat içindeki veriyle özet gönderilir: atlama yok.
+        assertEquals(null, SummarySchedule.skipOutcome(true, null, day, Duration.ofHours(5)))
+        // Hata ayıklama gönderimi kapalı/gönderilmiş denetimlerini atlar, veri denetimini atlamaz.
+        assertEquals(null, SummarySchedule.skipOutcome(false, day, day, clean, force = true))
+        assertEquals(AttemptOutcome.NoData, SummarySchedule.skipOutcome(false, day, day, null, force = true))
+    }
+
+    @Test
+    fun `skip reasons agree with the verdict`() {
+        for (age in listOf(null, Duration.ofMinutes(5), Duration.ofHours(5), Duration.ofHours(25))) {
+            val skipped = SummarySchedule.verdict(true, null, day, age) == Verdict.Skip
+            assertEquals("age=$age", skipped, SummarySchedule.skipOutcome(true, null, day, age) != null)
+        }
+    }
 }

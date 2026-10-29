@@ -63,4 +63,16 @@ object SummarySchedule {
         cacheAge > FRESH -> Verdict.SendCached
         else -> Verdict.Send
     }
+
+    /**
+     * [verdict] göndermiyorsa kayda yazılacak neden. Özet kapalıysa ya da bugün zaten gönderildiyse null: söylenecek
+     * bir şey yok, saatlik yedek yolun her turu kayıt doldurmasın. [force] için [verdict] ile aynı kurallar.
+     */
+    fun skipOutcome(enabled: Boolean, sentOn: LocalDate?, today: LocalDate, cacheAge: Duration?, force: Boolean = false): AttemptOutcome? = when {
+        !enabled && !force -> null
+        !force && sentOn == today -> null
+        cacheAge == null -> AttemptOutcome.NoData
+        cacheAge > MAX_CACHE_AGE -> AttemptOutcome.DataTooOld
+        else -> null
+    }
 }
