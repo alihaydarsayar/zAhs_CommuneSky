@@ -325,4 +325,37 @@ class SummaryScheduleTest {
         val target = t0.plus(java.time.Duration.ofHours(2))
         assertTrue(SummarySchedule.reached(t0.plus(java.time.Duration.ofHours(5)), target))
     }
+
+    // --- Kurulu alarm yarına kaydırılıp iptal edilmez (1.5.11, emülatörde bulundu)
+
+    @Test
+    fun `a time that has just passed stays today so a pending alarm is not replaced by tomorrow's`() {
+        // Alarm 07:30'da çalacak ama biraz gecikebilir; 07:30'da, 07:31'de ya da 07:44'te yeniden kurulursa hedef hâlâ bugündür.
+        assertEquals(at(7, 30), SummarySchedule.alarmTarget(at(7, 30), morning, null))
+        assertEquals(at(7, 30), SummarySchedule.alarmTarget(at(7, 31), morning, null))
+        assertEquals(at(7, 30), SummarySchedule.alarmTarget(at(7, 44), morning, null))
+        // Bekleme payı (15 dk) geçince yarın; yedek yol zaten bundan sonra devreye girer.
+        assertEquals(at(7, 30, day.plusDays(1)), SummarySchedule.alarmTarget(at(7, 45), morning, null))
+        // Bugün gönderildiyse ya da alarm şu an çalıp işlendiyse sıradaki yarındır.
+        assertEquals(at(7, 30, day.plusDays(1)), SummarySchedule.alarmTarget(at(7, 31), morning, day))
+        assertEquals(at(7, 30, day.plusDays(1)), SummarySchedule.alarmTarget(at(7, 31), morning, null, handledToday = true))
+        // Saat gelmeden önce nextTrigger ile aynı.
+        assertEquals(at(7, 30), SummarySchedule.alarmTarget(at(5, 0), morning, null))
+    }
+
+    @Test
+    fun `the alarm path and the backup path do not leave a gap`() {
+        assertEquals(at(7, 30), SummarySchedule.alarmTarget(at(7, 44), morning, null))
+        assertFalse(SummarySchedule.shouldCatchUp(at(7, 44), morning, null))
+        assertTrue(SummarySchedule.shouldCatchUp(at(7, 45), morning, null))
+        assertEquals(at(7, 30, day.plusDays(1)), SummarySchedule.alarmTarget(at(7, 45), morning, null))
+    }
+
+    @Test
+    fun `in the zone of a phone on UTC+4 the just-passed rule is the same`() {
+        val baku = ZoneId.of("Asia/Baku")
+        val seven = 7 * 60
+        val late = ZonedDateTime.of(day, LocalTime.of(7, 5), baku)
+        assertEquals(ZonedDateTime.of(day, LocalTime.of(7, 0), baku), SummarySchedule.alarmTarget(late, seven, null))
+    }
 }

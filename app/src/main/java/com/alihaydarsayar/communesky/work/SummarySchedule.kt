@@ -88,6 +88,18 @@ object SummarySchedule {
     }
 
     /**
+     * Alarmın kurulacağı hedef. [nextTrigger] gibidir, tek farkla: bugünün saati az önce geçtiyse ([CATCH_UP_GRACE]
+     * içinde) ve bugün gönderilmediyse hedef bugünde kalır. Böylece kurulu bir alarm (biraz gecikebilir), saatlik iş,
+     * uygulama açılışı ya da saat değişimi gibi bir yeniden kurmayla yarına kaydırılıp iptal edilmez; geçmiş hedef
+     * alarmı hemen çaldırır. [handledToday]: bugünün alarmı şu an çaldı ve işlendi; sıradaki yarındır.
+     */
+    fun alarmTarget(now: ZonedDateTime, minutes: Int, sentOn: LocalDate?, handledToday: Boolean = false): ZonedDateTime {
+        val today = target(now.toLocalDate(), minutes, now.zone)
+        val justPassed = !handledToday && sentOn != now.toLocalDate() && !now.isBefore(today) && now.isBefore(today.plus(CATCH_UP_GRACE))
+        return if (justPassed) today else nextTrigger(now, minutes, sentOn)
+    }
+
+    /**
      * Yedek yol şimdi göndermeli mi: bugünün saatinden [CATCH_UP_GRACE] geçti, bugün gönderilmedi ve pencere
      * ([CATCH_UP] sonuna kadar, en çok gün sonuna) içindeyiz.
      */

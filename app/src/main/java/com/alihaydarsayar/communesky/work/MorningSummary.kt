@@ -92,8 +92,8 @@ object MorningSummary {
         if (kind == SummaryKind.Morning) settings.morningMinutes else settings.eveningMinutes
 
     /** Ayara göre iki özetin alarmlarını kurar ya da kaldırır. Uygulama açılınca, ayar değişince ve saatlik işte çağrılır. */
-    fun schedule(context: Context, settings: NotificationSettings, now: ZonedDateTime = ZonedDateTime.now()) {
-        for (kind in SummaryKind.entries) schedule(context, kind, enabled(settings, kind), minutes(settings, kind), now)
+    fun schedule(context: Context, settings: NotificationSettings, now: ZonedDateTime = ZonedDateTime.now(), handled: SummaryKind? = null) {
+        for (kind in SummaryKind.entries) schedule(context, kind, enabled(settings, kind), minutes(settings, kind), now, handled == kind)
     }
 
     /**
@@ -122,7 +122,7 @@ object MorningSummary {
     private fun exactAllowed(alarms: AlarmManager) =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.S || runCatching { alarms.canScheduleExactAlarms() }.getOrDefault(false)
 
-    private fun schedule(context: Context, kind: SummaryKind, enabled: Boolean, minutes: Int, now: ZonedDateTime) {
+    private fun schedule(context: Context, kind: SummaryKind, enabled: Boolean, minutes: Int, now: ZonedDateTime, handledToday: Boolean) {
         val alarms = context.getSystemService(AlarmManager::class.java) ?: return
         val log = NotificationLog(context)
         val attempt = attemptKind(kind)
@@ -136,7 +136,7 @@ object MorningSummary {
             log.setPlanned(attempt, null)
             return
         }
-        val target = SummarySchedule.nextTrigger(now, minutes, sentOn(context, kind)).toInstant()
+        val target = SummarySchedule.alarmTarget(now, minutes, sentOn(context, kind), handledToday).toInstant()
         // Tam zamanlı alarm izni varsa hedefe, yoksa hedefe adım adım yaklaşan alarma (bkz. SummarySchedule.wakeAt).
         val wake = if (exactAllowed(alarms)) target else SummarySchedule.wakeAt(now.toInstant(), target)
         val intent = alarmIntent(context, kind, target.toEpochMilli()) ?: return
@@ -216,7 +216,8 @@ object MorningSummary {
             NotificationLog(app).record(attemptKind(kind), AttemptOutcome.Error, detail = "LoadTimeout")
             return@withLock
         }
-        schedule(app, input.settings.notifications)
+        // Bugünün alarmı çaldı: sıradaki alarm yarınındır (özet bu turda gönderilir ya da nedeni kayda yazılır).
+        schedule(app, input.settings.notifications, handled = kind.takeIf { !force })
         val snapshot = pick(input)
         if (snapshot != null && Duration.between(snapshot.fetchedAt, Instant.now()) > SummarySchedule.FRESH) {
             // Saatlik iş çalışmamış (süreç öldürülmüş, pil tasarrufu): özet için tahmin burada kısaca yenilenir.
