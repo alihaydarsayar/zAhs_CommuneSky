@@ -1024,4 +1024,9 @@
 
     <string name="channel_sound_description">Joue le son de notification.</string>
     <string name="channel_silent_description">Apparaît dans le volet des notifications, sans son ni vibration.</string>
+
+    <string name="attempt_fallback">Un résumé simplifié a été envoyé (le résumé complet n’a pas pu être préparé)</string>
+    <string name="attempt_stale_notice">La météo actuelle n’a pas pu être récupérée ; un avis a été envoyé à la place</string>
+    <string name="attempt_error">Erreur : %1$s</string>
+    <string name="attempt_missed">Manqué : l’alarme ne s’est pas déclenchée</string>
 </resources>

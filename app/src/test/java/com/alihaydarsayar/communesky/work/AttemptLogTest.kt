@@ -6,6 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 
 /** Bildirim deneme kaydı: en çok 5 kayıt, 7 günden eskisi silinir, tekrarlar listeyi doldurmaz. */
 class AttemptLogTest {
@@ -68,5 +69,61 @@ class AttemptLogTest {
         assertEquals(AttemptOutcome.Sent, AttemptLog.last(entries, AttemptKind.Test)?.outcome)
         assertNull(AttemptLog.lastSent(listOf(attempt(1, AttemptKind.Test, AttemptOutcome.Sent))))
         assertEquals(AttemptOutcome.NoData, AttemptLog.last(entries, AttemptKind.Morning)?.outcome)
+    }
+
+    @Test
+    fun `an error keeps only the exception class name`() {
+        val entries = listOf(Attempt(ago(1), AttemptKind.Morning, AttemptOutcome.Error, Attempt.nameOf(IllegalStateException("Beşiktaş 41.04,29.00"))))
+        assertEquals("java.lang.IllegalStateException", entries.single().detail)
+        assertEquals(entries, AttemptLog.decode(AttemptLog.encode(entries)))
+        // Yer adı ya da konum içeren bir ayrıntı kabul edilmez; bozuk satır atlanır.
+        assertTrue(AttemptLog.decode("1,Morning,Error,Beşiktaş 41.04").isEmpty())
+        assertTrue(runCatching { Attempt(ago(1), AttemptKind.Morning, AttemptOutcome.Error, "Limerick, 52.66") }.isFailure)
+    }
+
+    @Test
+    fun `fallback counts as delivered, a stale notice and an error do not`() {
+        assertTrue(AttemptOutcome.Fallback.delivered)
+        assertTrue(!AttemptOutcome.StaleNotice.delivered && !AttemptOutcome.Error.delivered && !AttemptOutcome.Missed.delivered)
+    }
+
+    // --- Kaçırma algılama
+
+    private val baku = java.time.ZoneId.of("Asia/Baku")
+    private val planned = Instant.parse("2026-10-29T03:00:00Z") // Bakü 07:00
+
+    @Test
+    fun `no attempt after the window is a missed summary`() {
+        val after = planned.plus(Duration.ofHours(3)).plusSeconds(1)
+        assertTrue(MissedCheck.missed(planned, AttemptKind.Morning, emptyList(), null, after, baku))
+    }
+
+    @Test
+    fun `inside the window nothing is missed yet because the backup may still send`() {
+        assertTrue(!MissedCheck.missed(planned, AttemptKind.Morning, emptyList(), null, planned.plus(Duration.ofMinutes(179)), baku))
+        assertTrue(!MissedCheck.missed(null, AttemptKind.Morning, emptyList(), null, planned.plus(Duration.ofDays(1)), baku))
+    }
+
+    @Test
+    fun `any attempt record or a sent day after the planned time means it was not missed`() {
+        val after = planned.plus(Duration.ofHours(5))
+        for (outcome in listOf(AttemptOutcome.Sent, AttemptOutcome.NoPermission, AttemptOutcome.DataTooOld, AttemptOutcome.Error, AttemptOutcome.StaleNotice)) {
+            val record = listOf(Attempt(planned.plusSeconds(60), AttemptKind.Morning, outcome))
+            assertTrue(outcome.name, !MissedCheck.missed(planned, AttemptKind.Morning, record, null, after, baku))
+        }
+        // Başka türün kaydı ya da plandan önceki kayıt sayılmaz.
+        assertTrue(MissedCheck.missed(planned, AttemptKind.Morning, listOf(Attempt(planned.plusSeconds(60), AttemptKind.Evening, AttemptOutcome.Sent)), null, after, baku))
+        assertTrue(MissedCheck.missed(planned, AttemptKind.Morning, listOf(Attempt(planned.minusSeconds(60), AttemptKind.Morning, AttemptOutcome.Sent)), null, after, baku))
+        // Kayıt listeden düşse bile "bugün gönderildi" işareti varsa kaçırılmış sayılmaz.
+        assertTrue(!MissedCheck.missed(planned, AttemptKind.Morning, emptyList(), LocalDate.of(2026, 10, 29), after, baku))
+        assertTrue(MissedCheck.missed(planned, AttemptKind.Morning, emptyList(), LocalDate.of(2026, 10, 28), after, baku))
+    }
+
+    @Test
+    fun `the window ends at midnight in the device zone`() {
+        val late = Instant.parse("2026-10-29T19:30:00Z") // Bakü 23:30
+        // 23:30 + 3 saat gece yarısını aşar: pencere 00:00'da biter (Bakü 2026-10-30 00:00 = 20:00Z).
+        assertTrue(!MissedCheck.missed(late, AttemptKind.Evening, emptyList(), null, Instant.parse("2026-10-29T19:59:00Z"), baku))
+        assertTrue(MissedCheck.missed(late, AttemptKind.Evening, emptyList(), null, Instant.parse("2026-10-29T20:00:00Z"), baku))
     }
 }

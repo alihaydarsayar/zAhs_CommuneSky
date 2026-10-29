@@ -1024,4 +1024,9 @@
 
     <string name="channel_sound_description">Plays the notification sound.</string>
     <string name="channel_silent_description">Shows in the notification shade without sound or vibration.</string>
+
+    <string name="attempt_fallback">A basic summary was sent (the full one could not be prepared)</string>
+    <string name="attempt_stale_notice">Current weather could not be fetched; a notice was sent instead</string>
+    <string name="attempt_error">Error: %1$s</string>
+    <string name="attempt_missed">Missed: the alarm did not fire</string>
 </resources>

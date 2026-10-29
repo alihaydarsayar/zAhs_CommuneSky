@@ -1017,4 +1017,9 @@
 
     <string name="channel_sound_description">Bildirim sesiyle gelir.</string>
     <string name="channel_silent_description">Bildirim gölgesinde görünür; ses ve titreşim yoktur.</string>
+
+    <string name="attempt_fallback">Basit bir özet gönderildi (tam özet hazırlanamadı)</string>
+    <string name="attempt_stale_notice">Güncel hava alınamadı; yerine bilgi bildirimi gönderildi</string>
+    <string name="attempt_error">Hata: %1$s</string>
+    <string name="attempt_missed">Kaçırıldı: alarm tetiklenmedi</string>
 </resources>

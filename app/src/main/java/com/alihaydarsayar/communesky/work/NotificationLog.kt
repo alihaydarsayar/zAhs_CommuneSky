@@ -3,6 +3,8 @@ package com.alihaydarsayar.communesky.work
 import android.content.Context
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /** Hangi bildirimin denemesi. */
 enum class AttemptKind { Morning, Evening, Test }
@@ -35,13 +37,41 @@ enum class AttemptOutcome {
 
     /** Android bildirimi reddetti (istisna). */
     Failed,
+
+    /** Özet kurulurken hata oldu; yerine basit bir özet gönderildi (en düşük/en yüksek sıcaklık, genel durum). */
+    Fallback,
+
+    /** Veri 24 saatten eski ve yenilenemedi: özet yerine "güncel hava alınamadı" bildirimi gönderildi. */
+    StaleNotice,
+
+    /** Beklenmeyen hata; [Attempt.detail] istisnanın sınıf adıdır. */
+    Error,
+
+    /** Planlanan zaman geçti ve hiçbir deneme kaydı yok: alarm tetiklenmedi. */
+    Missed,
     ;
 
-    /** Bildirim gerçekten gönderildi (gün için "gönderildi" sayılır). */
-    val delivered: Boolean get() = this == Sent || this == SentOldData || this == NotVisible
+    /** Bir özet (ya da yedeği) gerçekten gönderildi: gün için "gönderildi" sayılır. */
+    val delivered: Boolean get() = this == Sent || this == SentOldData || this == NotVisible || this == Fallback
 }
 
-data class Attempt(val at: Instant, val kind: AttemptKind, val outcome: AttemptOutcome)
+/**
+ * Bir deneme. [detail] yalnız istisna sınıf adı ya da bir sayıdır (kısa, güvenli karakterler); yer adı, konum ya da
+ * hava verisi hiçbir zaman buraya yazılmaz.
+ */
+data class Attempt(val at: Instant, val kind: AttemptKind, val outcome: AttemptOutcome, val detail: String? = null) {
+    init {
+        require(detail == null || DETAIL.matches(detail)) { "detail" }
+    }
+
+    companion object {
+        val DETAIL = Regex("[A-Za-z0-9_.$]{1,64}")
+
+        /** Bir istisnanın kayda yazılacak adı (yalnız sınıf adı; iletisi kişisel bilgi taşıyabilir, yazılmaz). */
+        fun nameOf(error: Throwable): String = error.javaClass.name.takeLast(64).filter { it.isLetterOrDigit() || it == '_' || it == '.' || it == '$' }
+            .ifEmpty { "Unknown" }
+    }
+}
 
 /**
  * Son bildirim denemelerinin kısa kaydı: en çok [MAX] kayıt, [MAX_AGE]'den eskisi silinir. Yalnız zaman, tür ve sonuç
@@ -66,16 +96,19 @@ object AttemptLog {
     fun prune(entries: List<Attempt>, now: Instant): List<Attempt> =
         entries.filter { Duration.between(it.at, now) <= MAX_AGE }.sortedBy { it.at }.takeLast(MAX)
 
-    fun encode(entries: List<Attempt>): String = entries.joinToString("\n") { "${it.at.toEpochMilli()},${it.kind.name},${it.outcome.name}" }
+    fun encode(entries: List<Attempt>): String =
+        entries.joinToString("\n") { "${it.at.toEpochMilli()},${it.kind.name},${it.outcome.name}" + (it.detail?.let { d -> ",$d" } ?: "") }
 
     /** Bozuk satırlar sessizce atlanır. */
     fun decode(text: String?): List<Attempt> = text.orEmpty().lines().mapNotNull { line ->
         val part = line.split(',')
-        if (part.size != 3) return@mapNotNull null
+        if (part.size !in 3..4) return@mapNotNull null
+        val detail = part.getOrNull(3)
+        if (detail != null && !Attempt.DETAIL.matches(detail)) return@mapNotNull null
         val at = part[0].toLongOrNull()?.let(Instant::ofEpochMilli) ?: return@mapNotNull null
         val kind = AttemptKind.entries.firstOrNull { it.name == part[1] } ?: return@mapNotNull null
         val outcome = AttemptOutcome.entries.firstOrNull { it.name == part[2] } ?: return@mapNotNull null
-        Attempt(at, kind, outcome)
+        Attempt(at, kind, outcome, detail)
     }
 
     /** En son başarıyla gönderilen özet (test hariç). */
@@ -83,6 +116,21 @@ object AttemptLog {
 
     /** Bir türün en son denemesi. */
     fun last(entries: List<Attempt>, kind: AttemptKind): Attempt? = entries.filter { it.kind == kind }.maxByOrNull { it.at }
+}
+
+/**
+ * Kaçırma algılama: alarm için bir zaman planlandı ([planned]) ama yedek pencere de geçtiği halde o türden hiçbir
+ * deneme kaydı (gönderildi, atlandı, hata) yok ve gün "gönderildi" diye de işaretlenmemiş: alarm tetiklenmedi.
+ * Saf; test edilir.
+ */
+object MissedCheck {
+
+    fun missed(planned: Instant?, kind: AttemptKind, attempts: List<Attempt>, sentOn: LocalDate?, now: Instant, zone: ZoneId): Boolean {
+        if (planned == null) return false
+        if (now.isBefore(SummarySchedule.catchUpEnd(planned.atZone(zone)).toInstant())) return false
+        if (attempts.any { it.kind == kind && !it.at.isBefore(planned) }) return false
+        return sentOn == null || sentOn.isBefore(planned.atZone(zone).toLocalDate())
+    }
 }
 
 /** [AttemptLog]'un cihazdaki yeri (uygulamanın kendi özel dosyası). */
@@ -93,9 +141,20 @@ class NotificationLog(context: Context) {
     fun entries(now: Instant = Instant.now()): List<Attempt> = AttemptLog.prune(AttemptLog.decode(prefs.getString(KEY, null)), now)
 
     @Synchronized
-    fun record(kind: AttemptKind, outcome: AttemptOutcome, now: Instant = Instant.now()) {
-        val updated = AttemptLog.add(AttemptLog.decode(prefs.getString(KEY, null)), Attempt(now, kind, outcome), now)
+    fun record(kind: AttemptKind, outcome: AttemptOutcome, now: Instant = Instant.now(), detail: String? = null) {
+        val updated = AttemptLog.add(AttemptLog.decode(prefs.getString(KEY, null)), Attempt(now, kind, outcome, detail), now)
         prefs.edit().putString(KEY, AttemptLog.encode(updated)).apply()
+    }
+
+    /** Bir özet türü için en son planlanan zaman (alarmın kurulduğu hedef); yoksa ya da 7 günden eskiyse null. */
+    fun planned(kind: AttemptKind, now: Instant = Instant.now()): Instant? =
+        prefs.getLong("planned_${kind.name}", 0L).takeIf { it > 0 }?.let(Instant::ofEpochMilli)
+            ?.takeIf { java.time.Duration.between(it, now) <= AttemptLog.MAX_AGE }
+
+    /** Alarm bu hedef için kuruldu ([at] null: alarm kaldırıldı, özet kapalı). Her tür için yalnız en sonuncusu tutulur. */
+    @Synchronized
+    fun setPlanned(kind: AttemptKind, at: Instant?) {
+        prefs.edit().apply { if (at == null) remove("planned_${kind.name}") else putLong("planned_${kind.name}", at.toEpochMilli()) }.apply()
     }
 
     private companion object {

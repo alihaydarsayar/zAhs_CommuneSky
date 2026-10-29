@@ -51,9 +51,12 @@ object SummarySchedule {
         val today = now.toLocalDate()
         if (sentOn == today) return false
         val target = target(today, minutes, now.zone)
-        val end = minOf(target.plus(CATCH_UP), today.plusDays(1).atStartOfDay(now.zone))
-        return !now.isBefore(target.plus(CATCH_UP_GRACE)) && now.isBefore(end)
+        return !now.isBefore(target.plus(CATCH_UP_GRACE)) && now.isBefore(catchUpEnd(target))
     }
+
+    /** Yedek pencerenin sonu: hedeften [CATCH_UP] sonra, en çok o günün sonu. */
+    fun catchUpEnd(target: ZonedDateTime): ZonedDateTime =
+        minOf(target.plus(CATCH_UP), target.toLocalDate().plusDays(1).atStartOfDay(target.zone))
 
     /**
      * Kullanıcı özeti açtı ya da saatini değiştirdi ve seçtiği saat bugün çoktan geçti mi? O zaman bugünün özeti
