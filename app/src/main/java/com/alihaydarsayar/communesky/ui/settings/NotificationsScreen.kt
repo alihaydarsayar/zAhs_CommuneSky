@@ -306,7 +306,7 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                         GlassPill(stringResource(R.string.status_copy)) {
                             // Yalnız bu durum metni panoya kopyalanır; hiçbir yere gönderilmez.
                             val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
-                            clipboard?.setPrimaryClip(android.content.ClipData.newPlainText(context.getString(R.string.status_title), current.copyText(context)))
+                            clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Commune Sky", current.copyText(context)))
                             copied = true
                         }
                         if (copied) Hint(stringResource(R.string.status_copied))
