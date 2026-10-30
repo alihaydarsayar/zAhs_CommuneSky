@@ -36,7 +36,7 @@ object SummarySchedule {
      */
     const val RECEIVER_BUDGET_MS = 9_000L
     const val LOAD_TIMEOUT_MS = 4_000L
-    const val MAX_REFRESH_MS = 3_500L
+    const val MAX_REFRESH_MS = 5_500L
 
     /** Bildirimin listede görünmesini beklemek için ayrılan süre ([NotificationHealth.awaitShown]: 10 × 150 ms). */
     const val VERIFY_MS = 1_500L
