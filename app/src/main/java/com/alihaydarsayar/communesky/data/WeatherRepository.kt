@@ -92,6 +92,12 @@ class WeatherRepository @Inject constructor(
 
     suspend fun delete(placeId: Long) = dao.delete(placeId)
 
+    /** [places] içinden tahmini yeniden indirilmesi gerekenler (bkz. [ForecastFreshness]). */
+    suspend fun stale(places: List<Place>, now: Long = System.currentTimeMillis()): List<Place> = places.filter { place ->
+        val cached = dao.get(place.id)
+        ForecastFreshness.needsRefresh(cached?.fetchedAtMillis, cached?.latitude, cached?.longitude, place.city.latitude, place.city.longitude, now)
+    }
+
     /**
      * Verilen yerlerin tahminini tek bir istekle indirir ve önbelleğe yazar.
      * Ağ hatalarında istisna fırlatır; o durumda hiçbir satır değişmez.
@@ -150,6 +156,25 @@ class WeatherRepository @Inject constructor(
             fetchedAt = Instant.ofEpochMilli(fetchedAtMillis),
             accuracyMeters = accuracyMeters,
         )
+    }
+}
+
+/**
+ * Ana tahmin ne zaman yeniden istenir? Aynı yer için son indirme [MIN_AGE]'dan yeniyse ve yer kıpırdamadıysa
+ * istenmez: uygulamayı art arda açmak ya da saatlik işin hemen ardından gelmesi Open-Meteo'ya gereksiz istek
+ * göndermesin (ücretsiz sınır IP başınadır; ortak IP'li ağlarda 429 riski). Kullanıcı aşağı çekip yenilerse
+ * ([force]) bu denetim atlanır. Saf; test edilir.
+ */
+object ForecastFreshness {
+    const val MIN_AGE_MS = 5 * 60_000L
+
+    /** Yer bundan fazla kıpırdadıysa (derece, yaklaşık 1 km) önbellekteki tahmin onun değildir. */
+    private const val MOVED_DEGREES = 0.01
+
+    fun needsRefresh(fetchedAtMillis: Long?, cachedLat: Double?, cachedLon: Double?, lat: Double, lon: Double, now: Long): Boolean {
+        if (fetchedAtMillis == null || cachedLat == null || cachedLon == null) return true
+        if (now < fetchedAtMillis || now - fetchedAtMillis >= MIN_AGE_MS) return true
+        return kotlin.math.abs(cachedLat - lat) > MOVED_DEGREES || kotlin.math.abs(cachedLon - lon) > MOVED_DEGREES
     }
 }
 

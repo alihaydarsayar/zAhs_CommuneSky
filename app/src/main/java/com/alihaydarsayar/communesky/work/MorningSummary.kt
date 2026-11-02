@@ -226,7 +226,7 @@ object MorningSummary {
             val refreshed = if (budget == 0L) null else withTimeoutOrNull(budget) {
                 runCatching { EntryPointAccessors.fromApplication(app, WidgetEntryPoint::class.java).weatherUpdater().refreshForSummary() }.isSuccess
             }
-            if (refreshed == true) input = load(app) ?: input
+            if (refreshed == true) input = load(app) ?: input else runCatching { RefreshScheduler.retrySoon(app) }
         }
         deliver(app, input, kind, force)
     }

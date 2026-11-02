@@ -91,7 +91,8 @@ class WeatherUpdater @Inject constructor(
         // Ek veriler (ulusal servis, öteki modeller, uyarılar) ana tahminle aynı anda istenir; hata fırlatmaz
         // ve ana tahmini bekletmez. [force]: kullanıcı aşağı çekip yeniledi, tazelik eşiklerine bakılmaz.
         val extras = async { extrasRepository.refresh(places, force) }
-        weatherRepository.refresh(places)
+        // Ana tahmin: bu yerler için 5 dakikadan yeni bir indirme varsa yeniden istenmez (kullanıcı çekip yenilediyse istenir).
+        weatherRepository.refresh(if (force) places else weatherRepository.stale(places))
         extras.await()
         WeatherWidgetUpdater.updateAll(context)
     }

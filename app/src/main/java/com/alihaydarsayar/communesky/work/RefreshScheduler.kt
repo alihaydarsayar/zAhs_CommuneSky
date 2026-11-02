@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
@@ -40,6 +42,19 @@ object RefreshScheduler {
      */
     fun align(context: Context, now: Instant = Instant.now()) {
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request(nextRun(now)))
+    }
+
+    /**
+     * Özet için yenileme olmadı (sunucu 5xx/429 dedi ya da ağ yoktu): bir kez, birkaç dakika sonra ağ varken yeniden
+     * denenir; başarılı olursa iş, gönderilmemiş özeti de yedek yolla gönderir. Sürekli çalışan bir iş değildir.
+     */
+    fun retrySoon(context: Context) {
+        val request = OneTimeWorkRequestBuilder<WeatherRefreshWorker>()
+            .setInitialDelay(5, TimeUnit.MINUTES)
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 5, TimeUnit.MINUTES)
+            .build()
+        WorkManager.getInstance(context).enqueueUniqueWork("weather-refresh-retry", ExistingWorkPolicy.KEEP, request)
     }
 
     /** Bir sonraki çalışma zamanı: telefonun saatine göre sıradaki saat başı. Saf hesap; test edilir. */

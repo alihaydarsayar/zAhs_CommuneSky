@@ -194,13 +194,7 @@ class ExtrasRepository @Inject constructor(
 
     /** Hata, boş cevap ya da 5 saniyelik zaman aşımında null. */
     @Suppress("UNUSED_PARAMETER")
-    private suspend fun <T> attempt(what: String, block: suspend () -> T): T? = try {
-        withTimeoutOrNull(TIMEOUT_MS) { block() }
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        null
-    }
+    private suspend fun <T> attempt(what: String, block: suspend () -> T): T? = SideCall.attempt(TIMEOUT_MS, block)
 
     private companion object {
         const val TIMEOUT_MS = 5_000L
@@ -232,4 +226,18 @@ object ExtrasFreshness {
      */
     fun modelsFor(extras: PlaceExtras): List<ForecastSource> =
         listOfNotNull(extras.region.localModel, ForecastSource.EcmwfIfs, ForecastSource.EcmwfAifs, ForecastSource.OpenMeteo)
+}
+
+/**
+ * Yan servis çağrıları (hava kalitesi, ek modeller, MGM, uyarılar): hata (503, 429, ağ), boş cevap ya da zaman aşımı
+ * ana tahmini bozmaz, ana ekranı hataya düşürmez; sonuç null olur. İptal (CancellationException) yutulmaz. Saf; test edilir.
+ */
+object SideCall {
+    suspend fun <T> attempt(timeoutMs: Long, block: suspend () -> T): T? = try {
+        withTimeoutOrNull(timeoutMs) { block() }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
+    }
 }
