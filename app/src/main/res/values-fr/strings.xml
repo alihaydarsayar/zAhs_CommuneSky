@@ -1083,4 +1083,21 @@
     <string name="error_last_update">Dernière mise à jour réussie : %1$s</string>
     <string name="error_no_update">Aucune mise à jour réussie pour le moment.</string>
     <string name="update_failed_service">Échec de la mise à jour (%1$s, %2$d) · données enregistrées affichées</string>
+    <string name="status_power_save">Économiseur de batterie</string>
+    <string name="status_battery_optimization">Optimisation de la batterie</string>
+    <string name="status_standby">Groupe de veille de l’appli</string>
+    <string name="status_connection">Connexion</string>
+    <string name="status_conn_wifi">Wi-Fi</string>
+    <string name="status_conn_mobile">Données mobiles</string>
+    <string name="status_conn_other">Autre</string>
+    <string name="status_conn_none">Aucune</string>
+    <string name="status_last_update">Dernière mise à jour météo réussie</string>
+    <string name="status_failures">Dernières erreurs réseau</string>
+    <string name="status_no_connection">pas de connexion</string>
+    <string name="status_bucket_active">Active</string>
+    <string name="status_bucket_working">Ensemble de travail</string>
+    <string name="status_bucket_frequent">Fréquente</string>
+    <string name="status_bucket_rare">Rare</string>
+    <string name="status_bucket_restricted">Restreinte</string>
+    <string name="status_bucket_never">Jamais</string>
 </resources>

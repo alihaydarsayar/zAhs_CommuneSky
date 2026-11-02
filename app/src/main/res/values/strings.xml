@@ -1083,4 +1083,21 @@
     <string name="error_last_update">Last successful update: %1$s</string>
     <string name="error_no_update">No successful update yet.</string>
     <string name="update_failed_service">Couldn\'t update (%1$s, %2$d) · showing saved data</string>
+    <string name="status_power_save">Battery saver</string>
+    <string name="status_battery_optimization">Battery optimization</string>
+    <string name="status_standby">App standby group</string>
+    <string name="status_connection">Connection</string>
+    <string name="status_conn_wifi">Wi-Fi</string>
+    <string name="status_conn_mobile">Mobile data</string>
+    <string name="status_conn_other">Other</string>
+    <string name="status_conn_none">None</string>
+    <string name="status_last_update">Last successful weather update</string>
+    <string name="status_failures">Latest network errors</string>
+    <string name="status_no_connection">no connection</string>
+    <string name="status_bucket_active">Active</string>
+    <string name="status_bucket_working">Working set</string>
+    <string name="status_bucket_frequent">Frequent</string>
+    <string name="status_bucket_rare">Rare</string>
+    <string name="status_bucket_restricted">Restricted</string>
+    <string name="status_bucket_never">Never</string>
 </resources>

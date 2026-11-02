@@ -1076,4 +1076,21 @@
     <string name="error_last_update">Son başarılı güncelleme: %1$s</string>
     <string name="error_no_update">Henüz başarılı bir güncelleme yok.</string>
     <string name="update_failed_service">Güncellenemedi (%1$s, %2$d) · kayıtlı veri gösteriliyor</string>
+    <string name="status_power_save">Pil tasarrufu</string>
+    <string name="status_battery_optimization">Pil optimizasyonu</string>
+    <string name="status_standby">Uygulama bekleme grubu</string>
+    <string name="status_connection">Bağlantı</string>
+    <string name="status_conn_wifi">Wi-Fi</string>
+    <string name="status_conn_mobile">Mobil veri</string>
+    <string name="status_conn_other">Diğer</string>
+    <string name="status_conn_none">Yok</string>
+    <string name="status_last_update">Son başarılı hava güncellemesi</string>
+    <string name="status_failures">Son ağ hataları</string>
+    <string name="status_no_connection">bağlantı yok</string>
+    <string name="status_bucket_active">Etkin</string>
+    <string name="status_bucket_working">Çalışma kümesi</string>
+    <string name="status_bucket_frequent">Sık</string>
+    <string name="status_bucket_rare">Nadir</string>
+    <string name="status_bucket_restricted">Kısıtlı</string>
+    <string name="status_bucket_never">Hiç</string>
 </resources>

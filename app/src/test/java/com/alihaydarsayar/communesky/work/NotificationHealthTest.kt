@@ -123,5 +123,16 @@ class NotificationHealthTest {
         val forbidden = listOf("place", "location", "latitude", "longitude", "lat", "lon", "city", "weather", "forecast", "widget", "snapshot")
         assertTrue(names.toString(), names.none { name -> forbidden.any { name == it || name.contains(it) } })
         assertTrue(names.containsAll(listOf("permission", "appenabled", "channels", "backgroundrestricted", "zone", "planned", "attempts")))
+        // Yeni teşhis alanları da aynı kurala uyar: telefonun durumu, hata kaydı (host, kod, zaman) ve kilit ekranı ayarları.
+        assertTrue(names.containsAll(listOf("lockscreen", "device", "failures", "lastupdate")))
+        for (type in listOf(DeviceState::class.java, LockScreenSettings::class.java, com.alihaydarsayar.communesky.data.remote.NetworkFailure::class.java)) {
+            val inner = type.declaredFields.map { it.name.lowercase() }
+            assertTrue(inner.toString(), inner.none { name -> forbidden.any { name == it || name.contains(it) } })
+        }
+        // Ağ hatası kaydı yalnız zaman, servis (host), kod ve Retry-After tutar.
+        assertEquals(
+            setOf("at", "host", "code", "retryafterseconds"),
+            com.alihaydarsayar.communesky.data.remote.NetworkFailure::class.java.declaredFields.map { it.name.lowercase() }.filter { !it.startsWith("$") }.toSet(),
+        )
     }
 }
