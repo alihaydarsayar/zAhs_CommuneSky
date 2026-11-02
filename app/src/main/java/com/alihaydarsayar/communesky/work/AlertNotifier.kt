@@ -206,6 +206,7 @@ object AlertNotifier {
             .setGroup(group(snapshot.placeId))
             .setGroupSummary(true)
             .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(openPlace(context, snapshot.placeId, summaryId(snapshot.placeId)))
             .setAutoCancel(true)
             .build()

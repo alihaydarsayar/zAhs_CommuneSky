@@ -301,6 +301,7 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                 item {
                     GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.status_title)) {
                         current.rows(context).forEach { (label, value) -> StatusRow(label, value) }
+                        Hint(stringResource(R.string.notifications_lock_hint))
                         Hint(stringResource(R.string.status_copy_hint))
                         Spacer(Modifier.height(10.dp))
                         GlassPill(stringResource(R.string.status_copy)) {

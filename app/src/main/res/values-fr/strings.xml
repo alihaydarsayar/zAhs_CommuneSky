@@ -1070,4 +1070,13 @@
     <string name="notifications_summary_silent_hint">Un résumé réglé en silencieux apparaît quand même dans le volet des notifications, sans son ni vibration.</string>
     <string name="notifications_alert_scope">Uniquement pour les lieux en Türkiye (alertes MGM)</string>
     <string name="notifications_quiet_summaries">Les résumés ne sont jamais ignorés pendant les heures calmes ; ils arrivent sans son.</string>
+    <string name="status_unreadable">Illisible</string>
+    <string name="status_lock_public">Affichée en entier</string>
+    <string name="status_lock_private">Contenu masqué</string>
+    <string name="status_lock_secret">Non affichée</string>
+    <string name="status_lock_default">Réglage par défaut du téléphone</string>
+    <string name="status_lock_channel">%1$s sur l’écran de verrouillage</string>
+    <string name="status_lock_system">Notifications sur l’écran de verrouillage</string>
+    <string name="status_lock_silent">Notifications silencieuses sur l’écran de verrouillage</string>
+    <string name="notifications_lock_hint">Si les notifications n’apparaissent pas sur l’écran de verrouillage, vérifiez Réglages › Notifications › Écran de verrouillage de votre téléphone.</string>
 </resources>

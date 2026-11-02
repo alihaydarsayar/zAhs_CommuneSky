@@ -391,6 +391,7 @@ object MorningSummary {
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setContentIntent(page)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .build()
         val shown = NotificationHealth.outcome(
@@ -434,6 +435,7 @@ object MorningSummary {
             .setContentText(text.body)
             .setContentIntent(if (kind == SummaryKind.Morning) wearPage else dayPage)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
         var viewError: Throwable? = null
         val builder = try {

@@ -16,7 +16,10 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 /** Bir bildirim kanalının Android'deki durumu. [importance] null: kanal kurulmamış. */
-data class ChannelState(val kind: NotificationKind, val channelId: String, val silent: Boolean, val importance: Int?)
+data class ChannelState(val kind: NotificationKind, val channelId: String, val silent: Boolean, val importance: Int?, val lockscreen: Int? = null)
+
+/** Sistemin kilit ekranı bildirim ayarları; okunamayan null. */
+data class LockScreenSettings(val showNotifications: Boolean?, val showSilent: Boolean?)
 
 /** Bir özetin sıradaki planlı zamanı ve Android'de gerçekten kayıtlı bir alarm olup olmadığı. */
 data class PlannedSummary(val kind: SummaryKind, val enabled: Boolean, val at: Instant?, val alarmSet: Boolean)
@@ -34,6 +37,7 @@ data class NotificationStatus(
     val zone: ZoneId,
     val planned: List<PlannedSummary>,
     val attempts: List<Attempt>,
+    val lockScreen: LockScreenSettings,
     val appVersion: String,
     val androidSdk: Int,
     val model: String,
@@ -50,7 +54,7 @@ data class NotificationStatus(
             val channels = NotificationHealth.wantedKinds(settings).map { kind ->
                 val silent = !NotificationRouting.wantsSound(kind, settings)
                 val id = if (silent) kind.silentChannel else kind.soundChannel
-                ChannelState(kind, id, silent, manager?.getNotificationChannel(id)?.importance)
+                manager?.getNotificationChannel(id).let { ChannelState(kind, id, silent, it?.importance, it?.lockscreenVisibility) }
             }
             val restricted = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
                 context.getSystemService(ActivityManager::class.java)?.isBackgroundRestricted == true
@@ -71,11 +75,31 @@ data class NotificationStatus(
                 zone = ZoneId.systemDefault(),
                 planned = planned,
                 attempts = log.entries(now),
+                lockScreen = readLockScreen(context),
                 appVersion = version,
                 androidSdk = Build.VERSION.SDK_INT,
                 model = Build.MODEL.orEmpty(),
             )
         }
+
+        /** Sistemin kilit ekranı ayarları (Settings.Secure); bu anahtarlar her telefonda okunamaz, o zaman null. */
+        fun readLockScreen(context: Context): LockScreenSettings {
+            fun flag(key: String): Boolean? = runCatching {
+                android.provider.Settings.Secure.getInt(context.contentResolver, key).let { it != 0 }
+            }.getOrNull()
+            return LockScreenSettings(flag("lock_screen_show_notifications"), flag("lock_screen_show_silent_notifications"))
+        }
+
+        /** Kanalın kilit ekranı görünürlüğü, kullanıcının dilinde. */
+        fun lockscreenLabel(context: Context, visibility: Int?): String = context.getString(
+            when (visibility) {
+                null -> R.string.status_unreadable
+                android.app.Notification.VISIBILITY_PUBLIC -> R.string.status_lock_public
+                android.app.Notification.VISIBILITY_PRIVATE -> R.string.status_lock_private
+                android.app.Notification.VISIBILITY_SECRET -> R.string.status_lock_secret
+                else -> R.string.status_lock_default
+            },
+        )
 
         /** Android kanal önemi, kullanıcının dilinde. */
         fun importanceLabel(context: Context, importance: Int?): String = context.getString(
@@ -102,7 +126,11 @@ data class NotificationStatus(
         for (channel in channels) {
             val name = localized.getString(channel.kind.channelName).let { if (channel.silent) localized.getString(R.string.channel_silent, it) else it }
             rows += name to importanceLabel(localized, channel.importance)
+            rows += localized.getString(R.string.status_lock_channel, name) to lockscreenLabel(localized, channel.lockscreen)
         }
+        fun known(value: Boolean?) = value?.let { yes(it) } ?: localized.getString(R.string.status_unreadable)
+        rows += localized.getString(R.string.status_lock_system) to known(lockScreen.showNotifications)
+        rows += localized.getString(R.string.status_lock_silent) to known(lockScreen.showSilent)
         rows += localized.getString(R.string.status_battery) to localized.getString(if (backgroundRestricted) R.string.status_restricted else R.string.status_unrestricted)
         rows += localized.getString(R.string.status_zone) to zone.id
         for (plan in planned) {

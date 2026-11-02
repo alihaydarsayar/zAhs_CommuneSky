@@ -1063,4 +1063,13 @@
     <string name="notifications_summary_silent_hint">Sessiz seçilen özet de bildirim gölgesinde görünür; yalnız ses ve titreşim olmaz.</string>
     <string name="notifications_alert_scope">Yalnız Türkiye’deki yerler için (MGM uyarıları)</string>
     <string name="notifications_quiet_summaries">Sessiz saatlerde özetler atlanmaz; sessiz gelir.</string>
+    <string name="status_unreadable">Okunamıyor</string>
+    <string name="status_lock_public">Tam görünür</string>
+    <string name="status_lock_private">İçerik gizli</string>
+    <string name="status_lock_secret">Gösterilmez</string>
+    <string name="status_lock_default">Telefonun varsayılanı</string>
+    <string name="status_lock_channel">%1$s kilit ekranında</string>
+    <string name="status_lock_system">Kilit ekranında bildirimler</string>
+    <string name="status_lock_silent">Kilit ekranında sessiz bildirimler</string>
+    <string name="notifications_lock_hint">Bildirimler kilit ekranında görünmüyorsa telefonun Ayarlar › Bildirimler › Kilit ekranı ayarına bak.</string>
 </resources>

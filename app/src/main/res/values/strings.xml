@@ -1070,4 +1070,13 @@
     <string name="notifications_summary_silent_hint">A summary set to silent still appears in the notification shade, only without sound or vibration.</string>
     <string name="notifications_alert_scope">Only for places in Türkiye (MGM alerts)</string>
     <string name="notifications_quiet_summaries">Summaries are never skipped in quiet hours; they arrive silently.</string>
+    <string name="status_unreadable">Can\'t be read</string>
+    <string name="status_lock_public">Shown in full</string>
+    <string name="status_lock_private">Content hidden</string>
+    <string name="status_lock_secret">Not shown</string>
+    <string name="status_lock_default">Phone\'s default</string>
+    <string name="status_lock_channel">%1$s on lock screen</string>
+    <string name="status_lock_system">Notifications on lock screen</string>
+    <string name="status_lock_silent">Silent notifications on lock screen</string>
+    <string name="notifications_lock_hint">If notifications do not show on the lock screen, check your phone\'s Settings › Notifications › Lock screen.</string>
 </resources>

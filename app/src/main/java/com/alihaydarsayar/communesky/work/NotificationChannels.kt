@@ -1,5 +1,6 @@
 package com.alihaydarsayar.communesky.work
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
@@ -118,10 +119,12 @@ object NotificationChannels {
                 NotificationChannel(kind.soundChannel, name, kind.soundImportance).apply {
                     group = kind.group
                     description = localized.getString(R.string.channel_sound_description)
+                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 },
                 NotificationChannel(kind.silentChannel, localized.getString(R.string.channel_silent, name), kind.silentImportance).apply {
                     group = kind.group
                     description = localized.getString(R.string.channel_silent_description)
+                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                     // Önem varsayılan olsa da ses ve titreşim yok: bildirim gölgesinde görünür, çalmaz.
                     setSound(null, null)
                     enableVibration(false)
