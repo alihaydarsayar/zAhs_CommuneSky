@@ -100,3 +100,10 @@ The debug build has helpers to try situations that are hard to produce. They are
 2. Add a section for the new version to [CHANGELOG.md](CHANGELOG.md), written for users in plain language, one short line per change.
 3. Run the unit tests, lint and the on-device tests, and install the **release** build once to check the main flows (R8 can change behaviour that debug builds hide).
 4. Build the bundle (`./gradlew :app:bundleRelease`) with your own signing key, upload it, and paste the changelog lines into the store listing in English and Turkish.
+
+### Branches and tags / Dallar ve etiketler
+
+- **`main` shows only the version that is live on Google Play production.** New work goes to the `dahili-test` (internal testing) branch first. / **`main` yalnızca Google Play production'da yayında olan sürümü gösterir.** Yeni iş önce `dahili-test` dalına gider.
+- **Order: `dahili-test` → Play internal testing → Play production → `main`.** When a version reaches production, bring it into `main` with a fast-forward only: `git switch main && git merge --ff-only dahili-test`. Never merge or commit straight to `main`, never force-push it. / **Sıra: `dahili-test` → Play dahili test → Play production → `main`.** Production'a çıkınca `main`'e yalnızca fast-forward ile alınır; `main`'e doğrudan commit ya da force push yok.
+- **Version code:** every Play upload has a `versionCode` higher than the previous one, even for a test build; a code that was uploaded is never reused. / **Sürüm kodu:** her Play yüklemesinin `versionCode` değeri bir öncekinden büyüktür; yüklenmiş kod bir daha kullanılmaz.
+- **Tag:** when a version goes live on production, tag that commit `vX.Y.Z` (for example `v1.5.12`) and push the tag. Tags are not created for test builds. / **Etiket:** bir sürüm production'a çıkınca o commit'e `vX.Y.Z` etiketi atılır ve push'lanır; test sürümlerine etiket atılmaz.
