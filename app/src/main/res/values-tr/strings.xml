@@ -1072,4 +1072,8 @@
     <string name="status_lock_system">Kilit ekranında bildirimler</string>
     <string name="status_lock_silent">Kilit ekranında sessiz bildirimler</string>
     <string name="notifications_lock_hint">Bildirimler kilit ekranında görünmüyorsa telefonun Ayarlar › Bildirimler › Kilit ekranı ayarına bak.</string>
+    <string name="error_server_service">%1$s yanıt vermiyor (HTTP %2$d). Biraz sonra tekrar dene.</string>
+    <string name="error_last_update">Son başarılı güncelleme: %1$s</string>
+    <string name="error_no_update">Henüz başarılı bir güncelleme yok.</string>
+    <string name="update_failed_service">Güncellenemedi (%1$s, %2$d) · kayıtlı veri gösteriliyor</string>
 </resources>

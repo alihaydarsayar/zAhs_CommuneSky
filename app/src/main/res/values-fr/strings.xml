@@ -1079,4 +1079,8 @@
     <string name="status_lock_system">Notifications sur l’écran de verrouillage</string>
     <string name="status_lock_silent">Notifications silencieuses sur l’écran de verrouillage</string>
     <string name="notifications_lock_hint">Si les notifications n’apparaissent pas sur l’écran de verrouillage, vérifiez Réglages › Notifications › Écran de verrouillage de votre téléphone.</string>
+    <string name="error_server_service">%1$s ne répond pas (HTTP %2$d). Réessayez dans un instant.</string>
+    <string name="error_last_update">Dernière mise à jour réussie : %1$s</string>
+    <string name="error_no_update">Aucune mise à jour réussie pour le moment.</string>
+    <string name="update_failed_service">Échec de la mise à jour (%1$s, %2$d) · données enregistrées affichées</string>
 </resources>

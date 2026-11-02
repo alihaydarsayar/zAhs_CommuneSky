@@ -1,6 +1,7 @@
 package com.alihaydarsayar.communesky.ui.home
 
 import com.alihaydarsayar.communesky.ui.common.touchTarget
+import com.alihaydarsayar.communesky.data.remote.ServiceName
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -60,6 +61,7 @@ fun CurrentHeader(
     isHome: Boolean,
     today: DailyForecast?,
     status: HeaderStatus,
+    failure: LoadError? = null,
     locationStatus: LocationStatus,
     onLocationAction: (LocationStatus) -> Unit,
     modifier: Modifier = Modifier,
@@ -96,7 +98,7 @@ fun CurrentHeader(
             )
         }
         Spacer(Modifier.height(4.dp))
-        StatusLine(status, weather)
+        StatusLine(status, weather, failure)
         val observation = weather.observation
         if (observation is ObservationUse.Override) {
             Spacer(Modifier.height(2.dp))
@@ -163,11 +165,15 @@ fun CurrentHeader(
 enum class HeaderStatus { Idle, Refreshing, Failed }
 
 @Composable
-private fun StatusLine(status: HeaderStatus, weather: WeatherSnapshot) {
+private fun StatusLine(status: HeaderStatus, weather: WeatherSnapshot, failure: LoadError?) {
     val ago = relativeTimeSince(weather.fetchedAt)
     val text = when (status) {
         HeaderStatus.Refreshing -> stringResource(R.string.updating)
-        HeaderStatus.Failed -> stringResource(R.string.update_failed)
+        HeaderStatus.Failed -> {
+            // Hangi servisin hangi kodla yanıt vermediği (varsa) söylenir.
+            val service = (failure as? LoadError.Server)?.let { ServiceName.of(it.host) }
+            if (service != null) stringResource(R.string.update_failed_service, service, (failure as LoadError.Server).code) else stringResource(R.string.update_failed)
+        }
         HeaderStatus.Idle -> if (ago == null) {
             stringResource(R.string.updated_just_now)
         } else {

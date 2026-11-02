@@ -1079,4 +1079,8 @@
     <string name="status_lock_system">Notifications on lock screen</string>
     <string name="status_lock_silent">Silent notifications on lock screen</string>
     <string name="notifications_lock_hint">If notifications do not show on the lock screen, check your phone\'s Settings › Notifications › Lock screen.</string>
+    <string name="error_server_service">%1$s isn\'t responding (HTTP %2$d). Try again shortly.</string>
+    <string name="error_last_update">Last successful update: %1$s</string>
+    <string name="error_no_update">No successful update yet.</string>
+    <string name="update_failed_service">Couldn\'t update (%1$s, %2$d) · showing saved data</string>
 </resources>

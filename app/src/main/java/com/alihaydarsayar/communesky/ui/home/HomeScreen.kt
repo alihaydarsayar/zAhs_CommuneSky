@@ -1,5 +1,7 @@
 package com.alihaydarsayar.communesky.ui.home
 
+import com.alihaydarsayar.communesky.data.remote.NetworkFailureLog
+import com.alihaydarsayar.communesky.data.remote.ServiceName
 import com.alihaydarsayar.communesky.ui.common.touchTarget
 import android.Manifest
 import android.content.Context
@@ -499,6 +501,7 @@ private fun ForecastList(
                 isHome = page.isHome,
                 today = today,
                 status = status,
+                failure = uiState.error,
                 // Konum düğmesi sadece "Bulunduğum yer" sayfasında anlamlı.
                 locationStatus = if (page.isDevice) uiState.locationStatus else LocationStatus.Current,
                 onLocationAction = onLocationAction,
@@ -662,9 +665,15 @@ private fun LoadingContent() {
 private fun ErrorContent(error: LoadError, onRetry: () -> Unit) {
     val message = when (error) {
         LoadError.Network -> stringResource(R.string.error_network)
-        is LoadError.Server -> stringResource(R.string.error_server, error.code)
+        is LoadError.Server -> ServiceName.of(error.host)?.let { stringResource(R.string.error_server_service, it, error.code) }
+            ?: stringResource(R.string.error_server, error.code)
         LoadError.Unknown -> stringResource(R.string.error_unknown)
     }
+    // Son başarılı güncelleme (bu ekran yalnız önbellek boşken görünür; çoğu zaman henüz hiç alınmamıştır).
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val lastUpdate = remember { NetworkFailureLog(context).lastSuccess() }?.let {
+        stringResource(R.string.error_last_update, java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT).format(java.util.Date(it)))
+    } ?: stringResource(R.string.error_no_update)
     Column(
         Modifier
             .fillMaxSize()
@@ -680,6 +689,8 @@ private fun ErrorContent(error: LoadError, onRetry: () -> Unit) {
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleMedium,
         )
+        Spacer(Modifier.height(8.dp))
+        Text(text = lastUpdate, color = TextSecondary, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(20.dp))
         Text(
             text = stringResource(R.string.retry),
