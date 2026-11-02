@@ -77,8 +77,8 @@ object MorningSummary {
     /** Alarm ile yedek yol aynı anda çalışırsa özet iki kez gitmesin. */
     private val lock = Mutex()
 
-    private fun notificationId(kind: SummaryKind) = if (kind == SummaryKind.Morning) 7301 else 7302
-    private fun lastDayKey(kind: SummaryKind) = if (kind == SummaryKind.Morning) "last_day" else "last_day_evening"
+    internal fun notificationId(kind: SummaryKind) = if (kind == SummaryKind.Morning) 7301 else 7302
+    internal fun lastDayKey(kind: SummaryKind) = if (kind == SummaryKind.Morning) "last_day" else "last_day_evening"
 
     /** Özetin en son gönderildiği günün tarihi (cihazın tarihi); hiç gönderilmediyse null. */
     private fun sentOn(context: Context, kind: SummaryKind): LocalDate? =
@@ -112,9 +112,18 @@ object MorningSummary {
         schedule(context, new, now)
     }
 
-    private fun alarmIntent(context: Context, kind: SummaryKind, target: Long, flags: Int = PendingIntent.FLAG_UPDATE_CURRENT): PendingIntent? =
+    /**
+     * Her özetin iki ayrı alarmı vardır: hedefe adım adım yaklaşan zincir ([alarmRequestCode]) ve doğrudan hedefe kurulu
+     * yedek (backup = true). Zincirin bir halkası çalışmazsa (üretici arayüzü o yayını engellerse) yedek en geç bir saat
+     * içinde özeti yine de getirir. Sabah ve akşam kimlikleri hep ayrıdır; biri öbürünü ezmez.
+     */
+    internal fun alarmRequestCode(kind: SummaryKind, backup: Boolean = false) = kind.ordinal + if (backup) 10 else 0
+
+    private fun alarmIntent(
+        context: Context, kind: SummaryKind, target: Long, flags: Int = PendingIntent.FLAG_UPDATE_CURRENT, backup: Boolean = false,
+    ): PendingIntent? =
         PendingIntent.getBroadcast(
-            context, kind.ordinal,
+            context, alarmRequestCode(kind, backup),
             Intent(context, MorningSummaryReceiver::class.java).putExtra(EXTRA_KIND, kind.name).putExtra(EXTRA_TARGET, target),
             flags or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -129,9 +138,11 @@ object MorningSummary {
         // Önce kaçırılmış bir özet var mı bakılır: planlanan zaman aşağıda yenisiyle değişmeden.
         checkMissed(context, kind, now)
         if (!enabled) {
-            alarmIntent(context, kind, 0)?.let {
-                alarms.cancel(it)
-                it.cancel()
+            for (backup in listOf(false, true)) {
+                alarmIntent(context, kind, 0, backup = backup)?.let {
+                    alarms.cancel(it)
+                    it.cancel()
+                }
             }
             log.setPlanned(attempt, null)
             return
@@ -141,6 +152,13 @@ object MorningSummary {
         val wake = if (exactAllowed(alarms)) target else SummarySchedule.wakeAt(now.toInstant(), target)
         val intent = alarmIntent(context, kind, target.toEpochMilli()) ?: return
         setAlarm(alarms, wake.toEpochMilli(), intent)
+        // Yedek: doğrudan hedefe (en çok bir saat gecikebilir). Zincir hedefe kurulduysa gerekmez.
+        val backup = alarmIntent(context, kind, target.toEpochMilli(), backup = true)
+        if (wake == target) {
+            backup?.let { alarms.cancel(it) }
+        } else if (backup != null) {
+            setAlarm(alarms, target.toEpochMilli(), backup)
+        }
         log.setPlanned(attempt, target)
     }
 
