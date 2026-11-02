@@ -61,9 +61,9 @@ fun CurrentHeader(
     isHome: Boolean,
     today: DailyForecast?,
     status: HeaderStatus,
-    failure: LoadError? = null,
     locationStatus: LocationStatus,
     onLocationAction: (LocationStatus) -> Unit,
+    failure: LoadError? = null,
     modifier: Modifier = Modifier,
 ) {
     val current = weather.forecast.current
