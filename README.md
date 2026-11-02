@@ -178,7 +178,7 @@ Commune Sky has no ads, no analytics and no accounts, and the developer never re
 - **NOAA Aviation Weather Center** (airport reports, everywhere): an area of about 50 km around the place
 - **Android Geocoder** (district and neighbourhood names, and searches as a last resort): your coordinates; the search text
 
-Forecasts, saved places, measurements and settings are stored only on your device. There is no troubleshooting report; the only record is a short list of the last notification results (at most 5, deleted after 7 days) that stays on your phone and is never sent anywhere. The full policy, in English and Turkish, is at [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/).
+Forecasts, saved places, measurements and settings are stored only on your device. There is no troubleshooting report; the only records are a short list of the last notification results and of the last network errors (service host, HTTP code and time only; at most 5 each, deleted after 7 days) that stay on your phone and are never sent anywhere. The full policy, in English and Turkish, is at [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/).
 
 ## Building
 

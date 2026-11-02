@@ -2,6 +2,26 @@
 
 What's new in each version of Commune Sky, newest first. Dates are the day a version was uploaded to Google Play; "in testing" means it only reached testers.
 
+## 1.5.12 — in testing
+
+### Fixed
+
+- Summaries, alerts, air-quality notices and the test notification are now fully visible on the lock screen (the weather is not private), and the notification status shows how the lock screen is set on the phone.
+- Each summary now has a second alarm set straight at its time, next to the step-by-step chain, so one broken step cannot make a summary miss the day. Morning and evening summaries are kept apart everywhere (sent-day record, alarms, notification ids) and this is covered by tests.
+- When the weather service answers 503 or 429 the app waits a moment and tries again (up to two more times, and it follows a short Retry-After). A summary whose refresh failed is tried again in the background a few minutes later.
+- Extra services (air quality, other models, national service, alerts) failing can no longer spoil the main forecast.
+- The error screen and the update note now say which service did not answer (for example Open-Meteo), the HTTP code and when the last successful update was.
+- Opening the app several times in a row no longer asks the weather service again for a place fetched less than five minutes ago (pull to refresh still does).
+
+### Improved
+
+- Notification status adds: battery saver, battery optimization, app standby group, connection type (Wi-Fi, mobile or none, never a network name), the last successful weather update and the latest network errors. "Copy status" includes them, still without any place, location or weather.
+- A hint tells where to look if notifications do not show on the lock screen.
+
+### Privacy
+
+- The phone keeps the last 5 network errors (service host, HTTP code, time and Retry-After, deleted after 7 days) and the time of the last successful update. Never a place, coordinates or a search text; never sent anywhere. No new permission.
+
 ## 1.5.11 — in testing
 
 ### Fixed
