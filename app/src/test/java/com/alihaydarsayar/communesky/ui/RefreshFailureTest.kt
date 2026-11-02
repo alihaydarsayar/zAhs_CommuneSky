@@ -27,7 +27,7 @@ class RefreshFailureTest {
     fun `real network and server errors are still shown`() {
         assertEquals(LoadError.Network, RefreshFailure.of(UnknownHostException("api.open-meteo.com")))
         assertEquals(LoadError.Network, RefreshFailure.of(IOException("timeout")))
-        assertEquals(LoadError.Server(503), RefreshFailure.of(HttpException(Response.error<Any>(503, "".toResponseBody()))))
+        assertEquals(LoadError.Server(503, "localhost"), RefreshFailure.of(HttpException(Response.error<Any>(503, "".toResponseBody()))))
         assertEquals(LoadError.Unknown, RefreshFailure.of(IllegalStateException("bozuk cevap")))
     }
 }

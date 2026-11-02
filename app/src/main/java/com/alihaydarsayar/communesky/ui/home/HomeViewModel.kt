@@ -85,7 +85,7 @@ internal object RefreshFailure {
         error is CancellationException -> null
         error is IOException && isCancelledCall(error) -> null
         error is IOException -> LoadError.Network
-        error is HttpException -> LoadError.Server(error.code())
+        error is HttpException -> LoadError.Server(error.code(), error.response()?.raw()?.request?.url?.host)
         else -> LoadError.Unknown
     }
 
@@ -97,7 +97,8 @@ internal object RefreshFailure {
 /** Hatanın türü; hangi dilde gösterileceğine ekran (strings.xml) karar verir. */
 sealed interface LoadError {
     data object Network : LoadError
-    data class Server(val code: Int) : LoadError
+    /** [host]: yanıt vermeyen servisin ana makine adı (bilinmiyorsa null). */
+    data class Server(val code: Int, val host: String? = null) : LoadError
     data object Unknown : LoadError
 }
 

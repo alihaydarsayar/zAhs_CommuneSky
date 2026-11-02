@@ -69,6 +69,8 @@ object AppModule {
                     .build(),
             )
         }
+        // 429 ve 5xx cevaplarını sınırlı yeniden dener, kalıcı hataları (host, kod, zaman) telefonda kaydeder.
+        .addInterceptor(com.alihaydarsayar.communesky.data.remote.NetworkFailureInterceptor(com.alihaydarsayar.communesky.data.remote.NetworkFailureLog(context)))
         // Yalnız debug sürümünde sahte ağ arızası ekler; release'de boştur.
         .apply { com.alihaydarsayar.communesky.debug.DebugNetwork.install(this) }
         .build()
