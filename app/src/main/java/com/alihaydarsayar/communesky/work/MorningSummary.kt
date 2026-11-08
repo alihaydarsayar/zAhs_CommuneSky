@@ -57,8 +57,10 @@ import kotlin.math.roundToInt
  *    setExactAndAllowWhileIdle, yoksa setAndAllowWhileIdle; birkaç dakika sapma olabilir. Alarm uygulama
  *    açılınca, ayar değişince, telefon yeniden başlayınca, uygulama güncellenince ve saat ya da saat dilimi
  *    değişince yeniden kurulur ([SummaryRescheduleReceiver]).
- * 2. Yedek: saatlik arka plan işi, bugünün özeti gönderilmediyse ve seçilen saatten sonra en çok 3 saat geçtiyse
- *    gönderir ([catchUp]); pencere geçtiyse o günün özetini atlar.
+ * 2. Güvenlik ağı: 15 dakikada bir çalışan arka plan denetimi ([SummaryWatchWorker], ağ koşulu yok) hedef saatle
+ *    hedef + 3 saat arasında özet gönderilmediyse gönderir ([watch]); hava alınamazsa 20 saniye içinde eldeki veriyle.
+ *    Saatlik iş, uygulama açılışı ve yeniden başlatma olayları da aynı pencerede gönderir ([catchUp]).
+ * Her alarm çalışı bildirimden ayrı kaydedilir (hedef, çaldığı an, hangi alarm); bildirim durumu gecikmeyi gösterir.
  * Günde bir kez gönderim, "son gönderilen gün" kaydıyla garanti edilir (cihazda, bildirim tekrarını önleyen kısa kayıt).
  */
 object MorningSummary {
@@ -70,12 +72,21 @@ object MorningSummary {
     private const val PREFS = "morning_summary"
     private const val EXTRA_KIND = "summary_kind"
     const val EXTRA_TARGET = "summary_target"
+    const val EXTRA_BACKUP = "summary_backup"
 
     /** Anlık hava (yağıyor mu) yalnız bu kadar tazeyse sabah özetinin şemsiye önerisine girer. */
     private val WET_NOW_MAX_AGE: Duration = Duration.ofHours(1)
 
     /** Alarm ile yedek yol aynı anda çalışırsa özet iki kez gitmesin. */
     private val lock = Mutex()
+
+    /**
+     * Yalnız cihaz testi için: Android'e her özet bildirimi verildiğinde çağrılır (çift gönderim testi). Bir şey
+     * saklamaz; üretimde null'dır.
+     */
+    @androidx.annotation.VisibleForTesting
+    @Volatile
+    internal var onPosted: ((SummaryKind, SummaryPath?) -> Unit)? = null
 
     internal fun notificationId(kind: SummaryKind) = if (kind == SummaryKind.Morning) 7301 else 7302
     internal fun lastDayKey(kind: SummaryKind) = if (kind == SummaryKind.Morning) "last_day" else "last_day_evening"
@@ -94,6 +105,8 @@ object MorningSummary {
     /** Ayara göre iki özetin alarmlarını kurar ya da kaldırır. Uygulama açılınca, ayar değişince ve saatlik işte çağrılır. */
     fun schedule(context: Context, settings: NotificationSettings, now: ZonedDateTime = ZonedDateTime.now(), handled: SummaryKind? = null) {
         for (kind in SummaryKind.entries) schedule(context, kind, enabled(settings, kind), minutes(settings, kind), now, handled == kind)
+        // Güvenlik ağı: bir özet açıkken 15 dakikada bir denetim; ikisi de kapalıysa kaldırılır.
+        runCatching { SummaryWatchWorker.ensure(context, settings.morning || settings.evening) }
     }
 
     /**
@@ -124,7 +137,7 @@ object MorningSummary {
     ): PendingIntent? =
         PendingIntent.getBroadcast(
             context, alarmRequestCode(kind, backup),
-            Intent(context, MorningSummaryReceiver::class.java).putExtra(EXTRA_KIND, kind.name).putExtra(EXTRA_TARGET, target),
+            Intent(context, MorningSummaryReceiver::class.java).putExtra(EXTRA_KIND, kind.name).putExtra(EXTRA_TARGET, target).putExtra(EXTRA_BACKUP, backup),
             flags or PendingIntent.FLAG_IMMUTABLE,
         )
 
@@ -164,6 +177,7 @@ object MorningSummary {
 
     /** Ara alarm çaldı ama hedefe daha var: sıradaki adımı kurar. Ayar okumaz; hızlıdır. */
     internal fun hop(context: Context, kind: SummaryKind, target: Long) {
+        runCatching { NotificationLog(context).recordHop(attemptKind(kind), java.time.Instant.ofEpochMilli(target)) }
         val alarms = context.getSystemService(AlarmManager::class.java) ?: return
         val wake = SummarySchedule.wakeAt(java.time.Instant.now(), java.time.Instant.ofEpochMilli(target))
         val intent = alarmIntent(context, kind, target) ?: return
@@ -217,25 +231,76 @@ object MorningSummary {
      * Telefon yeniden başladı, uygulama güncellendi ya da saat/saat dilimi değişti: alarmlar yeniden kurulur ve
      * kaçan bir özet varsa (pencere içindeyse) gönderilir.
      */
-    suspend fun restore(context: Context) {
+    suspend fun restore(context: Context, via: SummaryPath = SummaryPath.AppOpen) {
         val app = context.applicationContext
         // Alarmlar yalnız ayarlara bağlıdır: hava önbelleği yokken de (yeni kurulum, yedekten geri yükleme) kurulur.
         val settings = withTimeoutOrNull(SummarySchedule.LOAD_TIMEOUT_MS) {
             runCatching { EntryPointAccessors.fromApplication(app, WidgetEntryPoint::class.java).settingsRepository().settings.first() }.getOrNull()
         } ?: load(app)?.settings
         settings?.let { schedule(app, it.notifications) }
-        catchUp(app)
+        catchUp(app, via)
+    }
+
+    /**
+     * Saatlik işin sonunda (hava yenilemesi başarısız olsa da): alarmları geri kurar ve pencere içindeki gönderilmemiş
+     * özeti gönderir.
+     */
+    suspend fun backgroundCheck(context: Context) = restore(context, SummaryPath.Hourly)
+
+    /**
+     * 15 dakikalık güvenlik ağı: önce alarmlar geri kurulur (silinmişlerse); sonra hedef saatle hedef + 3 saat
+     * arasında bugün gönderilmemiş özet varsa hava kısa bir süre yenilenmeye çalışılır, alınamazsa eldeki veriyle
+     * gönderilir. Toplam süre [SummarySchedule.WATCH_TOTAL_MS] içinde kalır; "gönderildi" işareti ve kilit çift
+     * bildirimi önler.
+     */
+    suspend fun watch(context: Context, startedAt: Long = SystemClock.elapsedRealtime()) {
+        val app = context.applicationContext
+        val log = NotificationLog(app)
+        log.recordWatch()
+        val first = load(app) ?: run {
+            // Ayarlar okunamadı: alarm yolu gibi kayda yazılır; bir sonraki tur yeniden dener.
+            val settings = withTimeoutOrNull(SummarySchedule.LOAD_TIMEOUT_MS) {
+                runCatching { EntryPointAccessors.fromApplication(app, WidgetEntryPoint::class.java).settingsRepository().settings.first() }.getOrNull()
+            }
+            if (settings != null) {
+                for (kind in SummaryKind.entries) {
+                    if (enabled(settings.notifications, kind) && SummarySchedule.shouldWatch(ZonedDateTime.now(), minutes(settings.notifications, kind), sentOn(app, kind))) {
+                        log.record(attemptKind(kind), AttemptOutcome.Error, detail = "LoadTimeout", via = SummaryPath.Watcher)
+                    }
+                }
+            }
+            return
+        }
+        schedule(app, first.settings.notifications)
+        val now = ZonedDateTime.now()
+        val due = SummaryKind.entries.filter { kind ->
+            enabled(first.settings.notifications, kind) && SummarySchedule.shouldWatch(now, minutes(first.settings.notifications, kind), sentOn(app, kind))
+        }
+        if (due.isEmpty()) return
+        var input: WidgetInput = first
+        val snapshot = pick(first)
+        if (snapshot == null || Duration.between(snapshot.fetchedAt, Instant.now()) > SummarySchedule.FRESH) {
+            val budget = SummarySchedule.watchRefreshBudgetMs(SystemClock.elapsedRealtime() - startedAt)
+            val refreshed = if (budget == 0L) null else withTimeoutOrNull(budget) {
+                runCatching { EntryPointAccessors.fromApplication(app, WidgetEntryPoint::class.java).weatherUpdater().refreshForSummary() }.isSuccess
+            }
+            if (refreshed == true) input = load(app) ?: first
+        }
+        lock.withLock {
+            for (kind in due) deliver(app, input, kind, force = false, via = SummaryPath.Watcher)
+        }
     }
 
     /** Alarm çaldı: bugün gönderilmediyse özeti gönder, sonraki alarmı kur. Önbellek eskiyse önce yenilemeyi dener. */
     suspend fun onAlarm(
         context: Context, kind: SummaryKind = SummaryKind.Morning, force: Boolean = false, startedAt: Long = SystemClock.elapsedRealtime(),
+        via: SummaryPath = if (force) SummaryPath.Debug else SummaryPath.Alarm,
     ) = lock.withLock {
         val app = context.applicationContext
         var input = load(app)
         if (input == null) {
-            // Ayarlar zamanında okunamadı: sessizce geçilmez; kayda yazılır, yedek yol pencere içinde yeniden dener.
-            NotificationLog(app).record(attemptKind(kind), AttemptOutcome.Error, detail = "LoadTimeout")
+            // Ayarlar zamanında okunamadı: sessizce geçilmez; kayda yazılır, denetim pencere içinde yeniden dener.
+            NotificationLog(app).record(attemptKind(kind), AttemptOutcome.Error, detail = "LoadTimeout", via = via)
             return@withLock
         }
         // Bugünün alarmı çaldı: sıradaki alarm yarınındır (özet bu turda gönderilir ya da nedeni kayda yazılır).
@@ -250,21 +315,21 @@ object MorningSummary {
             }
             if (refreshed == true) input = load(app) ?: input else runCatching { RefreshScheduler.retrySoon(app) }
         }
-        deliver(app, input, kind, force)
+        deliver(app, input, kind, force, via)
     }
 
     /**
      * Yedek yol (saatlik işin sonunda ve yeniden başlatma olaylarında): bugünün özeti gönderilmediyse ve seçilen
      * saatten sonra en çok [SummarySchedule.CATCH_UP] geçtiyse gönderir.
      */
-    suspend fun catchUp(context: Context) = lock.withLock {
+    suspend fun catchUp(context: Context, via: SummaryPath = SummaryPath.Hourly) = lock.withLock {
         val app = context.applicationContext
         val input = load(app) ?: return@withLock
         val now = ZonedDateTime.now()
         for (kind in SummaryKind.entries) {
             val settings = input.settings.notifications
             if (enabled(settings, kind) && SummarySchedule.shouldCatchUp(now, minutes(settings, kind), sentOn(app, kind))) {
-                deliver(app, input, kind, force = false)
+                deliver(app, input, kind, force = false, via = via)
             }
         }
     }
@@ -285,18 +350,18 @@ object MorningSummary {
      * Özeti gönderir. Hiçbir koşulda sessiz değildir: her tur kayda bir sonuç yazar (gönderildi, atlandı ve nedeni,
      * hata ve istisna sınıf adı). Özet kurulamazsa basit özet, o da olmazsa tek satırlık bir bildirim gider.
      */
-    private suspend fun deliver(app: Context, input: WidgetInput, kind: SummaryKind, force: Boolean) {
+    private suspend fun deliver(app: Context, input: WidgetInput, kind: SummaryKind, force: Boolean, via: SummaryPath) {
         try {
-            deliverChecked(app, input, kind, force)
+            deliverChecked(app, input, kind, force, via)
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Throwable) {
-            NotificationLog(app).record(attemptKind(kind), AttemptOutcome.Error, detail = Attempt.nameOf(e))
+            NotificationLog(app).record(attemptKind(kind), AttemptOutcome.Error, detail = Attempt.nameOf(e), via = via)
             runCatching { unavailableNotice(app, input, kind) }
         }
     }
 
-    private suspend fun deliverChecked(app: Context, input: WidgetInput, kind: SummaryKind, force: Boolean) {
+    private suspend fun deliverChecked(app: Context, input: WidgetInput, kind: SummaryKind, force: Boolean, via: SummaryPath) {
         val settings = input.settings
         val log = NotificationLog(app)
         val attemptKind = attemptKind(kind)
@@ -312,12 +377,12 @@ object MorningSummary {
         NotificationChannels.ensure(app)
         val channel = channelFor(kind, settings.notifications)
         NotificationHealth.blocker(app, channel)?.let {
-            log.record(attemptKind, it)
+            log.record(attemptKind, it, via = via)
             return
         }
         val localized = WidgetLanguage.context(app)
         if (action == SummarySchedule.Action.StaleNotice || action == SummarySchedule.Action.NoDataNotice || snapshot == null) {
-            staleNotice(app, kind, channel, localized, snapshot)
+            staleNotice(app, kind, channel, localized, snapshot, via)
             return
         }
         val clock = timeFormatter(localized)
@@ -341,18 +406,18 @@ object MorningSummary {
                     val fetched = snapshot.fetchedAt.atOffset(ZoneOffset.ofTotalSeconds(snapshot.forecast.utcOffsetSeconds)).toLocalDateTime()
                     text = text.copy(lines = text.lines.take(3) + localized.getString(R.string.summary_cached_at, fetched.format(clock)))
                 }
-                notify(app, input, snapshot, kind, text, today, channel, old)
+                notify(app, input, snapshot, kind, text, today, channel, old, via)
             }
             is BuiltSummary.Basic -> {
                 // Tam özet kurulamadı: basit özet gider, hata kayda yazılır.
-                val posted = postPlain(app, kind, channel, snapshot.placeId, built.title, built.body)
+                val posted = postPlain(app, kind, channel, snapshot.placeId, built.title, built.body, via)
                 if (posted.delivered) markSent(app, kind, today)
-                log.record(attemptKind, posted, detail = built.error?.let(Attempt::nameOf))
+                log.record(attemptKind, posted, detail = built.error?.let(Attempt::nameOf), via = via)
             }
             is BuiltSummary.Unavailable -> {
                 // Günün verisi tahminde yok: nedeni yazılır. Bir istisna varsa üst katman hata olarak kaydeder.
                 built.error?.let { throw it }
-                log.record(attemptKind, AttemptOutcome.NoData)
+                log.record(attemptKind, AttemptOutcome.NoData, via = via)
             }
         }
     }
@@ -369,7 +434,7 @@ object MorningSummary {
      * Veri 24 saatten eski (ya da hiç yok) ve yenilenemedi: yanlış bir özet yerine "güncel hava alınamadı" der.
      * Son bilinen verinin zamanı yazılır. Günde en çok bir kez; gerçek özet sonra gelirse aynı bildirimin yerine geçer.
      */
-    private suspend fun staleNotice(app: Context, kind: SummaryKind, channel: String, localized: Context, snapshot: WeatherSnapshot?) {
+    private suspend fun staleNotice(app: Context, kind: SummaryKind, channel: String, localized: Context, snapshot: WeatherSnapshot?, via: SummaryPath) {
         val body = if (snapshot == null) {
             localized.getString(R.string.summary_nodata_body)
         } else {
@@ -378,12 +443,12 @@ object MorningSummary {
                 .withLocale(localized.resources.configuration.locales[0])
             localized.getString(R.string.summary_stale_body, at.format(format))
         }
-        val outcome = postPlain(app, kind, channel, snapshot?.placeId, localized.getString(R.string.summary_stale_title), body)
+        val outcome = postPlain(app, kind, channel, snapshot?.placeId, localized.getString(R.string.summary_stale_title), body, via)
         if (outcome.delivered) {
             markNotice(app, kind, LocalDate.now())
-            NotificationLog(app).record(attemptKind(kind), AttemptOutcome.StaleNotice)
+            NotificationLog(app).record(attemptKind(kind), AttemptOutcome.StaleNotice, via = via)
         } else {
-            NotificationLog(app).record(attemptKind(kind), outcome)
+            NotificationLog(app).record(attemptKind(kind), outcome, via = via)
         }
     }
 
@@ -402,7 +467,9 @@ object MorningSummary {
     }
 
     /** Düz (özel görünümsüz) bildirim: yedek özet ve bilgi bildirimleri. Bildirimin listede görüldüğünü doğrular. */
-    private suspend fun postPlain(app: Context, kind: SummaryKind, channel: String, placeId: Long?, title: String, body: String): AttemptOutcome {
+    private suspend fun postPlain(
+        app: Context, kind: SummaryKind, channel: String, placeId: Long?, title: String, body: String, via: SummaryPath? = null,
+    ): AttemptOutcome {
         val manager = app.getSystemService(NotificationManager::class.java) ?: return AttemptOutcome.Failed
         val id = notificationId(kind)
         val page = open(app, placeId ?: -1L, kind.ordinal * 10 + 3) { it }
@@ -418,7 +485,7 @@ object MorningSummary {
             .build()
         val shown = NotificationHealth.outcome(
             blocker = null, oldData = false,
-            post = { runCatching { manager.notify(id, notification) }.isSuccess },
+            post = { runCatching { manager.notify(id, notification) }.isSuccess.also { if (it) onPosted?.invoke(kind, via) } },
             shown = { NotificationHealth.awaitShown(app, id) },
         )
         // Düz bildirim bir yedek özet sayılır (Fallback); çağıran bilgi bildirimi ise kendi sonucunu yazar.
@@ -428,6 +495,7 @@ object MorningSummary {
     /** Özeti gösterir ve bildirimin gerçekten listede olduğunu doğrular; başarıyla gönderildiyse günü "gönderildi" diye işaretler. Sonucu kayda yazar. */
     private suspend fun notify(
         app: Context, input: WidgetInput, snapshot: WeatherSnapshot, kind: SummaryKind, text: SummaryText, today: LocalDate, channel: String, oldData: Boolean,
+        via: SummaryPath,
     ) {
         val settings = input.settings
         val localized = WidgetLanguage.context(app)
@@ -443,7 +511,7 @@ object MorningSummary {
         val log = NotificationLog(app)
         val manager = app.getSystemService(NotificationManager::class.java)
         if (manager == null) {
-            log.record(attemptKind(kind), AttemptOutcome.Failed)
+            log.record(attemptKind(kind), AttemptOutcome.Failed, via = via)
             return
         }
         val label = localized.getString(if (kind == SummaryKind.Morning) R.string.channel_morning else R.string.channel_evening)
@@ -481,15 +549,15 @@ object MorningSummary {
         val outcome = NotificationHealth.outcome(
             blocker = null,
             oldData = oldData,
-            post = { runCatching { manager.notify(id, builder.build()) }.isSuccess },
+            post = { runCatching { manager.notify(id, builder.build()) }.isSuccess.also { if (it) onPosted?.invoke(kind, via) } },
             shown = { NotificationHealth.awaitShown(app, id) },
         )
         // Gönderildi (ya da en azından Android kabul etti): gün tamam. Reddedildiyse yedek yol pencere içinde yeniden dener.
         if (outcome.delivered) markSent(app, kind, today)
         if (viewError != null && outcome.delivered) {
-            log.record(attemptKind(kind), AttemptOutcome.Fallback, detail = Attempt.nameOf(viewError))
+            log.record(attemptKind(kind), AttemptOutcome.Fallback, detail = Attempt.nameOf(viewError), via = via)
         } else {
-            log.record(attemptKind(kind), outcome)
+            log.record(attemptKind(kind), outcome, via = via)
         }
     }
 
@@ -573,7 +641,7 @@ class SummaryRescheduleReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                MorningSummary.restore(context)
+                MorningSummary.restore(context, SummaryPath.Restart)
             } finally {
                 pending.finish()
             }
@@ -587,14 +655,25 @@ class MorningSummaryReceiver : BroadcastReceiver() {
         val startedAt = SystemClock.elapsedRealtime()
         // Ara adım: hedefe daha var, sıradaki alarmı kur ve çık (ağ, ayar ya da bildirim yok).
         val target = intent.getLongExtra(MorningSummary.EXTRA_TARGET, 0L)
+        val kind = MorningSummary.kindOf(intent)
         if (target > 0 && !SummarySchedule.reached(java.time.Instant.now(), java.time.Instant.ofEpochMilli(target))) {
-            MorningSummary.hop(context, MorningSummary.kindOf(intent), target)
+            MorningSummary.hop(context, kind, target)
             return
+        }
+        // "Alarm alıcısı tetiklendi" kaydı: bildirimin gösterilmesinden ayrı, hedef saat ve gecikmeyle.
+        val backup = intent.getBooleanExtra(MorningSummary.EXTRA_BACKUP, false)
+        if (target > 0) {
+            runCatching {
+                NotificationLog(context).recordAlarm(
+                    if (kind == SummaryKind.Morning) AttemptKind.Morning else AttemptKind.Evening,
+                    java.time.Instant.ofEpochMilli(target), if (backup) AlarmWhich.Backup else AlarmWhich.Final,
+                )
+            }
         }
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                MorningSummary.onAlarm(context, MorningSummary.kindOf(intent), startedAt = startedAt)
+                MorningSummary.onAlarm(context, kind, startedAt = startedAt, via = if (backup) SummaryPath.Backup else SummaryPath.Alarm)
             } finally {
                 pending.finish()
             }

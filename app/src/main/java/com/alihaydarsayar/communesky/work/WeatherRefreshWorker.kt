@@ -22,22 +22,38 @@ class WeatherRefreshWorker @AssistedInject constructor(
     private val updater: WeatherUpdater,
 ) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result = try {
-        updater.refreshInBackground()
-        // Bir sonraki çalışma saat başına hizalanır (widget'larda "Şimdi" doğru saati göstersin).
-        RefreshScheduler.align(applicationContext)
-        Result.success()
-    } catch (e: IOException) {
-        // Geçici ağ sorunu: WorkManager biraz bekleyip tekrar dener.
-        Result.retry()
-    } catch (e: HttpException) {
-        if (e.code() >= 500) Result.retry() else Result.failure()
-    } catch (e: Exception) {
-        Log.e(TAG, "Arka plan güncellemesi başarısız", e)
-        Result.failure()
-    }
+    override suspend fun doWork(): Result = round(
+        refresh = {
+            updater.refreshInBackground()
+            // Bir sonraki çalışma saat başına hizalanır (widget'larda "Şimdi" doğru saati göstersin).
+            RefreshScheduler.align(applicationContext)
+        },
+        // Özet alarmları geri kurulur ve gönderilmemiş özet pencere içindeyse gönderilir: yenileme başarısız olsa da
+        // (ağ yok, 503). 1.5.12'de bu adım yalnız yenileme başarılıysa çalışıyordu.
+        summaries = { MorningSummary.backgroundCheck(applicationContext) },
+    )
 
-    private companion object {
-        const val TAG = "WeatherRefreshWorker"
+    companion object {
+        private const val TAG = "WeatherRefreshWorker"
+
+        /** Bir saatlik tur: önce yenileme, sonra her durumda özet denetimi. Saf; test edilir. */
+        suspend fun round(refresh: suspend () -> Unit, summaries: suspend () -> Unit): Result {
+            val result = try {
+                refresh()
+                Result.success()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: IOException) {
+                // Geçici ağ sorunu: WorkManager biraz bekleyip tekrar dener.
+                Result.retry()
+            } catch (e: HttpException) {
+                if (e.code() >= 500) Result.retry() else Result.failure()
+            } catch (e: Exception) {
+                Log.e(TAG, "Arka plan güncellemesi başarısız", e)
+                Result.failure()
+            }
+            runCatching { summaries() }.exceptionOrNull()?.let { if (it is kotlinx.coroutines.CancellationException) throw it }
+            return result
+        }
     }
 }

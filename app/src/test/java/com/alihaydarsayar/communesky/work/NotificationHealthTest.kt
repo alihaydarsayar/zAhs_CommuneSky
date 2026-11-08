@@ -151,7 +151,11 @@ class NotificationHealthTest {
         assertTrue(names.containsAll(listOf("permission", "appenabled", "channels", "backgroundrestricted", "zone", "planned", "attempts")))
         // Yeni teşhis alanları da aynı kurala uyar: telefonun durumu, hata kaydı (host, kod, zaman) ve kilit ekranı ayarları.
         assertTrue(names.containsAll(listOf("lockscreen", "device", "failures", "lastupdate")))
-        for (type in listOf(DeviceState::class.java, LockScreenSettings::class.java, com.alihaydarsayar.communesky.data.remote.NetworkFailure::class.java)) {
+        // 1.5.13: alarm tetiklenme kaydı, son ara adım ve arka plan denetimi; telefonda Rahatsız Etmeyin ve hazırda bekletme.
+        assertTrue(names.containsAll(listOf("alarms", "hops", "lastwatch")))
+        assertTrue(DeviceState::class.java.declaredFields.map { it.name.lowercase() }.containsAll(listOf("hibernationexempt", "interruptionfilter", "standbybucket")))
+        assertEquals(setOf("at", "kind", "target", "which"), AlarmFire::class.java.declaredFields.map { it.name.lowercase() }.filter { !it.startsWith("$") }.toSet())
+        for (type in listOf(DeviceState::class.java, LockScreenSettings::class.java, com.alihaydarsayar.communesky.data.remote.NetworkFailure::class.java, AlarmFire::class.java, Attempt::class.java)) {
             val inner = type.declaredFields.map { it.name.lowercase() }
             assertTrue(inner.toString(), inner.none { name -> forbidden.any { name == it || name.contains(it) } })
         }

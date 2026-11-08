@@ -385,7 +385,7 @@ object DemoWeather {
      * Önceki bütün yer ve hava verisini siler, [entries]'i yazar. Telefonun şu anki saati her yerin yerel saatine
      * çevrilir; bu yüzden önce telefonun tarihi ve saati ayarlanmalıdır.
      */
-    suspend fun install(context: Context, entries: List<Entry>, instant: Instant = Instant.now()) = withContext(Dispatchers.IO) {
+    suspend fun install(context: Context, entries: List<Entry>, instant: Instant = Instant.now(), fetchedAt: Instant = Instant.now()) = withContext(Dispatchers.IO) {
         val point = EntryPointAccessors.fromApplication(context.applicationContext, DemoEntryPoint::class.java)
         val db = point.database()
         val json = point.json()
@@ -414,7 +414,7 @@ object DemoWeather {
                         longitude = if (entry.role == Role.Device) at.longitude else entry.place.longitude,
                         isCurrentLocation = entry.role == Role.Device,
                         forecastJson = json.encodeToString(ForecastResponseDto.serializer(), dto),
-                        fetchedAtMillis = System.currentTimeMillis(),
+                        fetchedAtMillis = fetchedAt.toEpochMilli(),
                         accuracyMeters = if (entry.role == Role.Device) 25f else null,
                         regionName = null,
                     ),
@@ -456,6 +456,20 @@ object DemoWeather {
 /** adb ile örnek veriyi yazar (bkz. [DemoWeather]). */
 class DemoReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // Yalnız debug: "drop_alarms" (morning|evening) bir özetin iki alarmını siler; üretici arayüzünün alarmı silmesinin
+        // benzetimi (bildirim test matrisi). Alarm niyeti bileşen ve istek koduyla eşlenir: zincir 0/1, yedek 10/11.
+        intent.getStringExtra("drop_alarms")?.let { kind ->
+            val alarms = context.getSystemService(android.app.AlarmManager::class.java)
+            val base = if (kind == "morning") 0 else 1
+            for (code in listOf(base, base + 10)) {
+                android.app.PendingIntent.getBroadcast(
+                    context, code, Intent(context, com.alihaydarsayar.communesky.work.MorningSummaryReceiver::class.java),
+                    android.app.PendingIntent.FLAG_NO_CREATE or android.app.PendingIntent.FLAG_IMMUTABLE,
+                )?.let { alarms?.cancel(it); it.cancel() }
+            }
+            android.util.Log.i("DemoWeather", "alarms dropped: $kind")
+            return
+        }
         // "name": yerin görünen adı (dile göre, örn. Londra); verilmezse varsayılan.
         val place = DemoWeather.place(intent.getStringExtra("place") ?: "besiktas").let { base -> intent.getStringExtra("name")?.let { base.copy(name = it) } ?: base }
         val sky = DemoWeather.SKIES.getValue(intent.getStringExtra("sky") ?: "clear")

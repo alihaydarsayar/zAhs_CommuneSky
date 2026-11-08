@@ -1153,4 +1153,36 @@
     <string name="status_bucket_rare">Rare</string>
     <string name="status_bucket_restricted">Restreinte</string>
     <string name="status_bucket_never">Jamais</string>
+
+    <!-- Bildirim durumu 1.5.13: hazırda bekletme, Rahatsız Etmeyin, alarm kaydı, denetim, gönderim yolu -->
+    <string name="status_bucket_exempt">Exempté</string>
+    <string name="status_bucket_with_number">%1$s (%2$d)</string>
+    <string name="status_optimization_off">Désactivée pour cette application (Android ne limite pas sa batterie)</string>
+    <string name="status_optimization_on">Activée (Android gère la batterie de cette application ; par défaut)</string>
+    <string name="status_hibernation">Gérer l’application si inutilisée</string>
+    <string name="status_hibernation_on">Activé (si l’application n’est pas ouverte pendant des mois, Android peut retirer ses autorisations et l’arrêter)</string>
+    <string name="status_hibernation_off">Désactivé</string>
+    <string name="status_hibernation_none">Absent de cette version d’Android</string>
+    <string name="status_dnd">Ne pas déranger</string>
+    <string name="status_dnd_off">Désactivé</string>
+    <string name="status_dnd_priority">Activé : prioritaires uniquement</string>
+    <string name="status_dnd_none">Activé : silence total</string>
+    <string name="status_dnd_alarms">Activé : alarmes uniquement</string>
+    <string name="status_last_alarm">Dernière alarme · %1$s</string>
+    <string name="status_alarm_fired">prévue %1$s, déclenchée %2$s (%3$s) · %4$s</string>
+    <string name="status_alarm_final">alarme par étapes</string>
+    <string name="status_alarm_backup">alarme de secours</string>
+    <string name="status_delay_on_time">à l’heure</string>
+    <string name="status_delay_late">%1$d min de retard</string>
+    <string name="status_delay_early">%1$d min d’avance</string>
+    <string name="status_last_hop">Dernière étape · %1$s</string>
+    <string name="status_hop_value">%1$s (pour %2$s)</string>
+    <string name="status_last_watch">Dernière vérification (toutes les 15 min)</string>
+    <string name="via_alarm">par l’alarme</string>
+    <string name="via_backup">par l’alarme de secours</string>
+    <string name="via_watcher">par la vérification en arrière-plan</string>
+    <string name="via_hourly">par la mise à jour horaire</string>
+    <string name="via_app_open">à l’ouverture de l’application</string>
+    <string name="via_restart">après un redémarrage ou un changement d’heure</string>
+    <string name="via_debug">bouton de débogage</string>
 </resources>

@@ -118,10 +118,7 @@ class WeatherUpdater @Inject constructor(
         )
         // Hava kalitesi kötüleştiyse (ve kullanıcı istediyse) bildirim; yer başına günde en çok bir kez.
         com.alihaydarsayar.communesky.work.AirQualityNotifier.check(context, weatherRepository.allWeather.first().values, settings.notifications)
-        // Özet alarmları burada da geri kurulur (aynı alarmlar, ek uyanma yok). Alarm hiç çalmadıysa (süreç öldürüldü,
-        // alarm silindi) bugünün özeti yedek olarak, seçilen saatten sonra kısa bir süre içinde buradan gider.
-        com.alihaydarsayar.communesky.work.MorningSummary.schedule(context, settings.notifications)
-        com.alihaydarsayar.communesky.work.MorningSummary.catchUp(context)
+        // Özet alarmları ve gönderilmemiş özet WeatherRefreshWorker'da, yenileme başarısız olsa da denetlenir.
     }
 
     /** Sabah ya da akşam özeti için tahmini yeniler (ölçüm, doğruluk kaydı ve bildirim kontrolü yok). Ağ hatasında istisna fırlatır. */

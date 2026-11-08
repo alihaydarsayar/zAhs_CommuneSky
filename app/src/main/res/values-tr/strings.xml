@@ -1146,4 +1146,36 @@
     <string name="status_bucket_rare">Nadir</string>
     <string name="status_bucket_restricted">Kısıtlı</string>
     <string name="status_bucket_never">Hiç</string>
+
+    <!-- Bildirim durumu 1.5.13: hazırda bekletme, Rahatsız Etmeyin, alarm kaydı, denetim, gönderim yolu -->
+    <string name="status_bucket_exempt">Muaf</string>
+    <string name="status_bucket_with_number">%1$s (%2$d)</string>
+    <string name="status_optimization_off">Bu uygulama için kapalı (Android pil kullanımını sınırlamıyor)</string>
+    <string name="status_optimization_on">Açık (Android bu uygulamanın pil kullanımını yönetiyor; varsayılan)</string>
+    <string name="status_hibernation">Kullanılmayan uygulamaları yönet</string>
+    <string name="status_hibernation_on">Açık (uygulama aylarca açılmazsa Android izinlerini kaldırabilir ve onu durdurabilir)</string>
+    <string name="status_hibernation_off">Kapalı</string>
+    <string name="status_hibernation_none">Bu Android sürümünde yok</string>
+    <string name="status_dnd">Rahatsız Etmeyin</string>
+    <string name="status_dnd_off">Kapalı</string>
+    <string name="status_dnd_priority">Açık: yalnız öncelikli</string>
+    <string name="status_dnd_none">Açık: tam sessizlik</string>
+    <string name="status_dnd_alarms">Açık: yalnız alarmlar</string>
+    <string name="status_last_alarm">Son alarm · %1$s</string>
+    <string name="status_alarm_fired">hedef %1$s, çaldı %2$s (%3$s) · %4$s</string>
+    <string name="status_alarm_final">adım alarmı</string>
+    <string name="status_alarm_backup">yedek alarm</string>
+    <string name="status_delay_on_time">zamanında</string>
+    <string name="status_delay_late">%1$d dk gecikme</string>
+    <string name="status_delay_early">%1$d dk erken</string>
+    <string name="status_last_hop">Son ara adım · %1$s</string>
+    <string name="status_hop_value">%1$s (hedef %2$s)</string>
+    <string name="status_last_watch">Son arka plan denetimi (15 dk’da bir)</string>
+    <string name="via_alarm">alarmla</string>
+    <string name="via_backup">yedek alarmla</string>
+    <string name="via_watcher">arka plan denetimiyle</string>
+    <string name="via_hourly">saatlik güncellemeyle</string>
+    <string name="via_app_open">uygulama açılınca</string>
+    <string name="via_restart">yeniden başlatma ya da saat değişiminden sonra</string>
+    <string name="via_debug">hata ayıklama düğmesi</string>
 </resources>

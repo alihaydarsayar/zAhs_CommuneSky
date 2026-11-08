@@ -1153,4 +1153,36 @@
     <string name="status_bucket_rare">Rare</string>
     <string name="status_bucket_restricted">Restricted</string>
     <string name="status_bucket_never">Never</string>
+
+    <!-- Bildirim durumu 1.5.13: hazırda bekletme, Rahatsız Etmeyin, alarm kaydı, denetim, gönderim yolu -->
+    <string name="status_bucket_exempt">Exempt</string>
+    <string name="status_bucket_with_number">%1$s (%2$d)</string>
+    <string name="status_optimization_off">Off for this app (Android does not limit its battery use)</string>
+    <string name="status_optimization_on">On (Android manages this app’s battery use, the default)</string>
+    <string name="status_hibernation">Manage app if unused</string>
+    <string name="status_hibernation_on">On (if the app is not opened for months, Android may remove its permissions and stop it)</string>
+    <string name="status_hibernation_off">Off</string>
+    <string name="status_hibernation_none">Not in this Android version</string>
+    <string name="status_dnd">Do Not Disturb</string>
+    <string name="status_dnd_off">Off</string>
+    <string name="status_dnd_priority">On: priority only</string>
+    <string name="status_dnd_none">On: total silence</string>
+    <string name="status_dnd_alarms">On: alarms only</string>
+    <string name="status_last_alarm">Last alarm · %1$s</string>
+    <string name="status_alarm_fired">set for %1$s, went off %2$s (%3$s) · %4$s</string>
+    <string name="status_alarm_final">step alarm</string>
+    <string name="status_alarm_backup">backup alarm</string>
+    <string name="status_delay_on_time">on time</string>
+    <string name="status_delay_late">%1$d min late</string>
+    <string name="status_delay_early">%1$d min early</string>
+    <string name="status_last_hop">Last step · %1$s</string>
+    <string name="status_hop_value">%1$s (for %2$s)</string>
+    <string name="status_last_watch">Last background check (every 15 min)</string>
+    <string name="via_alarm">by the alarm</string>
+    <string name="via_backup">by the backup alarm</string>
+    <string name="via_watcher">by the background check</string>
+    <string name="via_hourly">by the hourly update</string>
+    <string name="via_app_open">when the app opened</string>
+    <string name="via_restart">after a restart or clock change</string>
+    <string name="via_debug">debug button</string>
 </resources>

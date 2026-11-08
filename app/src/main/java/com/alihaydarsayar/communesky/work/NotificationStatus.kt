@@ -21,8 +21,19 @@ import java.time.format.FormatStyle
 /** Bir bildirim kanalının Android'deki durumu. [importance] null: kanal kurulmamış. */
 data class ChannelState(val kind: NotificationKind, val channelId: String, val silent: Boolean, val importance: Int?, val lockscreen: Int? = null)
 
-/** Telefonun güç ve ağ durumu; okunamayan null. Ağ adı ya da konum asla okunmaz. */
-data class DeviceState(val powerSave: Boolean?, val ignoresBatteryLimits: Boolean?, val standbyBucket: Int?, val connection: Connection?)
+/**
+ * Telefonun güç, ağ ve bildirim durumu; okunamayan null. Ağ adı ya da konum asla okunmaz. [hibernationExempt]:
+ * "Kullanılmayan uygulamaları yönet" bu uygulama için kapalı mı (Android 11+; true: kapalı, uygulama korunur).
+ * [interruptionFilter]: Rahatsız Etmeyin durumu (NotificationManager.INTERRUPTION_FILTER_*).
+ */
+data class DeviceState(
+    val powerSave: Boolean?,
+    val ignoresBatteryLimits: Boolean?,
+    val standbyBucket: Int?,
+    val connection: Connection?,
+    val hibernationExempt: Boolean? = null,
+    val interruptionFilter: Int? = null,
+)
 
 /** Bağlantı türü: yalnızca "Wi-Fi", "mobil" ya da "yok". */
 enum class Connection { WiFi, Mobile, Other, None }
@@ -50,6 +61,9 @@ data class NotificationStatus(
     val device: DeviceState,
     val failures: List<NetworkFailure>,
     val lastUpdate: Long?,
+    val alarms: List<AlarmFire> = emptyList(),
+    val hops: Map<AttemptKind, Pair<Instant, Instant>> = emptyMap(),
+    val lastWatch: Instant? = null,
     val appVersion: String,
     val androidSdk: Int,
     val model: String,
@@ -92,6 +106,9 @@ data class NotificationStatus(
                 device = readDevice(context),
                 failures = NetworkFailureLog(context).entries(now.toEpochMilli()),
                 lastUpdate = NetworkFailureLog(context).lastSuccess(),
+                alarms = log.alarms(now),
+                hops = listOf(AttemptKind.Morning, AttemptKind.Evening).mapNotNull { kind -> log.lastHop(kind, now)?.let { kind to it } }.toMap(),
+                lastWatch = log.lastWatch(),
                 appVersion = version,
                 androidSdk = Build.VERSION.SDK_INT,
                 model = Build.MODEL.orEmpty(),
@@ -124,11 +141,18 @@ data class NotificationStatus(
                     else -> Connection.Other
                 }
             }.getOrNull()
+            val hibernation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                runCatching { context.packageManager.isAutoRevokeWhitelisted }.getOrNull()
+            } else {
+                null
+            }
             return DeviceState(
                 powerSave = runCatching { power?.isPowerSaveMode }.getOrNull(),
                 ignoresBatteryLimits = runCatching { power?.isIgnoringBatteryOptimizations(context.packageName) }.getOrNull(),
                 standbyBucket = bucket,
                 connection = connection,
+                hibernationExempt = hibernation,
+                interruptionFilter = runCatching { context.getSystemService(NotificationManager::class.java)?.currentInterruptionFilter }.getOrNull(),
             )
         }
 
@@ -175,10 +199,10 @@ data class NotificationStatus(
         rows += localized.getString(R.string.status_lock_silent) to known(lockScreen.showSilent)
         rows += localized.getString(R.string.status_battery) to localized.getString(if (backgroundRestricted) R.string.status_restricted else R.string.status_unrestricted)
         rows += localized.getString(R.string.status_power_save) to (device.powerSave?.let { yes(it) } ?: localized.getString(R.string.status_unreadable))
-        rows += localized.getString(R.string.status_battery_optimization) to (device.ignoresBatteryLimits?.let {
-            localized.getString(if (it) R.string.status_unrestricted else R.string.status_restricted)
-        } ?: localized.getString(R.string.status_unreadable))
+        rows += localized.getString(R.string.status_battery_optimization) to batteryOptimizationLabel(localized, device.ignoresBatteryLimits)
         rows += localized.getString(R.string.status_standby) to standbyLabel(localized, device.standbyBucket)
+        rows += localized.getString(R.string.status_hibernation) to hibernationLabel(localized, device.hibernationExempt, androidSdk)
+        rows += localized.getString(R.string.status_dnd) to dndLabel(localized, device.interruptionFilter)
         rows += localized.getString(R.string.status_connection) to localized.getString(
             when (device.connection) {
                 Connection.WiFi -> R.string.status_conn_wifi
@@ -216,10 +240,24 @@ data class NotificationStatus(
             val at = time(AttemptLog.missedTime(missed)).let { if (locale.language == "tr") com.alihaydarsayar.communesky.model.TurkishSuffix.locativeTime(it) else it }
             localized.getString(R.string.status_missed_value, name, at, com.alihaydarsayar.communesky.ui.settings.AttemptText.missedReason(localized, missed))
         } ?: localized.getString(R.string.status_none))
+        // Alarm alıcısının tetiklenmesi (bildirimden ayrı): hedef, çaldığı an, gecikme ve hangi alarm.
+        for (kind in listOf(AttemptKind.Morning, AttemptKind.Evening)) {
+            val name = localized.getString(if (kind == AttemptKind.Morning) R.string.channel_morning else R.string.channel_evening)
+            val fire = AlarmTrace.last(alarms, kind)
+            rows += localized.getString(R.string.status_last_alarm, name) to (fire?.let {
+                localized.getString(
+                    R.string.status_alarm_fired, time(it.target), time(it.at), delayLabel(localized, it.delay),
+                    localized.getString(if (it.which == AlarmWhich.Backup) R.string.status_alarm_backup else R.string.status_alarm_final),
+                )
+            } ?: localized.getString(R.string.status_none))
+            hops[kind]?.let { (at, target) -> rows += localized.getString(R.string.status_last_hop, name) to localized.getString(R.string.status_hop_value, time(at), time(target)) }
+        }
+        rows += localized.getString(R.string.status_last_watch) to (lastWatch?.let { time(it) } ?: localized.getString(R.string.status_none))
         rows += localized.getString(R.string.status_last_test) to (lastTest?.let { "${time(it.at)} · ${text(localized, it)}" } ?: localized.getString(R.string.status_none))
         attempts.filter { it.kind != AttemptKind.Test }.sortedByDescending { it.at }.forEach { attempt ->
             val kind = localized.getString(if (attempt.kind == AttemptKind.Morning) R.string.channel_morning else R.string.channel_evening)
-            rows += "${time(attempt.at)} · $kind" to text(localized, attempt)
+            val value = text(localized, attempt) + (attempt.via?.let { " · " + localized.getString(viaLabel(it)) } ?: "")
+            rows += "${time(attempt.at)} · $kind" to value
         }
         rows += localized.getString(R.string.status_app_info) to "$appVersion · Android $androidSdk · $model"
         return rows
@@ -231,15 +269,49 @@ data class NotificationStatus(
         return (listOf(localized.getString(R.string.status_title)) + rows(context).map { (label, value) -> "$label: $value" }).joinToString("\n")
     }
 
-    private fun standbyLabel(context: Context, bucket: Int?): String = when (bucket) {
-        null -> context.getString(R.string.status_unreadable)
-        10 -> context.getString(R.string.status_bucket_active)
-        20 -> context.getString(R.string.status_bucket_working)
-        30 -> context.getString(R.string.status_bucket_frequent)
-        40 -> context.getString(R.string.status_bucket_rare)
-        45 -> context.getString(R.string.status_bucket_restricted)
-        50 -> context.getString(R.string.status_bucket_never)
-        else -> bucket.toString()
+    /** Bekleme grubu, adı ve Android'deki numarasıyla ("Etkin (10)"). */
+    private fun standbyLabel(context: Context, bucket: Int?): String {
+        if (bucket == null) return context.getString(R.string.status_unreadable)
+        val name = StatusLabels.standbyBucket(bucket)?.let(context::getString) ?: return bucket.toString()
+        return context.getString(R.string.status_bucket_with_number, name, bucket)
+    }
+
+    private fun batteryOptimizationLabel(context: Context, ignores: Boolean?): String = context.getString(
+        when (ignores) {
+            null -> R.string.status_unreadable
+            true -> R.string.status_optimization_off
+            false -> R.string.status_optimization_on
+        },
+    )
+
+    private fun hibernationLabel(context: Context, exempt: Boolean?, sdk: Int): String = context.getString(
+        when {
+            sdk < Build.VERSION_CODES.R -> R.string.status_hibernation_none
+            exempt == null -> R.string.status_unreadable
+            exempt -> R.string.status_hibernation_off
+            else -> R.string.status_hibernation_on
+        },
+    )
+
+    private fun dndLabel(context: Context, filter: Int?): String = context.getString(StatusLabels.interruptionFilter(filter))
+
+    private fun delayLabel(context: Context, delay: java.time.Duration): String {
+        val minutes = delay.toMinutes()
+        return when {
+            delay.isNegative -> context.getString(R.string.status_delay_early, (-delay.seconds + 59) / 60)
+            minutes < 1 -> context.getString(R.string.status_delay_on_time)
+            else -> context.getString(R.string.status_delay_late, minutes)
+        }
+    }
+
+    private fun viaLabel(via: SummaryPath): Int = when (via) {
+        SummaryPath.Alarm -> R.string.via_alarm
+        SummaryPath.Backup -> R.string.via_backup
+        SummaryPath.Watcher -> R.string.via_watcher
+        SummaryPath.Hourly -> R.string.via_hourly
+        SummaryPath.AppOpen -> R.string.via_app_open
+        SummaryPath.Restart -> R.string.via_restart
+        SummaryPath.Debug -> R.string.via_debug
     }
 
     private fun text(context: Context, attempt: Attempt): String = com.alihaydarsayar.communesky.ui.settings.AttemptText.of(context, attempt.kind, attempt.outcome, attempt.detail)
@@ -248,4 +320,29 @@ data class NotificationStatus(
     val hasProblem: Boolean
         get() = !permission || !appEnabled || channels.any { it.importance == NotificationManager.IMPORTANCE_NONE } ||
             planned.any { it.enabled && !it.alarmSet }
+}
+
+/** Durum etiketlerinin Android değerlerinden seçimi. Saf; test edilir. */
+object StatusLabels {
+
+    /** Bekleme grubu: 5 Muaf, 10 Etkin, 20 Çalışma kümesi, 30 Sık, 40 Nadir, 45 Kısıtlı, 50 Hiç; bilinmeyen null. */
+    fun standbyBucket(bucket: Int): Int? = when (bucket) {
+        5 -> R.string.status_bucket_exempt
+        10 -> R.string.status_bucket_active
+        20 -> R.string.status_bucket_working
+        30 -> R.string.status_bucket_frequent
+        40 -> R.string.status_bucket_rare
+        45 -> R.string.status_bucket_restricted
+        50 -> R.string.status_bucket_never
+        else -> null
+    }
+
+    /** Rahatsız Etmeyin: 1 kapalı (her şey), 2 yalnız öncelikli, 3 tam sessiz, 4 yalnız alarmlar. */
+    fun interruptionFilter(filter: Int?): Int = when (filter) {
+        NotificationManager.INTERRUPTION_FILTER_ALL -> R.string.status_dnd_off
+        NotificationManager.INTERRUPTION_FILTER_PRIORITY -> R.string.status_dnd_priority
+        NotificationManager.INTERRUPTION_FILTER_NONE -> R.string.status_dnd_none
+        NotificationManager.INTERRUPTION_FILTER_ALARMS -> R.string.status_dnd_alarms
+        else -> R.string.status_unreadable
+    }
 }

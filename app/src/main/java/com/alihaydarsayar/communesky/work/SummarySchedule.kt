@@ -110,6 +110,26 @@ object SummarySchedule {
         return !now.isBefore(target.plus(CATCH_UP_GRACE)) && now.isBefore(catchUpEnd(target))
     }
 
+    /**
+     * 15 dakikalık arka plan denetimi ([SummaryWatchWorker]) şimdi göndermeli mi: bugün gönderilmedi ve hedef saat ile
+     * pencere sonu ([CATCH_UP], en çok gün sonu) arasındayız. Bekleme payı yoktur: alarm gecikmiş ya da hiç gelmemişse
+     * denetim gönderir; aynı anda ikisi çalışırsa yalnız biri gönderir ("gönderildi" işareti ve kilit).
+     */
+    fun shouldWatch(now: ZonedDateTime, minutes: Int, sentOn: LocalDate?): Boolean {
+        val today = now.toLocalDate()
+        if (sentOn == today) return false
+        val target = target(today, minutes, now.zone)
+        return !now.isBefore(target) && now.isBefore(catchUpEnd(target))
+    }
+
+    /** Arka plan denetiminin toplam süresi: hava alınamasa da bu süre içinde eldeki veriyle gönderilir. */
+    const val WATCH_TOTAL_MS = 20_000L
+    const val WATCH_REFRESH_MS = 12_000L
+
+    /** Denetim başladığından beri [elapsedMs] geçti: ağ yenilemesine kalan süre (0: yenilemeden eldeki veriyle gönder). */
+    fun watchRefreshBudgetMs(elapsedMs: Long): Long =
+        (WATCH_TOTAL_MS - elapsedMs - LOAD_TIMEOUT_MS - VERIFY_MS).coerceIn(0L, WATCH_REFRESH_MS)
+
     /** Yedek pencerenin sonu: hedeften [CATCH_UP] sonra, en çok o günün sonu. */
     fun catchUpEnd(target: ZonedDateTime): ZonedDateTime =
         minOf(target.plus(CATCH_UP), target.toLocalDate().plusDays(1).atStartOfDay(target.zone))
