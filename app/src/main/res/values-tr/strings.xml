@@ -204,7 +204,47 @@
     </plurals>
     <string name="no_saved_places_short">Henüz kayıtlı yer yok</string>
     <string name="settings_about">Hakkında</string>
-    <string name="settings_data_sources">Tahminler: Türkiye’de saatlik ve günlük sıcaklık ile hava durumu Meteoroloji Genel Müdürlüğü’nden (MGM); diğer yerlerde ve her yerde yağış, UV ve basınç Open-Meteo.com’dan (CC BY 4.0) gelir. Fransa’da Météo-France modelleri (AROME ve ARPEGE), Birleşik Krallık ve İrlanda’da Met Office modelleri Open-Meteo üzerinden kullanılır. ECMWF modeli (IFS ve AIFS, © ECMWF, CC BY 4.0) Open-Meteo üzerinden karşılaştırma için ve Türkiye’de MGM’nin beş gününden sonrası için kullanılır. Anlık durum en yakın istasyonun ölçümüyle doğrulanır: Türkiye’de MGM istasyonları, diğer yerlerde NOAA Aviation Weather Center üzerinden havalimanı ölçümleri (METAR). Hava kalitesi: Copernicus Atmosfer İzleme Servisi (CAMS), Open-Meteo üzerinden (CC BY 4.0). Yer arama: Photon, © OpenStreetMap katkıcıları.</string>
+
+    <!-- Hakkında: sürüm, lisans, kaynak kodu, açık kaynak lisansları, veri kaynakları, gizlilik -->
+    <string name="about_version">Commune Sky %1$s</string>
+    <string name="about_license">GNU Genel Kamu Lisansı v3.0 (GPL-3.0) ile yayımlanan özgür yazılım.</string>
+    <string name="about_source">Kaynak kodu</string>
+    <string name="about_open_source">Açık kaynak lisansları</string>
+    <string name="about_open_source_hint">Uygulamanın kullandığı kütüphaneler, yazı tipleri ve simgeler</string>
+    <string name="about_data_sources">Veri kaynakları</string>
+    <string name="about_data_sources_hint">Hava verisinin nereden geldiği, lisansları ve atıfları</string>
+    <string name="about_privacy">Gizlilik politikası</string>
+    <string name="about_privacy_hint">Tam metin, internetsiz de okunur</string>
+    <string name="about_privacy_web">Web sayfasında aç</string>
+    <string name="about_open_web">Web sitesi</string>
+    <string name="about_open_license">Lisans sayfası</string>
+    <string name="licenses_intro">Bu liste uygulama derlenirken hazırlanır ve uygulamanın içindedir; göstermek için hiçbir şey indirilmez. Lisansını okumak için bir satıra dokun.</string>
+    <string name="licenses_assets">Yazı tipleri, simgeler ve çizimler</string>
+    <string name="licenses_libraries">Kütüphaneler (%1$d)</string>
+    <string name="licenses_tap">Lisansı göstermek için dokun</string>
+    <string name="sources_intro">Her sağlayıcının lisansı, istediği atıf ve kullanım koşulu. Adlar ve atıf satırları sağlayıcının yazdığı gibidir.</string>
+    <string name="sources_license">Lisans</string>
+    <string name="sources_attribution">Atıf</string>
+    <string name="sources_terms">Kullanım koşulu</string>
+    <string name="sources_open_terms">Koşullar</string>
+    <string name="source_open_meteo_use">Her yerde tahmin, yağış, UV ve basınç; hava kalitesi ve yer arama da onun üzerinden.</string>
+    <string name="source_open_meteo_terms">Ücretsiz API yalnız ticari olmayan kullanım içindir ve günlük, saatlik çağrı sınırları vardır; veriler CC BY 4.0 ile verilir ve bağlantılı atıf ister.</string>
+    <string name="source_ecmwf_use">ECMWF modeli; karşılaştırma için ve Türkiye’de MGM’nin beş gününden sonraki günler için.</string>
+    <string name="source_ecmwf_terms">CC BY 4.0 ve ECMWF kullanım koşullarıyla açık veri: telif satırı, kaynak, lisans ve sorumluluk reddi istenir.</string>
+    <string name="source_meteo_france_use">Fransa’daki yerler için AROME ve ARPEGE modelleri.</string>
+    <string name="source_meteo_france_terms">Météo-France açık verilerini Etalab Açık Lisans 2.0 ile yayımlar; bu lisans kaynağın ve son güncelleme tarihinin belirtilmesini ister. Open-Meteo bunu Météo-France’ın kendi lisansı olarak listeler.</string>
+    <string name="source_met_office_use">Birleşik Krallık ve İrlanda’daki yerler için UKV ve küresel modeller.</string>
+    <string name="source_met_office_terms">Open-Meteo, Met Office verisini CC BY-SA 4.0 lisansıyla listeler.</string>
+    <string name="source_cams_use">Hava kalitesi (Avrupa Hava Kalitesi İndeksi ve kirleticiler).</string>
+    <string name="source_cams_terms">Copernicus Ürünleri Kullanım Lisansı: her yasal kullanım için ücretsizdir; yukarıdaki atıf satırı ve Avrupa Komisyonu ile ECMWF’nin kullanımdan sorumlu olmadığı ifadesi istenir.</string>
+    <string name="source_mgm_use">Türkiye’de: tahminler, meteorolojik uyarılar, mevsim normalleri ve istasyon ölçümleri.</string>
+    <string name="source_mgm_terms">MGM’nin yasal uyarısı, içeriğin bütün haklarının MGM’ye ait olduğunu ve içeriğin önceden izin alınmadan ve kaynak gösterilmeden kopyalanamayacağını ya da başka yerde kullanılamayacağını söyler. Bu veriler için ayrı bir lisans yayımlamaz.</string>
+    <string name="source_noaa_use">Her yerde anlık durum için havalimanı raporları (METAR).</string>
+    <string name="source_noaa_terms">NOAA/NWS bilgileri, aksi belirtilmedikçe ABD’de kamu malıdır; NOAA tarafından onaylanmış gibi sunulamaz. Veri API’si istek sayısının sınırlı tutulmasını ister (dakikada en çok 100).</string>
+    <string name="source_osm_use">komoot’un Photon hizmetiyle yer arama.</string>
+    <string name="source_osm_terms">OpenStreetMap verileri Açık Veritabanı Lisansı (ODbL) iledir ve OpenStreetMap’e atıf ister. Photon adil kullanım ister; yoğun kullanım yavaşlatılır.</string>
+    <string name="source_geonames_use">Open-Meteo yer aramasındaki yer adları.</string>
+    <string name="source_geonames_terms">Open-Meteo, GeoNames verisini CC BY 4.0 lisansıyla listeler.</string>
 
     <!-- Widget'lar: seçicideki 9 widget -->
     <string name="widget_kind_home">Ev ve konum</string>

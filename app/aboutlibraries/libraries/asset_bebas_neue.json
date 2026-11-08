@@ -1,0 +1,15 @@
+{
+  "uniqueId": "asset:bebas-neue",
+  "name": "Clock digits, derived from Bebas Neue (font)",
+  "artifactVersion": "res/font/commune_digits.ttf, res/font/commune_digits_outline.ttf",
+  "description": "Copyright 2019 The Bebas Neue Project Authors (https://github.com/dharmatype/Bebas-Neue). Modified for Commune Sky's clock widgets.",
+  "website": "https://github.com/dharmatype/Bebas-Neue",
+  "developers": [
+    {
+      "name": "The Bebas Neue Project Authors"
+    }
+  ],
+  "licenses": [
+    "OFL-1.1"
+  ]
+}

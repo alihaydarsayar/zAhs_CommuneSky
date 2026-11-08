@@ -209,7 +209,47 @@
     </plurals>
     <string name="no_saved_places_short">No saved places yet</string>
     <string name="settings_about">About</string>
-    <string name="settings_data_sources">Forecasts: in Türkiye, hourly and daily temperatures and the weather come from the Turkish State Meteorological Service (MGM); elsewhere, and for rain, UV and pressure everywhere, from Open-Meteo.com (CC BY 4.0). In France the Météo-France models (AROME and ARPEGE) and in the United Kingdom and Ireland the Met Office models are used through Open-Meteo. The ECMWF model (IFS and AIFS, © ECMWF, CC BY 4.0) is used through Open-Meteo for comparison and, in Türkiye, for the days after MGM’s five. Current conditions are checked against the nearest station: MGM stations in Türkiye, airport reports (METAR) from the NOAA Aviation Weather Center elsewhere. Air quality: Copernicus Atmosphere Monitoring Service (CAMS) through Open-Meteo (CC BY 4.0). Place search: Photon, © OpenStreetMap contributors.</string>
+
+    <!-- Hakkında: sürüm, lisans, kaynak kodu, açık kaynak lisansları, veri kaynakları, gizlilik -->
+    <string name="about_version">Commune Sky %1$s</string>
+    <string name="about_license">Free software under the GNU General Public License v3.0 (GPL-3.0).</string>
+    <string name="about_source">Source code</string>
+    <string name="about_open_source">Open-source licenses</string>
+    <string name="about_open_source_hint">Libraries, fonts and icons the app is built with</string>
+    <string name="about_data_sources">Data sources</string>
+    <string name="about_data_sources_hint">Where the weather comes from, with licenses and credits</string>
+    <string name="about_privacy">Privacy policy</string>
+    <string name="about_privacy_hint">The full text, also readable offline</string>
+    <string name="about_privacy_web">Open on the web page</string>
+    <string name="about_open_web">Website</string>
+    <string name="about_open_license">License page</string>
+    <string name="licenses_intro">This list is made when the app is built and is stored in the app; nothing is downloaded to show it. Tap an entry to read its license.</string>
+    <string name="licenses_assets">Fonts, icons and drawings</string>
+    <string name="licenses_libraries">Libraries (%1$d)</string>
+    <string name="licenses_tap">Tap to show the license</string>
+    <string name="sources_intro">The license, the credit each provider asks for and its terms of use. Names and credit lines are given as the provider writes them.</string>
+    <string name="sources_license">License</string>
+    <string name="sources_attribution">Credit</string>
+    <string name="sources_terms">Terms of use</string>
+    <string name="sources_open_terms">Terms</string>
+    <string name="source_open_meteo_use">Forecasts everywhere, rain, UV and pressure; air quality and place search go through it too.</string>
+    <string name="source_open_meteo_terms">The free API is for non-commercial use only, with daily and hourly call limits; the data are under CC BY 4.0 and need a credit with a link.</string>
+    <string name="source_ecmwf_use">The ECMWF model, for comparison and, in Türkiye, for the days after MGM’s five.</string>
+    <string name="source_ecmwf_terms">Open data under CC BY 4.0 and the ECMWF terms of use: a copyright line, the source, the license and a no-liability statement are required.</string>
+    <string name="source_meteo_france_use">The AROME and ARPEGE models for places in France.</string>
+    <string name="source_meteo_france_terms">Météo-France publishes its open data under the Etalab Open Licence 2.0, which asks for the source and the date of the last update. Open-Meteo lists it as Météo-France’s own licence.</string>
+    <string name="source_met_office_use">The UKV and global models for places in the United Kingdom and Ireland.</string>
+    <string name="source_met_office_terms">Open-Meteo lists Met Office data under CC BY-SA 4.0.</string>
+    <string name="source_cams_use">Air quality (European Air Quality Index and pollutants).</string>
+    <string name="source_cams_terms">Licence to Use Copernicus Products: free of charge for any lawful use, with the credit line above and a statement that the European Commission and ECMWF are not responsible for its use.</string>
+    <string name="source_mgm_use">In Türkiye: forecasts, weather warnings, seasonal normals and station measurements.</string>
+    <string name="source_mgm_terms">MGM’s legal notice says that all rights in its content belong to MGM and that its content may not be copied or used elsewhere without prior permission and without citing the source. It does not publish a separate license for this data.</string>
+    <string name="source_noaa_use">Airport reports (METAR) for current conditions, everywhere.</string>
+    <string name="source_noaa_terms">NOAA/NWS information is in the U.S. public domain unless noted otherwise; it must not be presented as endorsed by NOAA. The data API asks for limited request rates (at most 100 per minute).</string>
+    <string name="source_osm_use">Place search through Photon by komoot.</string>
+    <string name="source_osm_terms">OpenStreetMap data are under the Open Database License (ODbL) and must be credited to OpenStreetMap. Photon asks for fair use; heavy use is throttled.</string>
+    <string name="source_geonames_use">Place names in Open-Meteo’s place search.</string>
+    <string name="source_geonames_terms">Open-Meteo lists GeoNames data under CC BY 4.0.</string>
     <string name="unit_celsius" translatable="false">°C</string>
     <string name="unit_fahrenheit" translatable="false">°F</string>
 

@@ -1,0 +1,15 @@
+{
+  "uniqueId": "asset:outfit",
+  "name": "Outfit (font)",
+  "artifactVersion": "res/font/outfit.ttf",
+  "description": "Copyright 2021 The Outfit Project Authors (https://github.com/Outfitio/Outfit-Fonts)",
+  "website": "https://github.com/Outfitio/Outfit-Fonts",
+  "developers": [
+    {
+      "name": "The Outfit Project Authors"
+    }
+  ],
+  "licenses": [
+    "OFL-1.1"
+  ]
+}

@@ -208,7 +208,47 @@
     </plurals>
     <string name="no_saved_places_short">Aucun lieu enregistré pour l’instant</string>
     <string name="settings_about">À propos</string>
-    <string name="settings_data_sources">Prévisions : en Turquie, les températures horaires et quotidiennes et le temps viennent du service météorologique turc (MGM) ; ailleurs, et partout pour la pluie, l’UV et la pression, d’Open-Meteo.com (CC BY 4.0). En France, les modèles de Météo-France (AROME et ARPEGE) et, au Royaume-Uni et en Irlande, ceux du Met Office sont utilisés via Open-Meteo. Le modèle du CEPMMT (ECMWF : IFS et AIFS, © ECMWF, CC BY 4.0) sert de comparaison et, en Turquie, pour les jours au-delà des cinq jours de la MGM, via Open-Meteo. Le temps actuel est vérifié auprès de la station la plus proche : stations du MGM en Turquie, observations d’aéroport (METAR) du NOAA Aviation Weather Center ailleurs. Qualité de l’air : service Copernicus de surveillance de l’atmosphère (CAMS) via Open-Meteo (CC BY 4.0). Recherche de lieux : Photon, © les contributeurs d’OpenStreetMap.</string>
+
+    <!-- Hakkında: sürüm, lisans, kaynak kodu, açık kaynak lisansları, veri kaynakları, gizlilik -->
+    <string name="about_version">Commune Sky %1$s</string>
+    <string name="about_license">Logiciel libre sous licence publique générale GNU v3.0 (GPL-3.0).</string>
+    <string name="about_source">Code source</string>
+    <string name="about_open_source">Licences open source</string>
+    <string name="about_open_source_hint">Bibliothèques, polices et icônes utilisées par l’application</string>
+    <string name="about_data_sources">Sources des données</string>
+    <string name="about_data_sources_hint">D’où vient la météo, avec licences et mentions</string>
+    <string name="about_privacy">Politique de confidentialité</string>
+    <string name="about_privacy_hint">Le texte complet, lisible aussi hors connexion</string>
+    <string name="about_privacy_web">Ouvrir la page web</string>
+    <string name="about_open_web">Site web</string>
+    <string name="about_open_license">Page de la licence</string>
+    <string name="licenses_intro">Cette liste est établie lors de la compilation et stockée dans l’application ; rien n’est téléchargé pour l’afficher. Touchez une entrée pour lire sa licence.</string>
+    <string name="licenses_assets">Polices, icônes et dessins</string>
+    <string name="licenses_libraries">Bibliothèques (%1$d)</string>
+    <string name="licenses_tap">Touchez pour afficher la licence</string>
+    <string name="sources_intro">La licence, la mention demandée par chaque fournisseur et ses conditions d’utilisation. Les noms et les mentions sont reproduits tels que le fournisseur les écrit.</string>
+    <string name="sources_license">Licence</string>
+    <string name="sources_attribution">Mention</string>
+    <string name="sources_terms">Conditions d’utilisation</string>
+    <string name="sources_open_terms">Conditions</string>
+    <string name="source_open_meteo_use">Prévisions partout, pluie, UV et pression ; la qualité de l’air et la recherche de lieux passent aussi par lui.</string>
+    <string name="source_open_meteo_terms">L’API gratuite est réservée à un usage non commercial, avec des limites d’appels par jour et par heure ; les données sont sous CC BY 4.0 et demandent une mention avec un lien.</string>
+    <string name="source_ecmwf_use">Le modèle ECMWF, pour comparaison et, en Turquie, pour les jours après les cinq du MGM.</string>
+    <string name="source_ecmwf_terms">Données ouvertes sous CC BY 4.0 et conditions d’utilisation de l’ECMWF : une ligne de copyright, la source, la licence et une clause de non-responsabilité sont exigées.</string>
+    <string name="source_meteo_france_use">Les modèles AROME et ARPEGE pour les lieux en France.</string>
+    <string name="source_meteo_france_terms">Météo-France publie ses données ouvertes sous Licence Ouverte Etalab 2.0, qui demande la mention de la source et de la date de dernière mise à jour. Open-Meteo l’indique comme licence propre de Météo-France.</string>
+    <string name="source_met_office_use">Les modèles UKV et global pour les lieux au Royaume-Uni et en Irlande.</string>
+    <string name="source_met_office_terms">Open-Meteo indique les données du Met Office sous CC BY-SA 4.0.</string>
+    <string name="source_cams_use">Qualité de l’air (indice européen et polluants).</string>
+    <string name="source_cams_terms">Licence d’utilisation des produits Copernicus : gratuite pour tout usage licite, avec la mention ci-dessus et une déclaration indiquant que la Commission européenne et l’ECMWF ne sont pas responsables de son utilisation.</string>
+    <string name="source_mgm_use">En Turquie : prévisions, alertes météo, normales saisonnières et mesures des stations.</string>
+    <string name="source_mgm_terms">L’avis juridique du MGM indique que tous les droits sur son contenu appartiennent au MGM et que ce contenu ne peut être copié ni utilisé ailleurs sans autorisation préalable et sans citer la source. Il ne publie pas de licence distincte pour ces données.</string>
+    <string name="source_noaa_use">Rapports d’aéroport (METAR) pour les conditions actuelles, partout.</string>
+    <string name="source_noaa_terms">Les informations NOAA/NWS relèvent du domaine public américain sauf mention contraire ; elles ne doivent pas être présentées comme approuvées par la NOAA. L’API demande un nombre limité de requêtes (au plus 100 par minute).</string>
+    <string name="source_osm_use">Recherche de lieux avec Photon de komoot.</string>
+    <string name="source_osm_terms">Les données OpenStreetMap sont sous licence ODbL et doivent être attribuées à OpenStreetMap. Photon demande un usage raisonnable ; un usage intensif est limité.</string>
+    <string name="source_geonames_use">Noms de lieux de la recherche Open-Meteo.</string>
+    <string name="source_geonames_terms">Open-Meteo indique les données GeoNames sous CC BY 4.0.</string>
 
     <!-- Widgets: the 9 widgets in the picker -->
     <string name="widget_kind_home">Domicile et position</string>
@@ -1024,7 +1064,7 @@
     <string name="attempt_fallback">Un résumé simplifié a été envoyé (le résumé complet n’a pas pu être préparé)</string>
     <string name="attempt_stale_notice">La météo actuelle n’a pas pu être récupérée ; un avis a été envoyé à la place</string>
     <string name="attempt_error">Erreur : %1$s</string>
-    <string name="attempt_missed">Non envoyé : aucun essai enregistré, raison inconnue</string>
+    <string name="attempt_missed">Non envoyé : aucun essai enregistré, raison inconnue</string>
 
     <!-- Avis quand la météo est trop ancienne ou que le résumé ne peut pas être préparé -->
     <string name="summary_stale_title">Météo actuelle indisponible</string>
@@ -1057,13 +1097,13 @@
 
     <!-- Bildirim durumu: gönderilemeyen son özet ve arka plan ayarları (yalnız olanı söyler, tahmin yok) -->
     <string name="status_last_missed">Dernier résumé non envoyé</string>
-    <string name="status_missed_value">%1$s n’a pas pu être envoyé à %2$s · raison : %3$s</string>
+    <string name="status_missed_value">%1$s n’a pas pu être envoyé à %2$s · raison : %3$s</string>
     <string name="missed_reason_unknown">inconnue (aucun essai enregistré)</string>
     <string name="missed_reason_no_permission">l’autorisation de notification était désactivée</string>
     <string name="missed_reason_app_off">les notifications de l’application étaient désactivées</string>
     <string name="missed_reason_channel_off">le canal de notification du résumé était désactivé</string>
     <string name="missed_reason_no_data">les données météo n’ont pas pu être obtenues</string>
-    <string name="missed_reason_stale_notice">les données météo n’ont pas pu être obtenues ; une courte notification « météo actuelle indisponible » a été affichée à la place</string>
+    <string name="missed_reason_stale_notice">les données météo n’ont pas pu être obtenues ; une courte notification « météo actuelle indisponible » a été affichée à la place</string>
     <string name="missed_reason_failed">Android n’a pas accepté la notification</string>
     <string name="missed_reason_error">erreur de l’application (%1$s)</string>
     <string name="missed_reason_load_timeout">les réglages de l’application n’ont pas pu être lus à temps</string>

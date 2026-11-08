@@ -1,0 +1,63 @@
+# Politique de confidentialité
+Dernière mise à jour : 8 novembre 2026
+
+Commune Sky est une application météo pour Android développée par Ali Haydar Sayar. Cette politique explique ce qu'il advient de vos données lorsque vous l'utilisez.
+
+**En bref :** le développeur ne collecte, ne conserve et ne vend aucune de vos données. Pour afficher la météo, l'application demande à quelques services météo et cartographiques des données sur les lieux que vous choisissez ; ils sont listés ci-dessous.
+
+## Ce que l'application ne fait pas
+- Aucun compte ni connexion
+- Aucune publicité, analyse, rapport de plantage ni suivi
+- Aucun identifiant publicitaire ni autre identifiant de l'appareil n'est envoyé où que ce soit
+- Vos données ne sont jamais vendues. Elles ne sont envoyées qu'aux services listés ci-dessous, et uniquement pour vous montrer la météo.
+
+## Localisation
+Si vous l'autorisez, l'application utilise la position de votre appareil pour afficher la météo là où vous êtes. Vous choisissez la précision : avec la position approximative, l'application affiche votre arrondissement ou votre commune ; si vous autorisez aussi la position précise (facultatif), elle peut afficher votre quartier et choisir la station météo la plus proche. La position précise n'est utilisée que sur votre appareil, pour ces deux usages ; les coordonnées envoyées aux services météo ci-dessous sont toujours arrondies à environ 1 km.
+La position n'est utilisée que lorsque l'application est ouverte, sans forcer le GPS ; les mises à jour en arrière-plan réutilisent la dernière position connue. Le service de localisation de votre appareil (Google Play Services sur la plupart des téléphones) détermine la position sur l'appareil. Si vous n'autorisez pas la localisation, l'application affiche la météo de vos lieux enregistrés, ou d'une ville par défaut si vous n'en avez aucun.
+
+## Les lieux que vous enregistrez
+Vous pouvez rechercher des lieux et les enregistrer. Les lieux enregistrés, et celui que vous avez marqué comme Domicile, ne sont conservés que sur votre appareil.
+
+## Services auxquels l'application se connecte
+Toutes les connexions sont chiffrées (HTTPS). Comme pour toute requête internet, chaque service peut voir l'adresse IP de votre appareil. L'application se présente par son nom et par un lien vers son code source public.
+- **Open-Meteo (Suisse), prévisions météo :** les coordonnées de votre position actuelle et de vos lieux enregistrés, arrondies à environ 1 km, sont envoyées pour obtenir les prévisions. Cela se produit lorsque vous ouvrez l'application, y revenez après environ 15 minutes, tirez pour actualiser, et environ une fois par heure en arrière-plan pour que les widgets restent à jour. Les mêmes coordonnées arrondies servent à demander à Open-Meteo des modèles de prévision supplémentaires (par exemple ECMWF, et les modèles Météo-France ou Met Office pour les lieux en France, au Royaume-Uni et en Irlande) afin que l'application puisse utiliser le plus précis. Open-Meteo indique qu'il peut conserver des journaux de serveur, pouvant contenir des coordonnées, à des fins de dépannage, et les supprime après 90 jours (politique de confidentialité d'Open-Meteo : https://open-meteo.com/en/terms#privacy).
+- **Open-Meteo (Suisse), qualité de l'air :** les mêmes coordonnées arrondies sont envoyées pour obtenir les données de qualité de l'air (issues du Service de surveillance de l'atmosphère Copernicus), avec le même calendrier que les prévisions.
+- **Open-Meteo (Suisse), recherche de lieux :** le texte saisi dans la zone de recherche et la langue de l'application sont envoyés pour trouver les lieux correspondants.
+- **Photon par komoot (Allemagne), recherche de lieux :** le texte saisi (après une courte pause) et la langue de l'application sont envoyés pour trouver les lieux correspondants. Photon utilise les données d'OpenStreetMap. Aucune coordonnée n'est envoyée. Voir https://photon.komoot.io.
+- **Service météorologique turc, MGM (Turquie), mesures, prévisions, alertes et normales saisonnières :** uniquement pour les lieux situés en Turquie. Pour trouver le district et les stations les plus proches, les coordonnées du lieu (arrondies à environ 1 km) et le nom de sa province sont envoyés ; cela se répète toutes les 24 heures, après une mise à jour de l'application et si votre position actuelle se déplace de plus de 2 km environ. La liste de toutes les stations du MGM est téléchargée tous les 7 jours ; rien vous concernant n'est envoyé pour cela. Ensuite, seuls des numéros de district, de province et de station sont envoyés : le numéro de province (son numéro d'immatriculation) permet d'obtenir en une seule requête les dernières mesures de toutes les stations de cette province (ainsi que celles d'une province voisine lorsqu'un lieu est proche de sa frontière), les autres numéros les prévisions horaires et quotidiennes et la normale saisonnière. Les alertes météo sont téléchargées sous la forme d'une seule liste pour toute la Turquie ; celles qui concernent vos lieux sont déterminées sur votre appareil. Cela se produit pendant que vous utilisez l'application et environ une fois par heure en arrière-plan.
+- **NOAA Aviation Weather Center (États-Unis), conditions actuelles :** demandé pour chaque lieu, en plus du MGM en Turquie, afin que l'application puisse utiliser la mesure proche la plus proche et la plus récente. Une zone rectangulaire d'environ 50 km autour du lieu (d'après des coordonnées arrondies) est envoyée pour obtenir les rapports récents des aéroports voisins, avec le même calendrier que ci-dessus.
+- **Android Geocoder, fourni par le système d'exploitation de votre appareil (Google sur la plupart des téléphones) :** vos coordonnées lui sont transmises pour retrouver le nom de votre arrondissement ou, si vous avez autorisé la position précise, de votre quartier. Ces coordonnées ne sont pas arrondies, faute de quoi le nom serait faux. Si les autres services de recherche ne trouvent rien, le texte recherché lui est transmis en dernier recours.
+Le développeur ne reçoit jamais votre position, vos recherches ni vos lieux enregistrés.
+
+## Données conservées sur votre appareil
+- Les dernières prévisions de chaque lieu (avec ses coordonnées et, pour votre position actuelle, la précision de la localisation), afin que l'application et les widgets fonctionnent instantanément et hors connexion
+- Vos lieux enregistrés et votre marque Domicile
+- Le nom de votre quartier et de votre arrondissement actuels
+- La dernière mesure de station pour chaque lieu et les stations MGM proches trouvées pour lui ; la liste des stations proches est actualisée toutes les 24 heures et après une mise à jour de l'application, la liste de toutes les stations de Turquie tous les 7 jours
+- Les dernières données de qualité de l'air et les alertes météo de vos lieux
+- Les relevés de précision des prévisions : ce que chaque source avait prévu et ce qui a été mesuré ensuite, conservés environ 45 jours, afin que l'application choisisse la source la plus précise pour chaque lieu et corrige de petites erreurs locales
+- Votre préférence vestimentaire (« Je crains le froid » et similaires) et vos réponses « J'ai eu froid / J'ai eu trop chaud »
+- Un court relevé des alertes déjà affichées sous forme de notification, et du jour où un résumé ou une notification de qualité de l'air a été envoyé, afin que vous ne soyez pas prévenu deux fois
+- Un court historique des derniers résultats de notification et des heures de résumé prévues : au plus les 5 derniers essais et la dernière heure prévue pour chaque résumé, supprimés après 7 jours. Seuls figurent l'heure, le type de notification (résumé du matin, du soir, test), le résultat (envoyée, ignorée et pourquoi, type d'erreur) et la voie qui l'a envoyée (alarme, vérification en arrière-plan, ouverture de l'application).
+- Un court relevé des déclenchements des alarmes de résumé : au plus les 10 derniers, supprimés après 7 jours. Seuls figurent l'heure prévue, l'heure réelle du déclenchement et l'alarme concernée (étape, dernière étape ou secours), afin que l'état des notifications puisse indiquer le retard d'une alarme.
+- Un court historique des dernières erreurs réseau : au plus les 5 dernières, supprimées après 7 jours. Seuls figurent le nom d'hôte du service (par exemple api.open-meteo.com), le code HTTP (par exemple 503), l'heure et, s'il existe, la valeur Retry-After du serveur, ainsi que l'heure de la dernière mise à jour météo réussie.
+- Vos réglages (unités, thème, langue, format de l'heure, notifications, leurs horaires et les heures calmes, le dernier lieu consulté) et les réglages de chaque widget
+Les relevés ci-dessus ne contiennent jamais de nom de lieu, de coordonnées, de texte de recherche ni de données météo, et il n'y a toujours pas de rapport de dépannage. Ces données ne sont jamais envoyées au développeur. Si vous touchez « Copier l'état » dans Réglages › Notifications, seul le texte de l'état des notifications est copié dans le presse-papiers ; il n'est envoyé nulle part.
+
+## Sauvegarde
+Si la sauvegarde Android est activée, seuls vos réglages, les réglages des widgets, la langue de l'application et vos lieux enregistrés (avec votre marque Domicile) sont inclus dans votre propre sauvegarde Android. Les prévisions, les mesures, les listes de stations, les relevés de précision, les relevés de notification et les autres données de fonctionnement n'y sont pas inclus : ils repartent de zéro lorsque vous réinstallez l'application. Tout est supprimé lorsque vous désinstallez l'application ou effacez ses données.
+
+## Calculé sur votre appareil
+Les suggestions vestimentaires, les conseils du quotidien, les comparaisons avec la veille, la phase de la lune et la précision des prévisions sont tous calculés sur votre appareil à partir de données déjà téléchargées ; rien de plus n'est envoyé pour cela. Lorsque vous touchez un widget horloge, l'application cherche l'application d'horloge installée sur votre téléphone afin de l'ouvrir ; cette recherche reste sur votre appareil. L'état des notifications (autorisation, canaux, réglages de batterie et de mise en veille, Ne pas déranger, fuseau horaire, heures prévues et relevés ci-dessus) est lu sur votre appareil. « Ouvrir les réglages d'arrière-plan » ouvre une page de réglages de votre téléphone ; rien n'est envoyé.
+
+## Notifications
+Les notifications (alertes météo, mauvaise qualité de l'air et résumés facultatifs du matin et du soir) sont créées sur votre appareil à partir des données téléchargées ; aucun serveur de notifications n'est utilisé. Elles sont désactivées tant que vous ne les activez pas, et l'application ne demande l'autorisation d'afficher des notifications qu'à ce moment-là. Vous choisissez quelles alertes et quels lieux comptent, si chaque type arrive avec du son ou en silence, et les heures calmes ; ces choix restent sur votre appareil.
+
+## Enfants
+L'application ne collecte sciemment aucune information personnelle, y compris auprès des enfants.
+
+## Modifications
+Si cette politique change, la version mise à jour sera publiée dans l'application et sur https://alihaydarsayar.com/communesky/privacy/ avec une nouvelle date.
+
+## Contact
+Une question ? Écrivez à alihaydarsayar.info@gmail.com.

@@ -142,6 +142,9 @@ fun SettingsScreen(
     onOpenHomeLocation: () -> Unit,
     onOpenMyWidgets: () -> Unit,
     onOpenNotifications: () -> Unit,
+    onOpenLicenses: () -> Unit = {},
+    onOpenDataSources: () -> Unit = {},
+    onOpenPrivacy: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -372,15 +375,7 @@ fun SettingsScreen(
                     )
                 }
             }
-            item {
-                GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.settings_about)) {
-                    Text(
-                        stringResource(R.string.settings_data_sources),
-                        color = TextSecondary,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
+            item { AboutCard(onOpenLicenses, onOpenDataSources, onOpenPrivacy) }
             // Yalnız debug sürümünde bir bölüm ekler; release'de boştur ve kodu derlenmez.
             debugSettingsItems()
         }

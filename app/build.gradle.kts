@@ -6,6 +6,9 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.room)
     alias(libs.plugins.baselineprofile)
+    // Açık kaynak lisansları: bağımlılıkların lisansları derleme sırasında toplanır ve res/raw/aboutlibraries.json
+    // olarak uygulamaya gömülür. Yalnız derleme eklentisidir; uygulamaya kütüphane eklemez, çalışırken ağa çıkmaz.
+    alias(libs.plugins.aboutlibraries)
 }
 
 android {
@@ -78,6 +81,25 @@ android {
 composeCompiler {
     // java.time ve model sınıflarımızın değişmez olduğunu Compose'a söyler; gereksiz yeniden çizimleri önler.
     stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose_stability.conf"))
+}
+
+aboutLibraries {
+    // Derleme sırasında da ağa çıkılmaz: lisanslar yalnız bağımlılıkların POM dosyalarından okunur.
+    offlineMode = true
+    collect {
+        // Lisans metinleri (Apache-2.0, BSD-3-Clause…) ve gömülü varlıklar (yazı tipleri, simgeler) bu klasörde.
+        configPath = file("aboutlibraries")
+        fetchRemoteLicense = false
+        fetchRemoteFunding = false
+        // Uygulamaya giren bağımlılıklar (test ve debug araçları değil).
+        filterVariants.add("release")
+    }
+    export {
+        excludeFields.addAll("funding", "scm", "organization")
+    }
+    library {
+        duplicationMode = com.mikepenz.aboutlibraries.plugin.DuplicateMode.MERGE
+    }
 }
 
 room {

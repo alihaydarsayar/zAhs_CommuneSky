@@ -1,0 +1,15 @@
+{
+  "uniqueId": "asset:commune-sky-drawings",
+  "name": "Commune Sky drawings (weather, clothing and tip icons, clock dials, app icon)",
+  "artifactVersion": "res/drawable",
+  "description": "Drawn for Commune Sky and released with the app.",
+  "website": "https://github.com/alihaydarsayar/zAhs_CommuneSky",
+  "developers": [
+    {
+      "name": "Ali Haydar Sayar"
+    }
+  ],
+  "licenses": [
+    "GPL-3.0-only"
+  ]
+}

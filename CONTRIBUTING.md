@@ -87,10 +87,13 @@ The debug build has helpers to try situations that are hard to produce. They are
 
 ## Privacy rules
 
-- The privacy policy lives on the website, not in this repository: [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/).
-- Its source is `webapp/communesky/privacy/index.html` in the `alihaydarsayar.com` website repository. The site is published automatically when `main` is pushed.
-- Any change that collects, sends or stores data must update that page in **both English and Turkish**, and change its "Last updated" date. This includes a new service the app talks to, new data sent to an existing service, and new data kept on the device.
-- The app keeps nothing on the phone only for troubleshooting. Do not add logs, counters or usage records.
+- The privacy policy is published on the website, [alihaydarsayar.com/communesky/privacy](https://alihaydarsayar.com/communesky/privacy/), and the same full text is built into the app (Settings › About › Privacy policy) in `app/src/main/res/raw*/privacy_policy.txt` (English, Turkish, French). The app never downloads it.
+- The website page's source is `webapp/communesky/privacy/index.html` in the `alihaydarsayar.com` website repository. The site is published automatically when `main` is pushed.
+- **The in-app privacy text and the website page are always updated together**, with the same wording and the same "Last updated" date, in English, Turkish and French. A change to one without the other is not merged. `AboutDataTest` checks that the three in-app translations keep the same structure.
+- Any change that collects, sends or stores data must update both texts, and change their "Last updated" date. This includes a new service the app talks to, new data sent to an existing service, and new data kept on the device.
+- The app keeps nothing on the phone only for troubleshooting beyond the short notification and network records described in the policy (time, type, result; never a place, location, search or weather). Do not add other logs, counters or usage records.
+- Android backup takes only what `res/xml/data_extraction_rules.xml` and `res/xml/backup_rules.xml` list (settings and saved places). A new file is left out of the backup unless it is a user setting; change both files together (`BackupRulesTest`).
+- Open-source licenses are collected at build time by the AboutLibraries Gradle plugin (offline). A new font, icon or drawing taken from elsewhere needs an entry in `app/aboutlibraries/libraries/` with its license (`AboutDataTest`).
 - After such a change, check the **Data safety** form in Google Play Console and update it if needed.
 - Keep the privacy section in [README.md](README.md) and [README.tr.md](README.tr.md) in line with the website.
 

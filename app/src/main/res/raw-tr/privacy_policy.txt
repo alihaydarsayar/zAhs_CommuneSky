@@ -1,0 +1,63 @@
+# Gizlilik Politikası
+Son güncelleme: 8 Kasım 2026
+
+Commune Sky, Ali Haydar Sayar tarafından geliştirilen bir Android hava durumu uygulamasıdır. Bu politika, uygulamayı kullandığında verilerine ne olduğunu açıklar.
+
+**Kısaca:** Geliştirici hiçbir verini toplamaz, saklamaz ya da satmaz. Uygulama, hava durumunu gösterebilmek için seçtiğin yerlerle ilgili verileri birkaç hava durumu ve harita hizmetinden ister; bunlar aşağıda listelenmiştir.
+
+## Uygulamanın yapmadıkları
+- Hesap ya da giriş yok
+- Reklam, analiz, çökme raporlama ya da takip yok
+- Reklam kimliği ya da başka bir cihaz kimliği hiçbir yere gönderilmez
+- Verilerin hiçbir zaman satılmaz. Yalnızca aşağıda listelenen hizmetlere ve yalnızca sana hava durumunu göstermek için gönderilir.
+
+## Konum
+İzin verirsen uygulama, bulunduğun yerin hava durumunu göstermek için cihazının konumunu kullanır. Ne kadar hassas olacağını sen seçersin: yaklaşık konumla uygulama ilçeni gösterir; ayrıca hassas konuma da izin verirsen (isteğe bağlı) mahalleni gösterebilir ve sana en yakın meteoroloji istasyonunu seçebilir. Hassas konum sadece cihazında ve sadece bu iki iş için kullanılır; aşağıdaki hava durumu hizmetlerine giden koordinatlar her zaman yaklaşık 1 km'ye yuvarlanır.
+Konum sadece uygulama açıkken ve GPS'e zorlanmadan kullanılır; arka plan güncellemeleri son bilinen konumu kullanır. Konumu cihazının konum hizmeti (çoğu telefonda Google Play Hizmetleri) cihazın üzerinde belirler. Konum izni vermezsen uygulama kayıtlı yerlerinin, hiç kayıtlı yerin yoksa varsayılan bir şehrin hava durumunu gösterir.
+
+## Kaydettiğin yerler
+Yer arayıp kaydedebilirsin. Kayıtlı yerlerin ve hangisini Ev olarak işaretlediğin sadece cihazında saklanır.
+
+## Uygulamanın bağlandığı hizmetler
+Bütün bağlantılar şifreli (HTTPS) yapılır. Her internet isteğinde olduğu gibi, bu hizmetler cihazının IP adresini görebilir. Uygulama kendini adıyla ve açık kaynak kodunun bağlantısıyla tanıtır.
+- **Open-Meteo (İsviçre), hava tahmini:** Tahmini almak için bulunduğun yerin ve kayıtlı yerlerinin yaklaşık 1 km'ye yuvarlanmış koordinatları gönderilir. Bu, uygulamayı açtığında, yaklaşık 15 dakika sonra uygulamaya döndüğünde, aşağı çekip yenilediğinde ve widget'lar güncel kalsın diye arka planda saatte bir kez olur. Uygulamanın en doğru kaynağı seçebilmesi için aynı yuvarlanmış koordinatlarla Open-Meteo'dan ek tahmin modelleri de istenir (örneğin ECMWF; Fransa, Birleşik Krallık ve İrlanda'daki yerler için Météo-France ya da Met Office modelleri). Open-Meteo, sorun giderme amacıyla koordinatları içerebilen sunucu kayıtlarını tutabildiğini ve bunları 90 gün sonra sildiğini belirtmektedir (Open-Meteo gizlilik politikası: https://open-meteo.com/en/terms#privacy).
+- **Open-Meteo (İsviçre), hava kalitesi:** Hava kalitesi verisini (Copernicus Atmosfer İzleme Servisi tabanlı) almak için aynı yuvarlanmış koordinatlar gönderilir; zamanlaması tahminle aynıdır.
+- **Open-Meteo (İsviçre), yer arama:** Eşleşen yerleri bulmak için arama kutusuna yazdığın metin ve uygulama dilin gönderilir.
+- **Photon, komoot (Almanya), yer arama:** Eşleşen yerleri bulmak için yazdığın metin (kısa bir beklemeden sonra) ve uygulama dilin gönderilir. Photon, OpenStreetMap verilerini kullanır. Koordinat gönderilmez. Bkz. https://photon.komoot.io.
+- **Meteoroloji Genel Müdürlüğü, MGM (Türkiye), ölçümler, tahminler, uyarılar ve mevsim normalleri:** Sadece Türkiye'deki yerler için. İlçeyi ve en yakın istasyonları bulmak için yerin koordinatları (yaklaşık 1 km'ye yuvarlanmış) ve il adı gönderilir; bu 24 saatte bir, uygulama güncellenince ve bulunduğun yer yaklaşık 2 km'den fazla değişince yinelenir. MGM'nin bütün istasyonlarının listesi 7 günde bir indirilir; bunun için seninle ilgili hiçbir şey gönderilmez. Sonrasında yalnızca ilçe, il ve istasyon numaraları gönderilir: il numarası (il plaka numarası) o ildeki bütün istasyonların son ölçümlerini tek istekte almak için (yer il sınırına yakınsa komşu ilin ölçümleri de), diğerleri saatlik ve günlük tahmini ve mevsim normalini almak için. Meteorolojik uyarılar bütün Türkiye için tek liste olarak indirilir; hangilerinin senin yerlerini ilgilendirdiği cihazında belirlenir. Bu, uygulamayı kullanırken ve arka planda saatte bir kez olur.
+- **NOAA Aviation Weather Center (ABD), anlık durum:** Uygulama, hangi yakın ölçüm daha yakın ve daha yeniyse onu kullanabilmek için her yer için, Türkiye'de MGM ile birlikte sorulur. Yakındaki havalimanlarının son ölçümlerini almak için yerin çevresindeki yaklaşık 50 km'lik dikdörtgen bir alan (yuvarlanmış koordinatlara göre) gönderilir; zamanlaması yukarıdakiyle aynıdır.
+- **Android Geocoder, cihazının işletim sistemi tarafından sağlanır (çoğu telefonda Google):** İlçenin ya da hassas konuma izin verdiysen mahallenin adını bulmak için koordinatların bu hizmete iletilir. Bu koordinatlar yuvarlanmaz, yoksa ad yanlış çıkar. Diğer arama hizmetleri hiçbir sonuç bulamazsa, son çare olarak aradığın metin de bu hizmete iletilir.
+Geliştirici konumunu, aramalarını ya da kayıtlı yerlerini hiçbir zaman almaz.
+
+## Cihazında saklanan veriler
+- Uygulamanın ve widget'ların anında ve çevrimdışı çalışması için her yerin son hava tahmini (yerin koordinatları ve bulunduğun yer için konumun ne kadar kesin olduğu dahil)
+- Kayıtlı yerlerin ve Ev işaretin
+- Bulunduğun mahallenin ve ilçenin adı
+- Her yer için son istasyon ölçümü ve o yer için bulunan yakın MGM istasyonları; yakın istasyon listesi 24 saatte bir ve uygulama güncellenince, Türkiye'nin bütün istasyon listesi 7 günde bir yenilenir
+- Yerlerinin son hava kalitesi verisi ve meteorolojik uyarıları
+- Tahmin doğruluğu kayıtları: her tahmin kaynağının ne dediği ve sonra gerçekte ne ölçüldüğü, yaklaşık 45 gün; uygulama bunlarla her yer için en doğru kaynağı seçer ve küçük yerel sapmaları düzeltir
+- Giyim tercihin ("Çabuk üşürüm" gibi) ve "Üşüdüm / Bunaldım" cevapların
+- Hangi uyarıların bildirim olarak zaten gösterildiğinin ve bir özet ya da hava kalitesi bildiriminin hangi gün gönderildiğinin kısa kaydı; böylece aynı bildirim iki kez gelmez
+- Son bildirim sonuçlarının kısa kaydı ve planlanan özet zamanları: en fazla son 5 deneme ve her özet için son planlanan zaman, 7 gün sonra silinir. Yalnız zaman, bildirim türü (sabah özeti, akşam özeti, deneme), sonuç (gönderildi, atlandı ve nedeni, hata türü) ve hangi yolla gönderildiği (alarm, arka plan denetimi, uygulama açılışı) tutulur.
+- Özet alarmlarının ne zaman çaldığının kısa kaydı: en fazla son 10 kayıt, 7 gün sonra silinir. Yalnız planlanan zaman, alarmın gerçekte çaldığı zaman ve hangi alarm olduğu (ara adım, son adım ya da yedek) tutulur; böylece bildirim durumu bir alarmın ne kadar geciktiğini gösterebilir.
+- Son ağ hatalarının kısa kaydı: en fazla son 5 hata, 7 gün sonra silinir. Yalnız servisin ana makine adı (örn. api.open-meteo.com), HTTP kodu (örn. 503), zaman ve varsa sunucunun Retry-After değeri tutulur; ayrıca son başarılı hava güncellemesinin zamanı.
+- Ayarların (birimler, tema, dil, saat biçimi, bildirimler, saatleri ve sessiz saatler, en son baktığın yer) ve her widget'ın ayarları
+Yukarıdaki kayıtlarda hiçbir zaman yer adı, koordinat, arama metni ya da hava verisi yoktur ve sorun giderme raporu hâlâ yoktur. Bu veriler hiçbir zaman geliştiriciye gönderilmez. Ayarlar › Bildirimler'de "Durumu kopyala"ya dokunursan yalnız bildirim durumu metni panoya kopyalanır; hiçbir yere gönderilmez.
+
+## Yedekleme
+Android yedeklemesini açtıysan kendi Android yedeğine yalnızca ayarların, widget ayarların, uygulama dilin ve kayıtlı yerlerin (Ev işaretiyle) girer. Tahminler, ölçümler, istasyon listeleri, doğruluk kayıtları, bildirim kayıtları ve öteki çalışma verileri yedeğe girmez; uygulamayı yeniden kurunca bunlar temiz başlar. Hepsi uygulamayı kaldırdığında ya da verilerini temizlediğinde silinir.
+
+## Cihazında hesaplananlar
+Giyim önerileri, günlük öneriler, dünle karşılaştırma, ay evresi ve tahmin doğruluğu, zaten indirilmiş veriden cihazında hesaplanır; bunlar için ayrıca hiçbir şey gönderilmez. Bir saat widget'ına dokunduğunda uygulama, açabilmek için telefonunda kurulu saat uygulamasını arar; bu arama cihazında kalır. Bildirim durumu (izin, kanallar, pil ve bekleme ayarları, Rahatsız Etmeyin, saat dilimi, planlanan zamanlar ve yukarıdaki kayıtlar) cihazında okunur. "Arka plan ayarlarını aç" telefonunun bir ayar sayfasını açar; hiçbir şey gönderilmez.
+
+## Bildirimler
+Bildirimler (meteorolojik uyarılar, kötü hava kalitesi ve isteğe bağlı sabah ve akşam özetleri) cihazında, indirilmiş veriden oluşturulur; bildirim sunucusu kullanılmaz. Sen açana kadar kapalıdır ve uygulama bildirim iznini yalnızca o zaman ister. Hangi uyarıların ve yerlerin sayılacağını, her türün sesli mi sessiz mi geleceğini ve sessiz saatleri sen seçersin; bu seçimler cihazında kalır.
+
+## Çocuklar
+Uygulama, çocuklar da dahil olmak üzere hiç kimseden bilerek kişisel bilgi toplamaz.
+
+## Değişiklikler
+Bu politika değişirse güncel hali yeni bir tarihle uygulamada ve https://alihaydarsayar.com/communesky/privacy/ adresinde yayınlanır.
+
+## İletişim
+Sorun için: alihaydarsayar.info@gmail.com

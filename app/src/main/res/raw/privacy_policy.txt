@@ -1,0 +1,63 @@
+# Privacy Policy
+Last updated: November 8, 2026
+
+Commune Sky is a weather app for Android developed by Ali Haydar Sayar. This policy explains what happens to your data when you use it.
+
+**In short:** the developer does not collect, store or sell any of your data. To show the weather, the app asks a few weather and map services for data about the places you choose; they are listed below.
+
+## What the app does not do
+- No accounts or sign-in
+- No advertising, analytics, crash reporting or tracking
+- No advertising ID or other device identifiers are sent anywhere
+- Your data is never sold. It is only sent to the services listed below, and only to show you the weather.
+
+## Location
+If you allow it, the app uses your device's location to show the weather where you are. You choose how precise it is: with approximate location the app shows your district; if you also allow precise location (optional), it can show your neighbourhood and pick the closest weather station. Precise location is used only on your device for these two things; the coordinates sent to the weather services below are always rounded to about 1 km.
+Location is only used while the app is open, without forcing GPS; background updates reuse the last known location. Your device's location service (Google Play services on most phones) determines the location on the device. If you don't allow location, the app shows the weather for your saved places, or for a default city if you have none.
+
+## Places you save
+You can search for places and save them. Saved places, and which one you marked as Home, are stored only on your device.
+
+## Services the app connects to
+All connections use encrypted HTTPS. Like any internet request, each service can see your device's IP address. The app identifies itself by its name and a link to its public source code.
+- **Open-Meteo (Switzerland), weather forecast:** the coordinates of your current location and of your saved places, rounded to about 1 km, are sent to get the forecast. This happens when you open the app, return to it after about 15 minutes, pull to refresh, and about once an hour in the background so widgets stay current. The same rounded coordinates are used to ask Open-Meteo for additional forecast models (for example ECMWF, and Météo-France or Met Office models for places in France, the United Kingdom and Ireland) so the app can use the most accurate one. Open-Meteo states that it may keep server logs, which can include coordinates, for troubleshooting and deletes them after 90 days (Open-Meteo privacy policy: https://open-meteo.com/en/terms#privacy).
+- **Open-Meteo (Switzerland), air quality:** the same rounded coordinates are sent to get air quality data (based on the Copernicus Atmosphere Monitoring Service), with the same timing as the forecast.
+- **Open-Meteo (Switzerland), place search:** the text you type in the search box and your app language are sent to find matching places.
+- **Photon by komoot (Germany), place search:** the text you type (after a short pause) and your app language are sent to find matching places. Photon uses OpenStreetMap data. No coordinates are sent. See https://photon.komoot.io.
+- **Turkish State Meteorological Service, MGM (Türkiye), measurements, forecasts, warnings and seasonal normals:** only for places in Türkiye. To find the district and the closest stations, the coordinates of the place (rounded to about 1 km) and its province name are sent; this is repeated every 24 hours, after an app update, and if your current location moves more than about 2 km. The list of all MGM stations is downloaded every 7 days; nothing about you is sent for it. After that, only district, province and station numbers are sent: the province number (its licence plate number) gets the latest measurements of all stations in that province in one request (and of a neighbouring province when a place is close to its border), the others the hourly and daily forecast and the seasonal normal. Weather warnings are downloaded as one list for the whole of Türkiye; which warnings concern your places is worked out on your device. This happens while you use the app and about once an hour in the background.
+- **NOAA Aviation Weather Center (United States), current conditions:** asked for every place, alongside MGM in Türkiye, so the app can use whichever nearby measurement is closer and more recent. A rectangular area of roughly 50 km around the place (based on rounded coordinates) is sent to get recent reports from nearby airports, with the same timing as above.
+- **Android Geocoder, provided by your device's operating system (Google on most phones):** your coordinates are passed to it to look up the name of your district or, if you allowed precise location, your neighbourhood. These coordinates are not rounded, because the name would otherwise be wrong. If the other search services find nothing, the text you searched for is passed to it as a last resort.
+The developer never receives your location, your searches or your saved places.
+
+## Data stored on your device
+- The latest forecast for each place (including its coordinates and, for your current location, how accurate the location was), so the app and widgets work instantly and offline
+- Your saved places and your Home mark
+- The name of your current neighbourhood and district
+- The latest station measurement for each place and the nearby MGM stations found for it; the nearby list is refreshed every 24 hours and after an app update, the list of all stations in Türkiye every 7 days
+- The latest air quality data and weather warnings for your places
+- Forecast accuracy records: what each forecast source predicted and what was later measured, kept for about 45 days, so the app can choose the most accurate source for each place and correct small local errors
+- Your clothing preference ("I get cold easily" and similar) and your "I was cold / I was too warm" answers
+- A short record of which warnings have already been shown as notifications, and on which day a summary or air quality notification was sent, so you are not notified twice
+- A short record of the latest notification results and the planned summary times: at most the last 5 attempts and the last planned time for each summary, deleted after 7 days. Only the time, the notification type (morning summary, evening summary, test), the result (sent, skipped and why, error type) and which path sent it (alarm, background check, app start) are stored.
+- A short record of when the summary alarms went off: at most the last 10, deleted after 7 days. Only the planned time, the time the alarm actually went off and which alarm it was (step, final or backup) are stored, so the notification status can show how late an alarm was.
+- A short record of the latest network errors: at most the last 5, deleted after 7 days. Only the service host name (for example api.open-meteo.com), the HTTP code (for example 503), the time and, if present, the server's Retry-After value are stored, plus the time of the last successful weather update.
+- Your settings (units, theme, language, clock format, notifications, their times and quiet hours, the place you last viewed) and each widget's settings
+The records above never contain a place name, coordinates, a search text or weather data, and there is still no troubleshooting report. This data is never sent to the developer. If you tap "Copy status" in Settings › Notifications, only the notification status text is copied to your clipboard; it is not sent anywhere.
+
+## Backup
+If you have Android backup turned on, only your settings, widget settings, app language and saved places (with your Home mark) are included in your own Android backup. Forecasts, measurements, station lists, accuracy records, notification records and other working data are not, so they start clean when you reinstall the app. Everything is removed when you uninstall the app or clear its data.
+
+## Calculated on your device
+Clothing suggestions, everyday tips, comparisons with yesterday, the moon phase and forecast accuracy are all calculated on your device from data that has already been downloaded; nothing extra is sent for them. When you tap a clock widget, the app looks for the clock app installed on your phone so it can open it; this lookup stays on your device. The notification status (permission, channels, battery and standby settings, Do Not Disturb, time zone, planned times and the records above) is read on your device. "Open background settings" opens a settings page of your phone; nothing is sent.
+
+## Notifications
+Notifications (weather warnings, poor air quality and the optional morning and evening summaries) are created on your device from downloaded data; no notification server is used. They are off until you turn them on, and the app asks for permission to show notifications only then. You choose which warnings and places count, whether each kind comes with sound or silently, and the quiet hours; these choices stay on your device.
+
+## Children
+The app does not knowingly collect any personal information from anyone, including children.
+
+## Changes
+If this policy changes, the updated version will be published in the app and at https://alihaydarsayar.com/communesky/privacy/ with a new date.
+
+## Contact
+Questions? Email alihaydarsayar.info@gmail.com.

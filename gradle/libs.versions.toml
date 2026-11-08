@@ -26,6 +26,7 @@ datastore = "1.2.1"
 appcompat = "1.7.1"
 navigation = "2.10.2"
 reorderable = "2.5.1"
+aboutLibraries = "15.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -81,3 +82,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark" }
+aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }

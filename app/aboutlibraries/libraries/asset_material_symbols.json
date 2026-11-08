@@ -1,0 +1,15 @@
+{
+  "uniqueId": "asset:material-symbols",
+  "name": "Material Symbols and Material Icons (icons)",
+  "artifactVersion": "res/drawable: ic_back, ic_chevron_right, ic_close, ic_delete, ic_drag, ic_home, ic_home_outline, ic_list, ic_location, ic_search, ic_settings",
+  "description": "Copyright Google LLC. Interface icons.",
+  "website": "https://github.com/google/material-design-icons",
+  "developers": [
+    {
+      "name": "Google"
+    }
+  ],
+  "licenses": [
+    "Apache-2.0"
+  ]
+}
