@@ -29,6 +29,7 @@ class CommuneSkyApp : Application(), Configuration.Provider {
 
     @Inject lateinit var placesRepository: PlacesRepository
     @Inject lateinit var settingsRepository: SettingsRepository
+    @Inject lateinit var placesBackup: com.alihaydarsayar.communesky.data.places.PlacesBackup
 
     @Inject
     @ApplicationScope
@@ -53,6 +54,13 @@ class CommuneSkyApp : Application(), Configuration.Provider {
             android.os.StrictMode.setThreadPolicy(
                 android.os.StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build(),
             )
+        }
+        // Yedek (Android'in otomatik yedeği): yalnız ayarlar ve kayıtlı yerler yedeğe girer. Yeni bir kurulumda yerler
+        // yedek dosyasından geri konur; sonra her değişiklikte dosya güncellenir. Sıra önemli: önce geri koyma, yoksa
+        // boş liste yedeği ezer.
+        appScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { placesBackup.restoreIfNeeded() }
+            placesRepository.places.collect { placesBackup.save(it) }
         }
         // 1.5.3: bildirimler varsayılan kapalı. Güncelleyen ve izni olan kullanıcının uyarı ayarı korunur (bir kez).
         appScope.launch(kotlinx.coroutines.Dispatchers.IO) {

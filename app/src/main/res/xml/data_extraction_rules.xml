@@ -1,19 +1,28 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12+ (API 31+) yedekleme kuralları. Yalnız kullanıcının ayarları ve kayıtlı yerleri yedeğe girer:
+    - datastore/settings.preferences_pb: birimler, tema, bildirimler ve özet saatleri, sessiz saatler…
+    - datastore/widgets.preferences_pb: widget ayarları
+    - backup/places.json: kayıtlı yerler ve Ev işareti (bkz. PlacesBackup)
+    - widget_language.xml ve AppCompat'in dil dosyası: uygulama dili ve saat biçimi
+    Çalışma durumu yedeğe girmez: "gönderildi" işaretleri (morning_summary.xml), bildirim deneme ve alarm kayıtları
+    (notification_log.xml), ağ hataları, uyarı ve hava kalitesi bildirim kayıtları, hava önbelleği, istasyon
+    listeleri ve doğruluk kayıtları (weather.db), HTTP önbelleği, widget çizim durumu. Böylece yeniden kurulum temiz
+    başlar. API 26–30 için aynı liste backup_rules.xml'dedir; ikisi birlikte değiştirilir (BackupRulesTest).
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <include domain="file" path="datastore/settings.preferences_pb" />
+        <include domain="file" path="datastore/widgets.preferences_pb" />
+        <include domain="file" path="backup/places.json" />
+        <include domain="file" path="androidx.appcompat.app.AppCompatDelegate.application_locales_record_file" />
+        <include domain="sharedpref" path="widget_language.xml" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <include domain="file" path="datastore/settings.preferences_pb" />
+        <include domain="file" path="datastore/widgets.preferences_pb" />
+        <include domain="file" path="backup/places.json" />
+        <include domain="file" path="androidx.appcompat.app.AppCompatDelegate.application_locales_record_file" />
+        <include domain="sharedpref" path="widget_language.xml" />
     </device-transfer>
-    -->
 </data-extraction-rules>

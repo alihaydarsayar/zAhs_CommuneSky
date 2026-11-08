@@ -219,7 +219,11 @@ object MorningSummary {
      */
     suspend fun restore(context: Context) {
         val app = context.applicationContext
-        load(app)?.let { schedule(app, it.settings.notifications) }
+        // Alarmlar yalnız ayarlara bağlıdır: hava önbelleği yokken de (yeni kurulum, yedekten geri yükleme) kurulur.
+        val settings = withTimeoutOrNull(SummarySchedule.LOAD_TIMEOUT_MS) {
+            runCatching { EntryPointAccessors.fromApplication(app, WidgetEntryPoint::class.java).settingsRepository().settings.first() }.getOrNull()
+        } ?: load(app)?.settings
+        settings?.let { schedule(app, it.notifications) }
         catchUp(app)
     }
 
