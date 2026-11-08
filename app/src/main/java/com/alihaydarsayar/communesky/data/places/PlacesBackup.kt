@@ -31,7 +31,7 @@ private data class PlacesFile(val version: Int = 1, val places: List<BackedUpPla
 
 /**
  * Android'in otomatik yedeği için kayıtlı yerlerin küçük bir kopyası. Veritabanı (hava önbelleği, istasyonlar,
- * doğruluk kayıtları) yedeğe girmez (bkz. res/xml/data_extraction_rules.xml); yerler bu dosyayla geri gelir. Saf
+ * doğruluk kayıtları) yedeğe girmez (bkz. res/xml/data_extraction_rules.xml); yerler bu dosyadan geri konur. Saf
  * kısım test edilir.
  */
 object PlacesBackupFormat {
