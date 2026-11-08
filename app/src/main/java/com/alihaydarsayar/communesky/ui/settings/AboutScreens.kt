@@ -129,10 +129,10 @@ private fun AboutPage(title: String, onBack: () -> Unit, content: androidx.compo
 /** Açık kaynak lisansları: derleme sırasında üretilen listeden (res/raw/aboutlibraries.json); ağ yok. */
 @Composable
 fun LicensesScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-    val items by produceState<List<OpenSourceItem>>(emptyList()) {
+    val resources = androidx.compose.ui.platform.LocalResources.current
+    val items by produceState<List<OpenSourceItem>>(emptyList(), resources) {
         value = withContext(Dispatchers.IO) {
-            runCatching { context.resources.openRawResource(R.raw.aboutlibraries).bufferedReader().use { it.readText() } }
+            runCatching { resources.openRawResource(R.raw.aboutlibraries).bufferedReader().use { it.readText() } }
                 .map(OpenSourceLicenses::parse).getOrDefault(emptyList())
         }
     }
@@ -227,9 +227,10 @@ private fun sourceTerms(key: String): Int = when (key) {
 @Composable
 fun PrivacyScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    val blocks by produceState<List<PolicyBlock>>(emptyList()) {
+    val resources = androidx.compose.ui.platform.LocalResources.current
+    val blocks by produceState<List<PolicyBlock>>(emptyList(), resources) {
         value = withContext(Dispatchers.IO) {
-            runCatching { context.resources.openRawResource(R.raw.privacy_policy).bufferedReader().use { it.readText() } }
+            runCatching { resources.openRawResource(R.raw.privacy_policy).bufferedReader().use { it.readText() } }
                 .map(PolicyText::parse).getOrDefault(emptyList())
         }
     }
