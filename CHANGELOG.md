@@ -2,6 +2,36 @@
 
 What's new in each version of Commune Sky, newest first. Dates are the day a version was uploaded to Google Play; "in testing" means it only reached testers.
 
+## 1.5.13 — in testing
+
+### Fixed
+
+- A summary that did not come is no longer shown on the home screen. Settings › Notifications › Notification status says which one was not sent, when, and the reason the app recorded (for example "weather data could not be fetched" or "notification permission was off"), or that the reason is unknown.
+- New safety net for summaries: a background check every 15 minutes sends a summary that has not arrived between its time and three hours later, also without Wi-Fi or mobile data (with the last weather the phone has, within 20 seconds). A summary is still sent only once a day.
+- The hourly update now also checks the summaries when the weather could not be refreshed; before, a failed refresh skipped that check.
+- Reinstalling the app starts clean: Android's backup now keeps only your settings, widget settings, language and saved places, not the "already sent" marks, records or caches. Summary alarms are set again from the restored settings on first launch.
+
+### Improved
+
+- Notification status shows when each summary alarm went off and how late it was (kept apart from whether the notification was shown), which path sent the summary (alarm, backup alarm, background check, app start), the last background check, Do Not Disturb, "Manage app if unused", the app standby group with its name and number, and a plain explanation of battery optimization. "Copy status" includes them.
+- "Open background settings" goes to the phone maker's page when it can be found and otherwise to the app's Android page; a short hint is shown only for recognised makers.
+- Settings › About: version, the GPL-3.0 license and source code link, open-source licenses (libraries, fonts and icons, built into the app), data sources with their licenses and credits, and the full privacy policy, readable offline, with a link to the web page.
+
+### Privacy
+
+- The phone keeps the last 10 times a summary alarm went off (planned time, actual time, which alarm), deleted after 7 days, and the attempt record now notes which path sent a summary. Never a place, location or weather; never sent anywhere. No new permission and no new service.
+
+### Türkçe
+
+- Gelmeyen bir özet artık ana ekranda gösterilmiyor; Ayarlar › Bildirimler › Bildirim durumu hangisinin, ne zaman gönderilemediğini ve kayıttaki nedeni (örneğin "hava verisi alınamadı", "bildirim izni kapalıydı") ya da nedenin bilinmediğini yazar.
+- Özetler için yeni güvenlik ağı: 15 dakikada bir çalışan arka plan denetimi, saatinden sonraki üç saat içinde gelmeyen özeti gönderir; Wi-Fi ya da mobil veri olmadan da (telefondaki son hava verisiyle, 20 saniye içinde). Özet yine günde bir kez gider.
+- Saatlik güncelleme, hava yenilenemediğinde de özetleri denetler; önceden başarısız yenileme bu denetimi atlıyordu.
+- Yeniden kurulum temiz başlar: Android yedeği yalnız ayarları, widget ayarlarını, dili ve kayıtlı yerleri tutar; "gönderildi" işaretleri, kayıtlar ve önbellekler yedeğe girmez. Özet alarmları ilk açılışta geri gelen ayarlarla kurulur.
+- Bildirim durumu: her özet alarmının ne zaman çaldığı ve ne kadar geciktiği (bildirimin gösterilmesinden ayrı), özeti hangi yolun gönderdiği, son arka plan denetimi, Rahatsız Etmeyin, "Kullanılmayan uygulamaları yönet", bekleme grubu (adı ve numarası) ve pil optimizasyonunun anlaşılır açıklaması. "Durumu kopyala" bunları da içerir.
+- "Arka plan ayarlarını aç" bulunabiliyorsa üreticinin sayfasını, bulunamazsa uygulamanın Android sayfasını açar; kısa ipucu yalnız tanınan üreticilerde görünür.
+- Ayarlar › Hakkında: sürüm, GPL-3.0 lisansı ve kaynak kodu bağlantısı, açık kaynak lisansları (kütüphaneler, yazı tipleri ve simgeler, uygulamanın içinde), lisansları ve atıflarıyla veri kaynakları ve internetsiz okunabilen tam gizlilik politikası (web sayfası bağlantısıyla).
+- Gizlilik: telefon, bir özet alarmının son 10 çalışını (planlanan zaman, gerçek zaman, hangi alarm) 7 gün tutar; deneme kaydı özeti hangi yolun gönderdiğini de yazar. Yer, konum ya da hava yok; hiçbir yere gönderilmez. Yeni izin ve yeni hizmet yok.
+
 ## 1.5.12 — in testing
 
 ### Fixed
