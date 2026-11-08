@@ -268,7 +268,7 @@ private fun RichText(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(text.uppercase(), color = TextSecondary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
+    Text(text.uppercase(com.alihaydarsayar.communesky.ui.common.currentLocale()), color = TextSecondary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
 }
 
 @Composable
