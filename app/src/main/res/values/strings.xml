@@ -1003,10 +1003,6 @@
     <string name="notif_test_button">Send test notification</string>
     <string name="notif_test_notification_title">Test: notifications work</string>
     <string name="notif_test_notification_text">This is how your summaries will arrive.</string>
-    <string name="notif_tip_xiaomi">Xiaomi, Redmi, POCO: turn on Autostart, set Battery saver to “No restrictions” and lock the app in the recent apps.</string>
-    <string name="notif_tip_samsung">Samsung: Settings › Battery › Background usage limits: add Commune Sky to “Never sleeping apps” and turn off “Put unused apps to sleep”.</string>
-    <string name="notif_tip_huawei">Honor, Huawei: Settings › Battery › App launch: choose “Manage manually” for Commune Sky and allow auto-launch, secondary launch and running in the background.</string>
-    <string name="notif_tip_oppo">OPPO, Realme, Vivo: Settings › Battery › App battery management: allow background activity and auto-start for Commune Sky, and lock the app in the recent apps.</string>
 
     <!-- Result of a notification attempt (test button and status) -->
     <string name="attempt_sent">Sent</string>
@@ -1028,7 +1024,7 @@
     <string name="attempt_fallback">A basic summary was sent (the full one could not be prepared)</string>
     <string name="attempt_stale_notice">Current weather could not be fetched; a notice was sent instead</string>
     <string name="attempt_error">Error: %1$s</string>
-    <string name="attempt_missed">Missed: the alarm did not fire</string>
+    <string name="attempt_missed">Not sent: no attempt was recorded, reason unknown</string>
 
     <!-- Summary notices when the weather is too old or the summary cannot be prepared -->
     <string name="summary_stale_title">Current weather unavailable</string>
@@ -1058,14 +1054,31 @@
     <string name="status_alarm_not_set">alarm not set</string>
     <string name="status_alarm_not_set_at">%1$s · alarm NOT set (opens with the app)</string>
     <string name="status_last_sent">Last summary sent</string>
+
+    <!-- Bildirim durumu: gönderilemeyen son özet ve arka plan ayarları (yalnız olanı söyler, tahmin yok) -->
+    <string name="status_last_missed">Last summary not sent</string>
+    <string name="status_missed_value">%1$s could not be sent at %2$s · reason: %3$s</string>
+    <string name="missed_reason_unknown">unknown (no attempt was recorded)</string>
+    <string name="missed_reason_no_permission">notification permission was off</string>
+    <string name="missed_reason_app_off">notifications were turned off for this app</string>
+    <string name="missed_reason_channel_off">the summary’s notification channel was off</string>
+    <string name="missed_reason_no_data">weather data could not be fetched</string>
+    <string name="missed_reason_stale_notice">weather data could not be fetched; a short “current weather unavailable” notice was shown instead</string>
+    <string name="missed_reason_failed">Android did not accept the notification</string>
+    <string name="missed_reason_error">app error (%1$s)</string>
+    <string name="missed_reason_load_timeout">the app’s settings could not be read in time</string>
+    <string name="notif_background_title">The phone’s background settings for this app</string>
+    <string name="notif_background_open">Open background settings</string>
+    <string name="notif_background_hint_xiaomi">On Xiaomi, Redmi and POCO phones these are usually under Autostart and Battery saver.</string>
+    <string name="notif_background_hint_samsung">On Samsung phones these are usually under Battery › Background usage limits.</string>
+    <string name="notif_background_hint_huawei">On Honor and Huawei phones these are usually under Battery › App launch.</string>
+    <string name="notif_background_hint_oppo">On OPPO, realme, OnePlus and vivo phones these are usually under Battery › App battery management or Auto-start.</string>
     <string name="status_last_test">Last test</string>
     <string name="status_none">—</string>
     <string name="status_app_info">App</string>
     <string name="status_copy">Copy status</string>
     <string name="status_copied">Copied</string>
     <string name="status_copy_hint">Copies only this text: no location, place names or weather data. Nothing is sent anywhere.</string>
-    <string name="missed_title">Your %1$s did not arrive</string>
-    <string name="missed_text">The phone’s background settings may be blocking the app.</string>
     <string name="notifications_time_approx">About this time (a few minutes of drift is normal)</string>
     <string name="notifications_summary_silent_hint">A summary set to silent still appears in the notification shade, only without sound or vibration.</string>
     <string name="notifications_alert_scope">Only for places in Türkiye (MGM alerts)</string>

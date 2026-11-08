@@ -172,7 +172,7 @@ object MorningSummary {
 
     /**
      * Planlanan zaman geçti, yedek pencere de bitti ve o türden hiçbir deneme kaydı yok: alarm tetiklenmedi (süreç
-     * öldürüldü, alarm silindi). Kayda "kaçırıldı" yazılır; uygulama açılınca kullanıcıya gösterilir.
+     * öldürüldü, alarm silindi). Kayda "kaçırıldı" yazılır; yalnız Ayarlar › Bildirimler › Bildirim durumu'nda görünür.
      */
     private fun checkMissed(context: Context, kind: SummaryKind, now: ZonedDateTime) {
         val log = NotificationLog(context)

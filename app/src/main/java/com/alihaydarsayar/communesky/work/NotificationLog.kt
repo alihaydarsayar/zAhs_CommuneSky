@@ -111,9 +111,22 @@ object AttemptLog {
         Attempt(at, kind, outcome, detail)
     }
 
-    /** Kullanıcının henüz kapatmadığı en son "kaçırıldı" kaydı ([dismissedAt]: kartın en son kapatıldığı an). */
-    fun pendingMissed(entries: List<Attempt>, dismissedAt: Instant?): Attempt? =
-        entries.filter { it.outcome == AttemptOutcome.Missed && (dismissedAt == null || it.at.isAfter(dismissedAt)) }.maxByOrNull { it.at }
+    /**
+     * Gönderilemeyen en son özet denemesi (Ayarlar › Bildirimler › Bildirim durumu'ndaki "Son kaçırılan" satırı):
+     * gönderilmemiş bir sonuç (atlandı, engellendi, hata, kaçırıldı ya da yalnız "güncel hava alınamadı" bildirimi) ve
+     * aynı türün aynı gün ondan sonra gönderilmiş bir özeti yok. Test denemeleri sayılmaz. Saf; test edilir.
+     */
+    fun lastMissed(entries: List<Attempt>, zone: ZoneId): Attempt? =
+        entries.filter { it.kind != AttemptKind.Test && !it.outcome.delivered }
+            .filter { failed ->
+                val day = failed.at.atZone(zone).toLocalDate()
+                entries.none { it.kind == failed.kind && it.outcome.delivered && !it.at.isBefore(failed.at) && it.at.atZone(zone).toLocalDate() == day }
+            }
+            .maxByOrNull { it.at }
+
+    /** "Kaçırıldı" kaydında [Attempt.detail] planlanan zamandır (epoch ms); ötekilerde denemenin zamanı. */
+    fun missedTime(attempt: Attempt): Instant =
+        attempt.detail?.takeIf { attempt.outcome == AttemptOutcome.Missed }?.toLongOrNull()?.let(Instant::ofEpochMilli) ?: attempt.at
 
     /** En son başarıyla gönderilen özet (test hariç). */
     fun lastSent(entries: List<Attempt>): Attempt? = entries.filter { it.kind != AttemptKind.Test && it.outcome.delivered }.maxByOrNull { it.at }
@@ -148,15 +161,6 @@ class NotificationLog(context: Context) {
     fun record(kind: AttemptKind, outcome: AttemptOutcome, now: Instant = Instant.now(), detail: String? = null) {
         val updated = AttemptLog.add(AttemptLog.decode(prefs.getString(KEY, null)), Attempt(now, kind, outcome, detail), now)
         prefs.edit().putString(KEY, AttemptLog.encode(updated)).apply()
-    }
-
-    /** Henüz kapatılmamış "kaçırıldı" kaydı (uygulama açılınca kart olarak gösterilir). */
-    fun pendingMissed(now: Instant = Instant.now()): Attempt? =
-        AttemptLog.pendingMissed(entries(now), prefs.getLong("missed_dismissed", 0L).takeIf { it > 0 }?.let(Instant::ofEpochMilli))
-
-    /** Kullanıcı "kaçırıldı" kartını kapattı: o ana kadarki kayıtlar bir daha gösterilmez. */
-    fun dismissMissed(now: Instant = Instant.now()) {
-        prefs.edit().putLong("missed_dismissed", now.toEpochMilli()).apply()
     }
 
     /** Bir özet türü için en son planlanan zaman (alarmın kurulduğu hedef); yoksa ya da 7 günden eskiyse null. */

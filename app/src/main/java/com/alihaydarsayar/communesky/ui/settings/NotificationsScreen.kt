@@ -176,7 +176,6 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                                 NotificationHealth.startBackgroundSettings(context, maker)
                             }
                         }
-                        maker.tip?.let { Hint(stringResource(it)) }
                     }
                 }
             }
@@ -301,6 +300,11 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                 item {
                     GlassCard(Modifier.fillMaxWidth(), title = stringResource(R.string.status_title)) {
                         current.rows(context).forEach { (label, value) -> StatusRow(label, value) }
+                        // Üreticinin arka plan sayfası (bilinmiyorsa uygulama bilgisi). İpucu yalnız tanınan üreticide.
+                        HealthRow(stringResource(R.string.notif_background_title), stringResource(R.string.notif_background_open)) {
+                            NotificationHealth.startBackgroundSettings(context, maker)
+                        }
+                        maker.hint?.let { Hint(stringResource(it)) }
                         Hint(stringResource(R.string.notifications_lock_hint))
                         Hint(stringResource(R.string.status_copy_hint))
                         Spacer(Modifier.height(10.dp))
@@ -337,8 +341,6 @@ fun NotificationsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltV
                         }
                     }
                     testOutcome?.let { Hint(AttemptText.of(context, AttemptKind.Test, it)) }
-                    // Hiçbir sorun algılanmasa da bazı üreticiler uygulamayı arka planda kapatır; yönlendirme yalnız onlarda.
-                    if (!issues.any && notifications.anyOn) maker.tip?.let { Hint(stringResource(it)) }
                 }
             }
             item {

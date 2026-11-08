@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.ActivityManager
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -22,13 +23,44 @@ import com.alihaydarsayar.communesky.widget.WidgetLanguage
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 
-/** Telefon üreticisi: bazıları uygulamayı arka planda agresifçe kapatır; ona göre kısa bir yönlendirme gösterilir. */
-enum class Maker(@param:StringRes val tip: Int?) {
-    Xiaomi(R.string.notif_tip_xiaomi),
-    Samsung(R.string.notif_tip_samsung),
-    Huawei(R.string.notif_tip_huawei),
-    Oppo(R.string.notif_tip_oppo),
-    Other(null),
+/**
+ * Telefon üreticisi: arka plan ayarları üreticiye göre farklı sayfalardadır. [hint] o sayfanın genellikle nerede
+ * olduğunu söyler (suçlama ya da tahmin değil); tanınmayan üreticide hiçbir ipucu gösterilmez. [pages] o üreticinin
+ * bilinen arka plan sayfaları, denenme sırasıyla.
+ */
+enum class Maker(@param:StringRes val hint: Int?, val pages: List<ComponentName>) {
+    Xiaomi(
+        R.string.notif_background_hint_xiaomi,
+        listOf(
+            ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"),
+            ComponentName("com.miui.powerkeeper", "com.miui.powerkeeper.ui.HiddenAppsConfigActivity"),
+        ),
+    ),
+    Samsung(
+        R.string.notif_background_hint_samsung,
+        listOf(
+            ComponentName("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity"),
+            ComponentName("com.samsung.android.sm", "com.samsung.android.sm.ui.battery.BatteryActivity"),
+        ),
+    ),
+    Huawei(
+        R.string.notif_background_hint_huawei,
+        listOf(
+            ComponentName("com.hihonor.systemmanager", "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
+            ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
+            ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"),
+        ),
+    ),
+    Oppo(
+        R.string.notif_background_hint_oppo,
+        listOf(
+            ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"),
+            ComponentName("com.oplus.safecenter", "com.oplus.safecenter.permission.startup.StartupAppListActivity"),
+            ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"),
+            ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager"),
+        ),
+    ),
+    Other(null, emptyList()),
     ;
 
     companion object {
@@ -109,17 +141,28 @@ object NotificationHealth {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     /**
-     * Arka plan ayarlarının olduğu yer. Xiaomi'de otomatik başlatma sayfası denenir (cihaza göre yoksa [startBackgroundSettings]
-     * uygulama bilgi sayfasına düşer). Dışarıya bağlantı yoktur.
+     * "Arka plan ayarlarını aç": üreticinin bilinen sayfalarından ilki açılır, hiçbiri açılamazsa uygulamanın Android
+     * bilgi sayfası. Önce [resolves] ile bakılır; Android 11+ başka paketleri görünür kılmadan (manifest'te queries)
+     * çözümleme boş dönebilir, o yüzden çözülemeyen sayfalar da yakalanan bir denemeyle açılmaya çalışılır. Sayfa yoksa
+     * ya da dışa açık değilse (ActivityNotFound, SecurityException) çökme olmaz. Dışarıya bağlantı yoktur.
      */
-    fun autostartIntent(): Intent = Intent().setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-    /** Üreticiye özel sayfa açılamazsa uygulamanın Android bilgi sayfasını açar. */
-    fun startBackgroundSettings(context: Context, maker: Maker) {
-        if (maker == Maker.Xiaomi && runCatching { context.startActivity(autostartIntent()) }.isSuccess) return
-        context.startActivity(appDetailsIntent(context))
+    fun startBackgroundSettings(context: Context, maker: Maker = Maker.of(Build.MANUFACTURER.orEmpty(), Build.BRAND.orEmpty())) {
+        val intents = maker.pages.map { Intent().setComponent(it).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+        val target = backgroundTarget(intents, resolves = { intent -> resolves(context, intent) }, start = { intent -> runCatching { context.startActivity(intent) }.isSuccess })
+        if (target == null) runCatching { context.startActivity(appDetailsIntent(context)) }
     }
+
+    /**
+     * Açılacak sayfa: önce çözümlenebilen ilk sayfa, sonra sırayla denenen ötekiler. Açılanı döndürür; hiçbiri
+     * açılamadıysa null (çağıran uygulama bilgi sayfasına döner). Saf; test edilir.
+     */
+    fun <T> backgroundTarget(pages: List<T>, resolves: (T) -> Boolean, start: (T) -> Boolean): T? {
+        val (known, unknown) = pages.partition(resolves)
+        return (known + unknown).firstOrNull(start)
+    }
+
+    private fun resolves(context: Context, intent: Intent): Boolean =
+        runCatching { context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null }.getOrDefault(false)
 
     /** Uygulamanın Android bilgi sayfası: pil ve arka plan ayarlarına buradan gidilir. */
     fun appDetailsIntent(context: Context): Intent =

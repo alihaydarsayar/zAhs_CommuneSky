@@ -1003,10 +1003,6 @@
     <string name="notif_test_button">Envoyer une notification de test</string>
     <string name="notif_test_notification_title">Test : les notifications fonctionnent</string>
     <string name="notif_test_notification_text">Voici comment arriveront vos résumés.</string>
-    <string name="notif_tip_xiaomi">Xiaomi, Redmi, POCO : activez le démarrage automatique, réglez l’économiseur de batterie sur « Aucune restriction » et verrouillez l’application dans les applications récentes.</string>
-    <string name="notif_tip_samsung">Samsung : Réglages › Batterie › Limites d’utilisation en arrière-plan : ajoutez Commune Sky aux « Applications jamais en veille » et désactivez « Mettre en veille les applications inutilisées ».</string>
-    <string name="notif_tip_huawei">Honor, Huawei : Réglages › Batterie › Lancement des applications : choisissez « Gérer manuellement » pour Commune Sky et autorisez le lancement automatique, secondaire et l’exécution en arrière-plan.</string>
-    <string name="notif_tip_oppo">OPPO, Realme, Vivo : Réglages › Batterie › Gestion de la batterie des applications : autorisez l’activité en arrière-plan et le démarrage automatique pour Commune Sky, et verrouillez l’application dans les applications récentes.</string>
 
     <!-- Résultat d’un essai de notification (bouton de test et état) -->
     <string name="attempt_sent">Envoyée</string>
@@ -1028,7 +1024,7 @@
     <string name="attempt_fallback">Un résumé simplifié a été envoyé (le résumé complet n’a pas pu être préparé)</string>
     <string name="attempt_stale_notice">La météo actuelle n’a pas pu être récupérée ; un avis a été envoyé à la place</string>
     <string name="attempt_error">Erreur : %1$s</string>
-    <string name="attempt_missed">Manqué : l’alarme ne s’est pas déclenchée</string>
+    <string name="attempt_missed">Non envoyé : aucun essai enregistré, raison inconnue</string>
 
     <!-- Avis quand la météo est trop ancienne ou que le résumé ne peut pas être préparé -->
     <string name="summary_stale_title">Météo actuelle indisponible</string>
@@ -1058,14 +1054,31 @@
     <string name="status_alarm_not_set">alarme non programmée</string>
     <string name="status_alarm_not_set_at">%1$s · alarme NON programmée (reprogrammée à l’ouverture)</string>
     <string name="status_last_sent">Dernier résumé envoyé</string>
+
+    <!-- Bildirim durumu: gönderilemeyen son özet ve arka plan ayarları (yalnız olanı söyler, tahmin yok) -->
+    <string name="status_last_missed">Dernier résumé non envoyé</string>
+    <string name="status_missed_value">%1$s n’a pas pu être envoyé à %2$s · raison : %3$s</string>
+    <string name="missed_reason_unknown">inconnue (aucun essai enregistré)</string>
+    <string name="missed_reason_no_permission">l’autorisation de notification était désactivée</string>
+    <string name="missed_reason_app_off">les notifications de l’application étaient désactivées</string>
+    <string name="missed_reason_channel_off">le canal de notification du résumé était désactivé</string>
+    <string name="missed_reason_no_data">les données météo n’ont pas pu être obtenues</string>
+    <string name="missed_reason_stale_notice">les données météo n’ont pas pu être obtenues ; une courte notification « météo actuelle indisponible » a été affichée à la place</string>
+    <string name="missed_reason_failed">Android n’a pas accepté la notification</string>
+    <string name="missed_reason_error">erreur de l’application (%1$s)</string>
+    <string name="missed_reason_load_timeout">les réglages de l’application n’ont pas pu être lus à temps</string>
+    <string name="notif_background_title">Réglages d’arrière-plan du téléphone pour cette application</string>
+    <string name="notif_background_open">Ouvrir les réglages d’arrière-plan</string>
+    <string name="notif_background_hint_xiaomi">Sur les téléphones Xiaomi, Redmi et POCO, ils se trouvent généralement sous Démarrage automatique et Économiseur de batterie.</string>
+    <string name="notif_background_hint_samsung">Sur les téléphones Samsung, ils se trouvent généralement sous Batterie › Limites d’utilisation en arrière-plan.</string>
+    <string name="notif_background_hint_huawei">Sur les téléphones Honor et Huawei, ils se trouvent généralement sous Batterie › Lancement des applications.</string>
+    <string name="notif_background_hint_oppo">Sur les téléphones OPPO, realme, OnePlus et vivo, ils se trouvent généralement sous Batterie › Gestion de la batterie des applications ou Démarrage automatique.</string>
     <string name="status_last_test">Dernier test</string>
     <string name="status_none">—</string>
     <string name="status_app_info">Application</string>
     <string name="status_copy">Copier l’état</string>
     <string name="status_copied">Copié</string>
     <string name="status_copy_hint">Ne copie que ce texte : ni position, ni nom de lieu, ni données météo. Rien n’est envoyé.</string>
-    <string name="missed_title">%1$s n’est pas arrivé</string>
-    <string name="missed_text">Les réglages d’arrière-plan du téléphone bloquent peut-être l’application.</string>
     <string name="notifications_time_approx">À peu près à cette heure (quelques minutes d’écart possibles)</string>
     <string name="notifications_summary_silent_hint">Un résumé réglé en silencieux apparaît quand même dans le volet des notifications, sans son ni vibration.</string>
     <string name="notifications_alert_scope">Uniquement pour les lieux en Türkiye (alertes MGM)</string>

@@ -56,6 +56,7 @@ data class NotificationStatus(
 ) {
     val lastSent: Attempt? get() = AttemptLog.lastSent(attempts)
     val lastTest: Attempt? get() = AttemptLog.last(attempts, AttemptKind.Test)
+    val lastMissed: Attempt? get() = AttemptLog.lastMissed(attempts, zone)
 
     companion object {
 
@@ -209,6 +210,12 @@ data class NotificationStatus(
             }
         }
         rows += localized.getString(R.string.status_last_sent) to (lastSent?.let { time(it.at) } ?: localized.getString(R.string.status_none))
+        // Gönderilemeyen son özet: yalnız olanı ve kayıtta görülen nedeni söyler; neden bilinmiyorsa öyle yazar.
+        rows += localized.getString(R.string.status_last_missed) to (lastMissed?.let { missed ->
+            val name = localized.getString(if (missed.kind == AttemptKind.Morning) R.string.channel_morning else R.string.channel_evening)
+            val at = time(AttemptLog.missedTime(missed)).let { if (locale.language == "tr") com.alihaydarsayar.communesky.model.TurkishSuffix.locativeTime(it) else it }
+            localized.getString(R.string.status_missed_value, name, at, com.alihaydarsayar.communesky.ui.settings.AttemptText.missedReason(localized, missed))
+        } ?: localized.getString(R.string.status_none))
         rows += localized.getString(R.string.status_last_test) to (lastTest?.let { "${time(it.at)} · ${text(localized, it)}" } ?: localized.getString(R.string.status_none))
         attempts.filter { it.kind != AttemptKind.Test }.sortedByDescending { it.at }.forEach { attempt ->
             val kind = localized.getString(if (attempt.kind == AttemptKind.Morning) R.string.channel_morning else R.string.channel_evening)

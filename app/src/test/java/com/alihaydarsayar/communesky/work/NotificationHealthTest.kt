@@ -24,8 +24,34 @@ class NotificationHealthTest {
         assertEquals(Maker.Huawei, Maker.of("HONOR", "honor"))
         assertEquals(Maker.Oppo, Maker.of("realme", "realme"))
         assertEquals(Maker.Other, Maker.of("Google", "google"))
-        assertNotNull(Maker.Xiaomi.tip)
-        assertNull(Maker.Other.tip)
+        assertNotNull(Maker.Xiaomi.hint)
+        // Tanınmayan üreticide ipucu yok, üreticiye özel sayfa da yok (uygulama bilgisi açılır).
+        assertNull(Maker.Other.hint)
+        assertTrue(Maker.Other.pages.isEmpty())
+        Maker.entries.filter { it != Maker.Other }.forEach { assertTrue(it.name, it.pages.isNotEmpty()) }
+    }
+
+    @Test
+    fun `the background page opened is the first one that resolves, then the others, else none`() {
+        val pages = listOf("a", "b", "c")
+        // Çözümlenen sayfa önce denenir.
+        assertEquals("b", NotificationHealth.backgroundTarget(pages, resolves = { it == "b" }, start = { true }))
+        // Çözümlenen açılamazsa (SecurityException) sıradaki denenir.
+        assertEquals("a", NotificationHealth.backgroundTarget(pages, resolves = { it == "b" }, start = { it != "b" }))
+        // Hiçbiri açılamazsa null: çağıran uygulama bilgi sayfasını açar.
+        assertNull(NotificationHealth.backgroundTarget(pages, resolves = { false }, start = { false }))
+        assertNull(NotificationHealth.backgroundTarget(emptyList<String>(), resolves = { true }, start = { true }))
+    }
+
+    @Test
+    fun `no notification text blames the phone or guesses a reason`() {
+        // Kanıtsız iddia ("engelliyor olabilir", "may be blocking") metinlerde yok.
+        for (path in listOf("values", "values-tr", "values-fr")) {
+            val text = java.io.File("src/main/res/$path/strings.xml").readText()
+            for (phrase in listOf("may be blocking", "engelliyor olabilir", "bloquent peut-être", "likely to blame")) {
+                assertTrue("$path: $phrase", phrase !in text)
+            }
+        }
     }
 
     @Test

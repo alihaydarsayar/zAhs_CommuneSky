@@ -27,4 +27,23 @@ object AttemptText {
         val prefix = if (kind == AttemptKind.Test || outcome == AttemptOutcome.Failed) R.string.attempt_not_shown else R.string.attempt_skipped
         return context.getString(prefix, context.getString(reason))
     }
+
+    /**
+     * Gönderilemeyen bir özetin nedeni, yalnız kayıtta görülen olgu: izin, kanal, veri, Android'in reddi ya da hata.
+     * Kayıtta deneme yoksa "bilinmiyor" der; telefon ya da kullanıcı hakkında tahmin yürütmez.
+     */
+    fun missedReason(context: Context, attempt: com.alihaydarsayar.communesky.work.Attempt): String = when (attempt.outcome) {
+        AttemptOutcome.NoPermission -> context.getString(R.string.missed_reason_no_permission)
+        AttemptOutcome.AppOff -> context.getString(R.string.missed_reason_app_off)
+        AttemptOutcome.ChannelOff -> context.getString(R.string.missed_reason_channel_off)
+        AttemptOutcome.NoData, AttemptOutcome.DataTooOld -> context.getString(R.string.missed_reason_no_data)
+        AttemptOutcome.StaleNotice -> context.getString(R.string.missed_reason_stale_notice)
+        AttemptOutcome.Failed -> context.getString(R.string.missed_reason_failed)
+        AttemptOutcome.Error -> if (attempt.detail == "LoadTimeout") {
+            context.getString(R.string.missed_reason_load_timeout)
+        } else {
+            context.getString(R.string.missed_reason_error, attempt.detail ?: "?")
+        }
+        else -> context.getString(R.string.missed_reason_unknown)
+    }
 }

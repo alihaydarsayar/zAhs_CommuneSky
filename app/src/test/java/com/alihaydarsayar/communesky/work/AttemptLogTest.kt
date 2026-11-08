@@ -127,17 +127,35 @@ class AttemptLogTest {
         assertTrue(MissedCheck.missed(late, AttemptKind.Evening, emptyList(), null, Instant.parse("2026-10-29T20:00:00Z"), baku))
     }
 
-    // --- "Kaçırıldı" kartı: kapatılana kadar görünür (1.5.11)
+    // --- Bildirim durumu: "Son kaçırılan" (1.5.13; ana ekranda kart yok)
+
+    private val istanbul = java.time.ZoneId.of("Europe/Istanbul")
 
     @Test
-    fun `a missed summary is pending until the card is dismissed`() {
-        val missed = Attempt(ago(10), AttemptKind.Morning, AttemptOutcome.Missed, "1788000000000")
-        val entries = listOf(missed, attempt(1, AttemptKind.Evening, AttemptOutcome.Sent))
-        assertEquals(missed, AttemptLog.pendingMissed(entries, null))
-        // Kapatma anından önceki kayıt bir daha gösterilmez; sonrakiler gösterilir.
-        assertNull(AttemptLog.pendingMissed(entries, ago(5)))
-        val later = Attempt(ago(2), AttemptKind.Evening, AttemptOutcome.Missed, "1788000000001")
-        assertEquals(later, AttemptLog.pendingMissed(entries + later, ago(5)))
-        assertNull(AttemptLog.pendingMissed(listOf(attempt(1, AttemptKind.Morning, AttemptOutcome.Sent)), null))
+    fun `the last summary that could not be sent is found with its reason`() {
+        val failed = attempt(3, AttemptKind.Evening, AttemptOutcome.DataTooOld)
+        val entries = listOf(attempt(30, AttemptKind.Morning, AttemptOutcome.Sent), failed)
+        assertEquals(failed, AttemptLog.lastMissed(entries, istanbul))
+        assertEquals(failed.at, AttemptLog.missedTime(failed))
+    }
+
+    @Test
+    fun `a failure followed by a sent summary of the same kind that day is not missed`() {
+        val entries = listOf(attempt(3, AttemptKind.Evening, AttemptOutcome.NoPermission), attempt(2, AttemptKind.Evening, AttemptOutcome.Sent))
+        assertNull(AttemptLog.lastMissed(entries, istanbul))
+        // Başka türün gönderilmesi ya da ertesi günün özeti onu silmez.
+        val other = listOf(attempt(3, AttemptKind.Evening, AttemptOutcome.ChannelOff), attempt(2, AttemptKind.Morning, AttemptOutcome.Sent))
+        assertEquals(AttemptOutcome.ChannelOff, AttemptLog.lastMissed(other, istanbul)?.outcome)
+        val nextDay = listOf(Attempt(ago(30), AttemptKind.Morning, AttemptOutcome.Error, "LoadTimeout"), attempt(1, AttemptKind.Morning, AttemptOutcome.Sent))
+        assertEquals(AttemptOutcome.Error, AttemptLog.lastMissed(nextDay, istanbul)?.outcome)
+    }
+
+    @Test
+    fun `a missed record shows the planned time and tests never count`() {
+        val planned = Instant.parse("2026-10-28T16:03:00Z")
+        val missed = Attempt(ago(10), AttemptKind.Evening, AttemptOutcome.Missed, planned.toEpochMilli().toString())
+        assertEquals(planned, AttemptLog.missedTime(missed))
+        assertNull(AttemptLog.lastMissed(listOf(attempt(1, AttemptKind.Test, AttemptOutcome.NoPermission)), istanbul))
+        assertNull(AttemptLog.lastMissed(emptyList(), istanbul))
     }
 }
